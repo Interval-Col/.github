@@ -72,6 +72,47 @@ This document defines the official engineering standards for all primary project
 
 ---
 
+## 🔠 Cross-platform path safety
+
+Mac developers + Linux CI is a mixed-FS environment. macOS APFS is
+case-insensitive by default; Git is case-sensitive. **Never commit
+two files whose paths differ only in case** (e.g. `Order.ts` and
+`order.ts` in the same folder). On Linux they coexist; on macOS the
+filesystem can hold only one of the pair, leaving the other
+permanently "modified" in `git status` because the disk content can
+never match both blobs simultaneously. Recovery from a Mac is
+expensive (see the biuman-lis runbook linked below); prevention is
+cheap.
+
+### Required in every repo
+
+1. **Pre-commit hook + CI check** rejecting any commit that
+   introduces a case-collision pair. Reference implementation:
+   [`biuman-lis/scripts/check-case-collisions.sh`](https://github.com/Interval-Col/biuman-lis/blob/main/scripts/check-case-collisions.sh).
+   Detection is one-liner:
+   ```bash
+   git ls-tree -r HEAD | awk '{print $4}' \
+     | awk '{print tolower($0), $0}' | sort \
+     | awk '{ if ($1==prev) { print "case-collision:", lastpath, "vs", $2; bad=1 } prev=$1; lastpath=$2 } END { exit bad }'
+   ```
+2. **Repo-level convention**: pick one casing style per folder
+   (`PascalCase.ts` for components, `camelCase.ts` for utilities,
+   `kebab-case.vue` for pages — whatever the repo settles on) and
+   keep it consistent. Mixed casing within a folder is the
+   precondition for collisions.
+
+### If a collision lands on `main` anyway
+
+Fix from a case-sensitive system (Linux container, WSL, or a
+case-sensitive APFS volume on Mac) — `git rm --cached <dead-path>`
+on the dead casing, commit, push. Trying to fix it from a vanilla
+Mac requires the index-mirror dance documented in the biuman-lis
+[`CONTRIBUTING.md`](https://github.com/Interval-Col/biuman-lis/blob/main/CONTRIBUTING.md)
+case-collision runbook because `git stash` and `git reset --hard`
+oscillate the dirty status without ever clearing it.
+
+---
+
 ## 🛡️ Security & Config
 
 - No secrets/config in source; use `.env.example` for all config.
@@ -112,6 +153,7 @@ This document defines the official engineering standards for all primary project
 - [ ] `.github/` directory with workflows and templates
 - [ ] **CI must run all tests, lint, and builds**
 - [ ] Branch protection enabled on `main`
+- [ ] Case-collision check installed (pre-commit hook + CI step) — see "Cross-platform path safety"
 
 ---
 
