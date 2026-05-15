@@ -28,7 +28,10 @@ This document defines the official engineering standards for all primary project
 - `.env.example` with all required config variables
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
-- Nuxt 4 as framework (SSR/SPA ready)
+- Nuxt 4 as framework — **SSR by default**; opt individual pages out
+  with `definePageMeta({ ssr: false })` only when they are auth-gated
+  and load all data client-side (SSR would render an empty skeleton).
+  Never set a global `ssr: false`.
 - Vue 3, Vite, Pinia, Tailwind v4, TypeScript
 - Pin Node version in `package.json` and/or `.nvmrc`
 - `.env.example` in `frontend/`
