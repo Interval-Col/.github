@@ -187,6 +187,39 @@ oscillate the dirty status without ever clearing it.
 
 - Refer to this `ENGINEERING_STANDARDS.md` for any refactor, migration, or new major feature.
 
+### 📋 Plan craft
+
+Execution plans for delivery work (the `plans/*.md` files each repo
+carries) follow a shared **plan-craft methodology**, calibrated to a
+junior, Spanish-native, AI-agent-assisted dev team. It standardises:
+
+- **Bilingual layout** — English body with a Spanish `Resumen` per
+  section and inline `(ES: …)` glosses on the high-cost-of-misread
+  parts (decisions, acceptance criteria, checkpoint questions).
+- **Marker vocabulary** — `💡 Heuristic`, `🛑 HUMAN DECISION`,
+  `✅ Done-when`, `🚦 Checkpoint`, each with strict semantics.
+- **Working rules block** that every plan carries verbatim: commit +
+  push per slice; Conventional Commits with required scope (see
+  [`lab-qc/docs/STANDARDS.md`](https://github.com/Interval-Col/lab-qc/blob/main/docs/STANDARDS.md));
+  review-the-frontend-in-the-browser; AI-tool guidance; the
+  bypass-honesty note.
+- **Non-condescending tone** — gaps are framed as the *plan's* fault,
+  not the reader's; seniority is never mentioned.
+
+Authoritative artefacts (canonical sources of truth):
+
+- **Agent prompt** — [`agents/plan-craft.agent.md`](agents/plan-craft.agent.md).
+  System prompt for an AI agent helping a lead author or rebuild a plan
+  in this style. Includes the audience model, required structure,
+  tone "do / never," and a re-baselining recipe for plans the team has
+  already partly implemented.
+- **Template** — [`templates/plan-template.md`](templates/plan-template.md).
+  Copy into the target repo's `plans/` directory and fill in the
+  placeholders; canonical blocks are verbatim-ready.
+
+Reference plans worth reading as exemplars: `admission-patient/plans/`,
+`commercial-lch/plans/mvp-quote-generation-plan.md`.
+
 ---
 
 ## 🧑‍💻 Review & Collaboration
