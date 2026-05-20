@@ -6,8 +6,18 @@ preamble, the Conventions table, and the Working rules are CANONICAL —
 copy them verbatim; only the commit-message example may be adjusted to
 the project domain.
 
+Two Spanish-support surfaces are REQUIRED (they replace per-bullet ES
+glosses, which bloat the doc):
+  - **Glossary section** — fill in 5–12 entries with the technical
+    terms this plan keeps using.
+  - **Per-phase Resumen** — must list every task in 1 Spanish line
+    before the English task block, so a Spanish-native reader gets a
+    full map of the phase up front.
+
 Full authoring guidance: see `.github/agents/plan-craft.agent.md`.
-Reference plans worth imitating:
+Reference plans worth imitating (they predate the Glossary +
+task-by-task Resumen convention, so use them for tone and structure,
+not as exact-density references):
   - admission-patient/plans/finance-lch-integration-plan.md
   - admission-patient/plans/org-standards-harmonization-plan.md
   - commercial-lch/plans/mvp-quote-generation-plan.md
@@ -123,6 +133,27 @@ These apply to every phase.
   *(ES: puedes pedirle a tu agente que se salte las explicaciones — pero
   las preguntas del checkpoint las hace una persona; eso no se delega.)*
 
+## Glossary · Glosario
+
+> **Resumen (ES).** Términos técnicos en inglés que vas a ver muchas
+> veces en este plan, con su traducción y una línea de qué significan.
+> Si te encuentras un término del plan que no está aquí y no lo
+> entiendes, pregúntale a tu agente — no es una falla tuya, es un vacío
+> de esta tabla.
+
+5–12 entries — keep it to the English terms that recur across the plan
+and that a Spanish-native reader could plausibly stumble on. Skip
+universal terms (`URL`, `JSON`, `git`); skip terms that only appear
+once.
+
+| English | Español | Means |
+|---|---|---|
+| <e.g. compat shim> | <capa de compatibilidad> | <a temporary endpoint that speaks the old API shape while the client catches up> |
+| <e.g. payload> | <cuerpo de la petición / payload> | <the JSON body sent in a POST/PATCH> |
+| <e.g. Done-when> | <terminado-cuando> | <the literal checkable list that means the task is verified> |
+| <e.g. commit + push> | <hacer commit y push> | <save to git locally **and** send to GitHub — both verbs> |
+| <e.g. slice> | <rebanada / unidad de trabajo> | <a small piece of work that can ship on its own> |
+
 ## Out of scope · Fuera de alcance
 
 > **Resumen (ES).** Lo siguiente **no** es parte de este alcance — es
@@ -139,8 +170,19 @@ Explicitly out of scope — not for this plan:
 
 ## Phase 1 — <Bootstrap / foundation phase name>
 
-> **Resumen (ES).** <2–4 lines, Spanish, what this phase achieves and
-> why it comes first.>
+> **Resumen (ES) — Fase 1: <Spanish phase name>.**
+>
+> <1–2 lines in Spanish: what this phase achieves and why it comes
+> first.>
+>
+> En orden, las tareas:
+>
+> 1. **1.1** — <one Spanish line summarising task 1.1.>
+> 2. **1.2** — <one Spanish line summarising task 1.2.>
+> 3. **1.3** — <one Spanish line summarising task 1.3.>
+>
+> <If the phase has an open 🛑 HUMAN DECISION, name it on its own line:
+> "Decisión humana: …".>
 
 <Optional 1–2 line English context — only if the Resumen leaves
 something unclear.>

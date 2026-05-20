@@ -50,21 +50,36 @@ copy from it and fill in. Reference examples:
 6. `## Conventions · Convenciones` — canonical markers table (verbatim).
 7. `## Working rules · Reglas de trabajo` — canonical block (verbatim,
    adjust only the language about commit-message-scope examples).
-8. `## Out of scope · Fuera de alcance` — short ES intro + bullets.
-9. `## Phase N — <name>` — one heading per phase. Inside each phase:
-   - `> **Resumen (ES).** …` (2–4 lines, what this phase achieves)
-   - Task list — `[ ]` checkboxes, numbered `N.1`, `N.2`, …
-   - `**Why:**` lines on the non-obvious decisions only (not every task)
-   - `💡 **Heuristic.**` boxes where the *phase* has earned a real
-     engineering lesson (not generic filler; see "Heuristics" below)
-   - `✅ **Done-when:** …` block per phase (literal, verifiable
-     criteria; bilingual gloss)
-   - `🚦 **Checkpoint N.**` block on meaningful phase boundaries (not
-     every phase; see "Checkpoints" below)
-10. `## Decisions · Decisiones` — collected `🛑 HUMAN DECISION` items
+8. `## Glossary · Glosario` — a small bilingual table of the
+   English technical terms that recur throughout the plan and the
+   Spanish equivalent + a one-line meaning. 5–12 entries, no more.
+   Pick terms a Spanish-native reader will hit over and over and could
+   plausibly stumble on (e.g. `compat shim`, `payload`, `Done-when`,
+   `commit + push`, `slice`, `rollout`). Skip universal terms (`URL`,
+   `JSON`, `git`).
+9. `## Out of scope · Fuera de alcance` — short ES intro + bullets.
+10. `## Phase N — <name>` — one heading per phase. Inside each phase:
+    - `> **Resumen (ES).** …` blockquote. Two parts: (a) a 1–2 line
+      Spanish statement of what the phase achieves, then (b) a
+      numbered list with **one Spanish line per task** in the phase
+      (e.g. `1. **P2.1** — Cambiar la variable de entorno…`). The
+      task-list-in-Resumen gives a Spanish-native reader a complete
+      map of the phase *before* they read English details. If the
+      phase has a `🛑 HUMAN DECISION` or a known-resolved equivalent,
+      mention it on its own line under the task list ("Decisión
+      humana: …").
+    - Task list — `[ ]` checkboxes, numbered `N.1`, `N.2`, … (English).
+    - `**Why:**` lines on the non-obvious decisions only (not every task)
+    - `💡 **Heuristic.**` boxes where the *phase* has earned a real
+      engineering lesson (not generic filler; see "Heuristics" below)
+    - `✅ **Done-when:** …` block per phase (literal, verifiable
+      criteria; bilingual gloss)
+    - `🚦 **Checkpoint N.**` block on meaningful phase boundaries (not
+      every phase; see "Checkpoints" below)
+11. `## Decisions · Decisiones` — collected `🛑 HUMAN DECISION` items
     still open; resolved decisions logged below them with date.
-11. `## Risks · Riesgos` — bulleted; bilingual *Resumen* heading.
-12. `## References` — links to counterpart plans, RFCs, related files.
+12. `## Risks · Riesgos` — bulleted; bilingual *Resumen* heading.
+13. `## References` — links to counterpart plans, RFCs, related files.
 
 ### Marker vocabulary (semantics are strict)
 
@@ -88,18 +103,32 @@ copy from it and fill in. Reference examples:
 
 ### Bilingual rules
 
-- Body: English.
-- Per-section `Resumen (ES)`: 2–6-line Spanish summary up top of each
-  major section / phase.
-- Inline `*(ES: …)*` glosses on **high-cost-of-misread parts only**:
-  Done-when, checkpoints, HUMAN DECISIONs, key heuristics. Don't gloss
-  every English sentence — that becomes noise.
-- Code, file paths, commands, identifiers: never translate; keep them
-  exactly as they appear in code.
-- One canonical line in "How to use this plan": *"If the English here
-  slows you down: ask your AI agent to translate or explain any part in
-  Spanish — that is a completely legitimate thing to do."* Always
-  include this.
+The Spanish strategy is **structural, not per-line**. Spanish-native
+readers get oriented through three deliberate surfaces; the English body
+stays uncluttered.
+
+- **Body: English.** Code, file paths, commands, identifiers: never
+  translate; keep them exactly as in code.
+- **Top-of-plan Resumen** — Spanish summary of the whole project
+  (3–6 lines).
+- **Per-phase Resumen with task-by-task list.** Each phase's
+  `> **Resumen (ES).**` block opens with a 1–2-line statement of what
+  the phase achieves, then enumerates **one Spanish line per task** so
+  a reader gets the full phase map in Spanish *before* the English
+  details.
+- **Glossary section** — a 5–12-row bilingual table at the top of the
+  plan covering the English technical terms the reader will hit
+  repeatedly. Cheaper than translating every bullet; gives the reader
+  vocabulary support that compounds across phases.
+- **Inline `*(ES: …)*` glosses on high-cost-of-misread parts only**:
+  Done-when, checkpoint questions, HUMAN DECISIONs, key heuristics. The
+  marker has to *mean* something — "this is the part you must not
+  misread." Do **not** gloss every English sentence; that drains the
+  signal and bloats the doc 1.6–2×.
+- **Canonical line in "How to use this plan"** (always include):
+  *"If the English here slows you down: ask your AI agent to translate
+  or explain any part in Spanish — that is a completely legitimate thing
+  to do."*
 
 ### Working rules — verbatim block
 
