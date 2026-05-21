@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>Pháros icon (dark)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&display=swap');
+    .p { font-family: 'Fraunces', 'Times New Roman', serif; font-size: 56px; font-weight: 400; fill: #FFFFFF; letter-spacing: -0.01em; }
+  </style>
+  <circle cx="29" cy="14" r="4.5" fill="#E4002B"/>
+  <text x="14" y="56" class="p">P</text>
+</svg>
