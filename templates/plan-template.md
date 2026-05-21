@@ -91,7 +91,7 @@ sin problema.
 | 💡 **Heuristic** | A short engineering or working lesson. Worth 30 seconds. *(ES: heurística — lección breve.)* |
 | 🛑 **HUMAN DECISION** | A choice the plan deliberately does not make. **Do not let an agent pick it.** Escalate to <owner>. *(ES: decisión humana — no la toma un agente; escala a <owner>.)* |
 | ✅ **Done-when** | The Definition of Done. The phase is verified only when every line is literally true. *(ES: terminado-cuando — definición de "hecho".)* |
-| 🚦 **Checkpoint** | Stop. Show <owner> the named evidence and answer the questions before continuing. *(ES: punto de control.)* |
+| 🚦 **Checkpoint** | Stop. Show <owner> the named evidence and answer the questions before continuing. **Mandatory stop — including in auto mode** (see Working rules). *(ES: punto de control — alto obligatorio, también en modo auto.)* |
 
 > **On the checkpoints.** Each 🚦 lists evidence to show and questions to
 > answer. The questions are **not a test of you** — they test whether
@@ -132,6 +132,20 @@ These apply to every phase.
   cannot outsource. Reading as you go is the cheap way to be ready.
   *(ES: puedes pedirle a tu agente que se salte las explicaciones — pero
   las preguntas del checkpoint las hace una persona; eso no se delega.)*
+- **Auto mode is slice-bounded.** Auto mode (running without clarifying
+  questions between turns) is allowed for the duration of **one
+  slice** — a single numbered task, or one phase when the plan groups
+  tasks that way. At the end of every slice, the agent **STOPS**,
+  surfaces what landed (Done-when items verified, files touched,
+  what's next), and waits for explicit human acknowledgement before
+  starting the next slice. At 🚦 Checkpoints the stop is stronger —
+  the human walks the evidence with the agent. Auto mode is **never**
+  "execute the whole plan unattended." *(ES: el modo auto va por
+  slice, no por plan entero. Al final de cada slice, el agente
+  **PARA**, te muestra qué cerró (Done-when, archivos tocados, qué
+  viene) y espera tu visto bueno antes del siguiente slice. En los
+  🚦 el alto es más fuerte — recorres la evidencia con el agente.
+  Auto **nunca** significa "ejecuta el plan completo solo".)*
 
 ## Glossary · Glosario
 
