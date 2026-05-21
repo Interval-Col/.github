@@ -99,7 +99,8 @@ copy from it and fill in. Reference examples:
   Questions phrased as *they test the plan*, not the person. Place
   checkpoints at: (a) end of foundational/bootstrap phase, (b) end of
   first real UI phase, (c) end of the core-loop phase, (d) MVP exit.
-  Not on every phase.
+  Not on every phase. **A 🚦 is a MANDATORY stop, including for an
+  executing agent running in auto mode** — see Working rules below.
 
 ### Bilingual rules
 
@@ -132,7 +133,7 @@ stays uncluttered.
 
 ### Working rules — verbatim block
 
-Every plan carries the same Working rules. The five non-negotiable
+Every plan carries the same Working rules. The six non-negotiable
 bullets:
 
 1. Commit + push after every slice. Work on a laptop doesn't exist.
@@ -146,6 +147,16 @@ bullets:
 5. You can tell your agent to skip the Why boxes — we won't stop you.
    But the 🚦 checkpoint questions are asked by a person and that you
    cannot outsource.
+6. **Auto mode is slice-bounded.** Auto mode is allowed for the
+   duration of one slice — a single numbered task, or one phase when
+   tasks are grouped. At the end of every slice the agent **STOPS**,
+   surfaces what landed (Done-when items, files touched, what's next)
+   and waits for explicit human acknowledgement before starting the
+   next slice. 🚦 Checkpoints stop more strongly — the human walks
+   the evidence with the agent. Auto mode is **never** "execute the
+   whole plan unattended." This rule discovered 2026-05-20 when an
+   executing agent on auto blew past 🚦 markers; encoded here so
+   future plans carry it verbatim.
 
 Copy the canonical wording from the template; do not paraphrase. Adjust
 only the commit-message *example* (`feat(orders): …`) to fit the

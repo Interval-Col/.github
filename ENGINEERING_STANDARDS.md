@@ -202,7 +202,11 @@ junior, Spanish-native, AI-agent-assisted dev team. It standardises:
   push per slice; Conventional Commits with required scope (see
   [`lab-qc/docs/STANDARDS.md`](https://github.com/Interval-Col/lab-qc/blob/main/docs/STANDARDS.md));
   review-the-frontend-in-the-browser; AI-tool guidance; the
-  bypass-honesty note.
+  bypass-honesty note; and the **auto-mode-is-slice-bounded** rule
+  (auto mode is allowed within one slice, the agent stops at every
+  slice boundary and at every 🚦 Checkpoint to surface Done-when
+  status and wait for human acknowledgement — auto mode is never
+  "execute the whole plan unattended").
 - **Non-condescending tone** — gaps are framed as the *plan's* fault,
   not the reader's; seniority is never mentioned.
 
