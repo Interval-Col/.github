@@ -174,6 +174,46 @@ oscillate the dirty status without ever clearing it.
 - Separate `Dockerfile` for BE and FE.
 - Root-level `docker-compose.yml` or `compose.yaml`.
 
+### 🗝️ Secrets & vaults
+
+**Bitwarden is the org vault.** All shared infrastructure credentials
+(DB passwords, deploy-user SSH keys, host fingerprints, third-party
+API keys used at deploy time) live in Bitwarden. 1Password is **not**
+used at the org level — any older docs that mention it are historical.
+
+**Collection layout — by environment, not by app:**
+
+| Collection | Holds |
+|---|---|
+| `staging` | every service's staging credentials (e.g. `nucleus-db/nucleus_admin`, `nucleus-db/finance_user`) |
+| `prod` | every service's prod credentials, same item-naming convention |
+| `dev` | shared dev-only secrets (rare — most dev creds are per-developer) |
+
+**Why per-environment, not per-app:** lets us tighten prod-only access
+to a smaller subset of people without restructuring the vault, and
+every item's env is implicit in its parent collection so you cannot
+accidentally save a prod password under a staging name.
+
+**Item naming inside a collection:** `<service>/<role>` — e.g.
+`nucleus-db/nucleus_admin`, `nucleus-db/finance_user`,
+`staging-vm/deploy`. Match the role name used in the DB / system,
+not a friendly label.
+
+**Access:** the `staging` and `prod` collections are restricted to the
+infrastructure caretakers (@gczuluaga + @SKuger01 as of 2026-05-27).
+Other devs request a credential through the caretakers; they don't
+get blanket vault access. Document any access change in the relevant
+RFC's Decisions log.
+
+**GitHub Actions secrets are downstream of Bitwarden.** Bitwarden is
+the source of truth; GH secrets are *copies* needed at deploy time.
+Prefer **org-level GitHub secrets** (Interval-Col org settings → Secrets
+and variables → Actions → New organization secret) so the rotation
+story is one place per credential. Per-repo secrets are acceptable
+only when the secret is genuinely repo-scoped. When a credential
+rotates: update Bitwarden first, then the org-level secret, then any
+repo-level overrides.
+
 ---
 
 ## 📄 Project Documentation
