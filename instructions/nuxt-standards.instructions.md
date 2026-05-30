@@ -5,7 +5,7 @@ applyTo: "**/*.vue,**/*.ts"
 # Estándares Nuxt 4 — Interval-Col / LCH
 
 ## Stack
-- **Framework:** Nuxt 4 (SSR + SPA ready)
+- **Framework:** Nuxt 4 — SSR por defecto (ver "Modo de renderizado")
 - **UI:** Vue 3 Composition API (`<script setup lang="ts">`)
 - **Estilos:** Tailwind v4 — configuración via CSS (`@theme`), no `tailwind.config.js`
 - **Estado:** Pinia (`defineStore`)
@@ -73,6 +73,24 @@ function handleClick() { ... }
 /* Solo si Tailwind no es suficiente */
 </style>
 ```
+
+## Modo de renderizado (SSR / CSR)
+
+- **SSR por defecto.** Nunca pongas `ssr: false` global en
+  `nuxt.config.ts`.
+- Una página individual puede optar por CSR con
+  `definePageMeta({ ssr: false })` **solo** cuando: está detrás de
+  autenticación (sin valor SEO) **y** carga todos sus datos en
+  `onMounted` vía `apiFetch` cliente — el render del servidor
+  produciría únicamente un esqueleto vacío. Acompaña el
+  `definePageMeta` con un comentario de una línea explicando el
+  motivo.
+- **Código compartido SSR-safe** (stores, composables, plugins): no
+  uses `typeof window` / `typeof localStorage` para detectar el
+  servidor — Node 22+ expone un global `localStorage` y ese chequeo
+  falla (`.getItem()` lanza error). Usa `import.meta.client` /
+  `import.meta.server`. Para estado de Pinia persistido solo en
+  cliente, envuelve el `ref` en `skipHydrate()`.
 
 ## Tailwind v4 — Configuración
 ```css
