@@ -1,8 +1,8 @@
 ---
-status: pending
+status: active
 owner: gczuluaga
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-02
 home: Interval-Col/.github (org-level — this automation spans every repo's trackers, so it lives here, not in any single app repo)
 related:
   - Interval-Col/rfcs#4 (digest thread where the tracker convention was announced)
@@ -44,8 +44,15 @@ multiplies that risk. So trust is earned in phases.
 
 ## Phases
 
-### v1 — Central, propose-only  ✅ CHOSEN 2026-06-01 (start here)
-- One routine, owned by @gczuluaga, runs ~19:00 on weekdays (`/schedule`).
+### v1 — Central, propose-only  ✅ LIVE 2026-06-02
+- **Routine:** `trig_01WTXhtzpJfFzRgZSqnCxdQC` (manage at claude.ai/code/routines),
+  owner @gczuluaga, cron `0 0 * * 2-6` = weekdays 19:00 Bogotá, model sonnet-4-6,
+  tools Bash/Read/Grep, env **"Interval-Col GH"**. Manual test run 2026-06-02
+  returned 200 (GitHub access OK).
+- **Watches the 4 active execution-trackers** (the `eodWatch` set from the
+  2026-06-02 portfolio triage): commercial-lch#1, admission-patient#4,
+  admission-patient#5, nucleus-db#5. (finance-lch#1 + nucleus-db#2 were closed
+  in that triage; the others are co-creation/parked, not week-to-week movers.)
 - Reads the day's merged PRs across the active repos (by author, from git).
 - Posts **one "tracker check-in" comment** per active tracker:
   *"Looks done today: suggest ticking 1.4, 1.5 on #4 — confirm?"* and
@@ -68,6 +75,33 @@ multiplies that risk. So trust is earned in phases.
   unattended — it needs scoped write permission and will surface the same
   write-action guardrails we hit manually.
 
+## Setup — how to connect GitHub (learned the hard way, 2026-06-02)
+
+A routine's GitHub access does NOT come from the org GitHub App alone. The
+routine runs as a cloud agent that needs **your claude.ai account's GitHub
+token**, and getting it there has two non-obvious requirements:
+
+1. **Run `/web-setup` in the TERMINAL CLI** — the **VS Code extension does not
+   expose `/web-setup`**. Install the standalone CLI first
+   (`npm install -g @anthropic-ai/claude-code`), run `claude` in a terminal
+   (sign in as the **same account** that owns the routine), then `/web-setup`
+   and authorize GitHub. This syncs the `gh` token the routine uses.
+2. **Use a GitHub-connected environment** — after `/web-setup`, `/schedule`
+   offers an env named **"Interval-Col GH"**. The old generic "Default" env
+   fails with `github_repo_access_denied`.
+
+**Red herrings that cost ~1 hour on 2026-06-02 (don't repeat):**
+- Installing the org **GitHub App** (repos=all) — needed for interactive
+  sessions, NOT sufficient for routines.
+- The org's **"Access restricted" OAuth third-party policy** — irrelevant; the
+  Claude integration is a **GitHub App**, not an OAuth App. Do NOT click
+  "Remove restrictions"; it wouldn't help and weakens the org.
+- Recreating the routine / waiting for propagation — neither fixed it.
+
+**Failure signature:** routine run → HTTP 400 `github_repo_access_denied`
+("re-authorize GitHub in settings"); a scheduled run auto-disables with
+`ended_reason: auto_disabled_repo_access`.
+
 ## Open questions before building v1
 - Schedule: one fixed time (e.g. 19:00 America/Bogotá) vs per-dev EOD.
 - Scope: which repos/trackers are "active" enough to be worth a nightly check.
@@ -81,3 +115,9 @@ multiplies that risk. So trust is earned in phases.
   they are not forgotten. (gczuluaga)
 - **2026-06-01** — Relocated this plan from `finance-lch/plans/` to
   `Interval-Col/.github/plans/` — it's org-level, not finance-specific. (gczuluaga)
+- **2026-06-02** — v1 **stood up and verified** (`trig_01WTXhtzpJfFzRgZSqnCxdQC`,
+  env "Interval-Col GH"); manual run returned 200. Scoped to the 4 `eodWatch`
+  trackers from that day's portfolio triage. (gczuluaga)
+- **2026-06-02** — Recorded the GitHub-connection requirement (`/web-setup` in
+  the terminal CLI + a GitHub-connected env) after an hour of dead ends — see
+  the **Setup** section. (gczuluaga)
