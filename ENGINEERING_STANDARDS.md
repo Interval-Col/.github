@@ -49,11 +49,22 @@ This document defines the official engineering standards for all primary project
 
 | Practice           | Standard                                                            |
 |--------------------|---------------------------------------------------------------------|
-| Default Branch     | `main`                                                              |
-| Integration Branch | `develop`                                                           |
-| Feature Branches   | `feat/`, `fix/`, `refactor/`, `test/`, etc.                         |
-| Commit Style       | [Conventional Commits](https://www.conventionalcommits.org/)        |
-| CI/CD              | GitHub Actions in `.github/workflows/` for lint, test, build, deploy|
+| Branch model       | **GitFlow-lite**: `main` ← `develop` ← `<type>/<slug>`              |
+| Default Branch     | `main` (PR required, 1 reviewer, green CI, squash-merge)            |
+| Integration Branch | `develop` (direct push allowed; CI still required)                  |
+| Feature Branches   | `<type>/<short-kebab-slug>` — types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix` |
+| Commit & PR title  | [Conventional Commits](https://www.conventionalcommits.org/) — enforced on **both** |
+| Merge mode         | **Squash and merge** everywhere; auto-delete merged branches        |
+| CI/CD              | GitHub Actions in `.github/workflows/`; push-to-`develop` deploys dev server, push-to-`main` deploys prod (the PR review IS the deploy approval) |
+| Releases           | Semver tag (`v1.2.3`) + GitHub Release per prod deploy, auto-drafted notes |
+| Hotfix             | `hotfix/*` off `main` → PR to `main` → merge `main` forward into `develop` |
+
+> **Full operational policy**, including branch-protection settings,
+> required CI checks, the hook set, CODEOWNERS, stale-branch
+> automation, three-environment topology, and per-repo bootstrap
+> checklist: see **[`BRANCHING-AND-DEPLOY.md`](BRANCHING-AND-DEPLOY.md)**.
+> That doc is the source of truth for the per-setting choices; this
+> table is the elevator pitch.
 
 ---
 
@@ -271,10 +282,14 @@ Reference plans worth reading as exemplars: `admission-patient/plans/`,
 
 ## 🧑‍💻 Review & Collaboration
 
-- Branch protection on `main`
-- Required status checks and PR reviews
-- Use PR and Issue templates from `.github/`
-- All teams/contributors must follow the standards here for all major projects
+- Branch protection on `main` and `develop` — see
+  [`BRANCHING-AND-DEPLOY.md` §"Branch protection"](BRANCHING-AND-DEPLOY.md#branch-protection)
+  for the exact ruleset (required reviewers, required status checks,
+  force-push policy, planned escalation to signed commits).
+- Use PR and Issue templates from `.github/`.
+- CODEOWNERS required per repo — see
+  [`BRANCHING-AND-DEPLOY.md` §"CODEOWNERS"](BRANCHING-AND-DEPLOY.md#codeowners).
+- All teams/contributors must follow the standards here for all major projects.
 
 ---
 
