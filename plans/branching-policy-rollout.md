@@ -24,16 +24,23 @@ Legend: ✅ done · ⚠️ partial · ❌ missing · ❓ unknown / needs admin
 | Repo | BP main | BP develop | Repo settings | CODEOWNERS | PR template | Stale wf | Pre-commit | CI/CD shape |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `Interval-Col/.github` | ❌ | ❌ (no branch) | ❌ | ❌ | ❌ | ❌ | ❌ | n/a (meta-repo) |
-| `Interval-Col/finance-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (3/8 base hooks, 0/5 policy hooks) | ⚠️ rebuild-per-env |
+| `Interval-Col/finance-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote |
 | `Interval-Col/lab-qc` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ rebuild-per-env |
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ CI-only, no deploy yet |
 | `Interval-Col/cobol-migration` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ (no config) | ⚠️ rebuild-per-env, on develop only |
 | `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ (case-collision present, 4/5 missing) | ⚠️ CI-only, deploy not ported |
 
-Headline: zero repos have branch protection today, zero have the policy hook
-set, only one has a CODEOWNERS file. The rollout is wide but each repo is a
-small amount of work — the bulk of effort is the CI/CD migration in the three
-repos that already deploy.
+Headline (audit 2026-06-04): zero repos had branch protection, zero had the
+policy hook set, only one had a CODEOWNERS file. The rollout is wide but each
+repo is a small amount of work — the bulk of effort is the CI/CD migration in
+the three repos that already deploy.
+
+**Update 2026-06-04**: `finance-lch` is **done** end-to-end — chrome,
+branch protection on both `main` and `develop`, build-once-promote
+migration, repo settings. It now serves as the reference implementation
+the other repos can copy. See its row above for the concrete artifacts
+(PR Interval-Col/finance-lch#8, the `gh api` ruleset, the `promote-*`
+jobs pattern).
 
 ---
 
@@ -61,25 +68,23 @@ Estimated effort: ~2h end-to-end — this is mostly file creation + a settings t
 
 ## `Interval-Col/finance-lch`
 
-**Status:** policy chrome entirely absent (no protection, no CODEOWNERS, no PR template, no stale workflow); pre-commit exists but lacks all 5 policy hooks; ci-cd.yml is the worst offender on rebuild-per-env.
+**Status (2026-06-04):** ✅ **DONE.** All policy chrome landed, branch protection enforced on `main` and `develop`, ci-cd.yml migrated to build-once-promote. Closed via PR Interval-Col/finance-lch#8 (merged to `develop`) and the follow-up `develop` → `main` PR; repo settings + branch protection rules applied via `gh api` immediately after. This row is the first concrete reference implementation other repos can copy.
 
-- [ ] Land policy assets on `main` directly (the audit notes `main` has no `.github/` tree — assets currently live on `develop` only)
-- [ ] Add `.github/CODEOWNERS` — `backend/` → API leads, `frontend/` → FE leads, `alembic*/` + `seeds/` → DB owners (per `database.agent.md`), `.github/` → platform
-- [ ] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What changed / Test plan / Rollout notes, with DS gates checkbox row
-- [ ] Add `.github/workflows/stale.yml` (30/60/90)
-- [ ] Extend `.pre-commit-config.yaml` with the 5 missing hooks: `case-collision`, `gitleaks`, `format-on-stage`, `commit-msg-lint`, `branch-name-lint`
-- [x] Already done: pre-commit baseline (`end-of-file-fixer`, `trailing-whitespace`, `check-merge-conflict`, `check-yaml`, `check-added-large-files`, `ruff`, `ruff-format`, `eslint`) — Phase-0 baseline mirrors lab-qc
-- [x] Already done: `ci.yml` runs `lint-frontend`, `lint-backend`, `test-frontend`, `test-backend` on PR — these become the required status checks
-- [ ] Add a `verify-api-contract` job (currently absent) before wiring required checks on `main`
-- [ ] Add design-system gates job (none today)
-- [ ] Enable branch protection on `main` — required checks: `lint-frontend`, `lint-backend`, `test-frontend`, `test-backend`, `verify-api-contract`, DS gates; 1 reviewer; resolved threads; linear history; CODEOWNERS review; no force-push; no deletions
-- [ ] Enable branch protection on `develop` — required status checks on direct push, no force-push
-- [ ] Repo settings: auto-delete on, disable merge-commit + rebase-merge (squash-only), enable Discussions
-- [ ] Migrate `ci-cd.yml` from rebuild-per-env to build-once-promote (see Cross-cutting §1 below) — this is the load-bearing item
+- [x] Land policy assets — landed via PR #8 to `develop`, then promoted to `main` through the policy's own PR/squash-merge flow.
+- [x] Add `.github/CODEOWNERS` — initial domain map (backend / frontend / contabilidad / infra / plans+docs), catch-all `*` → `@gczuluaga`; `frontend/` → `@SKuger01`; contabilidad cross-cutting paths require both.
+- [x] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What changed / Test plan / Rollout notes, with the CC-format reminder in the HTML preamble (squash-merge makes the PR title load-bearing).
+- [x] Add `.github/workflows/stale.yml` — `actions/stale@v9`, 30d warn / 60d notify / 90d archive, daily 13:00 UTC, opt-out via `do-not-stale` label.
+- [x] Extend `.pre-commit-config.yaml` with the 5 policy hooks — `check-case-conflict`, `gitleaks` (v8.21.2), `ruff`/`ruff-format` (format-on-stage), `conventional-pre-commit` (v3.6.0, commit-msg stage), local `scripts/check-branch-name.sh` (pre-push stage). 12 hooks total across 3 stages.
+- [x] `ci.yml` was already at parity with the policy on this — `Frontend lint (ESLint)`, `Backend lint (Ruff + Pyright)`, `Frontend tests (Vitest)`, `Backend tests (pytest)`, `Verify API contract (regenerate then diff)`, and `Block local IAM from leaking into deploy compose` are all 6 wired into branch protection as the required check set. The audit originally flagged `verify-api-contract` as missing — that was stale; the job has existed since the API-contract slice landed in Phase 3.
+- [ ] Add design-system gates job — **deferred** (see Open Questions). No repo implements this yet; tracked as a separate workstream.
+- [x] Enable branch protection on `main` — applied via `gh api PUT /repos/.../branches/main/protection`. Ruleset: 6 required checks (above), 1 reviewer, dismiss stale on new commits, CODEOWNERS review required, linear history, resolved conversations required, no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation per policy).
+- [x] Enable branch protection on `develop` — applied via `gh api`. Same 6 required checks; PR optional (direct push allowed); no force-push, no deletions; linear history not required.
+- [x] Repo settings — `gh api PATCH /repos/...`: `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`.
+- [x] Migrate `ci-cd.yml` to build-once-promote — push to `develop` builds `${REPO}:dev` + `${REPO}:<sha>` and deploys dev; push to `main` runs new `promote-frontend`/`promote-backend` jobs that **pull `${REPO}:dev`, retag as `${REPO}:prod` + `${REPO}:<main-sha>`, push**. Same `sha256` digest from dev → prod. `workflow_dispatch` action set expanded with `promote-and-deploy` and `promote-only`. A safety check in the `config` job refuses to BUILD a prod image from a push event.
 
-**Owner:** <TBD>
+**Owner:** @gczuluaga (executed 2026-06-04).
 
-Estimated effort: ~1h for protection + settings + CODEOWNERS + PR template + stale + hook config; ~½ day for the ci-cd.yml migration (self-hosted runner + AWS ECR retag is straightforward but the prod path is workflow_dispatch today and needs reshaping).
+Actual effort: ~3h end-to-end including the chrome, hook configs, CI/CD migration, post-merge `gh api` calls, and exercising the policy's own PR-to-`main` flow as the bootstrap moment. The CI/CD migration was the bulk; chrome + settings were ~30 min total.
 
 ---
 
@@ -236,7 +241,7 @@ jobs:
 
 Per-repo migration checkbox:
 
-- [ ] `finance-lch` — split build/deploy; prod path becomes retag-only (currently workflow_dispatch rebuilds)
+- [x] `finance-lch` — **done 2026-06-04** (PR #8). Split build/deploy; new `promote-*` jobs pull `:dev`, retag as `:prod` + `:<main-sha>`, push. Push-to-`main` auto-triggers the promote path. `config` job refuses to BUILD a prod image from a push event.
 - [ ] `lab-qc` — same pattern as finance-lch; `environment: production` already wired so the approval gate is free
 - [ ] `cobol-migration` — merge ci-cd.yml to `main` first, then split
 - [ ] `commercial-lch` — green-field: author the build-once-promote workflow from the start (no migration debt)
@@ -261,7 +266,7 @@ repo's checklist above). Each app repo copies + tunes the patterns.
 Per-repo install checkbox:
 
 - [ ] `.github` — author the canonical configs
-- [ ] `finance-lch` — copy + commit
+- [x] `finance-lch` — **done 2026-06-04** (PR #8). All 5 policy hooks installed (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push). `default_install_hook_types: [pre-commit, commit-msg, pre-push]` so a single `pre-commit install` activates all stages.
 - [ ] `lab-qc` — copy + commit
 - [ ] `commercial-lch` — copy + commit
 - [ ] `cobol-migration` — create `.pre-commit-config.yaml` from scratch using the canonical set
@@ -328,16 +333,20 @@ because it has no deploy pipeline yet, so the chrome + protection rollout is
 risk-free and won't break any release. These two give us a working template
 and an end-to-end dry run.
 
-**Wave 2 (chrome + protection on repos that already deploy):** `lab-qc` then
-`finance-lch`. Chrome + branch protection only; defer the build-once-promote
-migration to Wave 3 so we don't conflate "policy chrome" with "CI/CD reshape".
-lab-qc goes first because its `environment: production` gate is already wired.
+**Wave 2 (chrome + protection on repos that already deploy):** ~~`lab-qc` then
+`finance-lch`.~~ Originally planned chrome + protection only with the CI/CD
+reshape deferred to Wave 3 — in practice, **`finance-lch` did Waves 2 and 3
+together** on 2026-06-04 because the two were tightly coupled and the team
+was already in flight. That worked; the same one-shot approach is now
+recommended for `lab-qc` too, using `finance-lch`'s PR #8 as the template.
 
-**Wave 3 (build-once-promote migration):** `lab-qc` → `finance-lch` →
-`cobol-migration`. lab-qc's migration becomes the template; finance-lch
-mirrors it; cobol-migration last because it also needs the chore/etl-cicd
-merge to `main` as a pre-req. Then backfill `commercial-lch` with the
-green-field pipeline once the template is proven.
+**Wave 3 (build-once-promote migration):** ✅ `finance-lch` done (folded
+into Wave 2). Remaining: `lab-qc` → `cobol-migration`. lab-qc copies the
+`promote-*` jobs from `finance-lch`/.github/workflows/ci-cd.yml — `environment:
+production` is already wired there, so the migration should be even cleaner.
+`cobol-migration` last because it needs the `chore/etl-cicd` merge to `main`
+as a pre-req. Backfill `commercial-lch` with the same green-field pipeline
+once the template is proven.
 
 **Wave 4 (blocked-on-other-work):** `admission-patient`. Cannot protect a
 permanently-red CI; cannot deploy without Phase H2. Sequence: Phase H2 (OIDC
