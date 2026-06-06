@@ -53,16 +53,19 @@ first `develop → main` promote (which exercises the prod promote path) and bra
 protection on `main` — these are bundled to land together in a later prod-side
 session. So lab-qc is NOT yet end-to-end "done"; its `BP main` cell is ⏸️.
 
-**Update 2026-06-06**: `operations` folded into the rollout as a **docs-only**
-repo. No code → no CI/CD migration, no `develop` branch, no build-once-promote.
-The policy applies in a slimmed-down form: chrome + protection + a minimum
-pre-commit set where **gitleaks is the load-bearing hook** (the whole repo is
-sensitive ops content). First piece of policy chrome landed via PR
-Interval-Col/operations#2 (CODEOWNERS + a substantially refined SECURITY.md
-that codifies "show how to find it, don't write it down" as the named pattern
-and adds the "what goes where" decision table). The remaining items are
-PR template, stale workflow, pre-commit config, repo settings, and branch
-protection on `main` (only).
+**Update 2026-06-06**: `operations` is **DONE** end-to-end as a docs-only
+rollout. No code → no CI/CD migration, no `develop` branch, no
+build-once-promote. The policy applied in a slimmed-down form: chrome +
+protection + a minimum pre-commit set where **gitleaks is the load-bearing
+hook** (the whole repo is sensitive ops content). Landed in two PRs:
+**operations#2** (CODEOWNERS + a substantially refined SECURITY.md that
+codifies "show how to find it, don't write it down" as the named pattern and
+adds the "what goes where" decision table); **operations#3** (PR template,
+stale workflow, slimmed `.pre-commit-config.yaml`, server-side
+`.github/workflows/gitleaks.yml`). Repo settings + branch protection on
+`main` then applied via `gh api`; required status check is `gitleaks` only.
+operations is now the docs-only reference implementation for the rollout —
+it shows how the policy adapts to repos with no code.
 
 ---
 
@@ -384,13 +387,15 @@ update the at-a-glance matrix.
 
 ## Rollout order recommendation
 
-**Wave 1 (low-risk chrome, no CI/CD changes):** `Interval-Col/.github` first,
-because it hosts the canonical configs the others copy; then `commercial-lch`
-and `Interval-Col/operations` (both have no deploy pipeline, so the chrome +
-protection rollout is risk-free and won't break any release). These three
-give us a working template and an end-to-end dry run. **`operations` is the
-shortest of the three** (~45 min remaining post-PR #2): docs-only, no `develop`
-branch, no required-check set beyond `gitleaks`.
+**Wave 1 (low-risk chrome, no CI/CD changes):** ✅ **`Interval-Col/operations`
+done first** (2026-06-06, PR operations#2 + #3) — landed as the docs-only
+reference implementation; gitleaks as the sole required check.
+**Remaining in Wave 1**: `Interval-Col/.github` (the meta-repo that hosts the
+canonical configs the others copy from — bootstrapping itself is paradoxical
+but valuable) and `commercial-lch` (has no deploy pipeline yet, so the chrome
++ protection rollout is risk-free and won't break any release). The
+`operations` PRs are the most direct precedent for `.github` because both
+are docs/meta repos without a `develop` branch.
 
 **Wave 2 (chrome + protection on repos that already deploy):** ~~`lab-qc` then
 `finance-lch`.~~ Originally planned chrome + protection only with the CI/CD
