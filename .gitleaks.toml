@@ -40,13 +40,18 @@ paths = [
   '''(.*?)\.env\.sample$''',
   # Lockfiles: long integrity hashes trip entropy rules; not secrets.
   '''(.*?)(package-lock\.json|pnpm-lock\.yaml|poetry\.lock|uv\.lock)$''',
+  # Mock-IAM dev tool: seeds dev-only stub tokens by design (the file's
+  # own comments say "Dev-only; rotate freely"). Used across repos that
+  # bridge to the local SSO mock (finance-lch, admission-patient, …).
+  '''(^|.*/)mock-iam/''',
 ]
 
 regexes = [
   # Obvious placeholder tokens used in docs and examples.
   '''(?i)(your[-_ ]?(api[-_ ]?)?key[-_ ]?here|changeme|placeholder|example[-_ ]?secret|dummy[-_ ]?token)''',
-  # The local dev bearer token used in finance-lch examples — a
-  # documented dev placeholder, not a real credential. (Seeded entry;
-  # review when finance-lch's first scan runs.)
-  '''Bearer\s+dev-admin\b''',
+  # `dev-admin` — the documented local SSO-mock placeholder token used in
+  # curl examples and localStorage across repos (sso-mock-dev pattern).
+  # Matches the bare token (the curl-auth-header rule captures just the
+  # value), so `\bdev-admin\b` rather than `Bearer dev-admin`.
+  '''\bdev-admin\b''',
 ]
