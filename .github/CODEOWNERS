@@ -1,0 +1,35 @@
+# CODEOWNERS for Interval-Col/.github
+#
+# This is the org's meta-repo: the branching/deploy policy, engineering
+# standards, agent instructions, shared templates, brand assets, and the
+# rollout tracker live here. Changes to these set the rules the rest of
+# the org follows, so the policy-bearing paths need a second reviewer.
+#
+# (CODEOWNERS is per-repo — it is NOT inherited org-wide the way the
+# default PR template is. This file governs PRs to THIS repo only.)
+#
+# Order matters: the LAST matching pattern wins.
+
+# Catch-all — every PR pings @gczuluaga unless a more specific owner
+# below claims it.
+*                               @gczuluaga
+
+# Org policy + standards — second pair of eyes required (these govern
+# every other repo's workflow).
+/BRANCHING-AND-DEPLOY.md        @gczuluaga @SKuger01
+/ENGINEERING_STANDARDS.md       @gczuluaga @SKuger01
+
+# Agent instructions, shared templates, onboarding instructions — these
+# have org-wide blast radius, so both review.
+/agents/                        @gczuluaga @SKuger01
+/templates/                     @gczuluaga @SKuger01
+/instructions/                  @gczuluaga @SKuger01
+
+# Rollout tracker + plans — plan author is @gczuluaga by default.
+/plans/                         @gczuluaga
+
+# Brand assets.
+/brands/                        @gczuluaga
+
+# This file + repo chrome.
+/.github/                       @gczuluaga @SKuger01
