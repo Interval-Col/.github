@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────
+# Canonical gitleaks config for Interval-Col.
+#
+# The org's single source of truth for "what counts as a leak." Every
+# repo's secret-scan (.github/workflows/gitleaks.yml) runs
+# `gitleaks detect`, which auto-discovers a .gitleaks.toml at the repo
+# root. Repos either:
+#   - copy this file in (docs/meta repos: .github, operations), or
+#   - keep it in sync (code repos) — when you change a rule or an
+#     allowlist entry here, propagate it.
+#
+# Keep the gitleaks VERSION in lockstep with each repo's pinned binary
+# in gitleaks.yml (currently v8.21.2) and the pre-commit hook rev.
+#
+# Policy: BRANCHING-AND-DEPLOY.md → "Hooks".
+# ─────────────────────────────────────────────────────────────────────
+
+title = "Interval-Col gitleaks config"
+
+[extend]
+# Start from gitleaks' maintained built-in ruleset (cloud keys, private
+# keys, generic high-entropy tokens, etc.) and layer org tweaks on top.
+# We do NOT replace it — the default set is the baseline.
+useDefault = true
+
+# ─────────────────────────────────────────────────────────────────────
+# Allowlist — false positives and known-safe placeholders ONLY.
+#
+# RULE OF THUMB: a real secret that leaked gets ROTATED (see operations
+# SECURITY.md → incident response), NOT allowlisted. Allowlist only
+# example/placeholder values and paths that are example-by-design. Every
+# entry should be obvious-why — add a comment.
+# ─────────────────────────────────────────────────────────────────────
+[allowlist]
+description = "Org-wide false-positive allowlist"
+
+paths = [
+  # Example env files carry placeholder values by design.
+  '''(.*?)\.env\.example$''',
+  '''(.*?)\.env\.sample$''',
+  # Lockfiles: long integrity hashes trip entropy rules; not secrets.
+  '''(.*?)(package-lock\.json|pnpm-lock\.yaml|poetry\.lock|uv\.lock)$''',
+]
+
+regexes = [
+  # Obvious placeholder tokens used in docs and examples.
+  '''(?i)(your[-_ ]?(api[-_ ]?)?key[-_ ]?here|changeme|placeholder|example[-_ ]?secret|dummy[-_ ]?token)''',
+  # The local dev bearer token used in finance-lch examples — a
+  # documented dev placeholder, not a real credential. (Seeded entry;
+  # review when finance-lch's first scan runs.)
+  '''Bearer\s+dev-admin\b''',
+]

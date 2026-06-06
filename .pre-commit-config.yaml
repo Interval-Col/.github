@@ -1,0 +1,70 @@
+# Pre-commit gate — slimmed policy set for the docs/meta repo.
+#
+# .github has no application code, so the format-on-stage hooks
+# (ruff / eslint) that code repos carry are intentionally dropped. What
+# remains is the 4 policy hooks that still apply
+# (BRANCHING-AND-DEPLOY.md → "Hooks"):
+#   1. case-collision  · 2. gitleaks (secret-scan, LOAD-BEARING here)
+#   3. commit-msg lint (Conventional Commits)
+#   4. branch-name lint
+#
+# gitleaks uses the repo-root .gitleaks.toml (the canonical org config
+# this repo hosts), so local and the server-side CI gate
+# (.github/workflows/gitleaks.yml) agree. Versions kept in lockstep:
+# gitleaks v8.21.2 in both places.
+#
+# Install once per checkout:
+#     pip install pre-commit
+#     pre-commit install --hook-type pre-commit --hook-type commit-msg --hook-type pre-push
+
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+
+repos:
+  # ── Baseline hygiene + policy hook #1 (case-collision) ─────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+
+  # ── Policy hook #2 — gitleaks (secret scanning) ────────────────────
+  # LOAD-BEARING. Mirrored server-side as the required status check
+  # (.github/workflows/gitleaks.yml). Uses the repo-root .gitleaks.toml.
+  # Keep the rev in sync with that workflow's VERSION.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  # ── Policy hook #3 — commit-msg lint (Conventional Commits) ────────
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - --strict
+          - feat
+          - fix
+          - refactor
+          - test
+          - chore
+          - docs
+          - hotfix
+
+  # ── Policy hook #4 — branch-name lint ──────────────────────────────
+  - repo: local
+    hooks:
+      - id: branch-name-lint
+        name: branch name lint (policy hook #4)
+        language: script
+        entry: scripts/check-branch-name.sh
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
