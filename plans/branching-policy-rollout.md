@@ -23,7 +23,7 @@ Legend: ✅ done · ⚠️ partial · ❌ missing · ❓ unknown / needs admin �
 
 | Repo | BP main | BP develop | Repo settings | CODEOWNERS | PR template | Stale wf | Pre-commit | CI/CD shape |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `Interval-Col/.github` | ❌ | ❌ (no branch) | ❌ | ❌ | ❌ | ❌ | ❌ | n/a (meta-repo) |
+| `Interval-Col/.github` | ✅ | — n/a (no `develop`) | ✅ | ✅ | ✅ | ✅ | ✅ (4 policy hooks) | **n/a deploy · ✅ gitleaks gate** |
 | `Interval-Col/finance-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote |
 | `Interval-Col/lab-qc` | ⏸️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote |
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ CI-only, no deploy yet |
@@ -71,23 +71,22 @@ it shows how the policy adapts to repos with no code.
 
 ## `Interval-Col/.github`
 
-**Status:** the meta-repo that publishes the policy is itself unprotected and
-missing the chrome it prescribes; needs a bootstrap pass before it can be the
-template source for the other repos.
+**Status (2026-06-06):** ✅ **DONE.** The meta-repo now carries the chrome it prescribes and hosts the canonical configs the other repos copy. Docs-only/meta repo — **no `develop`, no CI/CD** (same shape as `operations`). Chrome landed via the `.github` chrome PR; repo settings + branch protection on `main` applied via `gh api` immediately after.
 
-- [ ] Create `develop` branch off `main` (does not exist yet)
-- [ ] Enable branch protection on `main` per §"main — today" (PR required, 1 reviewer, resolved threads, linear history, CODEOWNERS review, no force-push, no deletions)
-- [ ] Enable branch protection on `develop` per §"develop — today" (no force-push, required status checks on direct push)
-- [ ] Add `.github/CODEOWNERS` — route `BRANCHING-AND-DEPLOY.md`, `ENGINEERING_STANDARDS.md`, `agents/`, `templates/`, `instructions/` to `@SKuger01` + Gloria
-- [ ] Add `.github/PULL_REQUEST_TEMPLATE.md` — this will become the org-default for any repo without its own
-- [ ] Add `.github/workflows/stale.yml` (30d warn / 60d notify / 90d archive) — needed even here so policy/template PRs don't rot
-- [ ] Add `.pre-commit-config.yaml` with the 5 policy hooks (this repo will host the reference config the others copy)
-- [ ] Repo settings: turn on auto-delete-on-merge, disable merge-commit + rebase-merge (squash-only), enable Discussions
-- [ ] Land `commitlint.config.js` + `branch-name-lint.config.js` at the root as the canonical copies the other repos can vendor
+- [x] **Skip**: `develop` branch — docs/meta repo with no integration-branch model (same pattern as `operations`).
+- [x] Enable branch protection on `main` — PR required (the gate), 1 reviewer + CODEOWNERS, resolved threads, up-to-date, **linear-history OFF** (merge-commit model — see BRANCHING-AND-DEPLOY.md §"Merge mode"), no force-push, no deletions. `enforce_admins:false`.
+- [x] **Skip**: branch protection on `develop` — no `develop` branch.
+- [x] Add `.github/CODEOWNERS` — catch-all `@gczuluaga`; `BRANCHING-AND-DEPLOY.md`, `ENGINEERING_STANDARDS.md`, `agents/`, `templates/`, `instructions/` → `@gczuluaga` + `@SKuger01`.
+- [x] Add `.github/PULL_REQUEST_TEMPLATE.md` — generic **org-default** for any repo without its own.
+- [x] Add `.github/workflows/stale.yml` (30/60/90, `actions/stale@v9`).
+- [x] Add `.github/workflows/gitleaks.yml` — server-side secret-scan (the required check); pinned binary; auto-uses the canonical `.gitleaks.toml`.
+- [x] Add `.pre-commit-config.yaml` — 4 docs-only policy hooks (case-collision, gitleaks, conventional-pre-commit, branch-name). ruff/eslint dropped — no code to format.
+- [x] Add **canonical `.gitleaks.toml`** — the org's single source of truth for "what counts as a leak"; other repos copy / sync it.
+- [x] Add `scripts/check-branch-name.sh` — the reusable branch-name linter (canonical copy).
+- [x] Repo settings: **merge-commit-only** (squash + rebase off), **PR title as merge-commit message**, auto-delete-on-merge, Discussions on.
+- [x] Canonical hook configs landed: `.gitleaks.toml` + `scripts/check-branch-name.sh`. Conventional-Commits is enforced via the `conventional-pre-commit` hook (no separate `commitlint.config.js` needed).
 
-**Owner:** <TBD>
-
-Estimated effort: ~2h end-to-end — this is mostly file creation + a settings toggle pass, plus the one-time job of authoring the canonical hook configs. No CI/CD migration here.
+**Owner:** @gczuluaga (with @SKuger01 as second reviewer for policy paths via CODEOWNERS).
 
 ---
 
