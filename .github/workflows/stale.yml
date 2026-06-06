@@ -1,0 +1,65 @@
+# Stale-branch / stale-PR / stale-issue automation.
+#
+# Required by the org's branching-and-deploy policy
+# (BRANCHING-AND-DEPLOY.md → "Stale branches"):
+#   - 30 days inactive  → warn (label `stale`, friendly comment)
+#   - 60 days           → re-ping (handled by `actions/stale`'s natural
+#                          re-comment as the close window advances)
+#   - 90 days           → close + label `stale-archived`
+#
+# Needed even in this docs/meta repo so policy/template PRs and tracking
+# issues don't rot silently.
+#
+# Opt out per PR/issue by adding the `do-not-stale` label, or by any
+# activity (commit, comment, review, label change).
+
+name: Stale
+
+on:
+  schedule:
+    # Daily at 13:00 UTC (~08:00 Bogotá) so the bot runs once a day
+    # without depending on a developer being online.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 30
+          stale-pr-label: stale
+          stale-issue-label: stale
+          stale-pr-message: |
+            This PR has been inactive for 30 days. It will be closed and
+            archived (label `stale-archived`) in 60 more days if there's
+            no activity — a commit, comment, review, or label change
+            counts. Add the `do-not-stale` label to opt out (use
+            sparingly; PRs blocked on external work are the typical
+            case).
+          stale-issue-message: |
+            This issue has been inactive for 30 days. It will be closed
+            in 60 more days if there's no activity. Add the
+            `do-not-stale` label to opt out.
+
+          days-before-close: 60
+          close-pr-label: stale-archived
+          close-issue-label: stale-archived
+          close-pr-message: |
+            Closing as stale (90 days inactive). Re-open by removing
+            the `stale-archived` label or pushing a new commit; the
+            branch and history are preserved.
+          close-issue-message: |
+            Closing as stale (90 days inactive). Re-open by removing
+            the `stale-archived` label or commenting.
+
+          exempt-pr-labels: do-not-stale
+          exempt-issue-labels: do-not-stale
+          exempt-all-milestones: true
+          operations-per-run: 100
+          ignore-updates: false
