@@ -19,7 +19,7 @@ doc is the detailed reference.
 | Feature branch format | `<type>/<short-kebab-slug>` (e.g. `feat/sso-mock`) |
 | `<type>` prefixes | `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix` |
 | Commit & PR title format | Conventional Commits, **enforced on both** |
-| Merge mode | **Squash and merge** (everywhere) |
+| Merge mode | **Merge commit** (everywhere) — PR-gated; no direct pushes to protected branches |
 | Auto-delete merged branches | **Yes** |
 | PR required for `main` | **Yes** — 1 reviewer + green CI |
 | PR required for `develop` | No — direct push allowed; CI still required |
@@ -68,7 +68,7 @@ so any integration breakage is caught **before** merge to `main`.
    ║  PR → develop                        ║
    ║  (optional — direct push is allowed) ║
    ╚══════════════════════════════════════╝
-            │ squash-merge OR direct push (CI must pass)
+            │ merge-commit via PR OR direct push (CI must pass)
             ▼
 ┌─────────────────────────┐
 │ develop                 │ → auto-deploys to dev server (real SSO)
@@ -80,7 +80,7 @@ so any integration breakage is caught **before** merge to `main`.
    ║  + 1 reviewer + green CI + threads   ║
    ║    resolved                          ║
    ╚══════════════════════════════════════╝
-            │ squash-merge
+            │ merge-commit (via PR)
             ▼
 ┌─────────────────────────┐
 │ main                    │ → auto-deploys to prod
@@ -111,9 +111,10 @@ Examples:
 - `fix(auth): respect ALLOW_LOCAL_IAM in startup guard`
 - `docs: codify SSR rendering-mode standard`
 
-Because we squash-merge, the PR title **becomes the commit on `main` /
-`develop`**. A bad PR title = a bad git log entry forever. CI rejects
-non-conforming titles.
+The PR title **becomes the merge-commit subject on `main` /
+`develop`** (each repo's merge button is configured to use the PR
+title, not the default `Merge pull request #N from …`). A bad PR
+title = a bad git log entry forever. CI rejects non-conforming titles.
 
 ### PR description
 
@@ -137,14 +138,30 @@ Use the repo's PR template. Required sections (template-enforced):
 
 ### Merge mode
 
-**Squash and merge** — everywhere, always. Configure each repo's
+**Merge commit** — everywhere, always. Every PR lands as a GitHub
+merge commit, so the branch's work shows as a visible **arc** in the
+graph and you can see exactly what merged when. Configure each repo's
 GitHub settings to:
-- Disable "Allow merge commits"
+- **Enable** "Allow merge commits"
+- Disable "Allow squash merging"
 - Disable "Allow rebase merging"
-- **Enable** "Allow squash merging"
-- Default commit message: "Pull request title"
+- Default merge-commit message: **"Pull request title"** — so the
+  merge commit's subject is the Conventional-Commits PR title, not the
+  noisy default `Merge pull request #N from …`.
 
-This keeps `main` and `develop` history linear and one-commit-per-PR.
+**History stays clean by *gating*, not by flattening.** Arcs reach
+`main`/`develop` only through a reviewed PR that GitHub merges for
+you — never a hand-made `git merge` a developer pushes. The
+PR-required + up-to-date + review rules in
+[Branch protection](#branch-protection) are what enforce this.
+`main`'s first-parent backbone is therefore a clean line of one merge
+commit per PR; the feature commits live on the arc's side, reachable
+but out of the way.
+
+> Trade-off vs. squash: we regain the visual branch topology (the
+> reason we switched) at the cost of feature-branch WIP commits being
+> visible inside each arc. Accepted — the gate keeps the backbone
+> readable.
 
 ### Auto-delete branches
 
@@ -164,15 +181,15 @@ ruleset model). Apply the rule to the named branch.
 
 | Setting | Value |
 |---|---|
-| Require a pull request before merging | ✅ |
+| Require a pull request before merging | ✅ **(the gate — the only way an arc reaches `main`; no direct pushes)** |
 | Required approvals | **1** |
 | Dismiss stale pull-request approvals when new commits are pushed | ✅ |
 | Require review from Code Owners | ✅ |
 | Require status checks to pass before merging | ✅ |
 | Required status checks | **`gitleaks`** (secret scan — required on every repo, even docs-only), lint-frontend, lint-backend, test-frontend, test-backend, verify-api-contract, plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
-| Require branches to be up to date before merging | ✅ |
+| Require branches to be up to date before merging | ✅ (anchors each arc to current `main`) |
 | Require conversation resolution before merging | ✅ |
-| Require linear history | ✅ (squash-merge gives this automatically; the setting enforces it) |
+| Require linear history | ❌ (incompatible with merge commits — intentionally off; the PR-required gate above keeps history clean instead) |
 | Lock branch | ❌ |
 | Do not allow bypassing the above settings | ⚠️ — off today (escalation, see below) |
 | Allow force pushes | ❌ (never) |
@@ -354,12 +371,13 @@ Releases). Not our model.
    - Pick a prior tag, pull, restart. Or pin by digest for absolute
      certainty.
 
-### The squash-merge wrinkle
+### The two-SHA wrinkle
 
-With squash-merge, the commit SHA on `develop` is different from the
-commit SHA on `main` for the same release. Build-once-promote handles
-this naturally:
-- The image is built from `<develop-sha>` (the squash commit on
+`develop` and `main` get **different commit SHAs for the same
+release** — true under any merge mode (the merge commit on `develop`
+is a distinct object from the one on `main`). Build-once-promote
+handles this naturally:
+- The image is built from `<develop-sha>` (the merge commit on
   `develop` after PR-to-develop landed, OR the develop-tip at
   promote time).
 - The image is **the same** across both tags — we just *retag*; we
@@ -513,16 +531,16 @@ Same set is used for both **commit messages** AND **branch prefixes**.
 
 ### Enforced where
 
-- **PR title** — commitlint runs in CI and blocks the PR. Squash-merge
-  uses the PR title as the commit message on `main`/`develop`, so this
+- **PR title** — commitlint runs in CI and blocks the PR. The merge
+  commit's subject is set to the PR title on `main`/`develop`, so this
   is the *load-bearing* check.
 - **Every commit** — the commit-message pre-commit hook runs locally.
   Catches `wip` / `tmp` commits before they leave the laptop. CI
   also re-checks individual commits on PR sync.
 
 Yes, both — the cost is one hook install; the win is that the
-individual-commit history is also reviewable on the PR page, not just
-the squashed summary.
+individual-commit history is reviewable on the PR page AND preserved
+on the arc after merge.
 
 ---
 
@@ -559,8 +577,8 @@ the deploy succeeds, the CI/CD workflow:
 1. Tags the merge commit with the next **semver** version
    (`v<major>.<minor>.<patch>`).
 2. Creates a **GitHub Release** for that tag.
-3. Auto-drafts the release notes from the squash commits since the
-   previous tag (each squash commit's message is a PR title in
+3. Auto-drafts the release notes from the merge commits since the
+   previous tag (each merge commit's subject is a PR title in
    Conventional Commits format — they group cleanly into Features /
    Fixes / Refactors / etc.).
 
@@ -609,7 +627,7 @@ option:
 ```
    main  ◀────────────── tag v1.2.4 ───────────────┐
     │                                              │
-    └─▶ hotfix/iam-bug ─▶ PR to main ─▶ squash-merge to main
+    └─▶ hotfix/iam-bug ─▶ PR to main ─▶ merge to main
     │                                              │
     │   (auto-deploys to prod, tags v1.2.4)        │
     │                                              │
@@ -621,7 +639,7 @@ option:
 Steps:
 
 1. `git checkout main && git pull && git checkout -b hotfix/<slug>`
-2. Fix, push, open PR-to-`main`, get review, squash-merge.
+2. Fix, push, open PR-to-`main`, get review, merge via PR.
 3. Prod auto-deploys; tag bumps a patch version.
 4. **Immediately** open a follow-up PR `chore: merge main into develop`
    so `develop` carries the fix forward. Conflicts (if any) are
@@ -692,7 +710,7 @@ checklist:
 - [ ] Branch protection on `main` — see [§"main — today"](#main--today)
 - [ ] Branch protection on `develop` — see [§"develop — today"](#develop--today)
 - [ ] Repo settings → "Automatically delete head branches" = on
-- [ ] Repo settings → squash-only merge button
+- [ ] Repo settings → merge-commit-only merge button (PR title as merge-commit message)
 - [ ] `README.md` cross-links this doc
 
 A future bootstrap script in `.github/scripts/` will set these
