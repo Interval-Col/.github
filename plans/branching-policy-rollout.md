@@ -29,7 +29,7 @@ Legend: ✅ done · ⚠️ partial · ❌ missing · ❓ unknown / needs admin �
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ CI-only, no deploy yet |
 | `Interval-Col/cobol-migration` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ (no config) | ⚠️ rebuild-per-env, on develop only |
 | `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ (case-collision present, 4/5 missing) | ⚠️ CI-only, deploy not ported |
-| `Interval-Col/operations` | ❌ | ❌ (no `develop` branch — docs-only) | ❌ | ✅ | ❌ | ❌ | ❌ (4 hooks tbd) | **n/a (docs only)** |
+| `Interval-Col/operations` | ✅ | — n/a (no `develop` — docs-only) | ✅ | ✅ | ✅ | ✅ | ✅ (4 policy hooks) | **n/a deploy · ✅ gitleaks gate** |
 
 Headline (audit 2026-06-04): zero repos had branch protection, zero had the
 policy hook set, only one had a CODEOWNERS file. The rollout is wide but each
@@ -207,23 +207,24 @@ Estimated effort: ~1h for chrome + hook + PR template + stale once CI is green; 
 
 ## `Interval-Col/operations`
 
-**Status:** private operational docs repo. **No code → no CI/CD migration**, no build-once-promote, no deploy pipeline. The policy applies in a slimmed-down form: chrome + protection + a minimum pre-commit set where **gitleaks is the load-bearing hook** (the whole repo is sensitive ops content; a credential leak here is the worst case the convention is designed to prevent).
+**Status (2026-06-06):** ✅ **DONE.** Private operational docs repo. **No code → no CI/CD migration**, no build-once-promote, no deploy pipeline. The policy applied in a slimmed-down form: chrome + protection + a minimum pre-commit set where **gitleaks is the load-bearing hook** (the whole repo is sensitive ops content; a credential leak here is the worst case the convention is designed to prevent). Wave 1 chrome landed via PR Interval-Col/operations#3; repo settings + branch protection on `main` applied via `gh api` immediately after.
 
 - [x] **Done via PR Interval-Col/operations#2 (merged 2026-06-06):**
   - `.github/CODEOWNERS` — catch-all → `@gczuluaga`; `SECURITY.md` + `policies/` → `@gczuluaga` + `@SKuger01` (org-level policy rules get a second pair of eyes); `access/`, `runbooks/`, `incidents/` → `@gczuluaga` (sensitive operational content).
   - `SECURITY.md` substantially refined: codifies "show how to find it, don't write it down" as the named pattern, adds the "what goes where" decision table (11 rows + the IP+port+user+role tuple rule), two-part incident response (secret leak vs non-secret-but-policy-violating leak), and the verify-the-filter command for `git-crypt`.
-- [ ] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What changed / Test plan / Rollout sections, with the test-plan rows scoped to "docs-only" and the rollout/rollback rows pointed at "this is a docs change; revert is harmless." Asset-table-governance check the load-bearing review prompt for any PR touching `SECURITY.md`.
-- [ ] Add `.github/workflows/stale.yml` (30/60/90 via `actions/stale`).
-- [ ] Add `.pre-commit-config.yaml` — minimum set:
+- [x] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What changed / Test plan (docs-only) / Rollout (revert-harmless) sections, with the load-bearing review prompt to keep `SECURITY.md`'s asset table authoritative on any PR that touches it. **(operations#3)**
+- [x] Add `.github/workflows/stale.yml` (30/60/90 via `actions/stale@v9`, `do-not-stale` opt-out). **(operations#3)**
+- [x] Add `.github/workflows/gitleaks.yml` — **added beyond the original checklist**: the branch-protection rule below requires a `gitleaks` *status check*, but a pre-commit hook produces no GitHub check. This workflow runs the pinned gitleaks v8.21.2 binary (avoids the `GITLEAKS_LICENSE` requirement of `gitleaks-action@v2` on org repos), job named `gitleaks` so the check context matches. It is the server-side enforcement a local `--no-verify` can't bypass. **(operations#3)**
+- [x] Add `.pre-commit-config.yaml` — minimum set:
   - `check-case-conflict` — universal hygiene.
-  - **`gitleaks`** — load-bearing for this repo.
+  - **`gitleaks`** (v8.21.2, lockstep with the workflow) — load-bearing for this repo.
   - `conventional-pre-commit` (commit-msg stage) — same as the other repos.
-  - Local `scripts/check-branch-name.sh` (pre-push stage) — same as the other repos.
-  - **Skip `ruff`/`ruff-format`/`eslint` (format-on-stage)** — nothing to format. The hook set adapts to the repo shape.
-- [ ] Repo settings via `gh api PATCH /repos/Interval-Col/operations`:
-  - `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`. (Currently all three "off" + Discussions disabled — PR #2's merge used a regular merge commit because squash-only wasn't yet enforced.)
-- [ ] Enable branch protection on `main` per §"main — today":
-  - PR required, 1 reviewer (CODEOWNERS auto-routes the right person per path), resolved threads, linear history, no force-push, no deletions.
+  - Local `scripts/check-branch-name.sh` (pre-push stage) — byte-for-byte from finance-lch/lab-qc.
+  - **Skipped `ruff`/`ruff-format`/`eslint` (format-on-stage)** — nothing to format. The hook set adapts to the repo shape. **(operations#3)**
+- [x] Repo settings via `gh api PATCH /repos/Interval-Col/operations`:
+  - `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`. Applied + verified.
+- [x] Enable branch protection on `main` per §"main — today":
+  - PR required, 1 reviewer (CODEOWNERS auto-routes the right person per path), resolved threads, dismiss-stale-on-new-commits, linear history, no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation, same as finance-lch — keeps the solo owner from being deadlocked on self-review).
   - **Required status checks**: only `gitleaks` (the meaningful gate for a docs-only repo). The `Frontend lint` / `Backend lint` / `*tests` / `verify-api-contract` set from finance-lch doesn't apply here — there's no code to lint, no tests to run, no API contract.
 - [ ] **Skip**: branch protection on `develop` — operations has no `develop` branch and doesn't need one. Docs-only repos with no integration-branch model (same pattern as `Interval-Col/.github`).
 - [ ] **Skip**: `ci-cd.yml` migration — no deploy pipeline. No "rebuild per env" problem because there's no build.
