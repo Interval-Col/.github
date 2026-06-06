@@ -302,6 +302,7 @@ Reference plans worth reading as exemplars: `admission-patient/plans/`,
 - [ ] **CI must run all tests, lint, and builds**
 - [ ] Branch protection enabled on `main`
 - [ ] Case-collision check installed (pre-commit hook + CI step) — see "Cross-platform path safety"
+- [ ] Secret scanning (gitleaks) installed — pre-commit hook **and** required CI check named `gitleaks` (every repo, incl. docs-only) — see [`BRANCHING-AND-DEPLOY.md` §"Hooks"](BRANCHING-AND-DEPLOY.md#hooks)
 
 ---
 

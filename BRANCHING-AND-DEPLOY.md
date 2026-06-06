@@ -169,7 +169,7 @@ ruleset model). Apply the rule to the named branch.
 | Dismiss stale pull-request approvals when new commits are pushed | ✅ |
 | Require review from Code Owners | ✅ |
 | Require status checks to pass before merging | ✅ |
-| Required status checks | lint-frontend, lint-backend, test-frontend, test-backend, verify-api-contract, plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`) |
+| Required status checks | **`gitleaks`** (secret scan — required on every repo, even docs-only), lint-frontend, lint-backend, test-frontend, test-backend, verify-api-contract, plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
 | Require branches to be up to date before merging | ✅ |
 | Require conversation resolution before merging | ✅ |
 | Require linear history | ✅ (squash-merge gives this automatically; the setting enforces it) |
@@ -454,8 +454,28 @@ via `.pre-commit-config.yaml`:
 | **Branch-name lint** | Rejects branches that don't match `<type>/<kebab-slug>` | Small custom hook (~10 lines of bash) calling `git rev-parse --abbrev-ref HEAD` |
 
 Same set is also enforced in CI (so a developer who skipped the hook
-install doesn't get a free pass). The pre-commit step is the *fast
-feedback*, not the gate of record.
+install — or used `git commit --no-verify` — doesn't get a free
+pass). The pre-commit step is *fast feedback*; the CI check is the
+gate of record.
+
+**Secret scanning is the one hook every repo MUST also enforce as a
+required CI status check named `gitleaks`** — including docs-only
+repos with no lint/test jobs, because a leaked credential is the worst
+case regardless of whether the repo holds code.
+
+- **Implementation:** run the pinned `gitleaks` **binary** in a
+  workflow (`gitleaks detect`), *not* `gitleaks-action` — the action
+  requires a paid `GITLEAKS_LICENSE` for org-owned repos and would put
+  a third-party license check on the merge-critical path. Reference
+  impl: [`operations/.github/workflows/gitleaks.yml`](https://github.com/Interval-Col/operations/blob/main/.github/workflows/gitleaks.yml).
+- **Shared config:** the ruleset/allowlist lives in
+  `Interval-Col/.github/.gitleaks.toml` (canonical); repos reference or
+  copy it so "what counts as a leak" is consistent org-wide.
+- **Rolling the gate onto an existing repo:** run the scan once →
+  triage findings (rotate real secrets per the incident process,
+  allowlist dead / false-positive findings in `.gitleaks.toml`) →
+  *then* mark the check required. Never enable enforcement before the
+  first scan is green, or you block every PR.
 
 Install once per checkout:
 
