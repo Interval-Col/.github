@@ -24,7 +24,7 @@ Legend: ✅ done · ⚠️ partial · ❌ missing · ❓ unknown / needs admin �
 | Repo | BP main | BP develop | Repo settings | CODEOWNERS | PR template | Stale wf | Pre-commit | CI/CD shape |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `Interval-Col/.github` | ✅ | — n/a (no `develop`) | ✅ | ✅ | ✅ | ✅ | ✅ (4 policy hooks) | **n/a deploy · ✅ gitleaks gate** |
-| `Interval-Col/finance-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote |
+| `Interval-Col/finance-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote · ✅ gitleaks gate |
 | `Interval-Col/lab-qc` | ⏸️ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote |
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ CI-only, no deploy yet |
 | `Interval-Col/cobol-migration` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ (no config) | ⚠️ rebuild-per-env, on develop only |
@@ -93,6 +93,8 @@ it shows how the policy adapts to repos with no code.
 ## `Interval-Col/finance-lch`
 
 **Status (2026-06-04):** ✅ **DONE.** All policy chrome landed, branch protection enforced on `main` and `develop`, ci-cd.yml migrated to build-once-promote. Closed via PR Interval-Col/finance-lch#8 (merged to `develop`) and the follow-up `develop` → `main` PR; repo settings + branch protection rules applied via `gh api` immediately after. This row is the first concrete reference implementation other repos can copy.
+
+**Update 2026-06-06:** server-side **gitleaks gate** added — required status check on `main` + `develop` (PR Interval-Col/finance-lch#9) — and the repo flipped to the **merge-commit model** (squash off, linear-history off, PR-title merge messages). A one-time full-history gitleaks audit surfaced a real leak: `cobolql` API tokens + `finance_user` DB creds in `jobs/config.json` history (file already removed from `develop`). **Rotated by @gczuluaga**; the dead values are allowlisted in finance-lch's own `.gitleaks.toml` with an incident pointer, and mock-IAM / `dev-admin` placeholders are allowlisted via the canonical `.github/.gitleaks.toml`. Full-history scan: clean (462 commits).
 
 - [x] Land policy assets — landed via PR #8 to `develop`, then promoted to `main` through the policy's own PR/squash-merge flow.
 - [x] Add `.github/CODEOWNERS` — initial domain map (backend / frontend / contabilidad / infra / plans+docs), catch-all `*` → `@gczuluaga`; `frontend/` → `@SKuger01`; contabilidad cross-cutting paths require both.
