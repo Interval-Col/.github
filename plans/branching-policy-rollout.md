@@ -27,7 +27,7 @@ Legend: ✅ done · ⚠️ partial · ❌ missing · ❓ unknown / needs admin �
 | `Interval-Col/finance-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote · ✅ gitleaks gate |
 | `Interval-Col/lab-qc` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote · ✅ gitleaks gate |
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ CI-only, no deploy yet |
-| `Interval-Col/cobol-migration` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ (no config) | ⚠️ rebuild-per-env, on develop only |
+| `Interval-Col/cobol-migration` | ✅ | ✅ | ✅ | ✅ | ✅ (org-default) | ✅ | ✅ (5 policy hooks) | ⚠️ rebuild-per-env · ✅ gitleaks gate |
 | `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ (case-collision present, 4/5 missing) | ⚠️ CI-only, deploy not ported |
 | `Interval-Col/operations` | ✅ | — n/a (no `develop` — docs-only) | ✅ | ✅ | ✅ | ✅ | ✅ (4 policy hooks) | **n/a deploy · ✅ gitleaks gate** |
 
@@ -168,9 +168,9 @@ Estimated effort: ~1h for chrome + protection + settings + hooks; ~2-3h to autho
 
 ## `Interval-Col/cobol-migration`
 
-**Status:** the bare-cupboard repo — no pre-commit config at all, no CODEOWNERS, ci-cd.yml lives only on `develop` (unmerged to `main`, matches the open `chore/etl-cicd` branch noted in my own memory); needs the full chrome bootstrap before policy can attach.
+**Status (2026-06-07):** ✅ **DONE (chrome + gitleaks gate).** Full policy chrome bootstrapped on `develop` via PR Interval-Col/cobol-migration#1, on the merge-commit model: CODEOWNERS, the gitleaks gate (+ a copy of the canonical `.gitleaks.toml`), stale workflow, a Python 5-hook pre-commit config, and the branch-name linter (PR template inherited from the org-default in `.github`). Repo settings flipped to merge-only + PR-title; branch protection applied via `gh api` on `develop` (PR-optional) and `main` (1 reviewer + CODEOWNERS), `gitleaks` the required check on both. Full-history gitleaks scan: **clean, no leaks**. **Note:** the chrome landed on `develop`; `main` gets the `.github/` tree + `gitleaks.yml` on the next `develop → main` promote (the `gitleaks` required-check context is pre-set and satisfied then). The `ci-cd.yml` build-once-promote migration + first `develop → main` promote remain (out of scope of this gitleaks rollout).
 
-- [ ] Merge `chore/etl-cicd` (or its successor) so `main` actually has a `.github/` tree to attach policy to
+- [x] Bootstrap the full `.github/` chrome on `develop` (PR #1) — `main` inherits it on the next promote.
 - [ ] Create `.pre-commit-config.yaml` from scratch — install all 5 policy hooks plus the lint/format baseline used elsewhere
 - [ ] Add `.github/CODEOWNERS` — `services/etl/*` → ETL lead, `.github/workflows/*` → ops/platform
 - [ ] Add `.github/PULL_REQUEST_TEMPLATE.md` (summary, test plan, deploy notes)
