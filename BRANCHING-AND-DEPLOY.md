@@ -118,7 +118,11 @@ title = a bad git log entry forever. CI rejects non-conforming titles.
 
 ### PR description
 
-Use the repo's PR template. Required sections (template-enforced):
+Use the repo's PR template — or, if a repo has none, the **org-default**
+at [`Interval-Col/.github/.github/PULL_REQUEST_TEMPLATE.md`](https://github.com/Interval-Col/.github/blob/main/.github/PULL_REQUEST_TEMPLATE.md)
+applies automatically (GitHub falls back to the `.github` repo's
+template for any repo without its own — so docs/meta repos don't need
+their own copy). Required sections (template-enforced):
 
 - **Why** — what problem this solves; link the plan / issue if any.
 - **What changed** — short paragraph; readers should not have to read
@@ -148,6 +152,14 @@ GitHub settings to:
 - Default merge-commit message: **"Pull request title"** — so the
   merge commit's subject is the Conventional-Commits PR title, not the
   noisy default `Merge pull request #N from …`.
+
+> ⚙️ **Order-of-operations gotcha.** If the repo *already* has branch
+> protection requiring **linear history**, flipping it to merge-only
+> will `422` ("you must allow squash or rebase") — merge-commit +
+> required-linear-history leaves no usable strategy. Turn
+> `required_linear_history` **off** in branch protection *first*, then
+> set the repo to merge-only. (New repos with no protection yet aren't
+> affected.)
 
 **History stays clean by *gating*, not by flattening.** Arcs reach
 `main`/`develop` only through a reviewed PR that GitHub merges for
@@ -490,10 +502,15 @@ case regardless of whether the repo holds code.
   `Interval-Col/.github/.gitleaks.toml` (canonical); repos reference or
   copy it so "what counts as a leak" is consistent org-wide.
 - **Rolling the gate onto an existing repo:** run the scan once →
-  triage findings (rotate real secrets per the incident process,
-  allowlist dead / false-positive findings in `.gitleaks.toml`) →
-  *then* mark the check required. Never enable enforcement before the
-  first scan is green, or you block every PR.
+  triage findings (rotate real secrets per the [incident process in
+  `operations/SECURITY.md`](https://github.com/Interval-Col/operations/blob/main/SECURITY.md#incident-response),
+  then allowlist the now-dead value **by its exact string, with a
+  comment** noting it's rotated; allowlist genuine false positives by
+  path/pattern) → *then* mark the check required. Never enable
+  enforcement before the first scan is green, or you block every PR.
+  Repos that already have history leaks keep a repo-specific allowlist
+  block in their own `.gitleaks.toml` (a copy of the canonical config +
+  the dead values) — see `finance-lch` / `lab-qc` for the pattern.
 
 Install once per checkout:
 
