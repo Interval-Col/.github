@@ -13,7 +13,7 @@ landed in [PR Interval-Col/.github#4](https://github.com/Interval-Col/.github/pu
 audit below was run on 2026-06-04 across the six repos in scope; this document
 turns each audit's gap list into a per-repo checklist so we can roll out the
 policy without losing track of which repo is at which stage. Locked decisions
-(GitFlow-lite, squash-only, conventional commits, 5 pre-commit hooks,
+(GitFlow-lite, merge-commit via PR, conventional commits, 5 pre-commit hooks,
 build-once-promote, etc.) are not up for debate here — only the work to make
 them real per repo.
 
@@ -278,7 +278,7 @@ Actual effort (develop-side): ~2h — chrome + hooks + ci-cd migration + local g
 - [ ] Add DS gates job (only contract diff today)
 - [ ] Enable branch protection on `main` — required checks should include backend + frontend lint/tests + `verify-api-contract` + DS gates
 - [ ] Enable branch protection on `develop`
-- [ ] Repo settings: auto-delete on, disable merge-commit + rebase-merge
+- [ ] Repo settings: auto-delete on, merge-commit-only (disable squash + rebase)
 - [ ] Add a deploy workflow that implements build-once-promote from day one (no migration debt — this is the green-field win)
 
 **Owner:** <TBD>
@@ -299,7 +299,7 @@ Estimated effort: ~1h for chrome + protection + settings + hooks; ~2-3h to autho
 - [ ] Audit extra branches (`feat/etl-shared-harness`, `feat/etl-tui-enhancements`) and either rebase to `develop` or close before stale-bot starts marking them
 - [ ] Enable branch protection on `main`
 - [ ] Enable branch protection on `develop`
-- [ ] Repo settings: auto-delete on, disable merge-commit + rebase-merge, enable Discussions
+- [ ] Repo settings: auto-delete on, merge-commit-only (disable squash + rebase), enable Discussions
 - [ ] Migrate `ci-cd.yml` to build-once-promote — currently `push to develop → build+deploy dev tag` and `push to main → build+deploy prod tag` each rebuild from source; target: build once on develop with `:sha` tag, then a separate `main` workflow that pulls + retags ECR image to `:prod`
 
 **Owner:** <TBD>
@@ -323,7 +323,7 @@ Estimated effort: ~2-3h for full chrome bootstrap (more than the others because 
 - [ ] Fix CI before flipping required-status-checks on main: the `@intervalica/alexandria` private-package issue must land first (Track 2 Phase H2 — GitHub OIDC + AWS trust); protecting `main` against a permanently-red check is worse than no protection
 - [ ] Enable branch protection on `main` (or `master` if not renamed) per §"main — today" — gate behind the CI-green fix above
 - [ ] Enable branch protection on `develop`
-- [ ] Repo settings: auto-delete on, disable merge-commit + rebase-merge
+- [ ] Repo settings: auto-delete on, merge-commit-only (disable squash + rebase)
 - [ ] Add deploy pipeline implementing build-once-promote (currently no deploy at all; Bitbucket-era ECR/SSH deploy not yet ported — Phase H2 work)
 
 **Owner:** <TBD>
@@ -349,7 +349,7 @@ Estimated effort: ~1h for chrome + hook + PR template + stale once CI is green; 
   - Local `scripts/check-branch-name.sh` (pre-push stage) — byte-for-byte from finance-lch/lab-qc.
   - **Skipped `ruff`/`ruff-format`/`eslint` (format-on-stage)** — nothing to format. The hook set adapts to the repo shape. **(operations#3)**
 - [x] Repo settings via `gh api PATCH /repos/Interval-Col/operations`:
-  - `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`. Applied + verified.
+  - `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`. Applied + verified. **(2026-06-13: later flipped to the merge-commit model per the policy change — `allow_merge_commit=true, allow_squash_merge=false`, PR-title merge messages.)**
 - [x] Enable branch protection on `main` per §"main — today":
   - PR required, 1 reviewer (CODEOWNERS auto-routes the right person per path), resolved threads, dismiss-stale-on-new-commits, linear history, no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation, same as finance-lch — keeps the solo owner from being deadlocked on self-review).
   - **Required status checks**: only `gitleaks` (the meaningful gate for a docs-only repo). The `Frontend lint` / `Backend lint` / `*tests` / `verify-api-contract` set from finance-lch doesn't apply here — there's no code to lint, no tests to run, no API contract.
@@ -483,8 +483,8 @@ For each repo, an owner with admin permission runs the following once:
    - [ ] Allow force pushes: **off**
    - PR-required: **off** (policy does not require it for develop)
 4. **Settings** → **General** → **Pull Requests**:
-   - Allow squash merging: **on**
-   - Allow merge commits: **off**
+   - Allow squash merging: **off**
+   - Allow merge commits: **on** (default merge-commit message: **Pull request title**)
    - Allow rebase merging: **off**
    - Automatically delete head branches: **on**
 
@@ -501,7 +501,7 @@ which gates each repo is missing — the procedure here is the "how".
 - [ ] Stale workflow live
 - [ ] All 5 required pre-commit hooks installed and running in CI
 - [ ] `ci-cd.yml` migrated to build-once-promote (or authored that way for green-field repos)
-- [ ] Repo settings: auto-delete + squash-only verified
+- [ ] Repo settings: auto-delete + merge-commit-only verified
 
 A repo is "rolled out" when every box above is checked. Track per-repo
 completion by checking off the per-repo sections — when a section is all-green,
