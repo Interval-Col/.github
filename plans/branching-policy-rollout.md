@@ -34,7 +34,7 @@ does not enforce (GitHub reads CODEOWNERS + produces Actions checks from the def
 | `Interval-Col/finance-lch` | ⚠️ hollow (req. checks + CODEOWNERS on `develop` only) | ✅ (no review reqs) | ✅ (merge-commit-only per policy) | ⚠️ develop only | ⚠️ develop only | ⚠️ develop only | ✅ 4/4 on `develop` (absent on `main`) | ✅ build-once-promote · ✅ gitleaks (develop) |
 | `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ✅ 4/4 on `develop` (`main` stale: 0/4) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
 | `Interval-Col/commercial-lch` | ✅ (1 review + CODEOWNERS + 3 checks + conv-res) | ✅ (3 checks, PR-optional) | ✅ (merge-commit-only, auto-delete, discussions) | ✅ | ✅ | ✅ | ✅ 5/5 hooks | ✅ **build-once-promote** (main retags :dev→:prod, PRs CI-only) · ✅ gitleaks gate |
-| `Interval-Col/cobol-migration` | ⚠️ hollow (gitleaks wf + CODEOWNERS on `develop` only) | ✅ | ✅ | ⚠️ develop only | ❌ missing on **both** branches | ⚠️ develop only | ✅ 4 hooks (develop only) | ⚠️ rebuild-per-env · ⚠️ gitleaks wf develop only |
+| `Interval-Col/cobol-migration` | ✅ (gitleaks + 1 review + CODEOWNERS; chrome on `main`) | ✅ (gitleaks, PR-optional) | ✅ (merge-commit, auto-delete, discussions) | ✅ (on `main`) | ⚠️ org-default | ✅ (on `main`) | ✅ 4 hooks (on `main`) | ✅ **build-once-promote** (prod deploy flag-gated) · ✅ gitleaks |
 | `Interval-Col/admission-patient` | ✅ (renamed `master`→`main`) | ✅ | ✅ (merge-commit-only) | ✅ | ✅ | ✅ | ✅ 4/4 hooks | ⚠️ CI-only, **deploy port deferred (H2)** · ✅ gitleaks gate |
 | `Interval-Col/operations` | ✅ | n/a (no `develop` — docs-only) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
 
@@ -290,22 +290,24 @@ Net: commercial-lch is **fully policy-compliant** — branching + protection + c
 
 ## `Interval-Col/cobol-migration`
 
-**Status (2026-06-07):** ✅ **DONE (chrome + gitleaks gate).** Full policy chrome bootstrapped on `develop` via PR Interval-Col/cobol-migration#1, on the merge-commit model: CODEOWNERS, the gitleaks gate (+ a copy of the canonical `.gitleaks.toml`), stale workflow, a Python 5-hook pre-commit config, and the branch-name linter (PR template inherited from the org-default in `.github`). Repo settings flipped to merge-only + PR-title; branch protection applied via `gh api` on `develop` (PR-optional) and `main` (1 reviewer + CODEOWNERS), `gitleaks` the required check on both. Full-history gitleaks scan: **clean, no leaks**. **Note:** the chrome landed on `develop`; `main` gets the `.github/` tree + `gitleaks.yml` on the next `develop → main` promote (the `gitleaks` required-check context is pre-set and satisfied then). The `ci-cd.yml` build-once-promote migration + first `develop → main` promote remain (out of scope of this gitleaks rollout).
+**Status (2026-06-13):** ✅ **FULLY DONE — chrome + gitleaks + protection + settings + build-once-promote (prod deploy flag-gated).** Chrome bootstrapped on `develop` (PR #1), then everything promoted to `main` (PR #6) so branch protection is **real, not hollow**. The `ci-cd.yml` is now build-once-promote (PR #4) with the prod deploy **gated behind `COBOL_PROD_DEPLOY_ENABLED`** (PR #5) — a push to `main` promotes the `etl-cobol:dev` image to `:prod` but **skips the deploy** (golden rule: no income to prod until the RFC 0002 CSRF decision). Prod go-live (Phase 1) is owned by @ychejne-jpg via issue #7 + `operations/plans/cobol-migration-promote-to-prod.md`.
 
-- [x] Bootstrap the full `.github/` chrome on `develop` (PR #1) — `main` inherits it on the next promote.
-- [ ] Create `.pre-commit-config.yaml` from scratch — install all 5 policy hooks plus the lint/format baseline used elsewhere
-- [ ] Add `.github/CODEOWNERS` — `services/etl/*` → ETL lead, `.github/workflows/*` → ops/platform
-- [ ] Add `.github/PULL_REQUEST_TEMPLATE.md` (summary, test plan, deploy notes)
-- [ ] Add `.github/workflows/stale.yml`
-- [ ] Audit extra branches (`feat/etl-shared-harness`, `feat/etl-tui-enhancements`) and either rebase to `develop` or close before stale-bot starts marking them
-- [ ] Enable branch protection on `main`
-- [ ] Enable branch protection on `develop`
-- [ ] Repo settings: auto-delete on, merge-commit-only (disable squash + rebase), enable Discussions
-- [ ] Migrate `ci-cd.yml` to build-once-promote — currently `push to develop → build+deploy dev tag` and `push to main → build+deploy prod tag` each rebuild from source; target: build once on develop with `:sha` tag, then a separate `main` workflow that pulls + retags ECR image to `:prod`
+- [x] Bootstrap the full `.github/` chrome on `develop` (PR #1).
+- [x] `.pre-commit-config.yaml` with the policy hooks + lint/format baseline (PR #1).
+- [x] `.github/CODEOWNERS` (PR #1; now on `main`).
+- [x] PR template — inherits the org-default in `Interval-Col/.github` (no per-repo file needed).
+- [x] `.github/workflows/stale.yml` (PR #1; now on `main`).
+- [x] Repo settings: merge-commit-only (squash + rebase off), auto-delete on, Discussions on.
+- [x] Branch protection on `develop` (gitleaks, PR-optional) and `main` (gitleaks + 1 review + CODEOWNERS) — real now that the gitleaks workflow is on `main`.
+- [x] **Migrate `ci-cd.yml` to build-once-promote** (PR #4): push to `main` → `promote-and-deploy` retags `:dev`→`:prod` (no rebuild). Verified via a `promote-only` dry-run (identical digest `ccfe3eae…160cc`) + the real main-push run (Build skipped, Promote success, Deploy gated-skipped).
+- [x] **Gate the prod deploy** behind `COBOL_PROD_DEPLOY_ENABLED` (PR #5) — environment required-reviewers aren't available on this repo tier, so an in-workflow flag is the gate.
+- [x] **Promote `develop → main`** (PR #6) — chrome + pipeline + ~30 commits of ETL work on `main`; prod deploy gated-skipped, prod untouched.
+- [ ] **Prod go-live — DEFERRED (Phase 1, gated).** Wire the `production` env secrets + flip `COBOL_PROD_DEPLOY_ENABLED` + first prod deploy. Gated on RFC 0002 CSRF (@SKuger01) + prod nucleus-db host (@ychejne) + CobolQL service account. Owned by @ychejne-jpg via issue #7 + `operations/plans/cobol-migration-promote-to-prod.md`.
+- [ ] Audit stale feature branches (`docs/income-prod-plan-refresh` etc.) — auto-delete is on for future merges; existing ones are pre-existing cruft.
 
-**Owner:** <TBD>
+**Owner:** @gczuluaga (rollout executed 2026-06-13); prod go-live @ychejne-jpg (issue #7).
 
-Estimated effort: ~2-3h for full chrome bootstrap (more than the others because pre-commit config is being created from zero); ~½ day for ci-cd.yml migration once the `develop` workflow is on `main`.
+Net: cobol-migration is **fully policy-compliant** — chrome + protection + settings + a verified build-once-promote pipeline on `main`, with the prod deploy deliberately flag-gated until the prod readiness gates clear.
 
 ---
 
@@ -424,7 +426,7 @@ Per-repo migration checkbox:
 
 - [x] `finance-lch` — **done 2026-06-04** (PR #8). Split build/deploy; new `promote-*` jobs pull `:dev`, retag as `:prod` + `:<main-sha>`, push. Push-to-`main` auto-triggers the promote path. `config` job refuses to BUILD a prod image from a push event.
 - [x] `lab-qc` — **migrated 2026-06-05** (PR #3). Split build/promote; new `promote-*` jobs pull `:dev`, retag `:prod` + `:<sha>`, push. Proven on `develop` (promote jobs skip correctly; dev deploy green). **Not yet exercised `develop → main`** — deferred with the prod bundle.
-- [ ] `cobol-migration` — merge ci-cd.yml to `main` first, then split
+- [x] `cobol-migration` — **DONE 2026-06-13** (PR #4 + promote #6). Single `etl-cobol` image → one `promote` job retags `:dev`→`:prod` on a main push (no rebuild). Prod deploy **flag-gated** (`COBOL_PROD_DEPLOY_ENABLED`, default off) until prod readiness clears. Verified via `promote-only` dry-run + real main-push (deploy gated-skipped).
 - [x] `commercial-lch` — **DONE 2026-06-13** (PR #19 + cutover #20). Was NOT green-field (live audit: it already rebuilt+deployed dev+prod per env). New `promote` job retags `:dev`→`:prod` on a main push (no rebuild); PRs flipped to CI-only. Verified end-to-end incl. a `promote-only` dry-run with identical digests + a real prod cutover (prod Up on `:prod`). **First repo with a proven build-once-promote pipeline.**
 - [ ] `admission-patient` — H2 blocker (private-pkg + OIDC) **resolved** (alexandria removed in shadcn migration); deploy port still deferred per plan, owned by ychejne-jpg via issue #21 + `plans/deploy-pipeline-go-live-plan.md`
 
@@ -450,7 +452,7 @@ Per-repo install checkbox:
 - [x] `finance-lch` — **done 2026-06-04** (PR #8). All 5 policy hooks installed (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push). `default_install_hook_types: [pre-commit, commit-msg, pre-push]` so a single `pre-commit install` activates all stages.
 - [x] `lab-qc` — **done 2026-06-05** (PR #3). All 5 policy hooks (`check-case-conflict`, `gitleaks`, `ruff`/`ruff-format`, `conventional-pre-commit` at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Byte-identical to finance-lch.
 - [x] `commercial-lch` — **done 2026-06-13** (PR #17). All 5 policy hooks (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format` on `backend/`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Existing ruff + frontend `pnpm lint-check` eslint preserved.
-- [ ] `cobol-migration` — create `.pre-commit-config.yaml` from scratch using the canonical set
+- [x] `cobol-migration` — **done** (PR #1; now on `main` via promote #6). Policy hooks + lint/format baseline created from scratch.
 - [ ] `admission-patient` — copy + commit (only 4 of 5 needed — `check-case-collisions` already present)
 
 Also add a CI job in each repo that runs `pre-commit run --all-files` so the
