@@ -19,17 +19,24 @@ them real per repo.
 
 ## At-a-glance status matrix
 
-Legend: ✅ done · ⚠️ partial · ❌ missing · ❓ unknown / needs admin · ⏸️ deferred (by owner)
+Legend: ✅ done · ⚠️ partial / nuance · ❌ missing · ❗ active problem · n/a not applicable
+· "develop only" = artifact exists on `develop` but **not on the default branch**, so it
+does not enforce (GitHub reads CODEOWNERS + produces Actions checks from the default branch).
+
+> **Corrected 2026-06-13 from a live `gh api` re-verify of all 7 repos** (see the
+> RE-VERIFY note below). The previous matrix overstated finance-lch / lab-qc / cobol-migration
+> by counting develop-side work as done; the dominant gap is that **the chrome was never
+> promoted `develop → main`**, leaving main's branch protection hollow.
 
 | Repo | BP main | BP develop | Repo settings | CODEOWNERS | PR template | Stale wf | Pre-commit | CI/CD shape |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `Interval-Col/.github` | ✅ | — n/a (no `develop`) | ✅ | ✅ | ✅ | ✅ | ✅ (4 policy hooks) | **n/a deploy · ✅ gitleaks gate** |
-| `Interval-Col/finance-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote · ✅ gitleaks gate |
-| `Interval-Col/lab-qc` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (all 5 policy hooks) | ✅ build-once-promote · ✅ gitleaks gate |
-| `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ (0/5 policy hooks) | ⚠️ CI-only, no deploy yet |
-| `Interval-Col/cobol-migration` | ✅ | ✅ | ✅ | ✅ | ✅ (org-default) | ✅ | ✅ (5 policy hooks) | ⚠️ rebuild-per-env · ✅ gitleaks gate |
-| `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ (case-collision present, 4/5 missing) | ⚠️ CI-only, deploy not ported |
-| `Interval-Col/operations` | ✅ | — n/a (no `develop` — docs-only) | ✅ | ✅ | ✅ | ✅ | ✅ (4 policy hooks) | **n/a deploy · ✅ gitleaks gate** |
+| `Interval-Col/.github` | ✅ | n/a (no `develop`) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
+| `Interval-Col/finance-lch` | ⚠️ hollow (req. checks + CODEOWNERS on `develop` only) | ✅ (no review reqs) | ✅ (merge-commit-only per policy) | ⚠️ develop only | ⚠️ develop only | ⚠️ develop only | ⚠️ 2/4 hooks (no case-conflict, no branch-name) | ✅ build-once-promote · ✅ gitleaks (develop) |
+| `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ⚠️ **0/4 hooks** (ruff+eslint only) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
+| `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ (no auto-delete, all 3 merge methods) | ❌ | ❌ | ❌ | ⚠️ 0/5 hooks | ❗ rebuild-per-env, **deploys dev+prod** (NOT ci-only) · ❌ no gitleaks |
+| `Interval-Col/cobol-migration` | ⚠️ hollow (gitleaks wf + CODEOWNERS on `develop` only) | ✅ | ✅ | ⚠️ develop only | ❌ missing on **both** branches | ⚠️ develop only | ✅ 4 hooks (develop only) | ⚠️ rebuild-per-env · ⚠️ gitleaks wf develop only |
+| `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ (catch-all, unenforced — no BP) | ❌ | ❌ | ⚠️ custom case-collision only | ⚠️ CI-only, deploy not ported (Phase H2) |
+| `Interval-Col/operations` | ✅ | n/a (no `develop` — docs-only) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
 
 Headline (audit 2026-06-04): zero repos had branch protection, zero had the
 policy hook set, only one had a CODEOWNERS file. The rollout is wide but each
@@ -67,6 +74,45 @@ stale workflow, slimmed `.pre-commit-config.yaml`, server-side
 operations is now the docs-only reference implementation for the rollout —
 it shows how the policy adapts to repos with no code.
 
+**RE-VERIFY 2026-06-13 (live `gh api` audit of all 7 repos — supersedes the
+optimistic ✅ marks in the 06-04/05/06 notes above).** A full audit found the
+tracker materially overstated three repos. Root cause: **policy chrome was done
+on `develop` and never promoted to `main`.** Concretely:
+
+- **finance-lch + lab-qc + cobol-migration**: `CODEOWNERS`, `PULL_REQUEST_TEMPLATE.md`,
+  `stale.yml`, `gitleaks.yml`, and (for lab-qc/cobol) `.pre-commit-config.yaml`
+  exist **only on `develop`**. They are 404 on `main`. Because GitHub reads
+  CODEOWNERS and runs required-check workflows **from the default branch**, the
+  branch protection on `main` is **hollow**: it requires checks no workflow on
+  `main` produces, and enforces code-owner review against a CODEOWNERS file that
+  isn't there. lab-qc `main` requires **7 status checks** (incl. `gitleaks`) with
+  **zero** producing workflows on `main` — a real PR to `main` would block forever.
+- **Pre-commit hook drift** (not the claimed lockstep): finance-lch has **2/4**
+  policy hooks (missing `check-case-conflict`, branch-name-lint); lab-qc has
+  **0/4** (ruff+eslint only); cobol-migration has 4/4 (on develop). Only operations
+  and `.github` are clean.
+- **Merge mode — NOT a discrepancy** (corrected on second look): `.github`,
+  finance-lch, lab-qc, and operations are all **merge-commit-only**
+  (`squash=false, merge=true, rebase=false`). The audit first flagged this as a
+  "reversion from squash-only," but **the policy itself changed between sessions** —
+  BRANCHING-AND-DEPLOY.md §"Merge mode" now mandates **merge-commit-only** with the
+  PR title as the merge-commit subject (squash + rebase disabled; linear history
+  intentionally off). So these repos are **compliant**; the audit compared against
+  the stale squash-only rule. One thing still worth checking during the promote
+  work: any repo whose `main` protection has `required_linear_history=true` is now
+  **incompatible** with merge-commit-only and would block merges — verify + turn it
+  off where set.
+- **commercial-lch was understated**: the tracker said "CI-only, no deploy"; in
+  fact `ci.yml` is a full **rebuild-per-env pipeline that already deploys dev +
+  prod over SSH**. So it needs the build-once-promote migration too, not just chrome.
+- **admission-patient + operations + `.github`** audited as accurate (modulo the
+  merge-settings nuance).
+
+The good news: most "missing" artifacts **exist on `develop`** — the dominant fix
+is a `develop → main` promote on finance-lch / lab-qc / cobol-migration, not a
+rebuild. The per-repo sections below still describe the develop-side work that was
+done; treat their "DONE" language as **develop-side only** until the promote lands.
+
 ---
 
 ## `Interval-Col/.github`
@@ -92,7 +138,15 @@ it shows how the policy adapts to repos with no code.
 
 ## `Interval-Col/finance-lch`
 
-**Status (2026-06-04):** ✅ **DONE.** All policy chrome landed, branch protection enforced on `main` and `develop`, ci-cd.yml migrated to build-once-promote. Closed via PR Interval-Col/finance-lch#8 (merged to `develop`) and the follow-up `develop` → `main` PR; repo settings + branch protection rules applied via `gh api` immediately after. This row is the first concrete reference implementation other repos can copy.
+> ⚠️ **SUPERSEDED by the 2026-06-13 re-verify** (see RE-VERIFY note above). The
+> "DONE" status below reflects **develop-side** work. The governance chrome
+> (CODEOWNERS, PR template, stale.yml, the check-producing workflows) is on
+> `develop` only and **404 on `main`**, so `main` branch protection is hollow.
+> The "follow-up develop → main PR" referenced below did not actually carry the
+> `.github/` chrome to `main`. Real remaining work: promote chrome to `main` +
+> backfill pre-commit hooks (currently 2/4).
+
+**Status (2026-06-04, develop-side):** All policy chrome landed on `develop`, ci.yml/ci-cd.yml migrated to build-once-promote. Landed via PR Interval-Col/finance-lch#8. Repo settings + branch-protection rules applied via `gh api`.
 
 **Update 2026-06-06:** server-side **gitleaks gate** added — required status check on `main` + `develop` (PR Interval-Col/finance-lch#9) — and the repo flipped to the **merge-commit model** (squash off, linear-history off, PR-title merge messages). A one-time full-history gitleaks audit surfaced a real leak: `cobolql` API tokens + `finance_user` DB creds in `jobs/config.json` history (file already removed from `develop`). **Rotated by @gczuluaga**; the dead values are allowlisted in finance-lch's own `.gitleaks.toml` with an incident pointer, and mock-IAM / `dev-admin` placeholders are allowlisted via the canonical `.github/.gitleaks.toml`. Full-history scan: clean (462 commits).
 
@@ -115,6 +169,17 @@ Actual effort: ~3h end-to-end including the chrome, hook configs, CI/CD migratio
 ---
 
 ## `Interval-Col/lab-qc`
+
+> ⚠️ **SUPERSEDED by the 2026-06-13 re-verify** (see RE-VERIFY note above). This
+> section's "done" claims are **develop-side only and partly inaccurate**. Live
+> `gh api` audit found: CODEOWNERS, PR template, stale.yml, and `gitleaks.yml`
+> are **404 on `main`** (develop only); `main` branch protection requires **7
+> status checks with zero producing workflows on `main`** (incl. an orphaned
+> `gitleaks` check), so PRs to `main` would block; the `.pre-commit-config.yaml`
+> carries **0/4 policy hooks** (ruff+eslint only), not the "5 hooks" claimed. The
+> 2026-06-07 leak rotation below is real and stands. Real remaining work: promote
+> chrome to `main`, add the policy pre-commit hooks, confirm the gitleaks workflow
+> reaches `main` so its required check has a producer.
 
 **Status (2026-06-05):** ⏸️ **DEVELOP-SIDE DONE; prod bundle deferred.** Chrome,
 all 5 pre-commit hooks, build-once-promote migration, repo settings, and branch
@@ -144,6 +209,13 @@ Actual effort (develop-side): ~2h — chrome + hooks + ci-cd migration + local g
 ---
 
 ## `Interval-Col/commercial-lch`
+
+> ⚠️ **Corrected 2026-06-13**: the status below says "no deploy pipeline today" —
+> that is **wrong**. Live audit found `ci.yml` is a full **rebuild-per-env
+> pipeline that already deploys dev + prod over SSH** (`docker build` + compose
+> up). So this repo needs the **build-once-promote migration** (like
+> finance-lch/lab-qc/cobol), not a greenfield pipeline — plus all the chrome
+> below, which remains accurate (0/8 done).
 
 **Status:** lightest-lift app repo — no deploy pipeline today, so the build-once-promote work is "add the right pipeline" rather than "migrate"; CI already has `verify-api-contract` which is a leg up.
 
