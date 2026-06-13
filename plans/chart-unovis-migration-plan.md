@@ -2,6 +2,7 @@
 status: blocked
 created: 2026-06-13
 owner: gczuluaga
+tracking-issue: Interval-Col/.github#25
 blocked-on: RFC 0008 acceptance + Phase 1 foundation (shared chart tokens + components)
 ---
 
