@@ -31,8 +31,8 @@ does not enforce (GitHub reads CODEOWNERS + produces Actions checks from the def
 | Repo | BP main | BP develop | Repo settings | CODEOWNERS | PR template | Stale wf | Pre-commit | CI/CD shape |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `Interval-Col/.github` | ✅ | n/a (no `develop`) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
-| `Interval-Col/finance-lch` | ⚠️ hollow (req. checks + CODEOWNERS on `develop` only) | ✅ (no review reqs) | ✅ (merge-commit-only per policy) | ⚠️ develop only | ⚠️ develop only | ⚠️ develop only | ⚠️ 2/4 hooks (no case-conflict, no branch-name) | ✅ build-once-promote · ✅ gitleaks (develop) |
-| `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ⚠️ **0/4 hooks** (ruff+eslint only) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
+| `Interval-Col/finance-lch` | ⚠️ hollow (req. checks + CODEOWNERS on `develop` only) | ✅ (no review reqs) | ✅ (merge-commit-only per policy) | ⚠️ develop only | ⚠️ develop only | ⚠️ develop only | ✅ 4/4 on `develop` (absent on `main`) | ✅ build-once-promote · ✅ gitleaks (develop) |
+| `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ✅ 4/4 on `develop` (`main` stale: 0/4) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ (no auto-delete, all 3 merge methods) | ❌ | ❌ | ❌ | ⚠️ 0/5 hooks | ❗ rebuild-per-env, **deploys dev+prod** (NOT ci-only) · ❌ no gitleaks |
 | `Interval-Col/cobol-migration` | ⚠️ hollow (gitleaks wf + CODEOWNERS on `develop` only) | ✅ | ✅ | ⚠️ develop only | ❌ missing on **both** branches | ⚠️ develop only | ✅ 4 hooks (develop only) | ⚠️ rebuild-per-env · ⚠️ gitleaks wf develop only |
 | `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ (catch-all, unenforced — no BP) | ❌ | ❌ | ⚠️ custom case-collision only | ⚠️ CI-only, deploy not ported (Phase H2) |
@@ -112,6 +112,55 @@ The good news: most "missing" artifacts **exist on `develop`** — the dominant 
 is a `develop → main` promote on finance-lch / lab-qc / cobol-migration, not a
 rebuild. The per-repo sections below still describe the develop-side work that was
 done; treat their "DONE" language as **develop-side only** until the promote lands.
+
+**Correction 2026-06-13 (same day):** the first pass of this RE-VERIFY recorded
+the audit's pre-commit hook counts verbatim — finance-lch "2/4", lab-qc "0/4".
+Both were **false negatives**: on a direct per-branch read, finance-lch and lab-qc
+each have **4/4 policy hooks on `develop`** (the "0/4" is only true of `main`, the
+stale snapshot). The matrix hook cells are corrected. Root cause + the rule that
+would have caught it are in **["Re-verifying this tracker"](#re-verifying-this-tracker--read-this-before-trusting-or-editing-the-matrix)** below — this episode is the cautionary tale that section exists for.
+
+---
+
+## Re-verifying this tracker — read this before trusting or editing the matrix
+
+This tracker is a **derived view**, not the source of truth — the live repos are.
+It is hand-edited across sessions and **goes stale**. On 2026-06-13 a full
+re-verify produced *four* wrong intermediate findings before the truth settled;
+the traps below are subtle and bit repeatedly. Follow the rules or repeat them.
+
+1. **A cell reflects the DEFAULT branch — that's what GitHub enforces.** Branch
+   protection, CODEOWNERS routing, and required-check *producers* are all read by
+   GitHub from `main`. A repo mid-rollout can have the work complete on `develop`
+   but **not promoted to `main`** → "done but unenforced." Represent that
+   explicitly (`✅ develop / ❌ main`); never collapse it to a bare ✅ or ❌. The
+   whole "hollow main protection" story is this: `main` requires checks whose
+   workflows live only on `develop`.
+
+2. **Always pass `?ref=<branch>`, and check BOTH `main` and `develop`.**
+   `gh api .../contents/PATH` with no `?ref` reads the default branch. Multiple
+   false findings came from reading `main` (a weeks-stale snapshot) and reporting
+   "missing everywhere."
+
+3. **Never test presence with `[ -n "$(gh api … --jq .path 2>/dev/null)" ]`.** A
+   404 piped through `--jq '.path'` prints `"null"` — **non-empty** — so every
+   absent file reports "PRESENT." This one bug made an entire per-branch sweep
+   report all-green. Instead: list the parent dir (`--jq '.[].name'`) and check
+   the **exit code**; keep stderr visible (don't `2>/dev/null` the signal away).
+
+4. **An automated/agent audit is a hypothesis, not fact.** The structured 7-repo
+   audit that seeded the 2026-06-13 correction was directionally useful but wrong
+   on specifics (branch-ref + grep-scope errors → false "2/4"/"0/4" hook counts
+   that briefly landed in this matrix). Verify every consequential claim with a
+   direct read before recording it; confirm surprises with a second independent
+   method.
+
+5. **Prefer a local working-tree read for committed files.** When the repo is
+   cloned and `git rev-parse HEAD == origin/<branch>`, reading the file on disk
+   beats a contents-API round-trip (no ref ambiguity, no 404→"null" trap).
+
+When in doubt, **re-derive** with these rules and **timestamp** the result — the
+ground moves between sessions.
 
 ---
 
