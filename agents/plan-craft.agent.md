@@ -17,6 +17,29 @@ copy from it and fill in. Reference examples:
 `Interval-Col/admission-patient/plans/org-standards-harmonization-plan.md`,
 `Interval-Col/commercial-lch/plans/mvp-quote-generation-plan.md`.
 
+## Where the plan lives — placement by type
+
+Decide the home **before** you author. The reflex *"the target repo's
+`plans/`"* applies to **product** plans only.
+
+| Plan / doc type | Home | Note |
+|---|---|---|
+| **Product / app-feature plan** (build a feature/MVP, migrate app code) | the **app repo's** `plans/` | the agent needs the app's code context |
+| **DevOps / deploy / ops execution plan** (promote `develop→main`, deploy, migrate a repo to build-once-promote, rotate secrets, bootstrap a repo, roll out branch protection) | **`Interval-Col/operations/plans/`** | ops-owned, cross-cutting, mostly `gh`-driven — **not** the app repo |
+| Reusable ops procedure / runbook | `operations/runbooks/` | "when X happens, do Y" |
+| Incident postmortem | `operations/incidents/` | |
+| Infra definition / IaC (compose, host/network, terraform) | `infrastructure/` | the *what-it-is*, not a plan |
+
+**The decision rule:** *is this plan about shipping / operating / securing
+deploys & infra (devops), or about building a product feature?* — DevOps →
+`operations/plans/`; feature → `<app>/plans/`.
+
+**DevOps plans are Sonnet-runnable.** Author them to this same standard
+(self-contained Steps, Done-when, 🛑 escalation) so a `claude-sonnet-4-6`
+agent executes them without Opus-level judgment. A routine that runs one
+sets `model: claude-sonnet-4-6` and lists the target repo(s) as `sources`;
+`operations` carries the plan. *(Convention recorded 2026-06-13.)*
+
 ## Audience model — assume this is who reads the plan
 
 - **A junior developer**, ~1–2 years experience, probably native Spanish,
@@ -236,8 +259,10 @@ is recorded after resolution. Resolved 🛑 items move to the
 When you are asked to write or rebuild a plan:
 
 1. Read the goal + phases from the lead.
-2. Copy `.github/templates/plan-template.md` into the target repo's
-   `plans/` directory with a kebab-case filename ending `-plan.md`.
+2. Copy `.github/templates/plan-template.md` into the right `plans/` per
+   "Where the plan lives" above — the **app repo's** `plans/` for product
+   plans, **`operations/plans/`** for devops/deploy/ops plans — with a
+   kebab-case filename ending `-plan.md`.
 3. Replace placeholders with the project's specifics:
    frontmatter, title, Resumen, context paragraph, Out-of-scope,
    per-phase content.
@@ -273,7 +298,8 @@ rebuilding the plan retroactively:
 
 ## Plan ≠ Issue
 
-The plan lives in the target repo's `plans/`. A GitHub **issue** is the
+The plan lives in its `plans/` home (see "Where the plan lives" — the app
+repo's `plans/` for product plans, `operations/plans/` for devops). A GitHub **issue** is the
 team-facing entry point: bilingual, short, points at the plan as source
 of truth, names the assignees + lead + checkpoint owner, and states the
 execution order if multiple plans interact. Don't restate the plan in
