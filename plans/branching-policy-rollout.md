@@ -35,7 +35,7 @@ does not enforce (GitHub reads CODEOWNERS + produces Actions checks from the def
 | `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ✅ 4/4 on `develop` (`main` stale: 0/4) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
 | `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ (no auto-delete, all 3 merge methods) | ❌ | ❌ | ❌ | ⚠️ 0/5 hooks | ❗ rebuild-per-env, **deploys dev+prod** (NOT ci-only) · ❌ no gitleaks |
 | `Interval-Col/cobol-migration` | ⚠️ hollow (gitleaks wf + CODEOWNERS on `develop` only) | ✅ | ✅ | ⚠️ develop only | ❌ missing on **both** branches | ⚠️ develop only | ✅ 4 hooks (develop only) | ⚠️ rebuild-per-env · ⚠️ gitleaks wf develop only |
-| `Interval-Col/admission-patient` | ❌ (default=`master`) | ❌ | ❌ | ✅ (catch-all, unenforced — no BP) | ❌ | ❌ | ⚠️ custom case-collision only | ⚠️ CI-only, deploy not ported (Phase H2) |
+| `Interval-Col/admission-patient` | ✅ (renamed `master`→`main`) | ✅ | ✅ (merge-commit-only) | ✅ | ✅ | ✅ | ✅ 4/4 hooks | ⚠️ CI-only, **deploy port deferred (H2)** · ✅ gitleaks gate |
 | `Interval-Col/operations` | ✅ | n/a (no `develop` — docs-only) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
 
 Headline (audit 2026-06-04): zero repos had branch protection, zero had the
@@ -73,6 +73,16 @@ stale workflow, slimmed `.pre-commit-config.yaml`, server-side
 `main` then applied via `gh api`; required status check is `gitleaks` only.
 operations is now the docs-only reference implementation for the rollout —
 it shows how the policy adapts to repos with no code.
+
+**Update 2026-06-13: `admission-patient` PREPPED.** The "KNOWN-RED CI / H2
+blocker" turned out to be resolved — `@intervalica/alexandria` (the unreachable
+private package) was removed in the shadcn migration, so CI is green. With that
+cleared: `master`→`main` rename (#19 promote made `main` current, source-only —
+no deploy), full chrome + 4/4 hooks, repo settings, and branch protection on
+both `main` and `develop`. First full-history gitleaks scan was clean. **Only
+the deploy-pipeline port (H2) remains deferred.** This was the last repo thought
+to be "parked"; it's now compliant on everything except deploy. See its row +
+section.
 
 **RE-VERIFY 2026-06-13 (live `gh api` audit of all 7 repos — supersedes the
 optimistic ✅ marks in the 06-04/05/06 notes above).** A full audit found the
@@ -310,25 +320,21 @@ Estimated effort: ~2-3h for full chrome bootstrap (more than the others because 
 
 ## `Interval-Col/admission-patient`
 
-**Status:** odd one out — default branch is `master` (not `main`), CI is intentionally KNOWN-RED pending Phase H2 (private `@intervalica/alexandria` package unreachable from cloud runners), and there's no deploy pipeline yet; CODEOWNERS is the only repo here that already has it.
+**Status (2026-06-13):** ✅ **PREPPED** (deploy port deferred). The "KNOWN-RED CI / Phase H2 blocker" is **resolved**: `@intervalica/alexandria` (the unreachable private package) was removed in the shadcn-vue migration, so CI is green again — no OIDC/private-registry work needed. With CI green, the full rollout landed. **The only deferred piece is the deploy pipeline** (Bitbucket-era ECR/SSH → build-once-promote), which is genuine H2 work and doesn't block the rest.
 
-- [ ] **Decision needed:** rename `master` → `main`, or grandfather `master` as the protected branch? (See Open questions below.) Default assumption for this checklist: rename to `main`.
-- [ ] Rename default branch `master` → `main` (ProTip: open a tracking PR first that retargets any active branches off `master`)
-- [ ] Add `.github/PULL_REQUEST_TEMPLATE.md` (Summary / Risk / Rollback)
-- [ ] Add `.github/workflows/stale.yml`
-- [ ] Extend `.pre-commit-config.yaml` with the 4 still-missing policy hooks: `gitleaks`, `format-on-stage`, `commit-msg-lint`, `branch-name-lint`
-- [x] Already done: `.github/CODEOWNERS` present (only repo in the org with this today — its mapping should be sanity-checked against the policy but the file exists)
-- [x] Already done: pre-commit `check-case-collisions` hook present (functional equivalent to the policy `case-collision` hook)
-- [x] Already done: pre-commit baseline (`end-of-file-fixer`, `trailing-whitespace`, `check-merge-conflict`, `check-yaml`, `check-added-large-files`, `eslint`)
-- [ ] Fix CI before flipping required-status-checks on main: the `@intervalica/alexandria` private-package issue must land first (Track 2 Phase H2 — GitHub OIDC + AWS trust); protecting `main` against a permanently-red check is worse than no protection
-- [ ] Enable branch protection on `main` (or `master` if not renamed) per §"main — today" — gate behind the CI-green fix above
-- [ ] Enable branch protection on `develop`
-- [ ] Repo settings: auto-delete on, merge-commit-only (disable squash + rebase)
-- [ ] Add deploy pipeline implementing build-once-promote (currently no deploy at all; Bitbucket-era ECR/SSH deploy not yet ported — Phase H2 work)
+- [x] **Rename `master` → `main`** — done via the GitHub branch-rename API (default branch moved, `master` ref deleted; no open PR targeted `master` so nothing to retarget). `ci.yml` push trigger flipped `[master, develop]` → `[main, develop]`.
+- [x] **`develop → main` promote** — `main` was 301 commits stale; promoted via PR Interval-Col/admission-patient#19 (merge-commit). **Source-only — no deploy fired** (no pipeline). `main` is now current and carries the chrome, so its branch protection is real (not hollow).
+- [x] **Chrome** (PR Interval-Col/admission-patient#18 → develop, then promoted): `.github/PULL_REQUEST_TEMPLATE.md` (adapted: Nuxt-at-root + Python `backend/`), `.github/workflows/stale.yml`, `.github/workflows/gitleaks.yml` + genericized `.gitleaks.toml`, `scripts/check-branch-name.sh`.
+- [x] **Pre-commit 4/4 policy hooks** — added gitleaks, ruff/ruff-format (`backend/` format-on-stage), conventional-pre-commit (commit-msg), branch-name-lint (pre-push). Replaced the custom `check-case-collisions` hook with the standard `check-case-conflict` for lockstep (script left on disk, unwired). Root eslint kept.
+- [x] **First full-history gitleaks scan: CLEAN** (301 commits, no leak — unlike lab-qc, no rotation needed).
+- [x] **Repo settings** via `gh api`: merge-commit-only (`squash=false, rebase=false`), `delete_branch_on_merge=true`, `has_discussions=true`.
+- [x] **Branch protection on `main`** per §"main — today": checks `[backend, gitleaks, lint-and-build]`, 1 review, code-owner review, dismiss-stale, conversation-resolution, no force-push, no deletions, `enforce_admins=false`, linear-history off (merge-commit model).
+- [x] **Branch protection on `develop`**: same 3 checks, PR-optional (direct push allowed), no force-push, no deletions.
+- [ ] **Deploy pipeline — DEFERRED (H2).** No deploy today; merging to `main` is source-only. Porting the Bitbucket-era ECR/SSH deploy to build-once-promote is separate, ~½ day, owner's call on timing.
 
-**Owner:** <TBD>
+**Owner:** @gczuluaga (prep executed 2026-06-13).
 
-Estimated effort: ~1h for chrome + hook + PR template + stale once CI is green; protection enforcement is blocked on Phase H2 (KNOWN-RED CI); deploy pipeline ~½ day after H2 lands.
+Net: admission-patient is policy-compliant on branching + protection + chrome + hooks. Only the deploy-pipeline port remains, deliberately deferred.
 
 ---
 
@@ -545,7 +551,7 @@ this repo as parked on this plan until H2 lands.
 
 ## Open questions
 
-- **`admission-patient` default branch**: rename `master` → `main` (aligns with policy and the rest of the org) or grandfather `master`? Renaming requires retargeting any open PRs + updating CI triggers + dev-facing remote tracking. Recommendation: rename, but explicit go/no-go needed before Wave 4 starts.
+- ~~**`admission-patient` default branch**: rename `master` → `main` or grandfather `master`?~~ **RESOLVED 2026-06-13 — renamed to `main`** (no open PR targeted `master`; `ci.yml` triggers updated; `develop→main` promote made it current). See the admission-patient section above.
 - **`Interval-Col/.github` develop branch**: policy assumes `main ← develop ← <type>/<slug>` everywhere, but a meta/policy repo arguably doesn't need `develop` (no deploy pipeline, no integration branch). Should we exempt it, or create `develop` for consistency? Recommendation: create it for consistency — cost is zero, policy stays uniform.
 - **Admin permission scope**: the audit ran with read-level token access for protection endpoints (HTTP 404 on unprotected branches looks the same as "we can't see it"). Before any owner runs the enforcement procedure, confirm they have admin on each repo — Gloria + @SKuger01 are the likely set but not verified here.
 - **Required status check names**: policy lists "lint + unit tests + verify-api-contract + design-system gates" but each repo's check names differ (`lint-frontend` vs `lint`, `test-backend` vs `unit tests`, etc.). Do we standardize the job names across repos as part of this rollout, or accept per-repo names and just enumerate them in each protection rule? Recommendation: enumerate per-repo for Wave 1-2 (don't block on rename), standardize as a follow-up.
