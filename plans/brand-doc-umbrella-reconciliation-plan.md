@@ -1,0 +1,76 @@
+---
+status: pending
+created: 2026-06-13
+owner: gczuluaga
+tracking-issue: Interval-Col/.github#24
+---
+
+# Brand-doc reconciliation → Pháros umbrella model
+
+Reconcile the canonical brand docs (`brands/pharos_brand/BRAND.md`,
+`BACKBONE.md`, `BACKBONE.es.md`) from the **pre-RFC-0004** framing
+("Pháros = the QC module of LCH", no accent, sub-brand *of LCH*) to the
+**umbrella** model the org has since adopted: **Pháros = parent family**;
+**ERP / LIS / Admisiones / CRM = endorsed sub-brands** (accent + evocative
+name + icon); **QC = surfaces *inside* LIS** (its burgundy/red is a *state*
+palette, not a sibling accent); **Archivo = utility tier** (neutral family
+accent, no evocative name); **`nucleus-db` is never branded**.
+
+Spun out of the **RFC 0008 co-creation walk (Q10)** so the session stays on
+live design calls. The *direction* is already locked (RFC 0004 rev. 2026-06-04
++ RFC 0008 decisions 2026-06-10 + the 2026-06-13 walk) — this plan is the
+**writing work**, not a debate.
+
+## Locked inputs to fold in (from the 2026-06-13 walk)
+
+- **ERP = `Pháros · Timón`** — LCH Navy `#003A70` accent + teal `#A0D1CA`
+  success; maritime family theme; `·` separator.
+- **Type:** 3-font system — Fraunces (display/wordmark), Inter (sans UI),
+  IBM Plex Mono (data/labels). No per-app fonts.
+- **Theming:** `.dark` class mechanism; **light/dark only** — the `cobol`
+  theme is dropped.
+- **Tokens:** shadcn-vue base + an accent-**independent** status palette
+  (success/warning/error/info); QC burgundy/red lives in that status layer
+  for LIS.
+- Evocative↔functional name mapping is being recorded in **RFC 0004** (RFC
+  0008 Q2); only **ERP↔Timón** is named so far — the other sibling names are
+  still open (Q1, → SKuger).
+
+## Phases
+
+### Phase 1 — `BRAND.md` (visual/voice spec)
+- [ ] Reframe the opening: Pháros = umbrella family, not "the QC module of LCH".
+- [ ] Brand architecture section: parent + endorsed sub-brands; the
+      shared-vs-differentiated split (shared: type, app-shell, spacing/radius/
+      flatness, mark + wordmark, voice, token-contract *names*, gates;
+      differentiated: accent value, sub-name, icon tint).
+- [ ] Record the curated family palette + that each sub-brand draws ONE accent;
+      seed ERP = Navy `#003A70`.
+- [ ] QC: describe burgundy/red as the LIS **state** palette
+      (en-control / fuera-de-control / alerta), explicitly **not** a sibling
+      accent.
+- [ ] Archivo = utility tier (neutral accent, no evocative name);
+      `nucleus-db` never branded.
+- [ ] Type section → 3 families (drop the 2nd mono). Theming → light/dark only.
+
+### Phase 2 — `BACKBONE.md` + `BACKBONE.es.md` (strategy)
+- [ ] Same umbrella reconciliation in both language strategy docs.
+- [ ] Keep `.es.md` and `.md` in sync (neutral-Colombian Spanish for `.es.md`).
+
+### Phase 3 — Downstream chrome (non-blocking, tracked separately)
+- [ ] lab-qc: revisit `PharosLogo`'s "CONTROL DE CALIDAD" sublabel + plain
+      "Pharos" title once QC is officially "surfaces inside LIS". File as a
+      lab-qc follow-up; do **not** block this plan on it.
+
+## Out of scope
+- The evocative names for the non-ERP siblings (open — RFC 0008 Q1, → SKuger).
+- The full per-app UI brand remake (gated on RFC 0008 acceptance + locked
+  names/accents — see RFC 0008 Implementation §).
+
+## References
+- RFC 0008 (cocreation branch `docs/rfc-0008-cocreation-2026-06-10`) +
+  `rfcs/0008-cocreation-prep.md` (Q10).
+- RFC 0004 — portfolio + functional names; evocative↔functional mapping table
+  (RFC 0008 Q2).
+- `brands/pharos_brand/sub-brands/erp.md` — already umbrella-model (`Pháros ·
+  Timón`).
