@@ -33,7 +33,7 @@ does not enforce (GitHub reads CODEOWNERS + produces Actions checks from the def
 | `Interval-Col/.github` | ✅ | n/a (no `develop`) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
 | `Interval-Col/finance-lch` | ⚠️ hollow (req. checks + CODEOWNERS on `develop` only) | ✅ (no review reqs) | ✅ (merge-commit-only per policy) | ⚠️ develop only | ⚠️ develop only | ⚠️ develop only | ✅ 4/4 on `develop` (absent on `main`) | ✅ build-once-promote · ✅ gitleaks (develop) |
 | `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ✅ 4/4 on `develop` (`main` stale: 0/4) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
-| `Interval-Col/commercial-lch` | ❌ | ❌ | ❌ (no auto-delete, all 3 merge methods) | ❌ | ❌ | ❌ | ⚠️ 0/5 hooks | ❗ rebuild-per-env, **deploys dev+prod** (NOT ci-only) · ❌ no gitleaks |
+| `Interval-Col/commercial-lch` | ✅ (1 review + CODEOWNERS + 3 checks + conv-res) | ✅ (3 checks, PR-optional) | ✅ (merge-commit-only, auto-delete, discussions) | ✅ | ✅ | ✅ | ✅ 5/5 hooks | ⚠️ rebuild-per-env, **deploys dev+prod** (build-once-promote migration deferred) · ✅ gitleaks gate |
 | `Interval-Col/cobol-migration` | ⚠️ hollow (gitleaks wf + CODEOWNERS on `develop` only) | ✅ | ✅ | ⚠️ develop only | ❌ missing on **both** branches | ⚠️ develop only | ✅ 4 hooks (develop only) | ⚠️ rebuild-per-env · ⚠️ gitleaks wf develop only |
 | `Interval-Col/admission-patient` | ✅ (renamed `master`→`main`) | ✅ | ✅ (merge-commit-only) | ✅ | ✅ | ✅ | ✅ 4/4 hooks | ⚠️ CI-only, **deploy port deferred (H2)** · ✅ gitleaks gate |
 | `Interval-Col/operations` | ✅ | n/a (no `develop` — docs-only) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
@@ -269,31 +269,22 @@ Actual effort (develop-side): ~2h — chrome + hooks + ci-cd migration + local g
 
 ## `Interval-Col/commercial-lch`
 
-> ⚠️ **Corrected 2026-06-13**: the status below says "no deploy pipeline today" —
-> that is **wrong**. Live audit found `ci.yml` is a full **rebuild-per-env
-> pipeline that already deploys dev + prod over SSH** (`docker build` + compose
-> up). So this repo needs the **build-once-promote migration** (like
-> finance-lch/lab-qc/cobol), not a greenfield pipeline — plus all the chrome
-> below, which remains accurate (0/8 done).
+**Status (2026-06-13):** ✅ **DONE (chrome + gitleaks + protection + settings; chrome promoted to `main`).** Unlike the other deploy-capable repos, the chrome was taken **all the way to `main` the same day** (default branch was already `main`), so its branch protection is **real, not hollow**. The lone remaining piece is the **build-once-promote migration** of the existing rebuild-per-env `ci.yml` — deliberately scoped separately (it touches the live dev+prod deploy).
 
-**Status:** lightest-lift app repo — no deploy pipeline today, so the build-once-promote work is "add the right pipeline" rather than "migrate"; CI already has `verify-api-contract` which is a leg up.
+- [x] **Chrome → `develop`** (PR Interval-Col/commercial-lch#17, merge-commit): `.github/CODEOWNERS` (`backend/`→@gczuluaga, `frontend/`→@SKuger01, `.github/`+plans/docs→@gczuluaga), `.github/PULL_REQUEST_TEMPLATE.md` (backend/+frontend/ layout + deploy note), `.github/workflows/stale.yml`, `.github/workflows/gitleaks.yml` + genericized `.gitleaks.toml`, `scripts/check-branch-name.sh`.
+- [x] **`develop → main` promote** (PR Interval-Col/commercial-lch#18, merge-commit) — chrome now on `main`. **This triggered a PROD deploy** (rebuild-per-env pipeline) which **succeeded** — effectively a redeploy + chrome, no app-code change. Confirmed safe-to-deploy by owner.
+- [x] **Pre-commit 5/5 policy hooks** — `check-case-conflict` (case-collision), gitleaks v8.21.2, ruff/ruff-format (`backend/` format-on-stage), conventional-pre-commit v3.6.0 (commit-msg, --strict), branch-name-lint (pre-push). Existing ruff + frontend eslint (`pnpm lint-check`) baseline preserved.
+- [x] **First full-history gitleaks scan: CLEAN** (no leak — no rotation needed, unlike lab-qc).
+- [x] **Repo settings** via `gh api`: merge-commit-only (`squash=false, rebase=false, merge_commit=true`), `delete_branch_on_merge=true`, `has_discussions=true`.
+- [x] **Branch protection on `main`**: checks `[Backend CI, Frontend CI, gitleaks]` (strict), 1 review, code-owner review, conversation-resolution, no force-push, no deletions, `enforce_admins=false`, linear-history off (merge-commit model).
+- [x] **Branch protection on `develop`**: same 3 checks (strict), PR-optional (direct push allowed), no force-push, no deletions.
+- [x] **Lingering `master`**: none — default was already `main`, no `master` ref existed (no-op).
+- [ ] **Build-once-promote migration — SEPARATE SCOPE.** Today `ci.yml` rebuilds per env (`push develop → build+deploy dev`, `push main → build+deploy prod`). Target: build once on `develop` (`:dev` + `:sha`), retag the SAME digest to `:prod` on `main` — never rebuild. ~½ day. (Note: a `db/data-migration` branch carries related migration work — do not delete.)
+- [ ] DS gates job (only `verify-api-contract` today) — tracked as the cross-cutting DS workstream, not this rollout.
 
-- [ ] Add `.github/CODEOWNERS` — `backend/` + `frontend/` to lead dev + Gloria as gate-keeper
-- [ ] Add `.github/PULL_REQUEST_TEMPLATE.md`
-- [ ] Add `.github/workflows/stale.yml`
-- [ ] Extend `.pre-commit-config.yaml` with the 5 missing hooks
-- [x] Already done: pre-commit baseline
-- [x] Already done: `verify-api-contract` job present in `ci.yml` (ready to be a required check)
-- [x] Already done: backend lint/format/pyright/pytest + frontend lint/vitest in `ci.yml`
-- [ ] Add DS gates job (only contract diff today)
-- [ ] Enable branch protection on `main` — required checks should include backend + frontend lint/tests + `verify-api-contract` + DS gates
-- [ ] Enable branch protection on `develop`
-- [ ] Repo settings: auto-delete on, merge-commit-only (disable squash + rebase)
-- [ ] Add a deploy workflow that implements build-once-promote from day one (no migration debt — this is the green-field win)
+**Owner:** @gczuluaga (full rollout executed 2026-06-13).
 
-**Owner:** <TBD>
-
-Estimated effort: ~1h for chrome + protection + settings + hooks; ~2-3h to author the new deploy workflow (it can copy the lab-qc one once that's migrated, so timing this last among the deploy-capable repos saves work).
+Net: commercial-lch is policy-compliant on branching + protection + chrome + hooks + settings, with the chrome live on `main`. Only the build-once-promote `ci.yml` migration remains, deliberately scoped separately.
 
 ---
 
@@ -434,8 +425,8 @@ Per-repo migration checkbox:
 - [x] `finance-lch` — **done 2026-06-04** (PR #8). Split build/deploy; new `promote-*` jobs pull `:dev`, retag as `:prod` + `:<main-sha>`, push. Push-to-`main` auto-triggers the promote path. `config` job refuses to BUILD a prod image from a push event.
 - [x] `lab-qc` — **migrated 2026-06-05** (PR #3). Split build/promote; new `promote-*` jobs pull `:dev`, retag `:prod` + `:<sha>`, push. Proven on `develop` (promote jobs skip correctly; dev deploy green). **Not yet exercised `develop → main`** — deferred with the prod bundle.
 - [ ] `cobol-migration` — merge ci-cd.yml to `main` first, then split
-- [ ] `commercial-lch` — green-field: author the build-once-promote workflow from the start (no migration debt)
-- [ ] `admission-patient` — blocked on Track 2 Phase H2 (private-pkg + OIDC); author once H2 lands
+- [ ] `commercial-lch` — **NOT green-field** (live audit corrected this): `ci.yml` already rebuilds + deploys dev+prod per env. Migrate to build-once-promote (build on `develop`, retag digest to `:prod` on `main`). Chrome + protection + settings already DONE 2026-06-13; this is the remaining piece, scoped separately.
+- [ ] `admission-patient` — H2 blocker (private-pkg + OIDC) **resolved** (alexandria removed in shadcn migration); deploy port still deferred per plan, owned by ychejne-jpg via issue #21 + `plans/deploy-pipeline-go-live-plan.md`
 
 ## 2. Hook installation rollout
 
@@ -458,7 +449,7 @@ Per-repo install checkbox:
 - [ ] `.github` — author the canonical configs
 - [x] `finance-lch` — **done 2026-06-04** (PR #8). All 5 policy hooks installed (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push). `default_install_hook_types: [pre-commit, commit-msg, pre-push]` so a single `pre-commit install` activates all stages.
 - [x] `lab-qc` — **done 2026-06-05** (PR #3). All 5 policy hooks (`check-case-conflict`, `gitleaks`, `ruff`/`ruff-format`, `conventional-pre-commit` at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Byte-identical to finance-lch.
-- [ ] `commercial-lch` — copy + commit
+- [x] `commercial-lch` — **done 2026-06-13** (PR #17). All 5 policy hooks (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format` on `backend/`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Existing ruff + frontend `pnpm lint-check` eslint preserved.
 - [ ] `cobol-migration` — create `.pre-commit-config.yaml` from scratch using the canonical set
 - [ ] `admission-patient` — copy + commit (only 4 of 5 needed — `check-case-collisions` already present)
 
