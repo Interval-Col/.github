@@ -1,7 +1,8 @@
 ---
-status: ready
+status: in-progress
 created: 2026-06-13
 owner: gczuluaga
+tracking-issue: Interval-Col/.github#27
 intent: auto-runnable by a Sonnet coding agent
 relates-to: RFC 0008 Q5 (brand playground), Q4 (token contract), Q7 (theming), Q11 (charts)
 ---
