@@ -2,6 +2,8 @@
 
 This document defines the official engineering standards for all primary projects under the Interval-Col GitHub organization, especially as adopted by and standardized in [biuman-reports](https://github.com/Interval-Col/biuman-reports), [lab-qc](https://github.com/Interval-Col/lab-qc), and to be used for [finance-lch](https://github.com/Interval-Col/finance-lch).
 
+> **Companion guide (recommendation, not enforced):** [Agent Chat Hygiene](AGENT-CHAT-HYGIENE.md) — keeping Claude Code sessions cheap and durable: one chat per task, save durable knowledge to the repo/memory, and when to `/compact` / `/clear` / delete.
+
 ---
 
 ## 🚀 Stack & Architecture
