@@ -207,6 +207,16 @@ ruleset model). Apply the rule to the named branch.
 | Allow force pushes | ❌ (never) |
 | Allow deletions | ❌ |
 
+> **Solo-maintainer reality (today).** With a single Code Owner (`@gczuluaga`),
+> GitHub won't let an author approve their own PR — so the **Required approvals: 1**
+> + **Require review from Code Owners** rules above are unsatisfiable on the
+> gatekeeper's *own* PRs. That is why **"Do not allow bypassing" is off**: the
+> gatekeeper merges their own PRs via **admin override**
+> (`gh pr merge <n> --admin --merge`), while the 1-approval / Code-Owner gate still
+> binds any PR authored by a future second contributor. The escalation below
+> (bypass on; rules apply to admins too) lands once there's a second reviewer to
+> satisfy the gate without an override.
+
 ### `main` — planned escalation
 
 When the team is ready, tighten to:
