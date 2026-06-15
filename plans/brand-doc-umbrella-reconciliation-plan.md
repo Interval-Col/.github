@@ -1,11 +1,14 @@
 ---
-status: in-progress
+status: done
 created: 2026-06-13
+completed: 2026-06-14
 owner: gczuluaga
 tracking-issue: Interval-Col/.github#24
 ---
 
-> **Phase 1 + 2 done (2026-06-14).** `BRAND.md`, `BACKBONE.md`, `BACKBONE.es.md`
+> **DONE (2026-06-14)** — merged to `main` in [#30](https://github.com/Interval-Col/.github/pull/30); issue #24 closed. The only remainder is the non-blocking, separately-gated app-chrome remake (e.g. lab-qc `PharosLogo`), which folds into the full logo remake once sub-brand names/accents lock (RFC 0008); lab-qc#8 was closed.
+>
+> **Phase 1 + 2 (the writing work).** `BRAND.md`, `BACKBONE.md`, `BACKBONE.es.md`
 > reconciled to the umbrella model (+ `sub-brands/erp.md` JetBrains→IBM Plex Mono
 > fix and its now-stale "not done" note). Folded the 2026-06-13 walk: Interval =
 > LCH's in-house maker, LCH · Biuman = tenants; ERP = `Pháros · Timón` (Navy +
