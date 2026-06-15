@@ -7,10 +7,10 @@
 # per the org's branching-and-deploy policy
 # (BRANCHING-AND-DEPLOY.md → "Branch naming").
 #
-# Allowed `<type>` set: feat, fix, refactor, test, chore, docs, hotfix.
-# Slug must be lowercase kebab-case (a-z, 0-9, hyphen), 2-60 chars.
+# Allowed `<type>` set: feat, fix, refactor, test, chore, docs, hotfix, ci.
+# Slug must be lowercase kebab-case (a-z, 0-9, hyphen), 3-61 chars.
 #
-# `main` and `develop` are exempt — pushing to those is governed by
+# `main`, `master`, and `develop` are exempt — pushing to those is governed by
 # branch protection, not by name lint.
 
 set -euo pipefail
@@ -28,7 +28,7 @@ case "$branch" in
     ;;
 esac
 
-pattern='^(feat|fix|refactor|test|chore|docs|hotfix)/[a-z0-9][a-z0-9-]{1,59}[a-z0-9]$'
+pattern='^(feat|fix|refactor|test|chore|docs|hotfix|ci)/[a-z0-9][a-z0-9-]{1,59}[a-z0-9]$'
 
 if [[ ! "$branch" =~ $pattern ]]; then
   cat >&2 <<EOF
@@ -37,8 +37,8 @@ branch-name-lint: rejecting "$branch".
 Branch names must match:
   <type>/<short-kebab-slug>
 
-Allowed types: feat, fix, refactor, test, chore, docs, hotfix.
-Slug: lowercase kebab-case (a-z, 0-9, hyphen), 3-61 chars, no trailing hyphen.
+Allowed types: feat, fix, refactor, test, chore, docs, hotfix, ci.
+Slug: lowercase kebab-case (a-z, 0-9, hyphen), 3-61 chars, no leading or trailing hyphen.
 
 Examples:
   feat/sso-mock

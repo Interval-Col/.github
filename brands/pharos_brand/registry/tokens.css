@@ -1,0 +1,209 @@
+/* =============================================================================
+ * Pháros — shared design tokens (the registry token contract)
+ * -----------------------------------------------------------------------------
+ * SOURCE OF TRUTH for the Pháros product family's design tokens. Every app in
+ * the family (Pháros · Timón / LIS / Admisiones / CRM / Archivo) gets this file
+ * copied in via the registry sync script — NOT an npm package (RFC 0008 Q3).
+ *
+ * Decisions encoded here (RFC 0008 — co-creation, 2026-06-13):
+ *   Q4  Token contract = shadcn-vue vars + ONE accent-independent status palette
+ *       (success / warning / error / info). Everything else collapses:
+ *         --text-secondary/-muted → --muted-foreground ; --text-brand → --primary
+ *         --nav-* → --sidebar-* ; Spanish bridge-aliases drained.
+ *   Q5  Three font families: Fraunces (display) · Inter (sans UI) · IBM Plex Mono
+ *       (data + labels). JetBrains Mono dropped.
+ *   Q6  A sub-brand differentiates on ONE accent only. ERP · Timón = LCH Navy
+ *       #003A70 + teal success — LOCKED. Other sub-brand accents OPEN (→ SKuger,
+ *       validated in the brand playground).
+ *   Q7  Light + dark only, via the shadcn `.dark` class (NOT [data-theme]).
+ *       The `cobol`/CRT theme is dropped.
+ *
+ * Palette origin: the LCH colour set — see ../../hematologico/LCH-BRAND.md.
+ * LCH/Biuman are tenants of this contract; the burgundy/red mark constants come
+ * from ../BRAND.md §3.1.
+ *
+ * NOTE ON COLOUR ENCODING: values below are authored as hex for legibility of
+ * the contract. The exact channel encoding (oklch vs hsl) + final tints are a
+ * Phase-1 implementation detail, validated in the brand playground (RFC 0008 Q5/Q9)
+ * before the component library is built. Treat the *token names + roles* as the
+ * stable contract; treat the *exact values* of OPEN items as provisional.
+ * ========================================================================== */
+
+@import "tailwindcss";
+
+/* shadcn `.dark` class is the theme switch (RFC 0008 Q7) — never [data-theme]. */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* --- Family mark constants (shared, never re-tinted per app — BRAND.md §3.1) */
+  --pharos-burgundy: #782F40;   /* wordmark, primary text on light */
+  --pharos-red:      #E4002B;   /* pilot light + critical/error */
+
+  /* --- shadcn semantic contract — LIGHT -------------------------------------
+   * Sub-brand accent lives in --primary / --accent / --ring / --sidebar-primary.
+   * Values below = ERP · Timón (navy). A sub-brand is a small theme that
+   * overrides ONLY these accent slots; the rest of the contract is shared. */
+  --background:            #FFFFFF;
+  --foreground:            #000000;
+  --card:                  #FFFFFF;
+  --card-foreground:       #000000;
+  --popover:               #FFFFFF;
+  --popover-foreground:    #000000;
+
+  --primary:               #003A70;   /* ERP · Timón accent (LCH Navy) — LOCKED */
+  --primary-foreground:    #FFFFFF;
+  --secondary:             #F5F5F4;
+  --secondary-foreground:  #003A70;
+  --muted:                 #F5F5F4;
+  --muted-foreground:      #888B8D;   /* was --text-secondary / --text-muted */
+  --accent:                #EAF1F7;   /* subtle navy-tinted hover surface */
+  --accent-foreground:     #003A70;
+  --destructive:           #E4002B;   /* = --pharos-red */
+  --destructive-foreground:#FFFFFF;
+
+  --border:                #C8C9C7;
+  --input:                 #C8C9C7;
+  --ring:                  #003A70;   /* accent */
+  --radius:                0.5rem;    /* rounded-lg = 8px (modals rounded-xl) */
+
+  /* --- Accent-independent STATUS palette (RFC 0008 Q4) -----------------------
+   * Shared by ALL surfaces; NEVER shifts when a sub-brand re-accents. Mapped
+   * from the Pháros QC state palette (BRAND.md §3.4): in-control/drift/
+   * out-of-control/resolved. Finance "positive/income" → --success (this
+   * replaces the off-palette green #00843D the audit flagged). */
+  --success:               #A0D1CA;   /* teal — in control / positive / paid */
+  --success-foreground:    #003A70;
+  --warning:               #FBD872;   /* yellow — drift / pending */
+  --warning-foreground:    #000000;
+  --error:                 #E4002B;   /* red — out of control / overdue */
+  --error-foreground:      #FFFFFF;
+  --info:                  #326295;   /* blue — resolved / informational */
+  --info-foreground:       #FFFFFF;
+
+  /* --- Sidebar (lab-qc shadcn `Sidebar` is the app-shell reference) ---------- */
+  --sidebar:                        #F5F5F4;
+  --sidebar-foreground:             #000000;
+  --sidebar-primary:                #003A70;   /* accent */
+  --sidebar-primary-foreground:     #FFFFFF;
+  --sidebar-accent:                 #EAF1F7;
+  --sidebar-accent-foreground:      #003A70;
+  --sidebar-border:                 #C8C9C7;
+  --sidebar-ring:                   #003A70;
+
+  /* --- Chart tokens (RFC 0008 Q11: numbered --chart-1..5, brand-coloured) ---- */
+  --chart-1: #003A70;  /* navy */
+  --chart-2: #326295;  /* blue */
+  --chart-3: #A0D1CA;  /* teal */
+  --chart-4: #FBD872;  /* yellow */
+  --chart-5: #D986BA;  /* lilac */
+
+  /* --- Type system (RFC 0008 Q5) -------------------------------------------- */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, monospace;  /* data + labels */
+}
+
+.dark {
+  --background:            #0B0F14;
+  --foreground:            #F5F5F4;
+  --card:                  #11161D;
+  --card-foreground:       #F5F5F4;
+  --popover:               #11161D;
+  --popover-foreground:    #F5F5F4;
+
+  --primary:               #A0D1CA;   /* ERP dark accent → teal (BRAND §3.2) */
+  --primary-foreground:    #07242E;
+  --secondary:             #1B232C;
+  --secondary-foreground:  #F5F5F4;
+  --muted:                 #1B232C;
+  --muted-foreground:      #C8C9C7;
+  --accent:                #16202B;
+  --accent-foreground:     #A0D1CA;
+  --destructive:           #E4002B;
+  --destructive-foreground:#FFFFFF;
+
+  --border:                #1F2933;
+  --input:                 #1F2933;
+  --ring:                  #A0D1CA;
+
+  --success:               #A0D1CA;
+  --success-foreground:    #07242E;
+  --warning:               #FBD872;
+  --warning-foreground:    #1A1400;
+  --error:                 #FF5A6E;
+  --error-foreground:      #1A0006;
+  --info:                  #6FA0CB;
+  --info-foreground:       #06121F;
+
+  --sidebar:                        #0B0F14;
+  --sidebar-foreground:             #F5F5F4;
+  --sidebar-primary:                #A0D1CA;
+  --sidebar-primary-foreground:     #07242E;
+  --sidebar-accent:                 #16202B;
+  --sidebar-accent-foreground:      #A0D1CA;
+  --sidebar-border:                 #1F2933;
+  --sidebar-ring:                   #A0D1CA;
+}
+
+/* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).
+ * Utilities like bg-primary, text-success, border-border, font-mono resolve here. */
+@theme inline {
+  --color-background:            var(--background);
+  --color-foreground:            var(--foreground);
+  --color-card:                  var(--card);
+  --color-card-foreground:       var(--card-foreground);
+  --color-popover:               var(--popover);
+  --color-popover-foreground:    var(--popover-foreground);
+  --color-primary:               var(--primary);
+  --color-primary-foreground:    var(--primary-foreground);
+  --color-secondary:             var(--secondary);
+  --color-secondary-foreground:  var(--secondary-foreground);
+  --color-muted:                 var(--muted);
+  --color-muted-foreground:      var(--muted-foreground);
+  --color-accent:                var(--accent);
+  --color-accent-foreground:     var(--accent-foreground);
+  --color-destructive:           var(--destructive);
+  --color-destructive-foreground:var(--destructive-foreground);
+  --color-border:                var(--border);
+  --color-input:                 var(--input);
+  --color-ring:                  var(--ring);
+
+  --color-success:               var(--success);
+  --color-success-foreground:    var(--success-foreground);
+  --color-warning:               var(--warning);
+  --color-warning-foreground:    var(--warning-foreground);
+  --color-error:                 var(--error);
+  --color-error-foreground:      var(--error-foreground);
+  --color-info:                  var(--info);
+  --color-info-foreground:       var(--info-foreground);
+
+  --color-sidebar:                     var(--sidebar);
+  --color-sidebar-foreground:          var(--sidebar-foreground);
+  --color-sidebar-primary:             var(--sidebar-primary);
+  --color-sidebar-primary-foreground:  var(--sidebar-primary-foreground);
+  --color-sidebar-accent:              var(--sidebar-accent);
+  --color-sidebar-accent-foreground:   var(--sidebar-accent-foreground);
+  --color-sidebar-border:              var(--sidebar-border);
+  --color-sidebar-ring:                var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-display: var(--font-display);
+  --font-sans:    var(--font-sans);
+  --font-mono:    var(--font-mono);
+
+  --radius: var(--radius);
+}
+
+/* =============================================================================
+ * OPEN (do not treat as final — RFC 0008, for @SKuger01 / brand playground):
+ *   - Non-ERP sub-brand accents (LIS clínico, LIS deportivo, Admisiones, CRM,
+ *     Archivo) — Q1/Q6. Each = ONE accent overriding --primary/--accent/--ring/
+ *     --sidebar-primary only; the status palette + mark constants stay fixed.
+ *   - Final colour-space encoding (oklch vs hsl) + exact dark tints — Q5/Q9.
+ *   - Shell character ("Faro + Instrumento") — surfaced in the playground.
+ * ========================================================================== */
