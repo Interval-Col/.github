@@ -1,9 +1,21 @@
 ---
-status: pending
+status: in-progress
 created: 2026-06-13
 owner: gczuluaga
 tracking-issue: Interval-Col/.github#24
 ---
+
+> **Phase 1 + 2 done (2026-06-14).** `BRAND.md`, `BACKBONE.md`, `BACKBONE.es.md`
+> reconciled to the umbrella model (+ `sub-brands/erp.md` JetBrains→IBM Plex Mono
+> fix and its now-stale "not done" note). Folded the 2026-06-13 walk: Interval =
+> LCH's in-house maker, LCH · Biuman = tenants; ERP = `Pháros · Timón` (Navy +
+> teal); maritime theme + lighthouse→Timón soul bridge; `·` separator; 3-font
+> system (JetBrains dropped); light/dark only via `.dark`; accent-independent
+> status palette; QC = LIS state palette; Archivo = utility; `nucleus-db` never
+> branded. Shared brand SVGs also cleaned (QC sublabel + off-system Helvetica
+> removed, pilot-dot proportion fixed, `@import` XML ampersand escaped). The
+> app-chrome remake (e.g. lab-qc `PharosLogo`) remains as the non-blocking
+> follow-up; lab-qc#8 was closed (folded into the gated remake).
 
 # Brand-doc reconciliation → Pháros umbrella model
 
@@ -39,28 +51,33 @@ live design calls. The *direction* is already locked (RFC 0004 rev. 2026-06-04
 ## Phases
 
 ### Phase 1 — `BRAND.md` (visual/voice spec)
-- [ ] Reframe the opening: Pháros = umbrella family, not "the QC module of LCH".
-- [ ] Brand architecture section: parent + endorsed sub-brands; the
+- [x] Reframe the opening: Pháros = umbrella family, not "the QC module of LCH".
+- [x] Brand architecture section (§10): parent + endorsed sub-brands; the
       shared-vs-differentiated split (shared: type, app-shell, spacing/radius/
       flatness, mark + wordmark, voice, token-contract *names*, gates;
       differentiated: accent value, sub-name, icon tint).
-- [ ] Record the curated family palette + that each sub-brand draws ONE accent;
+- [x] Record the curated family palette + that each sub-brand draws ONE accent;
       seed ERP = Navy `#003A70`.
-- [ ] QC: describe burgundy/red as the LIS **state** palette
+- [x] QC: describe burgundy/red as the LIS **state** palette
       (en-control / fuera-de-control / alerta), explicitly **not** a sibling
       accent.
-- [ ] Archivo = utility tier (neutral accent, no evocative name);
+- [x] Archivo = utility tier (neutral accent, no evocative name);
       `nucleus-db` never branded.
-- [ ] Type section → 3 families (drop the 2nd mono). Theming → light/dark only.
+- [x] Type section → 3 families (drop the 2nd mono). Theming → light/dark only.
 
 ### Phase 2 — `BACKBONE.md` + `BACKBONE.es.md` (strategy)
-- [ ] Same umbrella reconciliation in both language strategy docs.
-- [ ] Keep `.es.md` and `.md` in sync (neutral-Colombian Spanish for `.es.md`).
+- [x] Same umbrella reconciliation in both language strategy docs (light
+      generalization — soul kept near-verbatim; lighthouse→Timón bridge added).
+- [x] Keep `.es.md` and `.md` in sync (neutral-Colombian Spanish for `.es.md`).
 
-### Phase 3 — Downstream chrome (non-blocking, tracked separately)
-- [ ] lab-qc: revisit `PharosLogo`'s "CONTROL DE CALIDAD" sublabel + plain
-      "Pharos" title once QC is officially "surfaces inside LIS". File as a
-      lab-qc follow-up; do **not** block this plan on it.
+### Phase 3 — Downstream chrome (non-blocking)
+- [x] Shared brand SVGs cleaned here: horizontal mark drops the
+      "CONTROL DE CALIDAD" sublabel + the off-system Helvetica face; pilot dot
+      rescaled to the navbar dot:P ratio (horizontal + icon); `@import`
+      ampersand XML-escaped across all six.
+- [ ] App chrome (e.g. lab-qc `PharosLogo`: accent "Pharos"→"Pháros", drop the
+      QC sublabel, Helvetica→IBM Plex Mono) re-syncs with the full logo remake
+      (RFC 0008 Implementation §). Not separately tracked — lab-qc#8 closed.
 
 ## Out of scope
 - The evocative names for the non-ERP siblings (open — RFC 0008 Q1, → SKuger).

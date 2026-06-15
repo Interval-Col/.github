@@ -146,7 +146,7 @@ precise, humanly warm, never alarmist** (see [`../BACKBONE.md`](../BACKBONE.md)
 
 Domain note for the ERP surface: the register is that of correct **Colombian
 accounting practice** — arqueo, base, cuadre, conciliación, retenciones,
-DIAN/UVT. Numbers are stated plainly and exactly (tabular-nums, JetBrains
+DIAN/UVT. Numbers are stated plainly and exactly (tabular-nums, IBM Plex
 Mono per the parent type system); error and validation copy names the
 contable reality precisely rather than softening it. Trust comes from
 accuracy, not reassurance.
@@ -199,11 +199,11 @@ only its degree of family-rhyme changes.
 | Token-contract base | inherit shared contract (shadcn vars) | open-q #4 |
 | Dark / `cobol` theme | inherit family decision | open-q #7 |
 
-> Note: the existing [`../BRAND.md`](../BRAND.md) / [`../BACKBONE.md`](../BACKBONE.md)
-> predate RFC 0004 and still describe Pharos as *the QC module of LCH*
-> rather than the umbrella brand. That reconciliation is its own task and
-> is **not** done here — this doc follows the RFC 0004 / 0008 umbrella model
-> (Pháros = family; Timón = the ERP sub-brand).
+> Note: [`../BRAND.md`](../BRAND.md) / [`../BACKBONE.md`](../BACKBONE.md) were
+> reconciled to the umbrella model (Pháros = family; QC = surfaces inside LIS;
+> Archivo = utility; tenants = LCH · Biuman) in issue #24 (RFC 0008 Q10). This
+> doc and the shared brand source now agree — Pháros = family; Timón = the ERP
+> sub-brand.
 
 ## References
 

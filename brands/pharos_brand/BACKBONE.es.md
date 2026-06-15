@@ -1,5 +1,5 @@
 # Pháros — Backbone
-> Estrategia de marca y fundamento conceptual del módulo de Control de Calidad de LCH.
+> Estrategia de marca y fundamento conceptual de la **familia de productos Pháros** — el software que reemplaza el LIS COBOL, nacida del módulo de Control de Calidad de LCH.
 > Este documento define quién *es* Pháros — su significado, alma y razón de ser — independiente de cómo se ve o cómo habla.
 
 ---
@@ -7,9 +7,9 @@
 ## 1. Cuerpo
 > El contenedor. Lo que Pháros *es* en términos llanos, antes de cualquier emoción o interpretación.
 
-Pháros es el sistema interno de Control de Calidad del Laboratorio Clínico Hematológico. Es el módulo que monitorea, valida y certifica la integridad de cada proceso clínico que ocurre dentro del laboratorio — desde el manejo de muestras hasta la entrega de resultados.
+Pháros es la familia de software que reemplaza el LIS COBOL en los laboratorios del holding. Nació de una disciplina dentro del Laboratorio Clínico Hematológico — el **Control de Calidad**: el módulo que monitorea, valida y certifica la integridad de cada proceso clínico que ocurre dentro del laboratorio — desde el manejo de muestras hasta la entrega de resultados. Esa disciplina fundacional sigue marcando el tono de toda la familia.
 
-Está construido para el equipo del laboratorio, no para los pacientes. Habla el lenguaje de las operaciones internas, la calibración, la verificación y la confianza.
+Está construido para las personas que operan el laboratorio y el holding, no para los pacientes. Habla el lenguaje de las operaciones internas, la calibración, la verificación y la confianza.
 
 ---
 
@@ -24,6 +24,8 @@ El equipo del laboratorio interactúa con Pháros a diario. Pháros debe sentirs
 
 Si el mantra de LCH es *"leer la vida en el tejido, usando la tecnología para ver lo invisible"*, Pháros es la disciplina que hace que esa lectura sea honesta. La luz que revela lo que se esconde — primero dentro del laboratorio mismo, después dentro del paciente.
 
+El faro le da nombre a toda la familia; cada miembro ocupa su lugar en las mismas aguas. Donde Pháros guía desde la costa, **Timón** — el ERP — toma el timón y gobierna la operación desde dentro del barco: el mismo mar, roles complementarios.
+
 ---
 
 ## 3. Ser
@@ -36,7 +38,7 @@ Pháros sabe. Guarda el conocimiento de cada protocolo, cada umbral, cada variac
 Pháros protege. Existe para mantener al laboratorio — y por extensión, a cada paciente — a salvo de fallas invisibles. Su vigilancia es una forma de amor: callada, constante, sin drama. Atrapa errores como una enfermera atenta atrapa una bandeja que cae.
 
 ### Heredado de LCH: Creador
-Pháros está construido sobre la innovación. Usa herramientas modernas para resolver un problema que los laboratorios antiguos resolvían con papeleo y esperanza. Es tecnología al servicio de la vida — exactamente como la marca madre lo exige.
+Pháros está construido sobre la innovación. Usa herramientas modernas para resolver un problema que los laboratorios antiguos resolvían con papeleo y esperanza. Es tecnología al servicio de la vida — exactamente como la cultura de LCH lo exige.
 
 ---
 
@@ -45,7 +47,7 @@ Pháros está construido sobre la innovación. Usa herramientas modernas para re
 
 Pháros convierte el control de calidad de una carga de cumplimiento en una compañía diaria. La mayoría de los sistemas de QC son formularios para llenar, reglas para seguir, auditorías para sobrevivir. Pháros es una presencia que vigila contigo y, en silencio, asegura que la promesa del laboratorio a sus pacientes se está cumpliendo — cada turno, cada muestra, cada resultado.
 
-Es Control de Calidad con un alma que coincide con la de LCH: *vidas, no clientes.*
+Es software con un alma que coincide con la de LCH: *vidas, no clientes.*
 
 ---
 
@@ -68,6 +70,8 @@ Pháros existe por una razón última: una persona real está esperando un resul
 
 ## 6. Meet Your Fan
 > Para quién está construido Pháros. No usuarios casuales — devotos.
+
+Estos tres son los fans fundacionales — las personas del QC y del LIS con las que creció la familia. Cada nueva superficie (ERP, Admisiones, CRM) suma las suyas, pero todas esperan lo mismo que ellos.
 
 **El bacteriólogo en un turno largo.** No tiene tiempo para software torpe. Necesita que Pháros sea rápido, legible, que confirme lo que está funcionando y haga visible lo que no — sin interrumpir su flujo. Cuando Pháros funciona, dejan de notarlo. Ese es el mayor cumplido.
 
@@ -130,7 +134,7 @@ El descriptor más simple posible. Sin metáfora, sin floritura. Pháros no nece
 
 - **Personaje**: profesionales del laboratorio en su trabajo — concentrados, calmos, reales (no fotos de stock)
 - **Espacial**: interiores limpios de laboratorio, luz natural, mínimo desorden — la calma de una biblioteca más que el bullicio de un hospital
-- **Colores**: vinotinto LCH + un solo punto de rojo LCH. Neutros apagados. Casi ningún otro color — Pháros se gana su moderación.
+- **Colores**: la marca Pháros — vinotinto + un solo punto de rojo (la luz piloto). Cada sub-marca añade un acento de la paleta de familia; el vinotinto/rojo del QC vive como la paleta de estado del LIS. Neutros apagados. Casi ningún otro color — Pháros se gana su moderación.
 - **Elementos**: cuadrículas limpias, espacio en blanco generoso, tipografía precisa, gráficos con alineación estricta
 - **Comunicación**: como si pudieras ver la integridad de cada proceso de un solo vistazo — claridad sobre decoración
 
@@ -143,4 +147,4 @@ El descriptor más simple posible. Sin metáfora, sin floritura. Pháros no nece
 
 ---
 
-*Pháros es una sub-marca del Laboratorio Clínico Hematológico. Hereda los arquetipos de LCH (Cuidador, Creador, Sabio) y sus valores (Vidas no clientes, Empatía), y añade su propia especialización: vigilancia, calma, verificación. Su identidad visual siempre debe sentirse como familia con la marca madre LCH — nunca más fuerte, nunca separada, nunca rebelde.*
+*Pháros es la marca paraguas de la familia de software, construida por Interval — The Human Tech Co. (el equipo de software interno de LCH) para los laboratorios del holding (LCH · Biuman). Hereda los arquetipos clínicos de LCH (Cuidador, Creador, Sabio) y sus valores (Vidas no clientes, Empatía), y añade su propia especialización: vigilancia, calma, verificación. Cada sub-marca siempre debe sentirse como familia con la marca Pháros compartida — nunca más fuerte, nunca separada, nunca rebelde.*
