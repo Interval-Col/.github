@@ -799,6 +799,10 @@ procedimiento de protección quedó corrido con merge-commit-only.)*
   `feat|fix|refactor|test|chore|docs|hotfix|ci` (`hotfix` is valid as both a
   branch type and a commit type; `ci` was added org-wide for pipeline-only
   changes). *(2026-06-15.)*
+- **Merge settings enforced live** — on 2026-06-15, `scripts/enforce-merge-policy.sh`
+  was run across all 13 GitHub repos, setting **merge-commit-only + auto-delete-on-merge**
+  (squash + rebase off). Spot-verified on `.github`, `finance-lch`, `biuman-reports`.
+  The script is idempotent and reversible; re-run to re-assert. *(2026-06-15.)*
 
 ## Risks · Riesgos
 
