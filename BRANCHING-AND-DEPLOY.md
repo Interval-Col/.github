@@ -24,7 +24,7 @@ doc is the detailed reference.
 | PR required for `main` | **Yes** — 1 reviewer + green CI |
 | PR required for `develop` | No — direct push allowed; CI still required |
 | Force-push on `main` / `develop` | **Never** (protected) |
-| Required CI on PR-to-`main` | `gitleaks`, `lint-frontend`, `lint-backend`, `test-frontend`, `test-backend`, `verify-api-contract` (+ any repo-specific design-system gates). Docs-only repos require `gitleaks` only. |
+| Required CI on PR-to-`main` | `gitleaks` (the one universally-required context) + the repo's lint, unit-test and API-contract checks — **exact job/context names are per-repo** (illustratively `lint-frontend`/`test-backend`/`verify-api-contract`) — plus any repo-specific design-system gates. Docs-only repos require `gitleaks` only. |
 | Prod deploy trigger | **Auto on merge to `main`** (PR review = deploy approval) |
 | Dev-server deploy trigger | Auto on push to `develop` |
 | Build / promote model | **Build once on `develop`, promote SAME image to prod** — never rebuild per environment (see §"Build-once-promote") |
@@ -198,7 +198,7 @@ ruleset model). Apply the rule to the named branch.
 | Dismiss stale pull-request approvals when new commits are pushed | ✅ |
 | Require review from Code Owners | ✅ |
 | Require status checks to pass before merging | ✅ |
-| Required status checks | **`gitleaks`** (secret scan — required on every repo, even docs-only), lint-frontend, lint-backend, test-frontend, test-backend, verify-api-contract, plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
+| Required status checks | **`gitleaks`** (secret scan — the one context required on every repo, even docs-only). Code repos additionally require their lint, unit-test and API-contract checks; **the job/context names are per-repo** and must be set to match that repo's actual CI (illustratively `lint-frontend`/`lint-backend`/`test-frontend`/`test-backend`/`verify-api-contract`), plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
 | Require branches to be up to date before merging | ✅ (anchors each arc to current `main`) |
 | Require conversation resolution before merging | ✅ |
 | Require linear history | ❌ (incompatible with merge commits — intentionally off; the PR-required gate above keeps history clean instead) |
@@ -733,7 +733,7 @@ When bootstrapping a new repo (or auditing an existing one), copy this
 checklist:
 
 - [ ] `.github/workflows/gitleaks.yml` — secret-scan; required check `gitleaks` (**every repo**, including docs-only)
-- [ ] `.github/workflows/ci.yml` — checks `lint-frontend`, `lint-backend`, `test-frontend`, `test-backend`, `verify-api-contract` (if full-stack) _(code repos only; docs-only repos require `gitleaks` + stale only)_
+- [ ] `.github/workflows/ci.yml` — runs the repo's lint, unit-test and API-contract checks; **name the required contexts to match your CI** (illustratively `lint-frontend`/`lint-backend`/`test-frontend`/`test-backend`/`verify-api-contract` for full-stack) _(code repos only; docs-only repos require `gitleaks` + stale only)_
 - [ ] `.github/workflows/ci-cd.yml` — push-to-develop → dev server; push-to-main → prod _(code repos only; docs-only repos require `gitleaks` + stale only)_
 - [ ] `.github/workflows/stale.yml` — stale@30d + close@90d cleanup
 - [ ] `.github/CODEOWNERS` — at minimum, one owner per top-level dir

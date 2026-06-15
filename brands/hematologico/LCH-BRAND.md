@@ -329,27 +329,30 @@ The logo has three elements:
 
 ### 4.2 Logo Versions
 
-> **Reconciled to the actual committed assets** in `brands/hematologico/logos/`
-> (run `ls` to confirm). These are the **real files**; the idealized
-> `logo-vertical-color.svg`-style naming previously listed here did not exist on disk.
-> Files marked **canonical** are the approved versions for current use. Vector (SVG)
-> exports do **not** exist yet — see TODO below.
+> **Reconciled to the actual committed assets** in `brands/hematologico/logos/`,
+> renamed to a consistent kebab-case scheme and **verified against the rendered
+> artwork** — the legacy `LOGO.png` / `Logo horizontal.png` filenames had the
+> orientation backwards (`LOGO.png` was the horizontal lockup; `Logo horizontal.png`
+> was the vertical/stacked one). Files marked **canonical** are the approved versions.
+> Each canonical mark now also ships a `.svg` — see the SVG note below.
 
-| File (actual) | Version | Canonical? | Use Case |
+| File | Version | Canonical? | Use Case |
 |---|---|---|---|
-| `LOGO.png` | Full color, full lockup | ✅ canonical | Primary — white backgrounds. |
-| `LOGO_BLANCO.png` | All white | ✅ canonical | Dark / red / navy backgrounds. |
-| `LOGO_BLANCO2_Mesa de trabajo 1.png` | All white (alt artboard export) | — | Variant export; prefer `LOGO_BLANCO.png`. |
-| `Logo horizontal.png` | Horizontal lockup | ✅ canonical | Side-by-side contexts, wide headers. |
-| `logo_simbolo.png` | Symbol / isotipo only | ✅ canonical | Favicon, avatar, small icon slots (≥32px). |
-| `logonuevo.png` | Full color (updated mark) | — | Legacy/transitional export; verify before use. |
-| `logo1.png` | Full color (early export) | — | Legacy export; do not use for new UI. |
-| `logoKOC.png` | Single-color / print variant | — | Legacy print variant; verify with brand mgmt. |
+| `logo-horizontal-color.{svg,png}` | Horizontal lockup (icon + name + descriptor in a row) | ✅ canonical | Wide headers, navbars, side-by-side contexts. |
+| `logo-vertical-color.{svg,png}` | Vertical / stacked lockup (icon over name over descriptor) | ✅ canonical | Square-ish contexts; primary on white. |
+| `logo-white.{svg,png}` | All white (horizontal lockup) | ✅ canonical | Dark / red / navy backgrounds. |
+| `logo-icon-color.{svg,png}` | Symbol / isotipo only (DNA-helix "H") | ✅ canonical | Favicon, avatar, small icon slots (≥32px). |
+| `logo-white-alt.png` | All white (alt artboard export) | — | Variant; prefer `logo-white`. |
+| `logo-alt-nuevo.png` | Full color (updated mark) | — | Legacy/transitional export; verify before use. |
+| `logo-alt-1.png` | Full color (early export) | — | Legacy export; do not use for new UI. |
+| `logo-koc.png` | Single-color / print variant | — | Legacy print variant; verify with brand mgmt. |
 
-> **TODO (assets):** no SVG exports are committed. Produce vector versions of the
-> canonical four (`LOGO`, `LOGO_BLANCO`, `Logo horizontal`, `logo_simbolo`) and a true
-> single-color red/black mono lockup; until then, components must reference the `.png`
-> files above.
+> **SVG status (stopgap).** The four canonical `.svg` files exist but currently
+> **embed the raster PNG as a base64 data URI** — they render anywhere (`<img src>`,
+> CSS background) but are **not true vectors**. **TODO:** replace with hand-authored
+> vector exports of the canonical four + a true single-color red/black mono lockup.
+> (The gitleaks allowlist exempts `brands/**/logos/*.svg` so the embedded blob doesn't
+> trip the entropy rule — see `.gitleaks.toml`.)
 
 ### 4.3 Clear Space
 Minimum clear space = **2× the height of the letter "H" in "Hematológico"** on all sides. In special cases minimum is 1× (requires brand management approval).
@@ -378,10 +381,9 @@ Never: rotate, tilt, stretch, distort, outline, add drop shadows, change individ
 
 ### 4.8 Vue Component Usage
 
-> **Filenames reconciled to the actual committed `.png` assets** (see §4.2). The previous
-> example computed non-existent `logo-${variant}-${bg}.svg` paths. Until SVG exports exist
-> (§4.2 TODO), the component must map to the real canonical files:
-> `Logo horizontal.png`, `LOGO_BLANCO.png`, `logo_simbolo.png`, `LOGO.png`.
+> **Filenames map to the kebab-case canonical assets** (see §4.2). The `.svg` files are
+> raster-embedded stopgaps today (§4.2 SVG status) but resolve fine via `<img src>`;
+> swap to true vectors when they land — no code change needed.
 
 ```vue
 <!-- Use as <LchLogo> with theme prop -->
@@ -400,14 +402,14 @@ const props = defineProps({
   size: { type: String, default: 'default' },   // 'default' | 'navbar' | 'icon'
 })
 
-// Maps to the real committed files in brands/hematologico/logos/ (all .png; no SVGs yet).
+// Maps to the canonical kebab-case assets in brands/hematologico/logos/.
 const logoSrc = computed(() => {
-  if (props.size === 'icon') return '/assets/logos/logo_simbolo.png'   // symbol only
-  if (props.theme === 'dark') return '/assets/logos/LOGO_BLANCO.png'   // white, for dark/red/navy bg
-  // light theme: horizontal lockup for navbar, full lockup otherwise
+  if (props.size === 'icon') return '/assets/logos/logo-icon-color.svg'       // symbol only
+  if (props.theme === 'dark') return '/assets/logos/logo-white.svg'           // white, for dark/red/navy bg
+  // light theme: horizontal lockup for navbar, vertical (stacked) otherwise
   return props.size === 'navbar'
-    ? '/assets/logos/Logo horizontal.png'
-    : '/assets/logos/LOGO.png'
+    ? '/assets/logos/logo-horizontal-color.svg'
+    : '/assets/logos/logo-vertical-color.svg'
 })
 
 const height = computed(() => ({
