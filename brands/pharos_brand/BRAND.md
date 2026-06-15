@@ -415,6 +415,8 @@ nucleus-db — shared infrastructure, never branded
 
 **Tenant co-branding.** LCH and Biuman are tenants, not parents — a tenant **never prefixes an app name** (it is `Pháros · Timón`, never "LCH Pháros"). Where a tenant must appear (e.g. a login footer), use a small `para [tenant]` / "by [tenant]" credit; the Pháros brand wins on its own screens. (The exact co-brand lockup — peer sizing, placement — is a small open spec.)
 
+**Maker credit (every app).** Every Pháros app shows a small maker credit in the footer / app-shell chrome: the Interval `[ ]` bracket mark + **"Hecho por Interval · Tecnología Humana"**. Render it **monochrome and muted** — `text-neutral-gray-dark` on light, the muted foreground on dark — **never** with Interval's orange/indigo, always small and subordinate so the Pháros brand owns the screen. (This is the sanctioned "made by the studio" context; Interval branding belongs only here, not in the app's primary chrome — see `../interval/INTERVAL-BRAND.md` §10.) Use a clean single-colour export of the Interval icon (`../interval/logos/interval-icon`); it inherits the current text colour (no fixed fill), so it flips correctly in dark mode.
+
 ---
 
 ## 11. Quick Reference Card
@@ -423,6 +425,7 @@ nucleus-db — shared infrastructure, never branded
 FAMILY            Pháros — umbrella for the software family (replaces the COBOL LIS)
 BUILT BY          Interval · The Human Tech Co. (LCH's in-house team)
 SERVES            LCH · Biuman (tenants)
+MAKER CREDIT      [ ] Hecho por Interval · Tecnología Humana  (footer · muted · mono)
 
 LOGO              Wordmark "Pháros" + red pilot-light dot above the P (shared constant)
 WORDMARK FONT     Fraunces (variable serif, 400 weight)
