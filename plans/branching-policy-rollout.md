@@ -1,10 +1,23 @@
 ---
-status: pending
+status: in-progress
 created: 2026-06-04
+updated: 2026-06-15
 owner: gczuluaga
+implementation: gczuluaga
+language: English body; Spanish "Resumen" + decision/criteria glosses.
 ---
 
-# Branching & Deploy Policy — Per-Repo Rollout
+# Branching & Deploy Policy — Per-Repo Rollout · Política de ramas y despliegue — Despliegue por repo
+
+> **Resumen (ES).** Este plan rastrea, repo por repo, la aplicación de la
+> política de ramas y despliegue (`BRANCHING-AND-DEPLOY.md`). Para cada uno de
+> los siete repos en alcance fija el mismo conjunto: protección de ramas en
+> `main` y `develop`, CODEOWNERS, plantilla de PR, workflow de stale, los 5
+> hooks de pre-commit obligatorios, y la migración CI/CD a build-once-promote.
+> El objetivo es llevar cada repo a "cumplido" sin perder de vista en qué etapa
+> está cada uno. Las decisiones ya cerradas (GitFlow-lite, merge-commit vía PR,
+> conventional commits, build-once-promote) **no** se debaten aquí — solo el
+> trabajo de hacerlas reales por repo.
 
 This plan tracks per-repo enforcement of the branching-and-deploy policy that
 landed in [PR Interval-Col/.github#4](https://github.com/Interval-Col/.github/pull/4)
@@ -17,11 +30,170 @@ policy without losing track of which repo is at which stage. Locked decisions
 build-once-promote, etc.) are not up for debate here — only the work to make
 them real per repo.
 
-## At-a-glance status matrix
+---
 
-Legend: ✅ done · ⚠️ partial / nuance · ❌ missing · ❗ active problem · n/a not applicable
-· "develop only" = artifact exists on `develop` but **not on the default branch**, so it
-does not enforce (GitHub reads CODEOWNERS + produces Actions checks from the default branch).
+## How to use this plan · Cómo usar este plan
+
+**EN.** This plan is written to be executed with AI-agent assistance —
+that is expected and encouraged. The plan, not the agent, makes the
+technical decisions. Your job has three parts: **execute** the tasks,
+**verify** each one against its Done-when list, and **escalate** the
+decisions the plan marks for a human.
+
+Read each task fully — including its **Why** and **Done-when** — *before*
+you start it. A task is not finished because an agent said so; it is
+finished when every Done-when line is literally true and you have
+checked it yourself.
+
+If a task or its **Why** doesn't make sense, that is a gap in *this
+plan*, not a failing in you — stop and ask @gczuluaga. A question costs
+minutes; a misunderstanding shipped costs days.
+
+**If the English here slows you down:** every section opens with a
+Spanish **Resumen**, and your AI agent will translate or explain any
+part of this plan in Spanish if you ask it — that is a completely
+legitimate thing to do. Don't let the language be the reason a task
+stalls.
+
+**ES.** Este plan está escrito para ejecutarse con ayuda de agentes de
+IA — eso se espera y se fomenta. Las decisiones técnicas las toma el
+plan, no el agente. Tu trabajo tiene tres partes: **ejecutar** las
+tareas, **verificar** cada una contra su lista *Done-when*, y **escalar**
+las decisiones que el plan marca para un humano.
+
+Lee cada tarea completa — incluyendo su **Why** y su **Done-when** —
+*antes* de empezarla. Una tarea no está terminada porque un agente lo
+diga; está terminada cuando cada línea *Done-when* es literalmente cierta
+y tú mismo la verificaste.
+
+Si una tarea o su **Why** no te quedan claras, eso es un vacío de *este
+plan*, no una falla tuya — pregúntale a @gczuluaga. Y si el inglés te
+frena: cada sección tiene un **Resumen** en español, y tu agente de IA
+te traduce o explica cualquier parte en español si se lo pides — hazlo
+sin problema.
+
+## Conventions · Convenciones
+
+| Marker | Meaning |
+|---|---|
+| 💡 **Heuristic** | A short engineering or working lesson. Worth 30 seconds. *(ES: heurística — lección breve.)* |
+| 🛑 **HUMAN DECISION** | A choice the plan deliberately does not make. **Do not let an agent pick it.** Escalate to @gczuluaga. *(ES: decisión humana — no la toma un agente; escala a @gczuluaga.)* |
+| ✅ **Done-when** | The Definition of Done. The phase is verified only when every line is literally true. *(ES: terminado-cuando — definición de "hecho".)* |
+| 🚦 **Checkpoint** | Stop. Show @gczuluaga the named evidence and answer the questions before continuing. **Mandatory stop — including in auto mode** (see Working rules). *(ES: punto de control — alto obligatorio, también en modo auto.)* |
+
+> **Status-matrix legend (this plan's tracker uses a second, distinct
+> vocabulary in the at-a-glance matrix below):** ✅ done · ⚠️ partial /
+> nuance · ❌ missing · ❗ active problem · ⏸️ deferred · n/a not
+> applicable · "develop only" = artifact exists on `develop` but **not on
+> the default branch**, so it does not enforce (GitHub reads CODEOWNERS +
+> produces Actions checks from the default branch). *(ES: la matriz de
+> estado usa este segundo juego de íconos — no confundir con los markers
+> de arriba.)*
+
+> **On the checkpoints.** Each 🚦 lists evidence to show and questions to
+> answer. The questions are **not a test of you** — they test whether
+> the plan explained things well enough. @gczuluaga may also ask any of
+> them at any time. *(ES: las preguntas del checkpoint no son un examen
+> tuyo — prueban si el plan explicó bien; @gczuluaga puede preguntarlas en
+> cualquier momento.)*
+
+## Working rules · Reglas de trabajo
+
+These apply to every phase.
+
+- **Commit and push after every slice.** When a task group or a phase is
+  done and its Done-when checks pass, commit and push to GitHub
+  **immediately**. Work that lives only on your laptop cannot be seen,
+  reviewed, helped with, or recovered. *(ES: haz commit y push a GitHub
+  apenas termines — el trabajo que solo vive en tu laptop no existe para
+  el equipo.)*
+- **Commit messages — Conventional Commits, scope required.**
+  `type(scope): description` — e.g. `chore(lab-qc): add policy chrome`.
+  `type` ∈ `feat|fix|refactor|test|chore|docs|hotfix|ci`. The `(scope)` is
+  **mandatory**. Branch names mirror it: `type/scope-short-description`.
+  (`hotfix` and `ci` are both valid here — `hotfix` is a branch type *and*
+  a commit type; `ci` was added org-wide for pipeline-only changes.)
+  *(ES: Conventional Commits; el `(scope)` es obligatorio; la rama
+  refleja el commit.)*
+- **Review the frontend yourself, in the browser.** A phase that touches
+  the UI is **not verified** because the backend endpoint returned `200`
+  — it is verified when you have opened the app, clicked through what
+  you built, and seen it work the way a real user would use it. *(ES:
+  revisa el frontend tú mismo, en el navegador — un `200` del backend no
+  es una funcionalidad que sirve.)*
+- **Which AI tool:** Claude **Sonnet** by default; **Opus** when a task
+  is hard or you are stuck; **Copilot** for inline autocomplete and
+  quick questions — not for executing a whole task. *(ES: Sonnet por
+  defecto; Opus cuando es difícil o te atascas; Copilot para
+  autocompletar.)*
+- **You can tell your agent to skip the Why boxes — we won't stop you.**
+  But the 🚦 checkpoint questions are asked by a person, and that you
+  cannot outsource. Reading as you go is the cheap way to be ready.
+  *(ES: puedes pedirle a tu agente que se salte las explicaciones — pero
+  las preguntas del checkpoint las hace una persona; eso no se delega.)*
+- **Auto mode is slice-bounded.** Auto mode (running without clarifying
+  questions between turns) is allowed for the duration of **one
+  slice** — a single numbered task, or one phase when the plan groups
+  tasks that way. At the end of every slice, the agent **STOPS**,
+  surfaces what landed (Done-when items verified, files touched,
+  what's next), and waits for explicit human acknowledgement before
+  starting the next slice. At 🚦 Checkpoints the stop is stronger —
+  the human walks the evidence with the agent. Auto mode is **never**
+  "execute the whole plan unattended." *(ES: el modo auto va por
+  slice, no por plan entero. Al final de cada slice, el agente
+  **PARA**, te muestra qué cerró (Done-when, archivos tocados, qué
+  viene) y espera tu visto bueno antes del siguiente slice. En los
+  🚦 el alto es más fuerte — recorres la evidencia con el agente.
+  Auto **nunca** significa "ejecuta el plan completo solo".)*
+
+## Glossary · Glosario
+
+> **Resumen (ES).** Términos técnicos en inglés que vas a ver muchas
+> veces en este plan, con su traducción y una línea de qué significan.
+> Si te encuentras un término del plan que no está aquí y no lo
+> entiendes, pregúntale a tu agente — no es una falla tuya, es un vacío
+> de esta tabla.
+
+| English | Español | Means |
+|---|---|---|
+| branch protection (BP) | protección de rama | the GitHub ruleset on `main`/`develop` that forces PR + checks + reviews before a merge |
+| hollow protection | protección hueca | `main` requires checks whose producing workflows live only on `develop` — the rule exists but enforces nothing real |
+| chrome | "chrome" / herrajes de gobierno | the governance files a repo needs: CODEOWNERS, PR template, `stale.yml`, `gitleaks.yml` |
+| build-once-promote | construir-una-vez-y-promover | build the image once on `develop`, then retag the *same* digest `:dev → :prod` — never rebuild per env |
+| promote (develop → main) | promover | a merge-commit PR carrying develop's state to main; for deploy repos it also retags the image to prod |
+| pre-commit hook | hook de pre-commit | a local git check (gitleaks, ruff, branch-name-lint, etc.) that runs before a commit/push lands |
+| required status check | check requerido | a CI job GitHub forces green before a PR can merge (e.g. `gitleaks`) |
+| merge-commit model | modelo merge-commit | merges create a merge commit using the PR title; squash and rebase are **off** |
+| Done-when | terminado-cuando | the literal checkable list that means the task is verified |
+| commit + push | hacer commit y push | save to git locally **and** send to GitHub — both verbs |
+
+## Out of scope · Fuera de alcance
+
+> **Resumen (ES).** Lo siguiente **no** es parte de este alcance — es
+> para después o pertenece a otro workstream. Si un agente sugiere
+> construir algo de esta lista, no lo hagas.
+
+Explicitly out of scope — not for this plan:
+
+- **Design-system (DS) gates job.** No repo implements a DS-gate required
+  check today; tracked as a separate cross-cutting workstream (the Pháros
+  registry rollout), not here. This rollout closes without it.
+- **Required-status-check name standardization.** Each repo's job names
+  differ (`lint-frontend` vs `lint`, etc.); enumerate per-repo for now,
+  standardize as a follow-up.
+- **Prod go-live for `cobol-migration`** (wiring `production` secrets +
+  flipping the flag) — owned separately by @ychejne-jpg via issue #7.
+
+---
+
+## At-a-glance status matrix · Matriz de estado
+
+> **Resumen (ES).** Una fila por repo, una columna por artefacto de la
+> política. Lee la celda como el estado en la rama **por defecto** (lo que
+> GitHub realmente exige). Corregida el 2026-06-13 tras un re-verify en
+> vivo con `gh api` de los 7 repos.
+
+Legend: see the **status-matrix legend** under Conventions above.
 
 > **Corrected 2026-06-13 from a live `gh api` re-verify of all 7 repos** (see the
 > RE-VERIFY note below). The previous matrix overstated finance-lch / lab-qc / cobol-migration
@@ -54,7 +226,7 @@ jobs pattern).
 PR template, stale), all 5 pre-commit policy hooks (lockstep with finance-lch),
 `ci-cd.yml` migrated to build-once-promote (merged to `develop` via PR
 Interval-Col/lab-qc#3; the `promote-*` jobs correctly skip on a `develop` push
-and the dev deploy is green), repo settings (squash-only + auto-delete +
+and the dev deploy is green), repo settings (merge-commit-only + auto-delete +
 Discussions), and branch protection on `develop`. **Deferred by the owner**: the
 first `develop → main` promote (which exercises the prod promote path) and branch
 protection on `main` — these are bundled to land together in a later prod-side
@@ -134,10 +306,17 @@ would have caught it are in **["Re-verifying this tracker"](#re-verifying-this-t
 
 ## Re-verifying this tracker — read this before trusting or editing the matrix
 
-This tracker is a **derived view**, not the source of truth — the live repos are.
-It is hand-edited across sessions and **goes stale**. On 2026-06-13 a full
-re-verify produced *four* wrong intermediate findings before the truth settled;
-the traps below are subtle and bit repeatedly. Follow the rules or repeat them.
+> **Resumen (ES).** Este tracker es una **vista derivada**, no la fuente de
+> verdad — los repos en vivo lo son. Se edita a mano entre sesiones y **se
+> pone obsoleto**. Las 5 reglas de abajo evitan los errores sutiles que
+> mordieron repetidamente el 2026-06-13. Síguelas o los repetirás.
+
+💡 **Heuristic.** This tracker is a **derived view**, not the source of
+truth — the live repos are. It is hand-edited across sessions and **goes
+stale**. On 2026-06-13 a full re-verify produced *four* wrong intermediate
+findings before the truth settled; the traps below are subtle and bit
+repeatedly. Follow the rules or repeat them. *(ES: la matriz miente con el
+tiempo — re-deriva con estas reglas y pon fecha.)*
 
 1. **A cell reflects the DEFAULT branch — that's what GitHub enforces.** Branch
    protection, CODEOWNERS routing, and required-check *producers* are all read by
@@ -174,7 +353,32 @@ ground moves between sessions.
 
 ---
 
-## `Interval-Col/.github`
+## Phase 1 — Per-repo rollout (one section per repo)
+
+> **Resumen (ES) — Fase 1: Despliegue por repo.**
+>
+> Esta fase es el grueso del trabajo: llevar cada uno de los 7 repos al
+> estado "cumplido" de la política. Cada repo es su propia sub-sección con
+> su checklist y su dueño.
+>
+> En orden, los repos:
+>
+> 1. **1.1 `.github`** — el meta-repo que hospeda los configs canónicos que
+>    los demás copian. ✅ Hecho.
+> 2. **1.2 `finance-lch`** — implementación de referencia (lado develop);
+>    falta promover el chrome a `main`.
+> 3. **1.3 `lab-qc`** — lado develop hecho; el bundle de prod (promote +
+>    BP main) ya entró el 06-07.
+> 4. **1.4 `commercial-lch`** — totalmente cumplido, primer pipeline
+>    build-once-promote probado en prod.
+> 5. **1.5 `cobol-migration`** — totalmente cumplido; deploy a prod
+>    flag-gated hasta que pasen los gates de readiness.
+> 6. **1.6 `admission-patient`** — listo en todo menos el port del deploy
+>    (H2), diferido a propósito.
+> 7. **1.7 `operations`** — docs-only; cumplido en forma reducida (gitleaks
+>    como hook de carga).
+
+### 1.1 `Interval-Col/.github`
 
 **Status (2026-06-06):** ✅ **DONE.** The meta-repo now carries the chrome it prescribes and hosts the canonical configs the other repos copy. Docs-only/meta repo — **no `develop`, no CI/CD** (same shape as `operations`). Chrome landed via the `.github` chrome PR; repo settings + branch protection on `main` applied via `gh api` immediately after.
 
@@ -195,7 +399,7 @@ ground moves between sessions.
 
 ---
 
-## `Interval-Col/finance-lch`
+### 1.2 `Interval-Col/finance-lch`
 
 > ⚠️ **SUPERSEDED by the 2026-06-13 re-verify** (see RE-VERIFY note above). The
 > "DONE" status below reflects **develop-side** work. The governance chrome
@@ -203,22 +407,22 @@ ground moves between sessions.
 > `develop` only and **404 on `main`**, so `main` branch protection is hollow.
 > The "follow-up develop → main PR" referenced below did not actually carry the
 > `.github/` chrome to `main`. Real remaining work: promote chrome to `main` +
-> backfill pre-commit hooks (currently 2/4).
+> backfill pre-commit hooks (currently 2/4 on `main`; 4/4 on `develop`).
 
 **Status (2026-06-04, develop-side):** All policy chrome landed on `develop`, ci.yml/ci-cd.yml migrated to build-once-promote. Landed via PR Interval-Col/finance-lch#8. Repo settings + branch-protection rules applied via `gh api`.
 
 **Update 2026-06-06:** server-side **gitleaks gate** added — required status check on `main` + `develop` (PR Interval-Col/finance-lch#9) — and the repo flipped to the **merge-commit model** (squash off, linear-history off, PR-title merge messages). A one-time full-history gitleaks audit surfaced a real leak: `cobolql` API tokens + `finance_user` DB creds in `jobs/config.json` history (file already removed from `develop`). **Rotated by @gczuluaga**; the dead values are allowlisted in finance-lch's own `.gitleaks.toml` with an incident pointer, and mock-IAM / `dev-admin` placeholders are allowlisted via the canonical `.github/.gitleaks.toml`. Full-history scan: clean (462 commits).
 
-- [x] Land policy assets — landed via PR #8 to `develop`, then promoted to `main` through the policy's own PR/squash-merge flow.
+- [x] Land policy assets — landed via PR #8 to `develop`, then promoted to `main` through the policy's own PR/merge-commit flow.
 - [x] Add `.github/CODEOWNERS` — initial domain map (backend / frontend / contabilidad / infra / plans+docs), catch-all `*` → `@gczuluaga`; `frontend/` → `@SKuger01`; contabilidad cross-cutting paths require both.
-- [x] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What changed / Test plan / Rollout notes, with the CC-format reminder in the HTML preamble (squash-merge makes the PR title load-bearing).
+- [x] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What changed / Test plan / Rollout notes, with the CC-format reminder in the HTML preamble (the merge-commit model makes the PR title load-bearing).
 - [x] Add `.github/workflows/stale.yml` — `actions/stale@v9`, 30d warn / 60d notify / 90d archive, daily 13:00 UTC, opt-out via `do-not-stale` label.
 - [x] Extend `.pre-commit-config.yaml` with the 5 policy hooks — `check-case-conflict`, `gitleaks` (v8.21.2), `ruff`/`ruff-format` (format-on-stage), `conventional-pre-commit` (v3.6.0, commit-msg stage), local `scripts/check-branch-name.sh` (pre-push stage). 12 hooks total across 3 stages.
 - [x] `ci.yml` was already at parity with the policy on this — `Frontend lint (ESLint)`, `Backend lint (Ruff + Pyright)`, `Frontend tests (Vitest)`, `Backend tests (pytest)`, `Verify API contract (regenerate then diff)`, and `Block local IAM from leaking into deploy compose` are all 6 wired into branch protection as the required check set. The audit originally flagged `verify-api-contract` as missing — that was stale; the job has existed since the API-contract slice landed in Phase 3.
-- [ ] Add design-system gates job — **deferred** (see Open Questions). No repo implements this yet; tracked as a separate workstream.
-- [x] Enable branch protection on `main` — applied via `gh api PUT /repos/.../branches/main/protection`. Ruleset: 6 required checks (above), 1 reviewer, dismiss stale on new commits, CODEOWNERS review required, linear history, resolved conversations required, no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation per policy).
+- [ ] Add design-system gates job — **deferred** (see Decisions / Out of scope). No repo implements this yet; tracked as a separate workstream.
+- [x] Enable branch protection on `main` — applied via `gh api PUT /repos/.../branches/main/protection`. Ruleset: 6 required checks (above), 1 reviewer, dismiss stale on new commits, CODEOWNERS review required, linear-history off (merge-commit model), resolved conversations required, no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation per policy).
 - [x] Enable branch protection on `develop` — applied via `gh api`. Same 6 required checks; PR optional (direct push allowed); no force-push, no deletions; linear history not required.
-- [x] Repo settings — `gh api PATCH /repos/...`: `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`.
+- [x] Repo settings — `gh api PATCH /repos/...`: `delete_branch_on_merge=true`, `allow_squash_merge=false`, `allow_merge_commit=true`, `allow_rebase_merge=false`, `has_discussions=true` (merge-commit-only).
 - [x] Migrate `ci-cd.yml` to build-once-promote — push to `develop` builds `${REPO}:dev` + `${REPO}:<sha>` and deploys dev; push to `main` runs new `promote-frontend`/`promote-backend` jobs that **pull `${REPO}:dev`, retag as `${REPO}:prod` + `${REPO}:<main-sha>`, push**. Same `sha256` digest from dev → prod. `workflow_dispatch` action set expanded with `promote-and-deploy` and `promote-only`. A safety check in the `config` job refuses to BUILD a prod image from a push event.
 
 **Owner:** @gczuluaga (executed 2026-06-04).
@@ -227,7 +431,7 @@ Actual effort: ~3h end-to-end including the chrome, hook configs, CI/CD migratio
 
 ---
 
-## `Interval-Col/lab-qc`
+### 1.3 `Interval-Col/lab-qc`
 
 > ⚠️ **SUPERSEDED by the 2026-06-13 re-verify** (see RE-VERIFY note above). This
 > section's "done" claims are **develop-side only and partly inaccurate**. Live
@@ -235,14 +439,14 @@ Actual effort: ~3h end-to-end including the chrome, hook configs, CI/CD migratio
 > are **404 on `main`** (develop only); `main` branch protection requires **7
 > status checks with zero producing workflows on `main`** (incl. an orphaned
 > `gitleaks` check), so PRs to `main` would block; the `.pre-commit-config.yaml`
-> carries **0/4 policy hooks** (ruff+eslint only), not the "5 hooks" claimed. The
-> 2026-06-07 leak rotation below is real and stands. Real remaining work: promote
-> chrome to `main`, add the policy pre-commit hooks, confirm the gitleaks workflow
-> reaches `main` so its required check has a producer.
+> on `main` carries **0/4 policy hooks** (ruff+eslint only) vs **4/4 on `develop`**.
+> The 2026-06-07 leak rotation below is real and stands. Real remaining work:
+> promote chrome to `main`, confirm the gitleaks workflow reaches `main` so its
+> required check has a producer.
 
 **Status (2026-06-05):** ⏸️ **DEVELOP-SIDE DONE; prod bundle deferred.** Chrome,
 all 5 pre-commit hooks, build-once-promote migration, repo settings, and branch
-protection on `develop` all landed via PR Interval-Col/lab-qc#3 (squash-merged to
+protection on `develop` all landed via PR Interval-Col/lab-qc#3 (merge-commit to
 `develop`; dev deploy green). The owner deliberately deferred the first
 `develop → main` promote and branch protection on `main` to a later prod-side
 session — see the 2026-06-05 headline note above.
@@ -267,7 +471,7 @@ Actual effort (develop-side): ~2h — chrome + hooks + ci-cd migration + local g
 
 ---
 
-## `Interval-Col/commercial-lch`
+### 1.4 `Interval-Col/commercial-lch`
 
 **Status (2026-06-13):** ✅ **FULLY DONE — chrome + gitleaks + protection + settings + build-once-promote.** Unlike the other deploy-capable repos, everything was taken **all the way to `main` the same day** (default branch was already `main`), so branch protection is **real, not hollow**, and commercial-lch is the **first repo with a verified build-once-promote pipeline live on prod**.
 
@@ -288,7 +492,7 @@ Net: commercial-lch is **fully policy-compliant** — branching + protection + c
 
 ---
 
-## `Interval-Col/cobol-migration`
+### 1.5 `Interval-Col/cobol-migration`
 
 **Status (2026-06-13):** ✅ **FULLY DONE — chrome + gitleaks + protection + settings + build-once-promote (prod deploy flag-gated).** Chrome bootstrapped on `develop` (PR #1), then everything promoted to `main` (PR #6) so branch protection is **real, not hollow**. The `ci-cd.yml` is now build-once-promote (PR #4) with the prod deploy **gated behind `COBOL_PROD_DEPLOY_ENABLED`** (PR #5) — a push to `main` promotes the `etl-cobol:dev` image to `:prod` but **skips the deploy** (golden rule: no income to prod until the RFC 0002 CSRF decision). Prod go-live (Phase 1) is owned by @ychejne-jpg via issue #7 + `operations/plans/cobol-migration-promote-to-prod.md`.
 
@@ -311,7 +515,7 @@ Net: cobol-migration is **fully policy-compliant** — chrome + protection + set
 
 ---
 
-## `Interval-Col/admission-patient`
+### 1.6 `Interval-Col/admission-patient`
 
 **Status (2026-06-13):** ✅ **PREPPED** (deploy port deferred). The "KNOWN-RED CI / Phase H2 blocker" is **resolved**: `@intervalica/alexandria` (the unreachable private package) was removed in the shadcn-vue migration, so CI is green again — no OIDC/private-registry work needed. With CI green, the full rollout landed. **The only deferred piece is the deploy pipeline** (Bitbucket-era ECR/SSH → build-once-promote), which is genuine H2 work and doesn't block the rest.
 
@@ -331,7 +535,7 @@ Net: admission-patient is policy-compliant on branching + protection + chrome + 
 
 ---
 
-## `Interval-Col/operations`
+### 1.7 `Interval-Col/operations`
 
 **Status (2026-06-06):** ✅ **DONE.** Private operational docs repo. **No code → no CI/CD migration**, no build-once-promote, no deploy pipeline. The policy applied in a slimmed-down form: chrome + protection + a minimum pre-commit set where **gitleaks is the load-bearing hook** (the whole repo is sensitive ops content; a credential leak here is the worst case the convention is designed to prevent). Wave 1 chrome landed via PR Interval-Col/operations#3; repo settings + branch protection on `main` applied via `gh api` immediately after.
 
@@ -348,22 +552,63 @@ Net: admission-patient is policy-compliant on branching + protection + chrome + 
   - Local `scripts/check-branch-name.sh` (pre-push stage) — byte-for-byte from finance-lch/lab-qc.
   - **Skipped `ruff`/`ruff-format`/`eslint` (format-on-stage)** — nothing to format. The hook set adapts to the repo shape. **(operations#3)**
 - [x] Repo settings via `gh api PATCH /repos/Interval-Col/operations`:
-  - `delete_branch_on_merge=true`, `allow_squash_merge=true`, `allow_merge_commit=false`, `allow_rebase_merge=false`, `has_discussions=true`. Applied + verified. **(2026-06-13: later flipped to the merge-commit model per the policy change — `allow_merge_commit=true, allow_squash_merge=false`, PR-title merge messages.)**
+  - `delete_branch_on_merge=true`, `has_discussions=true`. **(2026-06-13: flipped to the merge-commit model per the policy change — `allow_merge_commit=true, allow_squash_merge=false, allow_rebase_merge=false`, PR-title merge messages.)**
 - [x] Enable branch protection on `main` per §"main — today":
-  - PR required, 1 reviewer (CODEOWNERS auto-routes the right person per path), resolved threads, dismiss-stale-on-new-commits, linear history, no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation, same as finance-lch — keeps the solo owner from being deadlocked on self-review).
+  - PR required, 1 reviewer (CODEOWNERS auto-routes the right person per path), resolved threads, dismiss-stale-on-new-commits, linear-history off (merge-commit model), no force-push, no deletions. `enforce_admins: false` (admin-included is the planned escalation, same as finance-lch — keeps the solo owner from being deadlocked on self-review).
   - **Required status checks**: only `gitleaks` (the meaningful gate for a docs-only repo). The `Frontend lint` / `Backend lint` / `*tests` / `verify-api-contract` set from finance-lch doesn't apply here — there's no code to lint, no tests to run, no API contract.
-- [ ] **Skip**: branch protection on `develop` — operations has no `develop` branch and doesn't need one. Docs-only repos with no integration-branch model (same pattern as `Interval-Col/.github`).
-- [ ] **Skip**: `ci-cd.yml` migration — no deploy pipeline. No "rebuild per env" problem because there's no build.
+- [x] **Skip**: branch protection on `develop` — operations has no `develop` branch and doesn't need one. Docs-only repos with no integration-branch model (same pattern as `Interval-Col/.github`).
+- [x] **Skip**: `ci-cd.yml` migration — no deploy pipeline. No "rebuild per env" problem because there's no build.
 
 **Owner:** @gczuluaga (with @SKuger01 as second reviewer for policy paths via CODEOWNERS).
 
 Estimated effort: ~45 min end-to-end for the remaining items. Mostly file creation + a single `gh api PATCH` for repo settings + branch protection on `main` only.
 
+✅ **Done-when (per repo — applies to every section in Phase 1):**
+- Branch protection enforced on `main` **and** `develop` per the policy (and **real, not hollow** — the producing workflows + CODEOWNERS live on the default branch).
+- CODEOWNERS in place on the default branch.
+- PR template in place (per-repo or org-default).
+- Stale workflow live.
+- All required pre-commit hooks installed (5 for code repos, 4 for docs/meta) and running in CI.
+- `ci-cd.yml` migrated to build-once-promote (or authored that way for green-field repos), or explicitly n/a for docs-only repos.
+- Repo settings: auto-delete + **merge-commit-only** (squash + rebase off, PR title as merge-commit subject) verified.
+
+*(ES: un repo está "desplegado" cuando todas las casillas de arriba están en
+verde sobre la rama por defecto; si el chrome solo vive en `develop`, la
+protección de `main` es hueca y el repo NO está hecho.)*
+
+🚦 **Checkpoint 1 — per repo, before flipping its matrix row to all-✅.** Show
+@gczuluaga: the `gh api` ruleset on `main` + `develop`, a real PR that ran the
+required checks green, and a per-branch read confirming the chrome exists on the
+**default branch** (not just `develop`). Questions:
+1. For this repo, is `main`'s branch protection **real or hollow** — i.e. do the
+   required-check workflows and CODEOWNERS actually live on `main`? Walk the
+   per-branch read live. *(ES: ¿la protección de `main` es real o hueca? Muestra
+   la lectura por rama en vivo.)*
+2. If this is a deploy repo, demonstrate that a `develop → main` promote retags
+   the **same image digest** `:dev → :prod` (no rebuild). *(ES: demuestra que el
+   promote re-etiqueta el mismo digest, sin reconstruir.)*
+
 ---
 
-# Cross-cutting work
+## Phase 2 — Cross-cutting work
 
-## 1. Build-once-promote CI/CD migration
+> **Resumen (ES) — Fase 2: Trabajo transversal.**
+>
+> Tres piezas que cruzan todos los repos y se rastrean una sola vez (no por
+> repo): la migración CI/CD a build-once-promote, el rollout de los hooks de
+> pre-commit, y el procedimiento de protección de ramas que un dueño con
+> permiso de admin corre una vez por repo.
+>
+> En orden, las tareas:
+>
+> 1. **2.1** — migrar cada `ci-cd.yml` a build-once-promote (construir una vez
+>    en develop, re-etiquetar `:dev → :prod` en main).
+> 2. **2.2** — instalar los hooks de pre-commit obligatorios y un job de CI que
+>    los corra (`pre-commit run --all-files`).
+> 3. **2.3** — el procedimiento de protección de ramas, corrido verbatim por
+>    repo por un admin.
+
+### 2.1 Build-once-promote CI/CD migration
 
 Today (per audit) finance-lch, lab-qc, and cobol-migration each rebuild on
 every environment. Policy mandates one build artifact promoted across envs.
@@ -428,9 +673,9 @@ Per-repo migration checkbox:
 - [x] `lab-qc` — **migrated 2026-06-05** (PR #3). Split build/promote; new `promote-*` jobs pull `:dev`, retag `:prod` + `:<sha>`, push. Proven on `develop` (promote jobs skip correctly; dev deploy green). **Not yet exercised `develop → main`** — deferred with the prod bundle.
 - [x] `cobol-migration` — **DONE 2026-06-13** (PR #4 + promote #6). Single `etl-cobol` image → one `promote` job retags `:dev`→`:prod` on a main push (no rebuild). Prod deploy **flag-gated** (`COBOL_PROD_DEPLOY_ENABLED`, default off) until prod readiness clears. Verified via `promote-only` dry-run + real main-push (deploy gated-skipped).
 - [x] `commercial-lch` — **DONE 2026-06-13** (PR #19 + cutover #20). Was NOT green-field (live audit: it already rebuilt+deployed dev+prod per env). New `promote` job retags `:dev`→`:prod` on a main push (no rebuild); PRs flipped to CI-only. Verified end-to-end incl. a `promote-only` dry-run with identical digests + a real prod cutover (prod Up on `:prod`). **First repo with a proven build-once-promote pipeline.**
-- [ ] `admission-patient` — H2 blocker (private-pkg + OIDC) **resolved** (alexandria removed in shadcn migration); deploy port still deferred per plan, owned by ychejne-jpg via issue #21 + `plans/deploy-pipeline-go-live-plan.md`
+- [ ] `admission-patient` — H2 blocker (private-pkg + OIDC) **resolved** (alexandria removed in shadcn migration); deploy port still deferred per plan, owned by @ychejne-jpg via issue #21 + `plans/deploy-pipeline-go-live-plan.md`
 
-## 2. Hook installation rollout
+### 2.2 Hook installation rollout
 
 The 5 required policy hooks and reference configs:
 
@@ -439,8 +684,8 @@ The 5 required policy hooks and reference configs:
 | `case-collision` | `pre-commit-hooks-org/check-case-conflict` (admission-patient has a local-script equivalent named `check-case-collisions` — keep or replace at owner discretion) |
 | `gitleaks` | `gitleaks/gitleaks` pre-commit mirror |
 | `format-on-stage` | wrap project formatter (ruff-format / prettier / eslint --fix) in a `local` repo block that runs on staged files only |
-| `commit-msg-lint` | `commitlint` + `@commitlint/config-conventional`; runs in `commit-msg` stage |
-| `branch-name-lint` | `branch-name-lint` npm pkg in a `local` repo `pre-push` hook; config restricts to `<type>/<short-kebab-slug>` |
+| `commit-msg-lint` | `commitlint` + `@commitlint/config-conventional`; runs in `commit-msg` stage. Allowed types: `feat|fix|refactor|test|chore|docs|hotfix|ci` (the canonical set) |
+| `branch-name-lint` | `branch-name-lint` npm pkg in a `local` repo `pre-push` hook; config restricts to `<type>/<short-kebab-slug>` where `<type>` ∈ `feat|fix|refactor|test|chore|docs|hotfix|ci` |
 
 Canonical `.pre-commit-config.yaml` + `commitlint.config.js` +
 `branch-name-lint.config.js` will live in `Interval-Col/.github` (see that
@@ -459,7 +704,7 @@ Also add a CI job in each repo that runs `pre-commit run --all-files` so the
 hooks are enforced even when contributors haven't run `pre-commit install`
 locally. This becomes a required status check.
 
-## 3. Branch protection enforcement procedure
+### 2.3 Branch protection enforcement procedure
 
 For each repo, an owner with admin permission runs the following once:
 
@@ -473,7 +718,7 @@ For each repo, an owner with admin permission runs the following once:
      - Require branches to be up to date: **on**
      - Required checks: `lint`, `unit tests`, `verify-api-contract`, design-system gates (per repo)
    - [x] Require conversation resolution before merging: **on**
-   - [x] Require linear history: **on**
+   - [ ] Require linear history: **off** (merge-commit model — linear history intentionally off; see BRANCHING-AND-DEPLOY.md §"Merge mode")
    - [x] Do not allow bypassing the above settings: **on**
    - [ ] Allow force pushes: **off**
    - [ ] Allow deletions: **off**
@@ -490,25 +735,107 @@ For each repo, an owner with admin permission runs the following once:
 Run this checklist verbatim per repo. The audit-derived checklists above flag
 which gates each repo is missing — the procedure here is the "how".
 
----
+✅ **Done-when (Phase 2):**
+- Every deploy repo's `ci-cd.yml` builds once on `develop` and **retags** the
+  same digest `:dev → :prod` on a `main` push (verified by an identical-digest
+  `promote-only` dry-run), with a guard refusing a prod BUILD from a push event.
+- Every code repo carries the 5 policy hooks (4 for docs/meta) + a CI job running
+  `pre-commit run --all-files` as a required status check.
+- The branch-protection procedure has been run verbatim on each repo and the
+  General → Pull Requests settings read **merge-commit-only** (squash + rebase off,
+  PR title as the merge-commit subject).
 
-## Definition of done (per repo)
-
-- [ ] Branch protection enforced on `main` and `develop` per the policy
-- [ ] CODEOWNERS in place
-- [ ] PR template in place
-- [ ] Stale workflow live
-- [ ] All 5 required pre-commit hooks installed and running in CI
-- [ ] `ci-cd.yml` migrated to build-once-promote (or authored that way for green-field repos)
-- [ ] Repo settings: auto-delete + merge-commit-only verified
-
-A repo is "rolled out" when every box above is checked. Track per-repo
-completion by checking off the per-repo sections — when a section is all-green,
-update the at-a-glance matrix.
+*(ES: hecho cuando cada repo de deploy re-etiqueta el mismo digest sin
+reconstruir, todos tienen los hooks + el job de CI que los corre, y el
+procedimiento de protección quedó corrido con merge-commit-only.)*
 
 ---
 
-## Rollout order recommendation
+## Decisions · Decisiones
+
+> Collected 🛑 markers that are still open, and resolved decisions logged below
+> for traceability. *(ES: decisiones humanas abiertas arriba, resueltas abajo.)*
+
+**Open:**
+
+- 🛑 **`Interval-Col/.github` develop branch** — policy assumes
+  `main ← develop ← <type>/<slug>` everywhere, but a meta/policy repo arguably
+  doesn't need `develop` (no deploy pipeline, no integration branch). Pending:
+  exempt it, or create `develop` for consistency? *Recommendation: create it —
+  cost is zero, policy stays uniform.* Decides: @gczuluaga.
+- 🛑 **Admin permission scope** — the audit ran with read-level token access for
+  protection endpoints (HTTP 404 on unprotected branches looks the same as "we
+  can't see it"). Pending: before any owner runs the enforcement procedure,
+  confirm they have admin on each repo — Gloria + @SKuger01 are the likely set
+  but not verified. Decides: @gczuluaga.
+- 🛑 **Required status check names** — policy lists "lint + unit tests +
+  verify-api-contract + design-system gates" but each repo's check names differ
+  (`lint-frontend` vs `lint`, `test-backend` vs `unit tests`, etc.). Pending:
+  standardize the job names across repos as part of this rollout, or accept
+  per-repo names and enumerate them per protection rule? *Recommendation:
+  enumerate per-repo for Wave 1–2 (don't block on rename), standardize as a
+  follow-up.* Decides: @gczuluaga.
+- 🛑 **DS gates job** — finance-lch and lab-qc have no design-system gate today;
+  commercial-lch has only contract diff. Required check "design-system gates" is
+  policy but no repo implements it. Pending: out of scope here, or in-scope?
+  *Recommendation: out of scope — track as the separate Pháros-registry
+  cross-cutting workstream so this plan can close.* Decides: @gczuluaga / @SKuger01.
+- 🛑 **cobol-migration extra branches** — `feat/etl-shared-harness` and
+  `feat/etl-tui-enhancements` are in-flight; stale-bot will start counting against
+  them once it ships. Pending: confirm with the ETL lead whether they're active
+  before Wave 1 to avoid surprise archival warnings. Decides: ETL lead /
+  @ychejne-jpg.
+
+**Resolved during planning:**
+
+- **`admission-patient` default branch** — renamed `master` → `main` (no open PR
+  targeted `master`; `ci.yml` triggers updated; `develop → main` promote made it
+  current). *(2026-06-13.)*
+- **Merge mode** — adopted **merge-commit-only** org-wide (squash + rebase
+  disabled, PR title as the merge-commit subject, linear history intentionally
+  off). The earlier squash-only rule is superseded; repos already on
+  merge-commit-only are compliant, not a reversion. *(2026-06-13.)*
+- **Conventional-commit + branch type set** — the canonical set is
+  `feat|fix|refactor|test|chore|docs|hotfix|ci` (`hotfix` is valid as both a
+  branch type and a commit type; `ci` was added org-wide for pipeline-only
+  changes). *(2026-06-15.)*
+
+## Risks · Riesgos
+
+> **Resumen (ES).** El riesgo dominante es la "protección hueca" — chrome en
+> `develop` que nunca se promovió a `main`, así que GitHub exige checks sin
+> productor. Las mitigaciones son lecturas por rama y promotes explícitos.
+
+- **Hollow `main` protection** → branch protection that requires checks no
+  workflow on `main` produces, blocking real PRs forever (lab-qc `main` requires
+  7 checks with 0 producers). **Mitigation:** before flipping a matrix row to ✅,
+  run the per-branch read in 🚦 Checkpoint 1 and land the `develop → main` promote
+  that carries the chrome to the default branch.
+- **Stale tracker** → the matrix is a hand-edited derived view and drifts between
+  sessions; four false findings landed on 2026-06-13. **Mitigation:** follow the
+  five rules in "Re-verifying this tracker" — always pass `?ref=<branch>`, never
+  test presence via `--jq .path`, treat agent audits as hypotheses, prefer a local
+  working-tree read, and timestamp the re-derive.
+- **Linear-history left on** → a repo whose `main` protection still has
+  `required_linear_history=true` is now **incompatible** with merge-commit-only
+  and would block merges. **Mitigation:** during the promote work, verify and turn
+  it off wherever set.
+- **Prod deploy fires on a chrome-only promote** → a `develop → main` promote on a
+  deploy repo can trigger a real prod deploy (commercial-lch #18 did). **Mitigation:**
+  confirm safe-to-deploy with the owner before the promote; for cobol-migration,
+  the prod deploy is flag-gated (`COBOL_PROD_DEPLOY_ENABLED`) until readiness clears.
+- **Surprise stale-bot archival** → in-flight feature branches (cobol-migration
+  `feat/etl-*`) get archival warnings once `stale.yml` ships. **Mitigation:**
+  confirm active branches with the ETL lead before Wave 1; use the `do-not-stale`
+  opt-out label.
+
+---
+
+## Rollout order recommendation · Orden de despliegue recomendado
+
+> **Resumen (ES).** Cuatro olas: chrome de bajo riesgo primero (docs/meta),
+> luego chrome + protección en repos que ya despliegan, luego la migración
+> build-once-promote, y al final los bloqueados por otro trabajo.
 
 **Wave 1 (low-risk chrome, no CI/CD changes):** ✅ **`Interval-Col/operations`
 done first** (2026-06-06, PR operations#2 + #3) — landed as the docs-only
@@ -538,15 +865,25 @@ once the template is proven.
 **Wave 4 (blocked-on-other-work):** `admission-patient`. Cannot protect a
 permanently-red CI; cannot deploy without Phase H2. Sequence: Phase H2 (OIDC
 + private package) → CI green → chrome + protection → deploy pipeline. Treat
-this repo as parked on this plan until H2 lands.
+this repo as parked on this plan until H2 lands. *(2026-06-13: the H2 CI
+blocker resolved — alexandria removed in the shadcn migration — so the chrome
++ protection landed; only the deploy port remains deferred.)*
 
 ---
 
-## Open questions
+## References
 
-- ~~**`admission-patient` default branch**: rename `master` → `main` or grandfather `master`?~~ **RESOLVED 2026-06-13 — renamed to `main`** (no open PR targeted `master`; `ci.yml` triggers updated; `develop→main` promote made it current). See the admission-patient section above.
-- **`Interval-Col/.github` develop branch**: policy assumes `main ← develop ← <type>/<slug>` everywhere, but a meta/policy repo arguably doesn't need `develop` (no deploy pipeline, no integration branch). Should we exempt it, or create `develop` for consistency? Recommendation: create it for consistency — cost is zero, policy stays uniform.
-- **Admin permission scope**: the audit ran with read-level token access for protection endpoints (HTTP 404 on unprotected branches looks the same as "we can't see it"). Before any owner runs the enforcement procedure, confirm they have admin on each repo — Gloria + @SKuger01 are the likely set but not verified here.
-- **Required status check names**: policy lists "lint + unit tests + verify-api-contract + design-system gates" but each repo's check names differ (`lint-frontend` vs `lint`, `test-backend` vs `unit tests`, etc.). Do we standardize the job names across repos as part of this rollout, or accept per-repo names and just enumerate them in each protection rule? Recommendation: enumerate per-repo for Wave 1-2 (don't block on rename), standardize as a follow-up.
-- **DS gates job**: finance-lch and lab-qc have no design-system gate today; commercial-lch has only contract diff. Required check "design-system gates" is policy but no repo implements it. Out of scope for this rollout, or in-scope? Recommendation: out of scope here — track as a separate cross-cutting workstream so this plan can close.
-- **cobol-migration extra branches**: `feat/etl-shared-harness` and `feat/etl-tui-enhancements` are in-flight; stale-bot will start counting against them once it ships. Confirm with the ETL lead whether they're active before Wave 1 to avoid surprise archival warnings.
+- `Interval-Col/.github/BRANCHING-AND-DEPLOY.md` — the policy this plan enforces
+  (§"Merge mode", §"main — today", §"develop — today").
+- [PR Interval-Col/.github#4](https://github.com/Interval-Col/.github/pull/4) —
+  where `BRANCHING-AND-DEPLOY.md` landed.
+- [Interval-Col/rfcs#6](https://github.com/Interval-Col/rfcs/discussions/6) —
+  companion org discussion.
+- `Interval-Col/finance-lch` PR #8 — the reference build-once-promote + chrome
+  implementation other repos copy.
+- `operations/plans/cobol-migration-promote-to-prod.md` + issue #7 — the
+  cobol-migration prod go-live (owned by @ychejne-jpg).
+- `admission-patient/plans/deploy-pipeline-go-live-plan.md` + issue #21 — the
+  deferred admission-patient deploy port (H2).
+- `.github/templates/plan-template.md` — the canonical plan shape this document
+  conforms to.

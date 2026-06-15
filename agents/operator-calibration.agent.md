@@ -1,3 +1,9 @@
+---
+description: "Run the operator calibration to tune human↔agent collaboration — a short multiple-choice protocol that captures fluency, authority, risk posture, and in-the-loop preferences, then writes a private operator profile the agent adapts to."
+name: "operator-calibration"
+tools: [read, edit, search]
+---
+
 # Operator calibration — tuning human↔agent collaboration
 
 > **Resumen (ES).** Un protocolo para que cada persona calibre cómo trabaja con su

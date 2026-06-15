@@ -1,6 +1,6 @@
 # 🏗️ Engineering Standards — Interval-Col
 
-This document defines the official engineering standards for all primary projects under the Interval-Col GitHub organization, especially as adopted by and standardized in [biuman-reports](https://github.com/Interval-Col/biuman-reports), [lab-qc](https://github.com/Interval-Col/lab-qc), and to be used for [finance-lch](https://github.com/Interval-Col/finance-lch).
+This document defines the official engineering standards for all primary projects under the Interval-Col GitHub organization, especially as adopted by and standardized in [biuman-reports](https://github.com/Interval-Col/biuman-reports), [lab-qc](https://github.com/Interval-Col/lab-qc), and [finance-lch](https://github.com/Interval-Col/finance-lch) (a primary adopter).
 
 > **Companion guide (recommendation, not enforced):** [Agent Chat Hygiene](AGENT-CHAT-HYGIENE.md) · [español](AGENT-CHAT-HYGIENE.es.md) — keeping Claude Code sessions cheap and durable: one chat per task, save durable knowledge to the repo/memory, and when to `/compact` / `/clear` / delete.
 
@@ -52,11 +52,11 @@ This document defines the official engineering standards for all primary project
 | Practice           | Standard                                                            |
 |--------------------|---------------------------------------------------------------------|
 | Branch model       | **GitFlow-lite**: `main` ← `develop` ← `<type>/<slug>`              |
-| Default Branch     | `main` (PR required, 1 reviewer, green CI, squash-merge)            |
+| Default Branch     | `main` (PR required, 1 reviewer, green CI, merge-commit)            |
 | Integration Branch | `develop` (direct push allowed; CI still required)                  |
-| Feature Branches   | `<type>/<short-kebab-slug>` — types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix` |
+| Feature Branches   | `<type>/<short-kebab-slug>` — types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix`, `ci` |
 | Commit & PR title  | [Conventional Commits](https://www.conventionalcommits.org/) — enforced on **both** |
-| Merge mode         | **Squash and merge** everywhere; auto-delete merged branches        |
+| Merge mode         | **Merge commit** everywhere; auto-delete merged branches            |
 | CI/CD              | GitHub Actions in `.github/workflows/`; push-to-`develop` deploys dev server, push-to-`main` deploys prod (the PR review IS the deploy approval) |
 | Releases           | Semver tag (`v1.2.3`) + GitHub Release per prod deploy, auto-drafted notes |
 | Hotfix             | `hotfix/*` off `main` → PR to `main` → merge `main` forward into `develop` |
@@ -77,7 +77,7 @@ This document defines the official engineering standards for all primary project
 - **Linter:** [Ruff](https://beta.ruff.rs/docs/)
 - **Formatter:** [Black](https://black.readthedocs.io/en/stable/)
 - **Test runner:** pytest
-- **Type checks:** mypy (recommended)
+- **Type checks:** pyright (required in CI)
 
 ### Frontend
 
@@ -88,14 +88,19 @@ This document defines the official engineering standards for all primary project
 
 #### Design-system CI gates (Nuxt + shadcn-vue projects)
 
-In addition to ESLint, every Nuxt + shadcn-vue project chains four
-design-system gates into `pnpm lint-check`. Each gate enforces a
-CONVENTIONS.md rule that ESLint can't catch and that has historically
-drifted across PRs:
+The org package manager is **pnpm**. In addition to ESLint, every
+Nuxt + shadcn-vue project (srcDir `app/`) chains four design-system
+gates into `pnpm lint-check`. Each gate enforces a rule that ESLint
+can't catch and that has historically drifted across PRs. The
+governing rule, stated once here: **semantic tokens over raw
+color/markup, and scoped `<style>` only in `app/components/` — never
+in `app/pages/` or `app/layouts/`** (those use Tailwind utilities and
+shadcn-vue primitives). The semantic-token source of truth is
+[`brands/pharos_brand/registry/tokens.css`](brands/pharos_brand/registry/tokens.css).
 
 | Gate | What it forbids | Where to add it |
 |---|---|---|
-| `check-no-scoped-pages.mjs` | `<style scoped>` blocks in `app/pages/**` and `app/layouts/**` (Tailwind utilities required) | `frontend/scripts/` |
+| `check-no-scoped-pages.mjs` | `<style scoped>` blocks in `app/pages/**` and `app/layouts/**` (Tailwind utilities required; scoped `<style>` allowed only in `app/components/**`) | `frontend/scripts/` |
 | `check-no-raw-html.mjs` | raw `<button>`, `<table>`, `<input>`, `<select>`, `<textarea>` in pages/layouts (shadcn-vue primitives required) | `frontend/scripts/` |
 | `check-no-hex-colors.mjs` | hex literals (`#abc`, `#abcdef`) outside `app/assets/css/` (semantic tokens required) | `frontend/scripts/` |
 | `check-no-palette-colors.mjs` | Tailwind palette utilities (`text-green-600`, `bg-amber-100`, …) outside `app/components/ui/` (semantic tokens required) | `frontend/scripts/` |
@@ -155,10 +160,14 @@ cheap.
 
 ### Required in every repo
 
-1. **Pre-commit hook + CI check** rejecting any commit that
-   introduces a case-collision pair. Reference implementation:
+1. **Pre-commit hook** rejecting any commit that introduces a
+   case-collision pair — the enforcement everywhere (including this
+   docs-only repo) is the upstream
+   [`pre-commit-hooks`](https://github.com/pre-commit/pre-commit-hooks)
+   `check-case-conflict` hook. In **code repos** this is additionally
+   backed by a case-collision **CI check**; reference implementation:
    [`biuman-lis/scripts/check-case-collisions.sh`](https://github.com/Interval-Col/biuman-lis/blob/main/scripts/check-case-collisions.sh).
-   Detection is one-liner:
+   The detection is a one-liner:
    ```bash
    git ls-tree -r HEAD | awk '{print $4}' \
      | awk '{print tolower($0), $0}' | sort \
@@ -215,9 +224,9 @@ accidentally save a prod password under a staging name.
 `staging-vm/deploy`. Match the role name used in the DB / system,
 not a friendly label.
 
-**Access:** the `staging` and `prod` collections are restricted to the
-infrastructure caretakers (@gczuluaga + @SKuger01 as of 2026-05-27).
-Other devs request a credential through the caretakers; they don't
+**Access:** `staging` and `prod` vault access is restricted to
+@gczuluaga only (sole, as of 2026-06-15). Other devs request a
+credential through the caretaker; they don't
 get blanket vault access. Document any access change in the relevant
 RFC's Decisions log.
 
@@ -299,11 +308,11 @@ Reference plans worth reading as exemplars: `admission-patient/plans/`,
 
 - [ ] BE Python: FastAPI, Ruff, Black, pytest, Pydantic v2, `.env.example`, `Dockerfile`
 - [ ] FE: Nuxt 4, Vue 3, TypeScript, Pinia, Tailwind v4, ESLint, Prettier, `.env.example`, `Dockerfile`
-- [ ] `README.md` and `ENGINEERING_STANDARDS.md` present
+- [ ] `README.md` present and cross-links the org-wide `ENGINEERING_STANDARDS.md` (single doc, not copied per repo)
 - [ ] `.github/` directory with workflows and templates
 - [ ] **CI must run all tests, lint, and builds**
 - [ ] Branch protection enabled on `main`
-- [ ] Case-collision check installed (pre-commit hook + CI step) — see "Cross-platform path safety"
+- [ ] Case-collision check installed (pre-commit `check-case-conflict` everywhere; CI step in code repos) — see "Cross-platform path safety"
 - [ ] Secret scanning (gitleaks) installed — pre-commit hook **and** required CI check named `gitleaks` (every repo, incl. docs-only) — see [`BRANCHING-AND-DEPLOY.md` §"Hooks"](BRANCHING-AND-DEPLOY.md#hooks)
 
 ---
