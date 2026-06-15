@@ -17,21 +17,21 @@ doc is the detailed reference.
 | Default branch | `main` |
 | Integration branch | `develop` |
 | Feature branch format | `<type>/<short-kebab-slug>` (e.g. `feat/sso-mock`) |
-| `<type>` prefixes | `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix` |
+| `<type>` prefixes | `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix`, `ci` |
 | Commit & PR title format | Conventional Commits, **enforced on both** |
 | Merge mode | **Merge commit** (everywhere) — PR-gated; no direct pushes to protected branches |
 | Auto-delete merged branches | **Yes** |
 | PR required for `main` | **Yes** — 1 reviewer + green CI |
 | PR required for `develop` | No — direct push allowed; CI still required |
 | Force-push on `main` / `develop` | **Never** (protected) |
-| Required CI on PR-to-`main` | lint + unit tests + `verify-api-contract` + design-system gates |
+| Required CI on PR-to-`main` | `gitleaks` (the one universally-required context) + the repo's lint, unit-test and API-contract checks — **exact job/context names are per-repo** (illustratively `lint-frontend`/`test-backend`/`verify-api-contract`) — plus any repo-specific design-system gates. Docs-only repos require `gitleaks` only. |
 | Prod deploy trigger | **Auto on merge to `main`** (PR review = deploy approval) |
 | Dev-server deploy trigger | Auto on push to `develop` |
 | Build / promote model | **Build once on `develop`, promote SAME image to prod** — never rebuild per environment (see §"Build-once-promote") |
 | Image tagging | Built with `<commit-sha>`; retagged `v1.2.3` on promote; deploys ideally pin by `sha256` digest |
 | Release tag on `main` | **Semver** (`v1.2.3`) + GitHub Release per deploy |
 | Hotfix flow | `hotfix/*` off `main` → PR to `main` → merge `main` forward into `develop` |
-| Stale branch policy | Warn @30d / notify @60d / archive @90d |
+| Stale branch policy | Warn @30d (label `stale`) / archive + close @90d (label `stale-archived`) — `actions/stale` re-comments naturally as the close window advances; no separate 60-day ping |
 | CODEOWNERS | Required per repo |
 | Pre-commit hooks | case-collision + secret scan + format-on-stage + commit-msg lint + branch-name lint |
 
@@ -198,7 +198,7 @@ ruleset model). Apply the rule to the named branch.
 | Dismiss stale pull-request approvals when new commits are pushed | ✅ |
 | Require review from Code Owners | ✅ |
 | Require status checks to pass before merging | ✅ |
-| Required status checks | **`gitleaks`** (secret scan — required on every repo, even docs-only), lint-frontend, lint-backend, test-frontend, test-backend, verify-api-contract, plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
+| Required status checks | **`gitleaks`** (secret scan — the one context required on every repo, even docs-only). Code repos additionally require their lint, unit-test and API-contract checks; **the job/context names are per-repo** and must be set to match that repo's actual CI (illustratively `lint-frontend`/`lint-backend`/`test-frontend`/`test-backend`/`verify-api-contract`), plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
 | Require branches to be up to date before merging | ✅ (anchors each arc to current `main`) |
 | Require conversation resolution before merging | ✅ |
 | Require linear history | ❌ (incompatible with merge commits — intentionally off; the PR-required gate above keeps history clean instead) |
@@ -477,16 +477,21 @@ via `.pre-commit-config.yaml`:
 
 | Hook | What it does | Reference impl |
 |---|---|---|
-| **Case-collision check** | Rejects two paths that differ only in case (catches macOS APFS / Linux ext4 footgun) | [`biuman-lis/scripts/check-case-collisions.sh`](https://github.com/Interval-Col/biuman-lis/blob/main/scripts/check-case-collisions.sh) |
-| **Secret scanning** | Rejects commits that introduce credentials, API keys, signing keys | [gitleaks](https://github.com/gitleaks/gitleaks) (`gitleaks protect --staged`) |
+| **Case-collision check** | Rejects two paths that differ only in case (catches macOS APFS / Linux ext4 footgun) | upstream [`check-case-conflict`](https://github.com/pre-commit/pre-commit-hooks) (from `pre-commit/pre-commit-hooks`) — the actually-configured hook. (`biuman-lis/scripts/check-case-collisions.sh` is the bespoke script equivalent for repos that need custom logic; new repos should prefer the upstream `check-case-conflict`.) |
+| **Secret scanning** | Rejects commits that introduce credentials, API keys, signing keys | [gitleaks](https://github.com/gitleaks/gitleaks) — the upstream pre-commit hook (bare `id: gitleaks`, which runs `gitleaks git --pre-commit` on the staged change); CI runs the pinned binary as `gitleaks detect --source . --redact --exit-code 1`. Both auto-load the repo-root `.gitleaks.toml`. |
 | **Format-on-stage** | Auto-formats staged files (ruff format for Python, eslint --fix for JS/TS) | Each repo's `.pre-commit-config.yaml` (see existing lab-qc / finance-lch configs) |
-| **Commit-message lint** | Rejects commit messages that don't match Conventional Commits | [commitlint](https://commitlint.js.org/) + `husky` (or pre-commit hook equivalent) |
+| **Commit-message lint** | Rejects commit messages that don't match Conventional Commits | [`conventional-pre-commit`](https://github.com/compilerla/conventional-pre-commit) (`compilerla/conventional-pre-commit`, `--strict`, `commit-msg` stage) — the actually-enforced hook; no commitlint/husky is used |
 | **Branch-name lint** | Rejects branches that don't match `<type>/<kebab-slug>` | Small custom hook (~10 lines of bash) calling `git rev-parse --abbrev-ref HEAD` |
 
-Same set is also enforced in CI (so a developer who skipped the hook
-install — or used `git commit --no-verify` — doesn't get a free
-pass). The pre-commit step is *fast feedback*; the CI check is the
-gate of record.
+For **code repos**, the lint/test side of this set is mirrored in CI
+(so a developer who skipped the hook install — or used `git commit
+--no-verify` — doesn't get a free pass): the pre-commit step is *fast
+feedback*; the CI check is the gate of record. The one exception is
+case-collision — there is no dedicated CI case-collision workflow in
+this `.github` repo, so for **docs-only repos the pre-commit
+`check-case-conflict` hook is the only enforcement**. (CI
+case-collision applies in code repos via their lint pipeline.) Secret
+scanning is enforced server-side everywhere — see below.
 
 **Secret scanning is the one hook every repo MUST also enforce as a
 required CI status check named `gitleaks`** — including docs-only
@@ -542,18 +547,23 @@ Format:
 | `test` | adding or fixing tests |
 | `chore` | tooling, build, dependency bumps |
 | `docs` | documentation only |
-| `hotfix` | branch type only — see [Hotfix flow](#hotfix-flow) |
+| `ci` | CI/CD pipeline or workflow changes (`.github/workflows/*`, hooks config) |
+| `hotfix` | an urgent prod fix — valid as **both** a branch type (`hotfix/*`, see [Hotfix flow](#hotfix-flow)) **and** a commit type (the enforced commit-msg hook accepts it) |
 
 Same set is used for both **commit messages** AND **branch prefixes**.
+The `conventional-pre-commit` allowlist accepts all of the above —
+`feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `hotfix`, `ci`.
 
 ### Enforced where
 
-- **PR title** — commitlint runs in CI and blocks the PR. The merge
-  commit's subject is set to the PR title on `main`/`develop`, so this
-  is the *load-bearing* check.
-- **Every commit** — the commit-message pre-commit hook runs locally.
-  Catches `wip` / `tmp` commits before they leave the laptop. CI
-  also re-checks individual commits on PR sync.
+- **PR title** — must follow Conventional Commits; the merge commit's
+  subject is set to the PR title on `main`/`develop`, so this is the
+  *load-bearing* check. (Wire a title-lint job — e.g. a
+  `conventional-pre-commit` run over the title — into code repos' CI to
+  block the PR; the docs-only `.github` repo gates on `gitleaks` only.)
+- **Every commit** — the `conventional-pre-commit` commit-msg hook runs
+  locally (`compilerla/conventional-pre-commit`, `--strict`). Catches
+  `wip` / `tmp` commits before they leave the laptop.
 
 Yes, both — the cost is one hook install; the win is that the
 individual-commit history is reviewable on the PR page AND preserved
@@ -579,8 +589,8 @@ Invalid (the branch-name pre-commit hook rejects these):
 - `gczuluaga-thing` (personal-name branches discouraged)
 
 Stale-branch automation also keys off the format — non-conforming
-branches don't get the friendly 30/60/90 notifications, they just
-sit.
+branches don't get the friendly stale@30d / close@90d notifications,
+they just sit.
 
 ---
 
@@ -675,8 +685,8 @@ action). Same config in every repo.
 
 | Age (no activity) | Action |
 |---|---|
-| **30 days** | Bot comments on the PR / issue: "This has been inactive for 30 days. It will be archived in 30 more days if there's no activity." Adds `stale` label. |
-| **60 days** | Bot pings the author + assignees. Updates the comment. |
+| **30 days** | Bot comments on the PR / issue: "This has been inactive for 30 days. It will be archived in 60 more days if there's no activity." Adds `stale` label. |
+| **60 days** | No separate ping tier. `actions/stale` only does stale@30d + close@90d; the natural re-comment as the close window advances is the only "60-day" surface — there is no active author+assignee re-ping. |
 | **90 days** | Bot closes the PR and archives the branch (label `stale-archived`). Re-open by removing the label or pushing a new commit. |
 
 "Activity" counts: any commit, comment, review, or label change.
@@ -688,20 +698,24 @@ Drafts that explicitly say "blocked on X" can opt out with the
 ## CODEOWNERS
 
 Every repo MUST have a `.github/CODEOWNERS` file mapping paths to
-people / teams. Examples (use the patterns; substitute your team):
+people / teams. The example below is **illustrative only** — substitute
+your repo's actual owner(s). It shows the path-mapping *patterns*, not a
+prescribed roster; today most repos run a sole-gatekeeper model where a
+single owner covers every path (see the org CODEOWNERS).
 
 ```
+# Illustrative — replace @org-owner with your repo's real owner/team.
 # Backend
-backend/                      @gczuluaga
-backend/app/auth/             @gczuluaga @security-team
+backend/                      @org-owner
+backend/app/auth/             @org-owner @org-security-team
 
 # Frontend
-frontend/                     @SKuger01
+frontend/                     @org-owner
 
 # Docs + meta
-docs/                         @gczuluaga
-.github/                      @gczuluaga
-plans/                        @gczuluaga
+docs/                         @org-owner
+.github/                      @org-owner
+plans/                        @org-owner
 ```
 
 Effects:
@@ -718,12 +732,13 @@ Effects:
 When bootstrapping a new repo (or auditing an existing one), copy this
 checklist:
 
-- [ ] `.github/workflows/ci.yml` — lint + unit tests + verify-api-contract (if full-stack)
-- [ ] `.github/workflows/ci-cd.yml` — push-to-develop → dev server; push-to-main → prod
-- [ ] `.github/workflows/stale.yml` — 30/60/90 cleanup
+- [ ] `.github/workflows/gitleaks.yml` — secret-scan; required check `gitleaks` (**every repo**, including docs-only)
+- [ ] `.github/workflows/ci.yml` — runs the repo's lint, unit-test and API-contract checks; **name the required contexts to match your CI** (illustratively `lint-frontend`/`lint-backend`/`test-frontend`/`test-backend`/`verify-api-contract` for full-stack) _(code repos only; docs-only repos require `gitleaks` + stale only)_
+- [ ] `.github/workflows/ci-cd.yml` — push-to-develop → dev server; push-to-main → prod _(code repos only; docs-only repos require `gitleaks` + stale only)_
+- [ ] `.github/workflows/stale.yml` — stale@30d + close@90d cleanup
 - [ ] `.github/CODEOWNERS` — at minimum, one owner per top-level dir
 - [ ] `.github/PULL_REQUEST_TEMPLATE.md` — Why / What / Test plan / Rollout
-- [ ] `.pre-commit-config.yaml` — case-collision + gitleaks + format + commitlint + branch-name
+- [ ] `.pre-commit-config.yaml` — case-collision (`check-case-conflict`) + gitleaks + format + `conventional-pre-commit` (commit-msg) + branch-name
 - [ ] Branch protection on `main` — see [§"main — today"](#main--today)
 - [ ] Branch protection on `develop` — see [§"develop — today"](#develop--today)
 - [ ] Repo settings → "Automatically delete head branches" = on

@@ -57,6 +57,7 @@ repos:
           - chore
           - docs
           - hotfix
+          - ci
 
   # ── Policy hook #4 — branch-name lint ──────────────────────────────
   - repo: local

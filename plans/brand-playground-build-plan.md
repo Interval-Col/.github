@@ -1,17 +1,27 @@
 ---
 status: active
 created: 2026-06-13
-updated: 2026-06-14
+updated: 2026-06-15
 owner: gczuluaga
+implementation: TBD
+language: English body; Spanish "Resumen" + decision/criteria glosses.
 tracking-issue: Interval-Col/.github#27
-intent: auto-runnable by a Sonnet coding agent — single source of truth (v1 build + v2 tweaks merged)
 relates-to: RFC 0008 Q4/Q5/Q6/Q7/Q9/Q11
-supersedes: brand-playground-tweaks-plan.md (merged here; that file is now archived)
+supersedes: archive/brand-playground-tweaks-plan.md (merged here; now archived)
 ---
 
-# Pháros brand playground — complete build plan (v1 + v2 tweaks)
+# Pháros brand playground — complete build plan (v1 + v2 tweaks) · Playground de marca Pháros
 
-## 0. What this is + how to run it
+> **Resumen (ES).** Una app **Nuxt 4 solo-local** que renderiza el app-shell
+> compartido de Pháros + una galería de componentes + gráficas de ejemplo, con
+> un **panel de control fijo a la derecha** que cambia en vivo
+> **acento (por sub-marca) · tema (claro/oscuro) · fuente mono · fuente de
+> datos**. Sirve para *ver* el sistema de diseño re-tematizarse antes de cerrar
+> las decisiones de marca abiertas. Pháros es el sistema de diseño paraguas;
+> LCH y Biuman son **tenants**. La fuente de la verdad es el registry en
+> `/Users/gczuluaga/dev/.github/brands/pharos_brand/registry/` (contrato de
+> tokens = `registry/tokens.css`). **Estado actual: la app ya está construida y
+> todas las fases están completas.**
 
 A **local-only Nuxt 4 app** that renders the shared Pháros app-shell + a component
 gallery + sample charts, with a **fixed right-side control panel** that live-switches
@@ -19,51 +29,251 @@ gallery + sample charts, with a **fixed right-side control panel** that live-swi
 (off/on)** — so the team can *see* the design system re-theme before locking the open
 brand decisions. The **code-first validation surface** RFC 0008 implies for Q5 (mono
 pick), Q6 (accent candidates), Q7 (themes), Q11 (charts), and the brand-book
-JetBrains-for-data split.
-
-**How to auto-run with Sonnet:** open a Claude session and paste:
-
-> Execute the plan at `/Users/gczuluaga/dev/.github/plans/brand-playground-build-plan.md`
-> exactly, phase by phase. Build at `/Users/gczuluaga/dev/pharos-playground/`.
-> After each phase run its verification. At the end run `pnpm dev` and confirm the
-> §11 acceptance checklist. Do not deviate from the embedded file contents — they
-> encode locked RFC 0008 decisions. Don't push.
-
-**Current state (2026-06-14):** the app is built and all phases below are complete.
-Phases 0–9 produced v1; Phases 10–15 + bug-fixes produced the current v2 state.
-A fresh run from Phase 0 reproduces the current app.
+data-font split.
 
 ---
 
-## 1. Locked invariants — DO NOT DRIFT (RFC 0008-cocreation-prep)
+## How to use this plan · Cómo usar este plan
 
-- **Theming = `.dark` CLASS** on `<html>`, light/dark only, **NO cobol** (Q7).
+**EN.** This plan is written to be executed with AI-agent assistance —
+that is expected and encouraged. The plan, not the agent, makes the
+technical decisions. Your job has three parts: **execute** the tasks,
+**verify** each one against its Done-when list, and **escalate** the
+decisions the plan marks for a human.
+
+Read each task fully — including its **Why** and **Done-when** — *before*
+you start it. A task is not finished because an agent said so; it is
+finished when every Done-when line is literally true and you have
+checked it yourself.
+
+If a task or its **Why** doesn't make sense, that is a gap in *this
+plan*, not a failing in you — stop and ask gczuluaga. A question costs
+minutes; a misunderstanding shipped costs days.
+
+**If the English here slows you down:** every section opens with a
+Spanish **Resumen**, and your AI agent will translate or explain any
+part of this plan in Spanish if you ask it — that is a completely
+legitimate thing to do. Don't let the language be the reason a task
+stalls.
+
+**ES.** Este plan está escrito para ejecutarse con ayuda de agentes de
+IA — eso se espera y se fomenta. Las decisiones técnicas las toma el
+plan, no el agente. Tu trabajo tiene tres partes: **ejecutar** las
+tareas, **verificar** cada una contra su lista *Done-when*, y **escalar**
+las decisiones que el plan marca para un humano.
+
+Lee cada tarea completa — incluyendo su **Why** y su **Done-when** —
+*antes* de empezarla. Una tarea no está terminada porque un agente lo
+diga; está terminada cuando cada línea *Done-when* es literalmente cierta
+y tú mismo la verificaste.
+
+Si una tarea o su **Why** no te quedan claras, eso es un vacío de *este
+plan*, no una falla tuya — pregúntale a gczuluaga. Y si el inglés te
+frena: cada sección tiene un **Resumen** en español, y tu agente de IA
+te traduce o explica cualquier parte en español si se lo pides — hazlo
+sin problema.
+
+> **How to auto-run with a coding agent.** Open a Claude session and paste:
+>
+> > Execute the plan at `/Users/gczuluaga/dev/.github/plans/brand-playground-build-plan.md`
+> > exactly, phase by phase. Build at `/Users/gczuluaga/dev/pharos-playground/`.
+> > After each phase run its verification. At the end run `pnpm dev` and confirm the
+> > acceptance checklist. Do not deviate from the embedded file contents — they
+> > encode locked RFC 0008 decisions. Don't push.
+>
+> **Current state (2026-06-15).** The app is built and all phases below are
+> complete. Phases 0–9 produced v1; Phases 10–15 + bug-fixes produced the
+> current v2 state. A fresh run from Phase 0 reproduces the current app.
+
+## Conventions · Convenciones
+
+| Marker | Meaning |
+|---|---|
+| 💡 **Heuristic** | A short engineering or working lesson. Worth 30 seconds. *(ES: heurística — lección breve.)* |
+| 🛑 **HUMAN DECISION** | A choice the plan deliberately does not make. **Do not let an agent pick it.** Escalate to gczuluaga. *(ES: decisión humana — no la toma un agente; escala a gczuluaga.)* |
+| ✅ **Done-when** | The Definition of Done. The phase is verified only when every line is literally true. *(ES: terminado-cuando — definición de "hecho".)* |
+| 🚦 **Checkpoint** | Stop. Show gczuluaga the named evidence and answer the questions before continuing. **Mandatory stop — including in auto mode** (see Working rules). *(ES: punto de control — alto obligatorio, también en modo auto.)* |
+
+> **On the checkpoints.** Each 🚦 lists evidence to show and questions to
+> answer. The questions are **not a test of you** — they test whether
+> the plan explained things well enough. gczuluaga may also ask any of
+> them at any time. *(ES: las preguntas del checkpoint no son un examen
+> tuyo — prueban si el plan explicó bien; gczuluaga puede preguntarlas en
+> cualquier momento.)*
+
+## Working rules · Reglas de trabajo
+
+These apply to every phase.
+
+- **Commit and push after every slice.** When a task group or a phase is
+  done and its Done-when checks pass, commit and push to GitHub
+  **immediately**. Work that lives only on your laptop cannot be seen,
+  reviewed, helped with, or recovered. *(ES: haz commit y push a GitHub
+  apenas termines — el trabajo que solo vive en tu laptop no existe para
+  el equipo.)*
+- **Merge mode — merge-commit everywhere.** PRs are integrated with a
+  **merge commit**; squash merging is **disabled** ("Allow squash merging"
+  off). *(ES: el modo de integración es merge-commit en todos los repos;
+  el squash está deshabilitado.)*
+- **Commit messages — Conventional Commits, scope required.**
+  `type(scope): description` — e.g. `feat(playground): add mono font picker`.
+  `type` ∈ `feat | fix | refactor | test | chore | docs | hotfix | ci`. The
+  `(scope)` is **mandatory**. Branch names mirror it:
+  `type/scope-short-description` (`hotfix` is valid as both a branch type and a
+  commit type; `ci` was added org-wide). *(ES: Conventional Commits; el
+  `(scope)` es obligatorio; la rama refleja el commit.)*
+- **Review the frontend yourself, in the browser.** A phase that touches
+  the UI is **not verified** because the backend endpoint returned `200`
+  — it is verified when you have opened the app, clicked through what
+  you built, and seen it work the way a real user would use it. *(ES:
+  revisa el frontend tú mismo, en el navegador — un `200` del backend no
+  es una funcionalidad que sirve.)*
+- **Which AI tool:** Claude **Sonnet** by default; **Opus** when a task
+  is hard or you are stuck; **Copilot** for inline autocomplete and
+  quick questions — not for executing a whole task. *(ES: Sonnet por
+  defecto; Opus cuando es difícil o te atascas; Copilot para
+  autocompletar.)*
+- **You can tell your agent to skip the Why boxes — we won't stop you.**
+  But the 🚦 checkpoint questions are asked by a person, and that you
+  cannot outsource. Reading as you go is the cheap way to be ready.
+  *(ES: puedes pedirle a tu agente que se salte las explicaciones — pero
+  las preguntas del checkpoint las hace una persona; eso no se delega.)*
+- **Auto mode is slice-bounded.** Auto mode (running without clarifying
+  questions between turns) is allowed for the duration of **one
+  slice** — a single numbered task, or one phase when the plan groups
+  tasks that way. At the end of every slice, the agent **STOPS**,
+  surfaces what landed (Done-when items verified, files touched,
+  what's next), and waits for explicit human acknowledgement before
+  starting the next slice. At 🚦 Checkpoints the stop is stronger —
+  the human walks the evidence with the agent. Auto mode is **never**
+  "execute the whole plan unattended." *(ES: el modo auto va por
+  slice, no por plan entero. Al final de cada slice, el agente
+  **PARA**, te muestra qué cerró (Done-when, archivos tocados, qué
+  viene) y espera tu visto bueno antes del siguiente slice. En los
+  🚦 el alto es más fuerte — recorres la evidencia con el agente.
+  Auto **nunca** significa "ejecuta el plan completo solo".)*
+
+## Glossary · Glosario
+
+> **Resumen (ES).** Términos técnicos en inglés que vas a ver muchas
+> veces en este plan, con su traducción y una línea de qué significan.
+> Si te encuentras un término del plan que no está aquí y no lo
+> entiendes, pregúntale a tu agente — no es una falla tuya, es un vacío
+> de esta tabla.
+
+| English | Español | Means |
+|---|---|---|
+| token contract | contrato de tokens | The canonical set of CSS variables every Pháros surface must expose; the source of truth is `registry/tokens.css` (shadcn-vue vars + an accent-independent status palette). |
+| accent / sub-brand accent | acento / acento de sub-marca | The single brand color a sub-brand overrides; touches only `--primary` / `--accent` / `--ring` / `--sidebar-primary` (+ `--chart-1`). |
+| status palette | paleta de estado | `--success` / `--warning` / `--error` / `--info` (+ foregrounds) — independent of the accent; **never** moves when the accent changes. |
+| `@theme inline` | `@theme inline` | The Tailwind v4 block that routes utilities through `var()` so runtime CSS-var overrides actually render. |
+| `@font-face` | `@font-face` | The CSS rule that registers a web font; `@nuxt/fonts` generates one per detected family. |
+| FOUC guard | guard anti-FOUC | A tiny inline head script that paints `.dark` before hydration so there is no flash of unstyled content. |
+| copy-in / sync | copiar-adentro / sincronizar | Distribution is by copying the registry into a repo via `scripts/sync-pharos-registry.sh`, **not** an npm package. |
+| tenant | tenant / inquilino | A brand (LCH, Biuman) that consumes the Pháros design system; a tenant never prefixes an app name. |
+| Done-when | terminado-cuando | The literal checkable list that means a phase is verified. |
+| cold restart | reinicio en frío | `rm -rf .nuxt` then `pnpm dev` — clears the build + font cache so `@nuxt/fonts` regenerates. |
+
+## Out of scope · Fuera de alcance
+
+> **Resumen (ES).** Lo siguiente **no** es parte de este alcance — es
+> v1+ / para después. Si un agente sugiere construir algo de esta lista,
+> no lo hagas.
+
+Explicitly out of scope — not for this plan:
+
+- **Resolving the data-font conflict.** The brand-book "data font" (a mono for
+  cifras) and Q5's "one mono" genuinely conflict. This playground does NOT
+  resolve it — it makes both visible so the brand owner (@SKuger01) can decide.
+  Default stays Q5 (one mono, toggle off).
+- **A CRT / cobol theme or `[data-theme]` switching.** Theming is shadcn `.dark`
+  class, light + dark only. finance-lch's real shell uses `[data-theme]` + cobol
+  + `--nav-*`; we deliberately adopt only its **look/structure** on the locked
+  `.dark`/shadcn substrate.
+- **Packaging the registry as an npm package.** Distribution is copy-in via
+  `scripts/sync-pharos-registry.sh`. The future home is the `pharos-ui`
+  shadcn-vue registry (RFC 0008 Q3); the resizable-panel + font-token work seeds
+  it but is not built here.
+- **Deploying anywhere.** Still local-only.
+
+---
+
+## 1. Locked invariants — DO NOT DRIFT (RFC 0008 co-creation prep)
+
+> **Resumen (ES).** Reglas que NO se pueden romper: tema por clase `.dark`
+> (claro/oscuro), contrato de tokens magro shadcn-vue + paleta de estado
+> independiente del acento, shell shadcn `Sidebar collapsible="icon"`, sistema de
+> 3 fuentes (Fraunces + Inter + IBM Plex Mono), gráficas con @unovis, y rojo
+> piloto `#E4002B` que nunca se re-tinta. La fuente de la verdad es el registry.
+
+- **Design system = Pháros, the umbrella.** Pháros is the product design system;
+  **LCH and Biuman are tenants**. The source of truth is the registry at
+  `/Users/gczuluaga/dev/.github/brands/pharos_brand/registry/`; its token contract
+  is `registry/tokens.css`. A tenant **never prefixes an app name** (it is
+  `Pháros · Timón`, never "LCH Pháros"). Maker credit = *Interval · The Human Tech
+  Co.* (footer credit only).
+- **Theming = `.dark` CLASS** on `<html>`, light/dark only, **NO cobol / CRT** (Q7).
   Do NOT introduce `[data-theme]`. Theme toggle lives in the **topbar**, not the panel.
-- **Token contract = LEAN shadcn + accent-INDEPENDENT status palette** (Q4).
-  Brand accent → `--primary` (+ `--ring`, `--sidebar-primary`, `--sidebar-ring`,
-  `--chart-1`) only. Status `--status-*` tokens NEVER move with the accent.
-  Use `--sidebar-*` / shadcn tokens for chrome — NOT `--nav-*`.
+- **Token contract = shadcn-vue vars + accent-INDEPENDENT status palette** (Q4).
+  The status tokens are `--success` / `--warning` / `--error` / `--info` (+ their
+  foregrounds) and they **NEVER move with the accent**. Brand accent → `--primary`
+  (+ `--accent`, `--ring`, `--sidebar-primary`, `--sidebar-ring`, `--chart-1`) only.
+  Use `--sidebar-*` / shadcn tokens for chrome — NOT `--nav-*`. Legacy tokens
+  collapse into the contract: `--text-secondary` / `--text-muted` →
+  `--muted-foreground`; `--text-brand` → `--primary`; `--nav-*` → `--sidebar-*`.
 - **Shell = shadcn `Sidebar collapsible="icon"`** (the RFC reference shell).
   **NO page `<h1>`** — the breadcrumb's bold leaf is the title.
   **UI copy in Spanish** (neutral Colombian; no exclamations, no emojis).
 - **3-family font system (Q5):** Fraunces (display/wordmark) · Inter (sans UI) ·
-  IBM Plex Mono (default mono). The richer picker is **playground exploration
-  before final Q5 lock**. Default state MUST be Q5 (mono = IBM Plex Mono, data font OFF).
+  IBM Plex Mono (data + labels, default mono). **JetBrains Mono and Apax are NOT
+  used in product UI** — Apax stays an LCH brand-identity asset only. The richer
+  picker is **playground exploration before final Q5 lock**. Default state MUST be
+  Q5 (mono = IBM Plex Mono, data font OFF).
 - **Charts = @unovis, `--chart-1..5`** (Q11), client-only (`.client.vue` + `ClientOnly`).
 - **Pilot-light red `#E4002B` is never re-tinted** (brand book) — it lives in the SVGs.
 - Keep v1 build fixes intact: `reka-ui@2.9.6` + `tsConfig.paths['reka-ui']`,
   `striptags` dep + `optimizeDeps.include`, `build.transpile` for @unovis, FOUC guard.
 - `reka-ui` 2.9.6 Switch: use `modelValue`/`update:modelValue` — `:checked` does not exist.
 
-## 2. Prerequisites
+> 🚦 **Accent lock state (escalate before inventing any accent).** ERP ·
+> Timón = LCH Navy `#003A70` (+ teal `#A0D1CA` for success) — **LOCKED**. All
+> non-ERP accents (LIS clínico, LIS deportivo, Admisiones, CRM, Archivo) are
+> **OPEN → TBD** (RFC 0008 Q1/Q6, owned by @SKuger01 via this playground). The
+> placeholder hexes in the store are explicitly NOT decisions — **never invent
+> an accent**. *(ES: solo el acento del ERP está cerrado; los demás están
+> abiertos y son TBD — nunca inventes un acento, escala a @SKuger01.)*
+
+## 2. Prerequisites · Prerrequisitos
+
+> **Resumen (ES).** Lo que necesitas antes de empezar: el directorio de build, las
+> versiones de Node/pnpm, y los SVG de marca.
 
 - Build dir: **`/Users/gczuluaga/dev/pharos-playground/`** (fresh).
 - `node >= 22`, `pnpm@10+`.
-- Brand SVGs: `/Users/gczuluaga/dev/.github/brands/pharos_brand/` (4 files: navbar/icon × light/dark).
+- Brand SVGs: `/Users/gczuluaga/dev/.github/brands/pharos_brand/` (navbar/icon × light/dark).
 
 ---
 
-## 3. Phase 0 — Scaffold
+## Phase 0 — Scaffold · Andamiaje
+
+> **Resumen (ES) — Fase 0: Andamiaje.**
+>
+> Crea el proyecto Nuxt 4 mínimo e instala todas las dependencias (Tailwind v4,
+> shadcn-nuxt, Pinia, @nuxt/fonts, reka-ui pineado, @unovis, striptags).
+>
+> En orden, las tareas:
+>
+> 1. **0.1** — Crear el proyecto `pharos-playground` con `pnpm create nuxt` e `git init`.
+> 2. **0.2** — Instalar dependencias dev y de runtime (versiones pineadas).
+> 3. **0.3** — Correr `nuxi prepare` para generar tipos antes del init de shadcn.
+
+- [x] **0.1** — Scaffold the project and init git.
+- [x] **0.2** — Install dev + runtime dependencies (pinned versions matter).
+  - **Why:** `reka-ui` is pinned to `2.9.6` because `2.9.10` breaks Vue SFC type
+    inference; `striptags` must be a direct dep so Vite 7 pre-bundles the CJS dep
+    that `@unovis/ts` imports; `typescript` is added explicitly to guarantee TS ≥5.5
+    for reka-ui resolution.
+- [x] **0.3** — `pnpm dlx nuxi prepare` to generate `.nuxt` types before shadcn init.
 
 ```bash
 cd /Users/gczuluaga/dev
@@ -83,18 +293,45 @@ pnpm add striptags            # @unovis/ts CJS dep — explicit for Vite 7 pre-b
 pnpm dlx nuxi prepare   # generates .nuxt types before shadcn init
 ```
 
-**Verify P0:** `pnpm dev` boots the default Nuxt page.
+✅ **Done-when:** `pnpm dev` boots the default Nuxt page. *(ES: `pnpm dev`
+arranca la página por defecto de Nuxt.)*
+
+🚦 **Checkpoint 0.** Show gczuluaga: the booting default Nuxt page and the
+`package.json` dependency list. Questions:
+1. Why is `reka-ui` pinned to `2.9.6` rather than taking the latest? *(ES: ¿por
+   qué se pinea `reka-ui` a `2.9.6` y no se toma la última?)*
+2. Walk the dependency list live — which deps exist only to make a *transitive*
+   dep build (`striptags`, `typescript`), and why? *(ES: recorre las dependencias
+   en vivo — ¿cuáles existen solo para que compile una dependencia transitiva?)*
 
 ---
 
-## 4. Phase 1 — Token contract: `app/assets/css/main.css`
+## Phase 1 — Token contract: `app/assets/css/main.css` · Contrato de tokens
 
-Write **exactly** this. The `--font-mono-stack`/`--font-data-stack` in `:root` are
-the vars the font picker writes at runtime. `@theme inline` routes utilities through
-them so runtime overrides render (the `var()` indirection — without it, `@theme inline`
-bakes literal font names at build time and runtime `setProperty` has no effect).
-The `.fonts-preload` class lists all 10 picker fonts in a `font-family` property so
-`@nuxt/fonts` generates `@font-face` for each; the class is never applied.
+> **Resumen (ES) — Fase 1: Contrato de tokens.**
+>
+> Escribe el CSS que define el contrato de tokens (shadcn-vue + paleta de estado
+> independiente del acento + paleta de gráficas + stacks de fuentes overridables
+> en runtime).
+>
+> En orden, las tareas:
+>
+> 1. **1.1** — Escribir `main.css` EXACTAMENTE como abajo (primitivas de marca, light, dark, `@theme inline`, preload de fuentes, base).
+
+- [x] **1.1** — Write `app/assets/css/main.css` **exactly** as below.
+  - **Why:** The `--font-mono-stack` / `--font-data-stack` in `:root` are the vars
+    the font picker writes at runtime. `@theme inline` routes utilities through
+    them so runtime overrides render (the `var()` indirection — without it,
+    `@theme inline` bakes literal font names at build time and runtime
+    `setProperty` has no effect). The `.fonts-preload` class lists all 10 picker
+    fonts in a `font-family` property so `@nuxt/fonts` generates `@font-face` for
+    each; the class is never applied.
+  - 💡 **Heuristic.** A CSS variable only stays overridable at runtime if every
+    consumer reads it through `var()`. The moment a Tailwind utility bakes the
+    literal value at build time, `setProperty()` is a no-op — the indirection is
+    the whole trick. *(ES: una variable CSS solo sigue siendo overridable en runtime
+    si todos la leen vía `var()`; si una utilidad hornea el literal en build, el
+    `setProperty()` no hace nada.)*
 
 ```css
 /* Pháros brand playground — LEAN token contract (RFC 0008 Q4/Q5/Q7) */
@@ -148,10 +385,10 @@ The `.fonts-preload` class lists all 10 picker fonts in a `font-family` property
   --sidebar-ring: #003A70;
 
   /* ACCENT-INDEPENDENT STATUS PALETTE — never moves when the accent changes */
-  --status-success: #1b6b5a; --status-success-bg: #e8f5f1;
-  --status-warning: #7a5d00; --status-warning-bg: #fef6dc;
-  --status-error:   #8b1a2b; --status-error-bg:   #fceaee;
-  --status-info:    #003a70; --status-info-bg:    #e4edf7;
+  --success: #1b6b5a; --success-foreground: #e8f5f1;
+  --warning: #7a5d00; --warning-foreground: #fef6dc;
+  --error:   #8b1a2b; --error-foreground:   #fceaee;
+  --info:    #003a70; --info-foreground:    #e4edf7;
 
   /* numbered chart palette (brand-derived) */
   --chart-1: #003A70;
@@ -197,10 +434,10 @@ The `.fonts-preload` class lists all 10 picker fonts in a `font-family` property
   --sidebar-border: #243a5a;
   --sidebar-ring: #A0D1CA;
 
-  --status-success: #4cd1b0; --status-success-bg: #0c2a24;
-  --status-warning: #e6c34d; --status-warning-bg: #2e2606;
-  --status-error:   #f4a0b0; --status-error-bg:   #2a0a10;
-  --status-info:    #7fb0e6; --status-info-bg:    #0a1f38;
+  --success: #4cd1b0; --success-foreground: #0c2a24;
+  --warning: #e6c34d; --warning-foreground: #2e2606;
+  --error:   #f4a0b0; --error-foreground:   #2a0a10;
+  --info:    #7fb0e6; --info-foreground:    #0a1f38;
 
   --chart-1: #5b9bd5;
   --chart-2: #A0D1CA;
@@ -240,14 +477,14 @@ The `.fonts-preload` class lists all 10 picker fonts in a `font-family` property
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --color-status-success: var(--status-success);
-  --color-status-success-bg: var(--status-success-bg);
-  --color-status-warning: var(--status-warning);
-  --color-status-warning-bg: var(--status-warning-bg);
-  --color-status-error: var(--status-error);
-  --color-status-error-bg: var(--status-error-bg);
-  --color-status-info: var(--status-info);
-  --color-status-info-bg: var(--status-info-bg);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -280,13 +517,36 @@ The `.fonts-preload` class lists all 10 picker fonts in a `font-family` property
 }
 ```
 
-**Verify P1:** CSS parses clean; the `var()` indirection means `.font-mono` and
-`.font-data` utilities resolve at runtime so `setProperty('--font-mono-stack', ...)` on
-`<html>` immediately changes the computed font-family of `.font-mono` elements.
+✅ **Done-when:** CSS parses clean; the `var()` indirection means `.font-mono`
+and `.font-data` utilities resolve at runtime so `setProperty('--font-mono-stack',
+…)` on `<html>` immediately changes the computed font-family of `.font-mono`
+elements. *(ES: el CSS parsea sin errores; la indirección `var()` hace que cambiar
+`--font-mono-stack` en `<html>` cambie de inmediato la `font-family` computada.)*
 
 ---
 
-## 5. Phase 2 — `nuxt.config.ts`
+## Phase 2 — `nuxt.config.ts` · Configuración de Nuxt
+
+> **Resumen (ES) — Fase 2: nuxt.config.ts.**
+>
+> Configura módulos, Tailwind v4 vía Vite, las 12 familias de fuentes
+> (`@nuxt/fonts`), el guard anti-FOUC, el puerto, y el `paths` de TypeScript para
+> `reka-ui`.
+>
+> En orden, las tareas:
+>
+> 1. **2.1** — Escribir `nuxt.config.ts` con módulos, Vite, fuentes, head/FOUC y typescript.
+
+- [x] **2.1** — Write `nuxt.config.ts` as below.
+  - 💡 **Heuristic.** `@nuxt/fonts` only generates `@font-face` for fonts it
+    *detects in CSS*. With the `var()` indirection, picker font names never appear
+    in the Tailwind utility CSS — so each picker family needs `global: true` AND
+    the `.fonts-preload` class (Phase 1); both are required for reliable
+    `@font-face` generation across dev cold-starts. A **cold restart** (cleared
+    `.nuxt/` and font cache) is required after these changes take effect. *(ES:
+    `@nuxt/fonts` solo genera `@font-face` para fuentes que detecta en el CSS; las
+    del picker necesitan `global: true` y la clase `.fonts-preload`, y un reinicio
+    en frío.)*
 
 ```ts
 import tailwindcss from '@tailwindcss/vite'
@@ -345,19 +605,30 @@ export default defineNuxtConfig({
 })
 ```
 
-> **@nuxt/fonts + picker fonts note:** `@nuxt/fonts` only generates `@font-face` for
-> fonts it detects in CSS. Without `global: true` AND the `.fonts-preload` class,
-> picker fonts would fall back to system fonts. Both are required for reliable
-> `@font-face` generation across dev cold-starts. A **cold restart** (with cleared
-> `.nuxt/` and font cache) is required after these changes take effect.
-
-**Verify P2:** after a cold start (`rm -rf .nuxt && pnpm dev`), the browser shows
-`@font-face` rules for all 10 picker fonts (check via DevTools → Sources, or
-`document.fonts` in console).
+✅ **Done-when:** after a cold start (`rm -rf .nuxt && pnpm dev`), the browser
+shows `@font-face` rules for all 10 picker fonts (check via DevTools → Sources, or
+`document.fonts` in console). *(ES: tras un reinicio en frío, el navegador muestra
+reglas `@font-face` para las 10 fuentes del picker.)*
 
 ---
 
-## 6. Phase 3 — shadcn-vue init + components
+## Phase 3 — shadcn-vue init + components · Init de shadcn-vue
+
+> **Resumen (ES) — Fase 3: Init de shadcn-vue + componentes.**
+>
+> Inicializa shadcn-vue y agrega los componentes que usa el playground, cuidando
+> de NO sobrescribir el `main.css` de la Fase 1.
+>
+> En orden, las tareas:
+>
+> 1. **3.1** — Correr `shadcn-vue init` (DECLINAR sobrescribir `main.css`).
+> 2. **3.2** — Agregar los componentes y crear `app/lib/utils.ts`; remover cualquier `@import` de Google Fonts inyectado.
+
+- [x] **3.1** — Run `shadcn-vue init` (new-york, zinc, prefix `""`, lucide). If
+      init offers to overwrite `main.css` → **DECLINE**; then restore Phase 1 CSS
+      exactly.
+- [x] **3.2** — Add the components, create `app/lib/utils.ts`, and remove any
+      injected Google Fonts `@import` from `main.css` (@nuxt/fonts owns fonts).
 
 ```bash
 pnpm dlx shadcn-vue@latest init    # new-york, zinc, app/assets/css/main.css, prefix "", lucide
@@ -373,18 +644,39 @@ import { twMerge } from 'tailwind-merge'
 export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }
 ```
 
-If `shadcn-vue add` injects a Google Fonts `@import url(...)` into `main.css`, remove
-it — @nuxt/fonts owns font loading.
-
-**Verify P3:** `ls app/components/ui` shows the added components. `main.css` still
-has the Phase-1 content.
+✅ **Done-when:** `ls app/components/ui` shows the added components, and
+`main.css` still has the Phase-1 content (no injected `@import url(...)`, no
+duplicate `@layer base`). *(ES: `ls app/components/ui` muestra los componentes y
+`main.css` conserva el contenido de la Fase 1.)*
 
 ---
 
-## 7. Phase 4 — Store: `app/stores/playground.ts`
+## Phase 4 — Store: `app/stores/playground.ts` · Estado del playground
 
-Writes brand-accent + font overrides as inline CSS vars on `<html>`. Status palette
-is deliberately untouched (accent-independence proof, Q4).
+> **Resumen (ES) — Fase 4: Store de Pinia.**
+>
+> El store escribe el acento de marca + overrides de fuente como variables CSS
+> inline en `<html>`. La paleta de estado se deja intacta a propósito (prueba de
+> independencia del acento, Q4). El ERP está LOCKED; el resto son placeholders.
+>
+> En orden, las tareas:
+>
+> 1. **4.1** — Escribir `app/stores/playground.ts` (sub-marcas, monos, fuentes de datos, `apply()`, `ensureFontLoaded`, persistencia, `init`).
+
+🚦 **Accent placeholders are NOT decisions.** The non-ERP sub-brand hexes below are
+**placeholders for @SKuger01**, marked `locked: false`. Only ERP · Timón (Navy
+`#003A70` light / teal `#A0D1CA` dark) is locked. Do not promote any placeholder to
+a decision without escalating (RFC 0008 Q1/Q6). *(ES: los hexes no-ERP son
+placeholders para @SKuger01; solo el ERP está cerrado — no los conviertas en
+decisión sin escalar.)*
+
+- [x] **4.1** — Write `app/stores/playground.ts` as below.
+  - **Why:** `apply()` writes the brand accent only to `--primary` / `--ring` /
+    `--sidebar-primary` / `--sidebar-ring` / `--chart-1` — never the status tokens
+    (that is the Q4 accent-independence proof). `ensureFontLoaded` is required
+    because `@nuxt/fonts`' lazy `@font-face` does not re-fire on a `var()`-indirected
+    `font-family` change (trap T8); without it, picked fonts silently fall back to
+    system mono and the picker looks dead.
 
 ```ts
 import { defineStore } from 'pinia'
@@ -418,9 +710,10 @@ export const MONO_FONTS = [
   { id: 'martian',   label: 'Martian Mono',               stack: '"Martian Mono", ui-monospace, SFMono-Regular, Menlo, monospace' },
 ]
 
-// Data-font candidates — only applied when dataFontEnabled. Brand book mandates
-// JetBrains Mono + tabular-nums for cifras (BRAND.md §4.4); Inter/Plex Sans are
-// the proportional-with-tabular-figures alternatives.
+// Data-font candidates — only applied when dataFontEnabled. The brand book mandates
+// a mono + tabular-nums for cifras (BRAND.md §4.4); Inter/Plex Sans are the
+// proportional-with-tabular-figures alternatives. NOTE: JetBrains Mono is a
+// playground exploration candidate ONLY — it is NOT a product-UI font (see §1).
 export const DATA_FONTS = [
   { id: 'jetbrains', label: 'JetBrains Mono (brand book — exploración)', stack: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace' },
   { id: 'ibm-mono',  label: 'IBM Plex Mono',               stack: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace' },
@@ -517,29 +810,51 @@ export const usePlayground = defineStore('playground', () => {
 })
 ```
 
+✅ **Done-when:** the store mounts; calling `setSubBrand`, `toggleTheme`,
+`setMono`, and `setDataFontEnabled` each mutate the inline CSS vars on `<html>`,
+and the status tokens (`--success`/`--warning`/`--error`/`--info`) never change.
+*(ES: el store monta; los setters mutan las variables CSS inline en `<html>` y los
+tokens de estado nunca cambian.)*
+
 ---
 
-## 8. Phase 5 — `AppLogo.vue` (inline SVG) + `SidebarLogo.vue`
+## Phase 5 — `AppLogo.vue` (inline SVG) + `SidebarLogo.vue` · Logo
 
-### 5a. The brand SVG files are NOT usable via `<img>` — inline instead
+> **Resumen (ES) — Fase 5: Logo.**
+>
+> Los SVG de marca NO se pueden usar vía `<img>` (renderizan el wordmark con un
+> `@import` externo de Google Fonts, bloqueado en modo estático seguro — falla y se
+> ve como "dos logos"). Se renderiza el mark **inline**, que usa la Fraunces real
+> de la página y se adapta al tema vía `currentColor`. El logo aparece EXACTAMENTE
+> UNA VEZ, en el header del sidebar.
+>
+> En orden, las tareas:
+>
+> 1. **5.1** — Entender por qué los SVG de marca no sirven vía `<img>` (trap T6).
+> 2. **5.2** — Escribir `AppLogo.vue` (SVG inline, dos variantes, dot rojo `#E4002B`).
+> 3. **5.3** — Escribir `SidebarLogo.vue` que puentea `useSidebar()` dentro del provider.
 
-The brand source SVGs (`/Users/gczuluaga/dev/.github/brands/pharos_brand/pharos-*.svg`)
-render their wordmark as `<text>` styled by an **external** Google-Fonts `@import`. When
-an SVG is loaded through `<img src>` it runs in **secure static mode** — external
-resources are blocked and the file fails to decode entirely (`naturalWidth === 0`),
-which the browser paints as a **broken-image glyph + the `alt` text**. That broken
-glyph beside the alt text is exactly what reads as "the logo appears twice." (Trap T6.)
+### 5.1 — The brand SVG files are NOT usable via `<img>` — inline instead
 
-So do NOT use `<img src>` for these. Render the mark **inline** instead, where it uses
-the page's real Fraunces (already loaded by @nuxt/fonts) and adapts to the theme via
-`currentColor`. Copying the `public/logos/*.svg` files is optional (harmless if present;
-not referenced by the component below).
+- [x] **5.1** — Confirm the constraint before building the component.
+  - **Why:** The brand source SVGs
+    (`/Users/gczuluaga/dev/.github/brands/pharos_brand/pharos-*.svg`) render their
+    wordmark as `<text>` styled by an **external** Google-Fonts `@import`. When an
+    SVG is loaded through `<img src>` it runs in **secure static mode** — external
+    resources are blocked and the file fails to decode entirely (`naturalWidth ===
+    0`), which the browser paints as a **broken-image glyph + the `alt` text**. That
+    broken glyph beside the alt text is exactly what reads as "the logo appears
+    twice" (trap T6). So do NOT use `<img src>`; render the mark **inline** instead,
+    where it uses the page's real Fraunces (already loaded by @nuxt/fonts) and adapts
+    to the theme via `currentColor`. Copying the `public/logos/*.svg` files is
+    optional (harmless if present; not referenced by the component below).
 
-### 5b. `app/components/AppLogo.vue` — inline SVG (verified)
+### 5.2 — `app/components/AppLogo.vue` — inline SVG (verified)
 
-One element per variant, theme-adaptive via `currentColor` on the wordmark; the
-pilot-light dot keeps the literal brand red `#E4002B` (never re-tinted — brand book).
-No `<img>`, no external font import, no light/dark file swap.
+- [x] **5.2** — Write `AppLogo.vue` as below. One element per variant,
+      theme-adaptive via `currentColor` on the wordmark; the pilot-light dot keeps
+      the literal brand red `#E4002B` (never re-tinted — brand book). No `<img>`, no
+      external font import, no light/dark file swap.
 
 ```vue
 <script setup lang="ts">
@@ -571,11 +886,12 @@ withDefaults(defineProps<{ variant?: 'navbar' | 'icon' }>(), { variant: 'navbar'
 </template>
 ```
 
-### 5c. `app/components/SidebarLogo.vue`
+### 5.3 — `app/components/SidebarLogo.vue`
 
-`useSidebar()` must be called from inside a component rendered inside `<SidebarProvider>`
-(not from the layout script setup that owns the `<SidebarProvider>`). This component
-bridges that boundary.
+- [x] **5.3** — Write `SidebarLogo.vue` as below.
+  - **Why:** `useSidebar()` must be called from inside a component rendered inside
+    `<SidebarProvider>` (not from the layout script setup that owns the
+    `<SidebarProvider>`). This component bridges that boundary (trap T7).
 
 ```vue
 <script setup lang="ts">
@@ -588,22 +904,35 @@ const { state } = useSidebar()
 </template>
 ```
 
-**Logo rule:** the logo appears EXACTLY ONCE — in the sidebar header via `<SidebarLogo />`.
-It is NOT repeated in the topbar. When the sidebar expands, the full navbar wordmark
-shows; when collapsed to the icon rail, the icon variant shows. Both remain at a fixed
-x position (the sidebar header, which doesn't shift horizontally with the content area).
+✅ **Done-when:** the logo appears **exactly once** — in the sidebar header via
+`<SidebarLogo />`, never in the topbar. When the sidebar expands the full navbar
+wordmark shows; collapsed to the icon rail, the icon variant shows. Both stay at a
+fixed x position. 0 leftover `<img alt="Pháros">`; exactly 1 visible `<svg
+aria-label="Pháros">` with rendered `<text>`. *(ES: el logo aparece exactamente una
+vez en el header del sidebar; nunca en el topbar; cambia navbar↔icon al colapsar.)*
 
 ---
 
-## 9. Phase 6 — Layout: `app/layouts/default.vue`
+## Phase 6 — Layout: `app/layouts/default.vue` · Layout
 
-Finance-lch topbar pattern on the `.dark`/shadcn substrate. The sidebar header holds
-the logo via `<SidebarLogo>`. The content area is a 3-track CSS grid:
-`preview | 6px-resizer | Marca-panel`, mimicking finance-lch's
-`FacturaDrawerPanel`/`CausacionPanel` pattern for the resizable right panel.
+> **Resumen (ES) — Fase 6: Layout.**
+>
+> Patrón de topbar de finance-lch sobre el substrato `.dark`/shadcn. El header del
+> sidebar lleva el logo. El área de contenido es un grid CSS de 3 pistas:
+> `preview | resizer 6px | panel Marca`, imitando el panel redimensionable de
+> finance-lch.
+>
+> En orden, las tareas:
+>
+> 1. **6.1** — Escribir `app/layouts/default.vue` (sidebar, topbar con breadcrumb-popover y toggle de tema, grid redimensionable con persistencia).
+> 2. **6.2** — Crear `app/app.vue`.
 
-Note: `SidebarInset` is already a `<main>`; do NOT nest a `<main>` inside it.
-`<NuxtPage>` goes inside a `<div>` with `overflow-y-auto`.
+- [x] **6.1** — Write `app/layouts/default.vue` as below.
+  - **Why:** `SidebarInset` is already a `<main>` — do NOT nest a `<main>` inside
+    it; `<NuxtPage>` goes inside a `<div>` with `overflow-y-auto`. The content area
+    is a 3-track CSS grid (`preview | 6px-resizer | Marca-panel`) mimicking
+    finance-lch's `FacturaDrawerPanel`/`CausacionPanel` pattern for the resizable
+    right panel.
 
 ```vue
 <script setup lang="ts">
@@ -738,22 +1067,45 @@ onMounted(() => {
 </template>
 ```
 
-Create `app/app.vue`:
+- [x] **6.2** — Create `app/app.vue`:
+
 ```vue
 <template><NuxtLayout><NuxtPage /></NuxtLayout></template>
 ```
 
-**Verify P6:** topbar shows `[trigger] | [Diseño ▾ / Componentes] ... [org] [theme btn]`.
-Pháros logo appears once, in the sidebar header. Dragging the 6px divider resizes the panel;
-width persists across reload; double-click resets to 26%. Theme toggle in topbar works.
-No `<h1>` anywhere.
+✅ **Done-when:** topbar shows `[trigger] | [Diseño ▾ / Componentes] … [org]
+[theme btn]`; the Pháros logo appears once, in the sidebar header; dragging the 6px
+divider resizes the panel; width persists across reload; double-click resets to
+26%; theme toggle in topbar works; **no `<h1>` anywhere**. *(ES: el topbar muestra
+la migaja con popover y el toggle de tema; el logo aparece una vez; el divisor
+redimensiona y persiste; no hay `<h1>`.)*
+
+🚦 **Checkpoint 6 (first real UI).** Show gczuluaga: the running app — topbar,
+sidebar collapse to icon rail, the resizable Marca panel, and the theme toggle
+flipping `.dark` with no FOUC. Questions:
+1. Why is the theme toggle in the topbar and not in the Marca panel — and why is
+   the logo never repeated in the topbar? *(ES: ¿por qué el toggle de tema va en el
+   topbar y no en el panel, y por qué el logo no se repite en el topbar?)*
+2. Walk the resize live: drag the divider, reload, double-click — explain where the
+   width is persisted and how the default (26%) is enforced. *(ES: recorre el
+   resize en vivo y explica dónde se persiste el ancho y cómo se fuerza el 26% por
+   defecto.)*
 
 ---
 
-## 10. Phase 7 — Marca panel: `app/components/PlaygroundPanel.vue`
+## Phase 7 — Marca panel: `app/components/PlaygroundPanel.vue` · Panel de marca
 
-Plain `<aside>` (NOT a Sheet/overlay) — the layout mounts it inline as the third
-grid track. Theme control is in the topbar; the panel has sub-brand, accent, fonts.
+> **Resumen (ES) — Fase 7: Panel de marca.**
+>
+> Un `<aside>` plano (NO un Sheet/overlay) — el layout lo monta inline como la
+> tercera pista del grid. El control de tema vive en el topbar; el panel tiene
+> sub-marca, acento personalizado y fuentes.
+>
+> En orden, las tareas:
+>
+> 1. **7.1** — Escribir `PlaygroundPanel.vue` (sub-marca, acento, mono, toggle de fuente de datos, nota de independencia del acento).
+
+- [x] **7.1** — Write `PlaygroundPanel.vue` as below.
 
 ```vue
 <script setup lang="ts">
@@ -833,7 +1185,7 @@ const pg = usePlayground()
       <p class="text-xs leading-relaxed text-muted-foreground">
         Apagado = un solo mono (RFC 0008 Q5). Encendido = fuente de datos aparte con
         <span class="font-data tabular-nums slashed-zero">tabular-nums</span> y cero con barra,
-        como el brand book (JetBrains Mono para cifras).
+        como el brand book (mono para cifras).
       </p>
     </section>
 
@@ -847,18 +1199,35 @@ const pg = usePlayground()
 </template>
 ```
 
+✅ **Done-when:** the panel renders inline as the third grid track (not an
+overlay); selecting a sub-brand, picking a custom accent, choosing a mono, and
+toggling the data font all visibly re-theme the preview. *(ES: el panel renderiza
+inline como tercera pista del grid; sub-marca, acento, mono y fuente de datos
+re-tematizan el preview de forma visible.)*
+
 ---
 
-## 11. Phase 8 — Component gallery: `app/pages/index.vue`
+## Phase 8 — Component gallery: `app/pages/index.vue` · Galería de componentes
 
-Use `font-data` (not `font-mono`) on all cifras so the data-font axis is visible.
-Status pills use status tokens; they must NOT recolor on accent change.
+> **Resumen (ES) — Fase 8: Galería de componentes.**
+>
+> Usa `font-data` (no `font-mono`) en todas las cifras para que el eje de fuente de
+> datos sea visible. Las píldoras de estado usan tokens de estado y NO se recolorean
+> al cambiar el acento.
+>
+> En orden, las tareas:
+>
+> 1. **8.1** — Escribir `app/pages/index.vue` con las tarjetas en orden y las cifras en `font-data`.
+
+- [x] **8.1** — Write `app/pages/index.vue`. Use `font-data` (not `font-mono`) on
+      all cifras so the data-font axis is visible. Status pills use status tokens;
+      they must NOT recolor on accent change.
 
 Key lines to get right:
 
 ```vue
 <!-- Table numeric cell — font-data + tabular features: -->
-<TableCell class="text-right font-data tabular-nums slashed-zero lining-nums" :class="row.monto < 0 ? 'text-status-error' : ''">
+<TableCell class="text-right font-data tabular-nums slashed-zero lining-nums" :class="row.monto < 0 ? 'text-error' : ''">
 
 <!-- Typography card — two samples: -->
 <p class="font-mono text-sm">Mono · IBM Plex Mono · etiquetas · ABCDEF · {} [] =></p>
@@ -868,12 +1237,27 @@ Key lines to get right:
 Full `app/pages/index.vue` structure (cards in order): Botones · Insignias y estados ·
 Formulario · Tabla financiera · Pestañas · Diálogo · Tipografía. All headings Spanish.
 
+✅ **Done-when:** all gallery cards render in order; cifras use `font-data` and
+visibly change when the data-font axis switches; status pills keep their colors
+when the accent changes. *(ES: todas las tarjetas renderizan en orden; las cifras
+usan `font-data` y las píldoras de estado no cambian con el acento.)*
+
 ---
 
-## 12. Phase 9 — Charts: `app/pages/graficas.vue` + `app/components/PgCharts.client.vue`
+## Phase 9 — Charts: `app/pages/graficas.vue` + `app/components/PgCharts.client.vue` · Gráficas
 
-`PgCharts.client.vue` uses `@unovis/vue` VisXYContainer/VisLine/VisDonut. Colors come
-from `var(--chart-N)`. The `.client` suffix keeps it off SSR; `build.transpile` is set.
+> **Resumen (ES) — Fase 9: Gráficas.**
+>
+> `PgCharts.client.vue` usa `@unovis/vue` (VisXYContainer/VisLine/VisDonut). Los
+> colores vienen de `var(--chart-N)`. El sufijo `.client` lo mantiene fuera de SSR;
+> `build.transpile` está puesto.
+>
+> En orden, las tareas:
+>
+> 1. **9.1** — Escribir `graficas.vue` (envuelto en `ClientOnly` con fallback).
+> 2. **9.2** — Mantener `PgCharts.client.vue` idéntico a la implementación v1.
+
+- [x] **9.1** — Write `graficas.vue` as below.
 
 ```vue
 <!-- graficas.vue -->
@@ -885,11 +1269,22 @@ from `var(--chart-N)`. The `.client` suffix keeps it off SSR; `build.transpile` 
 </template>
 ```
 
-(Keep `PgCharts.client.vue` identical to the v1 implementation — @unovis + chart data unchanged.)
+- [x] **9.2** — Keep `PgCharts.client.vue` identical to the v1 implementation —
+      @unovis + chart data unchanged.
+
+✅ **Done-when:** `/graficas` renders charts (line + donut); the breadcrumb leaf
+reads "Gráficas"; the charts recolor on accent change (via `--chart-1`); no SSR
+errors. *(ES: `/graficas` renderiza las gráficas; la migaja dice "Gráficas"; las
+gráficas se recolorean con el acento; sin errores de SSR.)*
 
 ---
 
-## 13. Known issues, traps, and fixes (discovered during build)
+## 10. Known issues, traps, and fixes (discovered during build) · Trampas y arreglos
+
+> **Resumen (ES).** Las trampas que se descubrieron construyendo. El picker de
+> fuentes solo funciona con tres arreglos en capas (T4 → T5 → T8). Los SVG de marca
+> solo sirven inline (T6). `useSidebar()` no se puede llamar en el script del layout
+> (T7). Léelas antes de tocar fuentes o logo.
 
 ### T1 — `reka-ui` TypeScript resolution
 `tsc` error: `Failed to resolve import source "reka-ui"`. Fix: `pnpm add -D typescript`
@@ -970,7 +1365,10 @@ inside `<SidebarProvider>`), so its script setup can safely call `useSidebar()`.
 
 ---
 
-## 14. Q9 snapshot determinism (required guard for Playwright)
+## 11. Q9 snapshot determinism (required guard for Playwright) · Determinismo de snapshots
+
+> **Resumen (ES).** Antes de cada snapshot, siembra/limpia `localStorage` al estado
+> canónico para que los snapshots sean reproducibles.
 
 Before each snapshot, seed/clear localStorage to canonical state:
 
@@ -987,7 +1385,11 @@ are likewise set explicitly per snapshot variant, never inherited from a prior s
 
 ---
 
-## 15. Run & acceptance checklist (§11)
+## 12. Run & acceptance checklist · Correr y checklist de aceptación
+
+> **Resumen (ES).** Cómo correr la app (con reinicio en frío) y la lista de
+> aceptación completa. La app NO está verificada hasta que cada línea sea
+> literalmente cierta en el navegador.
 
 ```bash
 cd /Users/gczuluaga/dev/pharos-playground
@@ -995,7 +1397,7 @@ rm -rf .nuxt                # cold start so @nuxt/fonts regenerates with all fam
 pnpm dev                    # http://localhost:3000
 ```
 
-Drive the page and confirm ALL of:
+✅ **Done-when (exit acceptance).** Drive the page and confirm ALL of:
 
 - [ ] **Logo** renders as a real **inline-SVG Fraunces wordmark** (NOT a broken image —
       `img.naturalWidth` must be >0, or better, there are 0 `<img alt="Pháros">` and exactly
@@ -1020,24 +1422,105 @@ Drive the page and confirm ALL of:
       `document.fonts.check('1rem "Martian Mono"')` becomes true. Requires `ensureFontLoaded`
       in `apply()` (T8) on top of T4 + T5.
 - [ ] **Data-font toggle:** OFF → cifras use the selected mono (one mono, Q5); ON → cifras
-      switch to the chosen data font (default JetBrains Mono) with `tabular-nums`/`slashed-zero`.
-      The data Select is disabled while OFF.
+      switch to the chosen data font (default JetBrains Mono — exploration only) with
+      `tabular-nums`/`slashed-zero`. The data Select is disabled while OFF.
 - [ ] **Charts** (`/graficas`) render; breadcrumb leaf reads "Gráficas"; recolor on accent change.
 - [ ] No console errors; **`pnpm build` succeeds** (charts stay `.client`/`ClientOnly`).
 
 Screenshots: (1) light+ERP, (2) dark+ERP, (3) light+placeholder accent,
 (4) data-font toggle ON/OFF, (5) panel resized.
 
+🚦 **Checkpoint 12 (exit).** Show gczuluaga: every acceptance line walked live in
+the browser, plus the 5 screenshots and a green `pnpm build`. This checkpoint
+**blocks archiving the plan** until Checkpoints 0, 6, and 12 have all been walked.
+Questions:
+1. Demonstrate the Q4 accent-independence proof live — switch sub-brands and show the
+   status pills do not move. *(ES: demuestra en vivo la independencia del acento —
+   cambia de sub-marca y muestra que las píldoras de estado no se mueven.)*
+2. Pick Martian Mono and show — with a width measurement, not just the CSS var — that
+   the glyphs actually changed (T8). *(ES: elige Martian Mono y muestra, con una
+   medición de ancho, que los glifos cambiaron de verdad.)*
+
 ---
 
-## 16. Out of scope / notes
+## Decisions · Decisiones
 
-- The brand-book "data font" (JetBrains Mono for cifras) and Q5's "one mono" genuinely
-  conflict. This playground does NOT resolve it — it makes both visible so SKuger can
-  decide. Default stays Q5 (one mono, toggle off).
-- finance-lch's real shell uses `[data-theme]` + cobol + `--nav-*`. We deliberately
-  adopt only its **look/structure** on the locked `.dark`/shadcn substrate.
-- Still local-only. Future home: `pharos-ui` shadcn-vue registry (RFC 0008 Q3).
-  The resizable-panel + font-token work seeds it.
-- The `sheet` component stays vendored (harmless) even though `PlaygroundPanel`
-  no longer uses it — leave it for future use.
+> Collected 🛑 markers that are still open, and resolved decisions logged below for
+> traceability.
+
+**Open:**
+
+- 🛑 **Non-ERP sub-brand accents** — LIS clínico, LIS deportivo, Admisiones, CRM,
+  and Archivo accents are TBD. Pending: @SKuger01 decides via this playground (RFC
+  0008 Q1/Q6); the placeholder hexes in the store are NOT decisions.
+- 🛑 **Q5 final mono / data-font split** — the brand-book "mono for cifras" vs Q5's
+  "one mono" conflict is deliberately left open. Pending: brand owner decides after
+  seeing both axes in the playground.
+
+**Resolved during planning (2026-06-15 unless noted):**
+
+- **Design system shape** — Pháros is the umbrella product design system; LCH and
+  Biuman are tenants. Source of truth = the registry at
+  `.github/brands/pharos_brand/registry/`; token contract = `registry/tokens.css`
+  (shadcn-vue vars + accent-independent `--success`/`--warning`/`--error`/`--info`).
+- **Token collapse** — legacy tokens fold into the contract: `--text-secondary` /
+  `--text-muted` → `--muted-foreground`; `--text-brand` → `--primary`; `--nav-*` →
+  `--sidebar-*`.
+- **Theming** — shadcn `.dark` class, light + dark only; no cobol/CRT; no
+  `[data-theme]` (Q7).
+- **Fonts** — Fraunces (display/wordmark) + Inter (sans UI) + IBM Plex Mono (data +
+  labels). JetBrains Mono and Apax are NOT product-UI fonts; Apax stays an LCH
+  brand-identity asset; JetBrains Mono appears only as a playground exploration
+  candidate.
+- **ERP accent locked** — Pháros · Timón = LCH Navy `#003A70` (+ teal `#A0D1CA`
+  success) — locked (RFC 0008 Q1/Q6).
+- **Merge mode** — merge-commit everywhere; squash merging disabled org-wide.
+- **Commit/branch type vocabulary** — canonical set is `feat | fix | refactor | test
+  | chore | docs | hotfix | ci` (`ci` added org-wide; `hotfix` valid as both a
+  branch and a commit type).
+- **Distribution** — copy-in via `scripts/sync-pharos-registry.sh`, not an npm
+  package.
+- **Tenancy naming** — a tenant never prefixes an app name (`Pháros · Timón`, never
+  "LCH Pháros"); maker credit = Interval · The Human Tech Co. (footer only).
+- **Supersedes** — `brand-playground-tweaks-plan.md` merged into this plan and moved
+  to `plans/archive/brand-playground-tweaks-plan.md`. *(2026-06-14; archived 2026-06-15.)*
+
+## Risks · Riesgos
+
+> **Resumen (ES).** Lo que puede salir mal y dónde está la mitigación concreta —
+> sobre todo el picker de fuentes y los SVG de marca.
+
+- **Font picker silently dead** → a font is selected, the CSS var changes, but the
+  glyphs never change (the three-layered T4/T5/T8 failure). **Mitigation:** keep
+  ALL THREE fixes — `var()` indirection (Phase 1), `global:true` + `.fonts-preload`
+  (Phases 1–2) with a cold restart, and `ensureFontLoaded` in `apply()` (Phase 4).
+  Verify in the browser by measuring rendered text width with Martian Mono, not by
+  reading the computed CSS var.
+- **Logo renders as a broken image** → using `<img src>` for the brand SVG fails to
+  decode in secure static mode and reads as "two logos" (T6). **Mitigation:** render
+  the mark inline in `AppLogo.vue` (Phase 5); never reintroduce `<img src>` for the
+  brand SVG. Verify with `naturalWidth`/screenshot, not curl (HTTP 200 hides it).
+- **`shadcn-vue add` overwrites the token contract** → the CLI may inject a Google
+  Fonts `@import` and a duplicate `@layer base` into `main.css` (T3). **Mitigation:**
+  after every `shadcn-vue init`/`add`, diff `main.css` against Phase 1 and restore.
+- **Accent independence regresses** → a future edit moves a status token with the
+  accent, breaking the Q4 proof. **Mitigation:** `apply()` writes the accent only to
+  `--primary`/`--ring`/`--sidebar-primary`/`--sidebar-ring`/`--chart-1`; the exit
+  checkpoint demonstrates the status pills staying put on a sub-brand switch.
+- **A placeholder accent gets shipped as a decision** → the non-ERP hexes are
+  mistaken for locked values. **Mitigation:** they carry `locked: false` and a
+  "propuesta" badge; escalate to @SKuger01 before promoting any.
+
+## References
+
+- RFC 0008 — Pháros design system + co-creation (Q1/Q4/Q5/Q6/Q7/Q9/Q11).
+- Token contract source of truth: `../brands/pharos_brand/registry/tokens.css`.
+- Registry README + frontend standards: `../brands/pharos_brand/registry/README.md`,
+  `../brands/pharos_brand/registry/frontend-standards.md`.
+- Distribution script: `../scripts/sync-pharos-registry.sh`.
+- Brand book + backbone: `../brands/pharos_brand/BRAND.md`,
+  `../brands/pharos_brand/BACKBONE.md` (`.es.md` Spanish counterpart).
+- Tracking issue: Interval-Col/.github#27.
+- Superseded plan: `archive/brand-playground-tweaks-plan.md` (merged here; archived).
+- Plan authoring guidance: `.github/agents/plan-craft.agent.md`; template at
+  `../templates/plan-template.md`.
