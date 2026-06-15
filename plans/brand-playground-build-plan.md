@@ -7,7 +7,7 @@ implementation: TBD
 language: English body; Spanish "Resumen" + decision/criteria glosses.
 tracking-issue: Interval-Col/.github#27
 relates-to: RFC 0008 Q4/Q5/Q6/Q7/Q9/Q11
-supersedes: brand-playground-tweaks-plan.md (merged here; that file is now archived)
+supersedes: archive/brand-playground-tweaks-plan.md (merged here; now archived)
 ---
 
 # Pháros brand playground — complete build plan (v1 + v2 tweaks) · Playground de marca Pháros
@@ -1482,8 +1482,8 @@ Questions:
   package.
 - **Tenancy naming** — a tenant never prefixes an app name (`Pháros · Timón`, never
   "LCH Pháros"); maker credit = Interval · The Human Tech Co. (footer only).
-- **Supersedes** — `brand-playground-tweaks-plan.md` merged into this plan and
-  archived. *(2026-06-14.)*
+- **Supersedes** — `brand-playground-tweaks-plan.md` merged into this plan and moved
+  to `plans/archive/brand-playground-tweaks-plan.md`. *(2026-06-14; archived 2026-06-15.)*
 
 ## Risks · Riesgos
 
@@ -1521,7 +1521,6 @@ Questions:
 - Brand book + backbone: `../brands/pharos_brand/BRAND.md`,
   `../brands/pharos_brand/BACKBONE.md` (`.es.md` Spanish counterpart).
 - Tracking issue: Interval-Col/.github#27.
-- Superseded plan: `brand-playground-tweaks-plan.md` (merged here; slated for
-  `archive/`).
+- Superseded plan: `archive/brand-playground-tweaks-plan.md` (merged here; archived).
 - Plan authoring guidance: `.github/agents/plan-craft.agent.md`; template at
   `../templates/plan-template.md`.
