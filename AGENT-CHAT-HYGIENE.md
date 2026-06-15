@@ -2,6 +2,8 @@
 
 > **Org guide — this is a RECOMMENDATION, not enforced.** No CI check, no required setting, nobody's going to bounce your PR over it. It's the advice a senior teammate would give you over coffee about keeping your Claude Code sessions cheap and tidy without ever losing real work. Read it, take the bits that help, ignore the rest.
 
+> 🇪🇸 **Versión en español:** [`AGENT-CHAT-HYGIENE.es.md`](AGENT-CHAT-HYGIENE.es.md).
+
 **TL;DR (safe defaults):** keep durable knowledge in the repo or memory — never _only_ in the chat. Then: **one chat per task**; **`/compact`** to finish the current task; **`/clear`** (or a new chat) to switch tasks or start a new day; **keep** when in doubt (transcripts auto-delete after 30 days); **delete** only a truly-spent transcript. Everything below is the _why_.
 
 ---
