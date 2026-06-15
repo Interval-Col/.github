@@ -32,7 +32,7 @@ The Pháros mark is a **typography-led wordmark** with one symbolic element:
 - **Wordmark**: "Pháros" set in Fraunces (variable serif, optical size 144), regular weight, in burgundy `#782F40`. The wordmark is the shared family constant — **never re-tinted to a sub-brand's accent**.
 - **Pilot light**: a small red dot floating above the P, in red `#E4002B`. It functions as an indicator light — quietly referencing the lighthouse without depicting one. Also shared across the family, never re-tinted.
 - **Separator + sub-name** (sub-brand lockup): `· <Sub-name>` after the wordmark — e.g. `Pháros · Timón`.
-- **Sublabel** (when used): the sub-brand's functional descriptor in IBM Plex Mono, ~9px, wide-tracked at 0.18em letter-spacing, muted gray `#888B8D` — e.g. `ERP · FINANZAS Y OPERACIONES` (Timón) or `CONTROL DE CALIDAD` (the QC/LIS surface).
+- **Sublabel** (when used): the sub-brand's functional descriptor in IBM Plex Mono, ~9px, wide-tracked at 0.18em letter-spacing, muted gray `#888B8D` — e.g. `ERP · FINANZAS Y OPERACIONES` (Timón). The shared horizontal mark carries **no** sublabel; descriptors live only in per-sub-brand lockups.
 
 ### 2.2 Versions
 
@@ -47,7 +47,7 @@ The Pháros mark is a **typography-led wordmark** with one symbolic element:
 
 Files live alongside this spec in `.github/brands/pharos_brand/`, and are copied into `/public/assets/logos/` in each Pháros project. Per-sub-brand lockups + accent-tinted icons live under `sub-brands/` once the names + accents lock (RFC 0008).
 
-> **The current SVGs are provisional.** The horizontal mark still carries a `CONTROL DE CALIDAD` sublabel in Helvetica Neue — leftover from the pre-umbrella QC framing. It becomes the per-sub-brand descriptor in IBM Plex Mono (per §2.1) in the gated logo remake (RFC 0008 Implementation §). The downstream `PharosLogo` chrome revisit (sublabel + plain "Pharos" title) is tracked as a non-blocking lab-qc follow-up — `Interval-Col/lab-qc#8` (spun out of #24).
+> The shared horizontal mark is the **Pháros wordmark + pilot dot** (no sublabel) — the pre-umbrella `CONTROL DE CALIDAD` sublabel + off-system Helvetica face were removed, the pilot dot was rescaled to the navbar's dot:P ratio (horizontal + icon), and the `@import` ampersand was XML-escaped across all six SVGs. Per-sub-brand lockups add the sub-name + descriptor (IBM Plex Mono, per §2.1) under `sub-brands/` once names lock. App chrome that still shows the old sublabel or an unaccented "Pharos" (e.g. lab-qc's `PharosLogo`) re-syncs with the full logo remake (RFC 0008 Implementation §).
 
 ### 2.3 Clear space
 Minimum clear space on all sides = the height of the lowercase "h" in the wordmark.

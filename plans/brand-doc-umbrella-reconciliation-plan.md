@@ -12,8 +12,10 @@ tracking-issue: Interval-Col/.github#24
 > teal); maritime theme + lighthouse→Timón soul bridge; `·` separator; 3-font
 > system (JetBrains dropped); light/dark only via `.dark`; accent-independent
 > status palette; QC = LIS state palette; Archivo = utility; `nucleus-db` never
-> branded. Phase 3 (lab-qc `PharosLogo` chrome) remains as the non-blocking
-> follow-up.
+> branded. Shared brand SVGs also cleaned (QC sublabel + off-system Helvetica
+> removed, pilot-dot proportion fixed, `@import` XML ampersand escaped). The
+> app-chrome remake (e.g. lab-qc `PharosLogo`) remains as the non-blocking
+> follow-up; lab-qc#8 was closed (folded into the gated remake).
 
 # Brand-doc reconciliation → Pháros umbrella model
 
@@ -68,11 +70,14 @@ live design calls. The *direction* is already locked (RFC 0004 rev. 2026-06-04
       generalization — soul kept near-verbatim; lighthouse→Timón bridge added).
 - [x] Keep `.es.md` and `.md` in sync (neutral-Colombian Spanish for `.es.md`).
 
-### Phase 3 — Downstream chrome (non-blocking, tracked separately)
-- [x] ~~File~~ the lab-qc follow-up → **`Interval-Col/lab-qc#8`** (accent
-      "Pharos"→"Pháros", revisit the "CONTROL DE CALIDAD" sublabel, Helvetica→
-      IBM Plex Mono). Gated with the full logo remake (RFC 0008); does **not**
-      block this plan.
+### Phase 3 — Downstream chrome (non-blocking)
+- [x] Shared brand SVGs cleaned here: horizontal mark drops the
+      "CONTROL DE CALIDAD" sublabel + the off-system Helvetica face; pilot dot
+      rescaled to the navbar dot:P ratio (horizontal + icon); `@import`
+      ampersand XML-escaped across all six.
+- [ ] App chrome (e.g. lab-qc `PharosLogo`: accent "Pharos"→"Pháros", drop the
+      QC sublabel, Helvetica→IBM Plex Mono) re-syncs with the full logo remake
+      (RFC 0008 Implementation §). Not separately tracked — lab-qc#8 closed.
 
 ## Out of scope
 - The evocative names for the non-ERP siblings (open — RFC 0008 Q1, → SKuger).
