@@ -1,5 +1,5 @@
 # Pháros — Backbone
-> Brand strategy and conceptual foundation for the LCH Quality Control module.
+> Brand strategy and conceptual foundation for the **Pháros product family** — the software that replaces the COBOL LIS, born from LCH's Quality Control module.
 > This document defines who Pháros *is* — its meaning, soul, and reason for existing — independent of how it looks or speaks.
 
 ---
@@ -7,9 +7,9 @@
 ## 1. Cuerpo · Body
 > The container. What Pháros *is* in plain terms, before any emotion or interpretation.
 
-Pháros is the internal Quality Control system of Laboratorio Clínico Hematológico. It is the module that monitors, validates, and certifies the integrity of every clinical process that happens inside the lab — from sample handling to result delivery.
+Pháros is the software family that replaces the COBOL LIS across the holding's labs. It was born from one discipline inside Laboratorio Clínico Hematológico — **Quality Control**: the module that monitors, validates, and certifies the integrity of every clinical process that happens inside the lab — from sample handling to result delivery. That founding discipline still sets the family's tone.
 
-It is built for the lab team itself, not for patients. It speaks the language of internal operations, calibration, verification, and trust.
+It is built for the people who run the lab and the holding, not for patients. It speaks the language of internal operations, calibration, verification, and trust.
 
 ---
 
@@ -24,6 +24,8 @@ The lab team interacts with Pháros daily. Pháros must feel like a calm, vigila
 
 If LCH's mantra is *"reading life in tissue, using technology to see the invisible,"* Pháros is the discipline that makes that reading honest. The light that reveals what hides — first within the lab itself, then within the patient.
 
+The lighthouse names the whole family; its members each take their place in the same waters. Where Pháros guides from the coast, **Timón** — the ERP — takes the helm and steers the operation from inside the vessel: same sea, complementary roles.
+
 ---
 
 ## 3. Ser · Personality
@@ -36,7 +38,7 @@ Pháros knows. It holds the knowledge of every protocol, every threshold, every 
 Pháros protects. It exists to keep the lab — and by extension, every patient — safe from invisible failures. Its vigilance is a form of love: quiet, constant, undramatic. It catches mistakes the way a careful nurse catches a falling tray.
 
 ### Inherited from LCH: Creator
-Pháros is built on innovation. It uses modern tools to solve a problem that older labs solved with paperwork and hope. It is technology in service of life — exactly as the parent brand demands.
+Pháros is built on innovation. It uses modern tools to solve a problem that older labs solved with paperwork and hope. It is technology in service of life — exactly as LCH's own culture demands.
 
 ---
 
@@ -45,7 +47,7 @@ Pháros is built on innovation. It uses modern tools to solve a problem that old
 
 Pháros turns quality control from a compliance burden into a daily companion. Most QC systems are forms to fill out, rules to follow, audits to survive. Pháros is a presence that watches with you and quietly ensures the lab's promise to its patients is being kept — every shift, every sample, every result.
 
-It is QC with a soul that matches LCH's: *vidas, no clientes.*
+It is software with a soul that matches LCH's: *vidas, no clientes.*
 
 ---
 
@@ -68,6 +70,8 @@ Pháros exists for one ultimate reason: a real person is waiting for a real resu
 
 ## 6. Meet Your Fan
 > Who Pháros is built to serve. Not casual users — devoted ones.
+
+These three are the founding fans — the QC and LIS personas the family grew up serving. Each new surface (ERP, Admisiones, CRM) adds its own, but they all expect what these three do.
 
 **The Lab Technologist on a long shift.** They don't have time for clunky software. They need Pháros to be quick, to be readable, to confirm what's working and surface what's not — without making them stop their flow. When Pháros works, they stop noticing it. That's the highest compliment.
 
@@ -130,7 +134,7 @@ The simplest possible descriptor. No metaphor, no flourish. Pháros doesn't need
 
 - **Character**: lab professionals at work — focused, calm, real (not stock-photo)
 - **Spatial**: clean lab interiors, natural light, minimal clutter — the calm of a library more than the bustle of a hospital
-- **Colors**: LCH burgundy + a single point of LCH red. Muted neutrals. Almost no other color — Pháros earns its restraint.
+- **Colors**: the Pháros mark — burgundy + a single point of red (the pilot light). Each sub-brand adds one accent from the family palette; QC's burgundy/red lives on as the LIS state palette. Muted neutrals. Almost no other color — Pháros earns its restraint.
 - **Elements**: clean grids, generous whitespace, precise typography, charts with strict alignment
 - **Communication**: as if you could see the integrity of every process at a glance — clarity over decoration
 
@@ -144,4 +148,4 @@ The simplest possible descriptor. No metaphor, no flourish. Pháros doesn't need
 
 ---
 
-*Pháros is a sub-brand of Laboratorio Clínico Hematológico. It inherits LCH's archetypes (Caregiver, Creator, Sage) and values (Vidas no clientes, Empatía), and adds its own specialization: vigilance, calm, verification. Its visual identity must always feel like family with the LCH master brand — never louder, never separate, never rebellious.*
+*Pháros is the umbrella brand for the software family, built by Interval — The Human Tech Co. (LCH's in-house software house) for the holding's labs (LCH · Biuman). It inherits LCH's clinical archetypes (Caregiver, Creator, Sage) and values (Vidas no clientes, Empatía), and adds its own specialization: vigilance, calm, verification. Every sub-brand must always feel like family with the shared Pháros mark — never louder, never separate, never rebellious.*
