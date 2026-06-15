@@ -44,6 +44,10 @@ paths = [
   # own comments say "Dev-only; rotate freely"). Used across repos that
   # bridge to the local SSO mock (finance-lch, admission-patient, …).
   '''(^|.*/)mock-iam/''',
+  # Brand logo SVGs embed the mark's raster PNG as a base64 data URI (a
+  # stopgap until true vector exports exist — LCH-BRAND.md §4.2). The blob
+  # is high-entropy image data, not a secret (same rationale as lockfiles).
+  '''(^|.*/)brands/.*/logos/.*\.svg$''',
 ]
 
 regexes = [

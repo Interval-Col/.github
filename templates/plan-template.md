@@ -18,8 +18,8 @@ Full authoring guidance: see `.github/agents/plan-craft.agent.md`.
 Reference plans worth imitating (they predate the Glossary +
 task-by-task Resumen convention, so use them for tone and structure,
 not as exact-density references):
-  - admission-patient/plans/finance-lch-integration-plan.md
-  - admission-patient/plans/org-standards-harmonization-plan.md
+  - admission-patient/plans/archive/finance-lch-integration-plan.md
+  - admission-patient/plans/archive/org-standards-harmonization-plan.md
   - commercial-lch/plans/mvp-quote-generation-plan.md
 
 Delete this comment when you start filling in.
@@ -112,7 +112,7 @@ These apply to every phase.
   el equipo.)*
 - **Commit messages — Conventional Commits, scope required.**
   `type(scope): description` — e.g. `feat(<domain>): <description>`.
-  `type` ∈ `feat|fix|chore|docs|refactor|test|ci`. The `(scope)` is
+  `type` ∈ `feat|fix|refactor|test|chore|docs|hotfix|ci`. The `(scope)` is
   **mandatory**. Branch names mirror it: `type/scope-short-description`.
   *(ES: Conventional Commits; el `(scope)` es obligatorio; la rama
   refleja el commit.)*

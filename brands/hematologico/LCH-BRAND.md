@@ -1,7 +1,16 @@
 # Laboratorio Clínico Hematológico — Brand & Design Specification
 > **For AI coding assistants (Copilot, Cursor, Claude Code)**  
 > Load this file as context before generating any UI code, components, copy, or styles.  
-> This spec is authoritative. Do not deviate from these tokens, patterns, or guidelines.
+> This spec is the authoritative source for the **LCH brand identity, palette, and voice**.
+
+> **⚠️ Read first — LCH is now a TENANT of the Pháros product family.**
+> The **product/app design system** is the Pháros registry at
+> `brands/pharos_brand/registry/` (token contract: `registry/tokens.css`). Build product
+> UI from those tokens, not from the UI-implementation snippets below. This brand book
+> remains the **LCH identity + palette source of truth** that Pháros draws from — Pháros
+> `BRAND.md` §3.2 cites it. The narrative, archetypes, voice, color values, and logo
+> intent here are canonical; the Tailwind/font/component **mechanics** in this file are
+> kept for reference and are annotated where superseded by the registry.
 
 ---
 
@@ -109,8 +118,15 @@
 
 ### 2.6 Tailwind Config Extension
 
+> **⚠️ Legacy / illustrative (Tailwind v3).** This `tailwind.config.js (module.exports)`
+> block is kept to document the palette mapping only. The live product system is
+> **Tailwind v4, CSS-first**, with tokens defined in the Pháros registry
+> (`brands/pharos_brand/registry/tokens.css`) — there is no JS config to extend. Use the
+> registry tokens; do not reintroduce a v3 config. The hex values below remain the
+> canonical LCH palette source.
+
 ```js
-// tailwind.config.js
+// tailwind.config.js  — LEGACY (Tailwind v3); superseded by registry tokens.css (v4 CSS-first)
 module.exports = {
   theme: {
     extend: {
@@ -210,8 +226,13 @@ font-family: 'Apax', 'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
 
 ### 3.3 Type Scale (Tailwind)
 
+> **⚠️ Legacy / illustrative (Tailwind v3).** This `fontSize` config is reference only.
+> The live product system is **Tailwind v4 CSS-first** and takes its type scale from the
+> Pháros registry (`brands/pharos_brand/registry/tokens.css` + `frontend-standards.md`).
+> Do not reintroduce a v3 `fontSize` block.
+
 ```js
-// tailwind.config.js — extend fontSize
+// tailwind.config.js — extend fontSize  — LEGACY (Tailwind v3); superseded by registry (v4 CSS-first)
 fontSize: {
   'xs':   ['0.75rem',  { lineHeight: '1.2rem' }],
   'sm':   ['0.875rem', { lineHeight: '1.4rem' }],
@@ -226,6 +247,13 @@ fontSize: {
 ```
 
 ### 3.4 Monospaced / Data Font
+
+> **⚠️ Product UI font standard differs.** Across the **Pháros product family** the data +
+> label font is **IBM Plex Mono** (the family triad is **Fraunces** display/wordmark +
+> **Inter** sans UI + **IBM Plex Mono** data/labels). **JetBrains Mono** (and **Apax**)
+> remain **LCH brand-identity references only** — they are *not* product-UI fonts. The
+> survey of mono options below is kept for brand context; for product code, use IBM Plex
+> Mono per the registry.
 
 Used for: numerical data, results, lab values, financial figures, code, timestamps, tabular data.
 
@@ -254,7 +282,11 @@ Used for: numerical data, results, lab values, financial figures, code, timestam
 | **Source Code Pro** | Legible, system-like, versatile | Adobe's workhorse. Very safe for mixed content apps. | `Source+Code+Pro` |
 
 #### 🏆 Recommendation for your Finanzas app
-**Primary:** `JetBrains Mono` for all numeric/data output  
+> **⚠️ Superseded for product UI.** The Pháros product standard is **IBM Plex Mono** as
+> the single data + label font. The JetBrains-Mono-primary pairing below is a historical
+> LCH recommendation, kept for reference only.
+
+**Primary:** `JetBrains Mono` for all numeric/data output *(LCH brand reference; product UI uses IBM Plex Mono)*  
 **Secondary:** `IBM Plex Mono` for labels, table headers, code  
 Both available free on Google Fonts and NPM.
 
@@ -297,15 +329,30 @@ The logo has three elements:
 
 ### 4.2 Logo Versions
 
-| File | Version | Use Case |
-|---|---|---|
-| `logo-vertical-color.png/svg` | Vertical, full color | Primary — use whenever possible. White backgrounds. |
-| `logo-horizontal-color.png/svg` | Horizontal + descriptor inline | Side-by-side contexts, wide headers |
-| `logo-horizontal-extended.png/svg` | Icon + name | pipe | descriptor | Full-width lockup, print, presentations |
-| `logo-icon-color.png/svg` | Symbol only | Favicon, avatar, small icon slots (≥32px) |
-| `logo-white.png/svg` | All white | Dark/red/navy backgrounds |
-| `logo-red-mono.png/svg` | Red single color | Single-color print |
-| `logo-black-mono.png/svg` | Black single color | Grayscale print |
+> **Reconciled to the actual committed assets** in `brands/hematologico/logos/`,
+> renamed to a consistent kebab-case scheme and **verified against the rendered
+> artwork** — the legacy `LOGO.png` / `Logo horizontal.png` filenames had the
+> orientation backwards (`LOGO.png` was the horizontal lockup; `Logo horizontal.png`
+> was the vertical/stacked one). Files marked **canonical** are the approved versions.
+> Each canonical mark now also ships a `.svg` — see the SVG note below.
+
+| File | Version | Canonical? | Use Case |
+|---|---|---|---|
+| `logo-horizontal-color.{svg,png}` | Horizontal lockup (icon + name + descriptor in a row) | ✅ canonical | Wide headers, navbars, side-by-side contexts. |
+| `logo-vertical-color.{svg,png}` | Vertical / stacked lockup (icon over name over descriptor) | ✅ canonical | Square-ish contexts; primary on white. |
+| `logo-white.{svg,png}` | All white (horizontal lockup) | ✅ canonical | Dark / red / navy backgrounds. |
+| `logo-icon-color.{svg,png}` | Symbol / isotipo only (DNA-helix "H") | ✅ canonical | Favicon, avatar, small icon slots (≥32px). |
+| `logo-white-alt.png` | All white (alt artboard export) | — | Variant; prefer `logo-white`. |
+| `logo-alt-nuevo.png` | Full color (updated mark) | — | Legacy/transitional export; verify before use. |
+| `logo-alt-1.png` | Full color (early export) | — | Legacy export; do not use for new UI. |
+| `logo-koc.png` | Single-color / print variant | — | Legacy print variant; verify with brand mgmt. |
+
+> **SVG status (stopgap).** The four canonical `.svg` files exist but currently
+> **embed the raster PNG as a base64 data URI** — they render anywhere (`<img src>`,
+> CSS background) but are **not true vectors**. **TODO:** replace with hand-authored
+> vector exports of the canonical four + a true single-color red/black mono lockup.
+> (The gitleaks allowlist exempts `brands/**/logos/*.svg` so the embedded blob doesn't
+> trip the entropy rule — see `.gitleaks.toml`.)
 
 ### 4.3 Clear Space
 Minimum clear space = **2× the height of the letter "H" in "Hematológico"** on all sides. In special cases minimum is 1× (requires brand management approval).
@@ -334,6 +381,10 @@ Never: rotate, tilt, stretch, distort, outline, add drop shadows, change individ
 
 ### 4.8 Vue Component Usage
 
+> **Filenames map to the kebab-case canonical assets** (see §4.2). The `.svg` files are
+> raster-embedded stopgaps today (§4.2 SVG status) but resolve fine via `<img src>`;
+> swap to true vectors when they land — no code change needed.
+
 ```vue
 <!-- Use as <LchLogo> with theme prop -->
 <template>
@@ -351,10 +402,14 @@ const props = defineProps({
   size: { type: String, default: 'default' },   // 'default' | 'navbar' | 'icon'
 })
 
+// Maps to the canonical kebab-case assets in brands/hematologico/logos/.
 const logoSrc = computed(() => {
-  const variant = props.size === 'icon' ? 'icon' : 'horizontal'
-  const bg = props.theme === 'dark' ? 'dark' : 'light'
-  return `/assets/logos/logo-${variant}-${bg}.svg`
+  if (props.size === 'icon') return '/assets/logos/logo-icon-color.svg'       // symbol only
+  if (props.theme === 'dark') return '/assets/logos/logo-white.svg'           // white, for dark/red/navy bg
+  // light theme: horizontal lockup for navbar, vertical (stacked) otherwise
+  return props.size === 'navbar'
+    ? '/assets/logos/logo-horizontal-color.svg'
+    : '/assets/logos/logo-vertical-color.svg'
 })
 
 const height = computed(() => ({
@@ -494,7 +549,7 @@ BRAND NAME   Laboratorio Clínico Hematológico
 TAGLINE      Medicina Diagnóstica Especializada
 URL          lch.co
 
-PRIMARY RED  #E4002B  (buttons, CTAs, logo accent)
+BRAND/UI RED #E4002B  (buttons, CTAs, highlights)
 DARK RED     #A6192E  (hover, pressed)
 NAVY         #003A70  (dark surfaces, data)
 TEAL         #A0D1CA  (success, soft accents)
@@ -502,11 +557,13 @@ YELLOW       #FBD872  (financial, warnings)
 BLUSH        #F4CDD4  (soft backgrounds)
 GRAY DARK    #888B8D  (secondary text)
 
-BRAND FONT   Apax (Optimo) → fallback: Inter, DM Sans
-DATA FONT    JetBrains Mono → fallback: IBM Plex Mono
+LOGO-ONLY RED #E40046 (logo rendering only — NOT a UI color)
+
+BRAND FONT   Apax (Optimo) → LCH brand-identity asset only; product UI sans = Inter
+DATA FONT    Product UI = IBM Plex Mono  (JetBrains Mono = LCH brand reference, not product UI)
 LABEL FONT   IBM Plex Mono
 
-LOGO COLORS  #E40046 (red) + #782F40 (burgundy)
+LOGO COLORS  #E40046 (logo-only red) + #782F40 (burgundy)
 LOGO MIN     103×85px vertical / 153×43px horizontal
 CLEAR SPACE  2× height of "H" in "Hematológico"
 ```

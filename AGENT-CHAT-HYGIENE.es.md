@@ -1,8 +1,8 @@
 # 🧹 Higiene de Chats con Agentes — Interval-Col
 
-> 🇬🇧 Fuente en inglés: [`AGENT-CHAT-HYGIENE.md`](AGENT-CHAT-HYGIENE.md). Los bloques de código se mantienen idénticos al inglés (una sola fuente de verdad para los comandos).
-
 > **Guía de la organización — esto es una RECOMENDACIÓN, no es obligatorio.** No hay chequeo de CI, ni configuración requerida, y nadie te va a rebotar un PR por esto. Es el consejo que un compañero senior te daría tomando un café: cómo mantener tus sesiones de Claude Code baratas y ordenadas sin perder nunca trabajo real. Léela, toma lo que te sirva, ignora el resto.
+
+> 🇬🇧 **Fuente en inglés:** [`AGENT-CHAT-HYGIENE.md`](AGENT-CHAT-HYGIENE.md). Los bloques de código se mantienen idénticos al inglés (una sola fuente de verdad para los comandos).
 
 **TL;DR (valores por defecto seguros):** mantén el conocimiento duradero en el repo o en la memoria — nunca _solo_ en el chat. Luego: **un chat por tarea**; **`/compact`** para terminar la tarea actual; **`/clear`** (o un chat nuevo) para cambiar de tarea o empezar un nuevo día; **consérvalo** ante la duda (los transcripts se borran solos a los 30 días); **borra** solo un transcript verdaderamente agotado. Todo lo de abajo es el _porqué_.
 
