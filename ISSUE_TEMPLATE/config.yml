@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 🏷️ Issue title style
+    url: https://github.com/Interval-Col/.github/blob/main/ISSUE_TITLE_STYLE.md
+    about: "How to title issues — [Área] + plain-English outcome, ≤60 chars (hard max 70)."
