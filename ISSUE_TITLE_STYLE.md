@@ -39,6 +39,7 @@ This governs the **title only** — body and comments follow the normal team reg
 | `[Tarifas]` | Tarifas | pricing / tariff chain, fee_set, price_list |
 | `[ETL]` | ETL | cobol-migration harness, income/analyte lanes |
 | `[Diseño]` | Diseño | Pháros design system, RFC 0008, brand |
+| `[LIS]` | _(add a matching Workstream option)_ | lab-qc / clinical LIS |
 
 Pick the one that matches the card's **Workstream** field. If it genuinely fits none, use **`[Plat]`** and (optionally) propose a new code via PR to this file — the legend is the single source of truth, so it changes here, not ad-hoc.
 
