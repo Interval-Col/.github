@@ -414,6 +414,19 @@ Tracked org-wide in [#42](https://github.com/Interval-Col/.github/issues/42)
   (status-check-only — required-reviewers is a paid feature on this private repo,
   same as `operations`). Net after this: **7 compliant · 3 partial ·
   11 non-compliant.**
+- **2026-06-16 · `design-studio` → ✅ compliant** (was ❌). Nuxt repo, `main`-only
+  (no `develop`). Set merge-commit-only (squash/rebase off); gitleaks gate +
+  `.gitleaks.toml` + policy pre-commit hooks + chrome (merge `64bb1b6`); pre-scan
+  clean (8 commits); `gitleaks` green; `main` protection requiring `gitleaks`.
+  eslint/prettier pre-commit hooks deferred. (Synced a concurrent upstream commit
+  `48b047e` cleanly.) Net after this: **8 compliant · 3 partial · 10 non-compliant.**
+- **2026-06-16 · `biuman-reports` → ✅ compliant** (was ❌). Code repo with a
+  `develop` branch (107 ahead of `main`). gitleaks gate landed **additively on
+  both** `main` (`0cc74a5`) and `develop` (`63154e7`) — no content promotion (the
+  develop→main first-promote stays a release decision); both branches protected
+  requiring `gitleaks`, both green; pre-scan clean (103 commits); merge-only
+  already set. ruff/eslint pre-commit hooks deferred. Net after this: **9 compliant ·
+  3 partial · 9 non-compliant.**
 
 ---
 
