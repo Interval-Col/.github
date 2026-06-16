@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-06-04
-updated: 2026-06-15
+updated: 2026-06-16
 owner: gczuluaga
 implementation: gczuluaga
 language: English body; Spanish "Resumen" + decision/criteria glosses.
@@ -301,6 +301,101 @@ Both were **false negatives**: on a direct per-branch read, finance-lch and lab-
 each have **4/4 policy hooks on `develop`** (the "0/4" is only true of `main`, the
 stale snapshot). The matrix hook cells are corrected. Root cause + the rule that
 would have caught it are in **["Re-verifying this tracker"](#re-verifying-this-tracker--read-this-before-trusting-or-editing-the-matrix)** below — this episode is the cautionary tale that section exists for.
+
+---
+
+## Org-wide compliance audit (2026-06-16) — beyond the 7-repo scope
+
+> **Resumen (ES).** Barrido automatizado de **los 21 repos** de la org (no solo
+> los 7 de este plan). Resultado: **6 cumplen · 3 parciales · 12 NO cumplen.**
+> El hallazgo de fondo: este plan solo cubrió 7 repos; los otros 14 nunca se
+> rastrearon aquí, y la mayoría no tiene la compuerta de `gitleaks` ni protección
+> en `main` — el riesgo #1 (fuga de secretos). Abajo: la matriz completa + el
+> backlog priorizado para los repos antes fuera de alcance.
+
+A read-only automated sweep (one checker per repo + an adversarial verify pass)
+audited **all 21 active org repos** against the policy CORE: default branch
+`main`, merge-commit-only, `main`/`develop` protection requiring a `gitleaks`
+check, and the gitleaks workflow + config in-repo. This plan's Phase 1 only ever
+scoped **7 repos**; the audit covers the rest.
+
+**Result: 21 repos · ✅ 6 compliant · ⚠️ 3 partial · ❌ 12 non-compliant.**
+
+| Repo | Default | Merge-only | main+gitleaks | develop+gitleaks | gitleaks files | chrome | Verdict |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `port-mapper` | ❌ master | ❌ | ❌ | — | ❌ | ❌ | ❌ |
+| `transmisiones` | ❌ master | ❌ | ❌ | — | ❌ | ❌ | ❌ |
+| `accounting-interface` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `api-calendar` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `biuman-lis` | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ❌ |
+| `biuman-reports` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `design-studio` | ✅ | ❌ | ❌ | — | ❌ | ❌ | ❌ |
+| `employee-management` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `inventory-management` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `legacy-repositories` | ✅ | ✅ | ❌ | — | ❌ | ❌ | ❌ |
+| `rfcs` | ✅ | ✅ | ❌ | — | ❌ | ❌ | ❌ |
+| `pdf-render-service` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `finance-lch` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ |
+| `lab-qc` | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ | ⚠️ |
+| `operations` | ✅ | ✅ | ✅ | — | ⚠️ | ✅ | ⚠️ |
+| `.github` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| `admission-patient` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `cobol-migration` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ |
+| `commercial-lch` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `infrastructure` | ✅ | ✅ | ✅ | — | ✅ | ⚠️ | ✅ |
+| `nucleus-db` | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ |
+
+**Reconciliation with the 2026-06-13 RE-VERIFY.** The `gitleaks files ❌` on
+**finance-lch** and **lab-qc** is the *same* finding this plan already records:
+the gitleaks workflow/config live on `develop`, 404 on `main` (the default branch
+the required check reads) → "hollow main protection." Not a new or false finding —
+the `develop → main` promote already on the backlog fixes it. (`operations` is
+`⚠️`: workflow present, `.gitleaks.toml` missing.)
+
+**Scope gap — the real story.** The 12 non-compliant repos are almost all
+**outside this plan's original 7-repo scope** and were never tracked here:
+`accounting-interface, api-calendar, biuman-lis, biuman-reports, design-studio,
+employee-management, inventory-management, legacy-repositories, rfcs,
+pdf-render-service` + `port-mapper, transmisiones`. **Decision needed:** extend
+the rollout to these, or explicitly defer each (with a reason) — but several are
+active/sensitive (`rfcs` is public; `biuman-lis` is a live LIS app;
+`accounting-interface` handles billing).
+
+### Remediation backlog (by severity)
+
+**🔴 High**
+- **Still on `master`** (`port-mapper`, `transmisiones`): rename `master → main`,
+  set default, protect. ⚠️ Coordinated-window human step (clones + open PRs) —
+  per Working rules, never ad-hoc.
+- **`main` unprotected + no `gitleaks` gate** (10): `accounting-interface,
+  api-calendar, biuman-lis, biuman-reports, design-studio, employee-management,
+  inventory-management, legacy-repositories, rfcs, pdf-render-service` — add
+  `gitleaks.yml` + `.gitleaks.toml`, protect `main` requiring the check.
+  **This is the #1-fear (secret-leak) gap.**
+- **Merge model not merge-commit-only** (squash/rebase on) (6):
+  `accounting-interface, api-calendar, design-studio, employee-management,
+  inventory-management, pdf-render-service` — turn squash + rebase off
+  (quick, reversible `gh repo edit` toggle).
+
+**🟡 Medium**
+- **finance-lch / lab-qc**: promote chrome `develop → main` so the required
+  `gitleaks` check actually runs on `main` (de-hollow protection) — already the
+  Phase-1 backlog item.
+- **operations**: add `.gitleaks.toml`.
+- **`develop` unprotected** where it exists (`accounting-interface, api-calendar,
+  biuman-lis, biuman-reports, employee-management, inventory-management,
+  pdf-render-service`): protect, requiring gitleaks.
+
+**⚪ Low (chrome)**
+- pre-commit hooks / PR template / stale workflow missing broadly — including a
+  few otherwise-compliant repos (`cobol-migration, infrastructure, nucleus-db`
+  carry a `⚠️` chrome cell).
+
+> **Method note.** The sweep is reproducible (one read-only `gh` check matrix per
+> repo); it could run periodically to keep this matrix honest — the same pattern
+> as the memory-hygiene drift detector. Verdicts are high-confidence: every
+> non-compliant repo was adversarially re-checked, and the one nuance
+> (finance-lch/lab-qc files-on-`develop`) is reconciled above.
 
 ---
 
