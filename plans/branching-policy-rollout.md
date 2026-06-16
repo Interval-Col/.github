@@ -321,6 +321,8 @@ scoped **7 repos**; the audit covers the rest.
 
 **Result: 21 repos · ✅ 6 compliant · ⚠️ 3 partial · ❌ 12 non-compliant.**
 
+> **Remediation tracked in [#42](https://github.com/Interval-Col/.github/issues/42)** (@gczuluaga · Start 2026-06-04 · Target 2026-07-10). The matrix below is the **as-found snapshot**; live progress is in the **Remediation log** at the end of this section.
+
 | Repo | Default | Merge-only | main+gitleaks | develop+gitleaks | gitleaks files | chrome | Verdict |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `port-mapper` | ❌ master | ❌ | ❌ | — | ❌ | ❌ | ❌ |
@@ -396,6 +398,22 @@ active/sensitive (`rfcs` is public; `biuman-lis` is a live LIS app;
 > as the memory-hygiene drift detector. Verdicts are high-confidence: every
 > non-compliant repo was adversarially re-checked, and the one nuance
 > (finance-lch/lab-qc files-on-`develop`) is reconciled above.
+
+### Remediation log
+
+Live deltas against the as-found snapshot above (the matrix is left as-found).
+Tracked org-wide in [#42](https://github.com/Interval-Col/.github/issues/42)
+(@gczuluaga · Start 2026-06-04 · Target 2026-07-10).
+
+- **2026-06-16 · `rfcs` → ✅ compliant** (was ❌). Docs-only rollout mirroring
+  `operations`: gitleaks gate (`.github/workflows/gitleaks.yml` + the canonical
+  `.gitleaks.toml`) + the 4 policy pre-commit hooks + `scripts/check-branch-name.sh`
+  + `.github/CODEOWNERS` + PR template + stale sweeper (merge `f63aae3`);
+  full-history gitleaks pre-scan clean (68 commits, 0 leaks); `gitleaks` check
+  green on `main`; `main` branch protection enabled requiring `gitleaks`
+  (status-check-only — required-reviewers is a paid feature on this private repo,
+  same as `operations`). Net after this: **7 compliant · 3 partial ·
+  11 non-compliant.**
 
 ---
 
