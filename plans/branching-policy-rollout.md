@@ -445,6 +445,11 @@ Tracked org-wide in [#42](https://github.com/Interval-Col/.github/issues/42)
   `ci-cd.yml` build-once-promote migration is separate. Net after this:
   **11 compliant · 3 partial · 7 non-compliant.**
 
+> **Rollout status: in progress** (board `#42` Status = *In Progress*). Paused
+> 2026-06-16 at **11 ✅ · 3 ⚠️ · 7 ❌**. Resume = the remaining 7 ❌ (5 straightforward
+> + `port-mapper`/`transmisiones` `master→main` rename) and the 3 ⚠️ partials. Target
+> 2026-07-10.
+
 ---
 
 ## Re-verifying this tracker — read this before trusting or editing the matrix
