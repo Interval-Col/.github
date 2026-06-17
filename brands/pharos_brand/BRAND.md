@@ -185,10 +185,11 @@ module.exports = {
 | Role | Font | Loaded from | Fallback |
 |---|---|---|---|
 | Display / wordmark | **Fraunces** (variable, opsz 9–144) | Google Fonts | Times New Roman, serif |
-| UI / body | **Inter** (variable) | Google Fonts | system-ui, sans-serif |
-| Data, metrics, labels, table headers | **IBM Plex Mono** | Google Fonts | monospace |
+| UI / body | **DM Sans** (variable) | Google Fonts | system-ui, sans-serif |
+| Labels, table headers, general mono | **IBM Plex Mono** | Google Fonts | monospace |
+| Data values, metrics, figures (cifras) | **JetBrains Mono** (`tabular-nums`) | Google Fonts | monospace |
 
-> Three families, shared across the whole family — **no per-app fonts** (type is the strongest cohesion lever, RFC 0008 Q5). Consolidated from four: the second mono (JetBrains Mono) is dropped; IBM Plex Mono now serves both data values and labels.
+> **Four families**, shared across the whole family — **no per-app fonts** (type is the strongest cohesion lever, RFC 0008 Q5). **Updated 2026-06-17** (co-creation, @SKuger01 present): the UI sans moved Inter → **DM Sans** (a free proxy for LCH's licensed Apax), and a dedicated data mono — **JetBrains Mono** for figures/cifras — is kept alongside **IBM Plex Mono** (labels + general mono). This reverses the earlier "consolidate to one mono / drop JetBrains" note.
 
 ### 4.2 Font loading (Nuxt 4)
 
@@ -200,7 +201,7 @@ export default defineNuxtConfig({
       link: [
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap'
+          href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap'
         }
       ]
     }
@@ -214,12 +215,12 @@ export default defineNuxtConfig({
 |---|---|---|---|---|
 | Hero / page title | 48px | 1.1 | Fraunces | 400 |
 | Section title | 32px | 1.2 | Fraunces | 400 |
-| Subsection | 20px | 1.4 | Inter | 600 |
-| Body | 15px | 1.6 | Inter | 400 |
-| Body small | 13px | 1.5 | Inter | 400 |
+| Subsection | 20px | 1.4 | DM Sans | 600 |
+| Body | 15px | 1.6 | DM Sans | 400 |
+| Body small | 13px | 1.5 | DM Sans | 400 |
 | Label | 11px | 1.4 | IBM Plex Mono | 500 (uppercase, 0.18em tracking) |
-| Data value | 22px | 1.0 | IBM Plex Mono | 500 (tabular-nums) |
-| Data value small | 14px | 1.0 | IBM Plex Mono | 400 (tabular-nums) |
+| Data value | 22px | 1.0 | JetBrains Mono | 500 (tabular-nums) |
+| Data value small | 14px | 1.0 | JetBrains Mono | 400 (tabular-nums) |
 
 ### 4.4 Typography rules
 - Body text: always left-aligned. Never justified.
@@ -227,7 +228,7 @@ export default defineNuxtConfig({
 - Brand name in running text: always title case "Pháros", never ALL CAPS.
 - Sub-brand in running text: `Pháros · Timón` (with the `·` separator).
 - Tenant brand name in running text: full form, "Laboratorio Clínico Hematológico", title case.
-- Data and numerical values: always IBM Plex Mono with `tabular-nums` — columns must align in tables.
+- Data and numerical values (figures/cifras): always JetBrains Mono with `tabular-nums` — columns must align in tables. Labels + table headers use IBM Plex Mono.
 - Headlines: never ALL CAPS — use weight contrast instead.
 
 ---
@@ -433,10 +434,11 @@ WORDMARK COLOR    #782F40 (burgundy) — never re-tinted per app
 PILOT LIGHT       #E4002B (red) — the family constant
 SEPARATOR         ·   (Pháros · <Sub-name>)
 
-UI FONT           Inter
-DATA + LABEL FONT IBM Plex Mono (tabular-nums for data; uppercase 0.18em for labels)
+UI FONT           DM Sans
+LABEL FONT        IBM Plex Mono (labels · uppercase 0.18em · table headers)
+DATA FONT         JetBrains Mono (figures/cifras · tabular-nums)
 
-ERP ACCENT        #003A70 (LCH Navy) + #A0D1CA teal success   [Pháros · Timón]
+ERP ACCENT        #7A5D00 ámbar (light) / #E6C34D (dark)   [Pháros · Números, glyph Timón]
 QC STATE (LIS)    #A0D1CA in control · #FBD872 drift · #E4002B out of control
 
 THEMES            light + dark only (.dark class); cobol dropped
