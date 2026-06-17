@@ -1,13 +1,25 @@
-# Pháros · Timón — ERP sub-brand
+# Pháros · Números — ERP sub-brand *(maritime identity: «Timón» / the ship's wheel)*
 
-> **⚠️ PRELIMINARY.** This is a starting point for the ERP sub-brand,
-> authored 2026-05-30. The endorsed sub-brand model, the family naming
-> theme, the per-app accent allocation, and the evocative-vs-functional
-> naming reconciliation are all still **open questions in [RFC 0008]**
-> (Pháros design system) and will be walked in the @gczuluaga + @SKuger01
-> co-creation session. Treat the **name "Timón"** and the **navy accent**
-> as the working proposal, not a locked decision. Update once RFC 0008 is
-> consolidated.
+> **✅ LOCKED 2026-06-17** (co-creation, @gczuluaga + @SKuger01; see
+> [RFC 0008] Decisions 2026-06-17). The session **split the two jobs** the name was
+> doing: the **user-facing name is now «Números»** (semi-functional — legible to the
+> contador/COO), while the **maritime identity «Timón» moved into the glyph + the
+> descriptor**. So Timón's "you govern the whole operation from the helm" meaning (the
+> §2 rationale below) is preserved as the **mark's story**, not the word — which also
+> answers the §2 objection that "Números" reads as a passive ledger: the *glyph* carries
+> the scope, the *word* carries the clarity.
+>
+> | Axis | Locked value |
+> |---|---|
+> | User-facing name | **Pháros · Números** |
+> | Maritime glyph | **Timón** → ship's-wheel mark (lucide `ShipWheel`) |
+> | Accent | **Ámbar** `#7A5D00` (light) / `#E6C34D` (dark) — *not* the old navy |
+> | Functional name | **Pháros ERP** (RFC 0004 §1) — unchanged |
+> | Separator | `·` · | Theme | maritime, via glyph + lighthouse parent |
+>
+> The earlier "Timón-the-word + navy accent" proposal is **superseded**. The narrative
+> below is kept as **provenance** (it explains why the ship's wheel is the right mark);
+> facts in the tables have been updated to the locked values.
 >
 > Parent brand source: [`../BRAND.md`](../BRAND.md) ·
 > [`../BACKBONE.md`](../BACKBONE.md). This doc only specifies what the ERP
@@ -18,15 +30,16 @@
 ## 1. At a glance
 
 ```
-SUB-BRAND          Pháros · Timón
+SUB-BRAND          Pháros · Números          (user-facing name; glyph = Timón/ship's wheel)
 REPLACES           "Pulso" (finance-lch) — the retired per-app name
-FUNCTIONAL NAME    Pháros ERP            (RFC 0004 §1)
-EVOCATIVE NAME     Pháros · Timón        (RFC 0008 endorsed sub-brand)
+FUNCTIONAL NAME    Pháros ERP                (RFC 0004 §1)
+USER-FACING NAME   Pháros · Números          (RFC 0008 Q1, semi-functional, LOCKED 2026-06-17)
+MARITIME GLYPH     Timón → ship's-wheel mark (lucide ShipWheel)
 DESCRIPTOR         ERP · Finanzas y Operaciones
 PERSONA            Contador · COO · jefe de operaciones (the operator who
                    runs the whole holding from one place)
 TENANCY            Multi-tenant (LCH + Biuman + future members) — RFC 0004 §3
-ACCENT (proposed)  LCH Navy #003A70  (draws ONE colour from the family palette)
+ACCENT (LOCKED)    Ámbar #7A5D00 light / #E6C34D dark  (ONE colour from the family palette)
 PILOT LIGHT        #E4002B  — SHARED across the family (the constant; never re-tinted)
 WORDMARK           Fraunces, burgundy #782F40 — SHARED construction
 ```
@@ -107,34 +120,38 @@ Everything not listed here is **inherited unchanged** from
 [`../BRAND.md`](../BRAND.md) (type scale, spacing, radius, flatness,
 iconography, layout).
 
-### 4.1 Accent colour (proposed — pending RFC 0008 open-q #6)
+### 4.1 Accent colour (LOCKED 2026-06-17 — RFC 0008 Q6)
 
-| Token | Hex | Role in Timón |
+| Token | Hex | Role in Números |
 |---|---|---|
-| `--accent` (primary) | **`#003A70`** LCH Navy | Primary actions, active nav, links, focus on data surfaces |
-| `--accent-secondary` | `#A0D1CA` LCH Teal | "En cuadre / conciliado" success state — aligns with finance-lch's existing `--status-success` token |
+| `--primary` (accent) | **`#7A5D00`** ámbar (light) / **`#E6C34D`** (dark) | Primary actions, active nav, links, focus on data surfaces |
 | `--pilot-light` | `#E4002B` | **SHARED, not overridden** — the family constant (focus dot, critical) |
 
-**Why navy.** It is the calmest, most data-dense member of the family
-palette — right for an ERP of tabular finance/ops data — and it carries the
-maritime undertone of the name (deep water, the sea you steer across)
-without shouting it. One accent, drawn from the curated family set, so
-Timón stays a sibling of QC (burgundy/red), LIS, CRM by construction.
+> **Status colours are accent-INDEPENDENT** (RFC 0008 Q4): success / warning / error / info
+> live in the shared status palette and do **not** move when the ERP re-accents — so the old
+> "teal = success" pairing is now a family-level status token, not part of this accent.
+
+**Why ámbar.** The 06-17 family walk moved the ERP off navy (navy → teal-deep 06-16 → ámbar
+06-17; teal-deep went to the clinical LIS). **Gold for the numbers/ops app** reads as value +
+ledger warmth, stays calm at data density, and is distinct from its siblings (Clínico teal,
+Deportivo azul profundo, Recepción rosa, Clientes ámbar claro) while sharing the family's
+restraint. One accent from the curated set, so Números stays a sibling by construction; burgundy
++ red remain family constants (wordmark + pilot light), never this app's accent.
 
 ### 4.2 Lockup
 
 `Pháros` (Fraunces, burgundy `#782F40`) + red pilot-light dot over the `P`
-+ separator `·` + `Timón` (sub-name) + optional sublabel
-`ERP · FINANZAS Y OPERACIONES` (IBM Plex Mono, uppercase, tracked, muted).
-The separator (`·` vs `—`) is RFC 0008 open-q #1 — using `·` provisionally.
++ separator `·` + the **Timón ship's-wheel glyph** + `Números` (sub-name) +
+optional sublabel `ERP · FINANZAS Y OPERACIONES` (IBM Plex Mono, uppercase,
+tracked, muted). Separator `·` is **locked** (RFC 0008 Q1).
 
 ### 4.3 Icon
 
-Shared Pháros mark (`P` + pilot light), **navy tint**. No new icon shape —
-differentiation is tint only (RFC 0008 §1). A subtle helm/ship's-wheel
-motif is noted as a *possible* future exploration but is **out of scope**
-for the preliminary mark; do not build it until RFC 0008 locks the icon
-approach.
+Shared Pháros wordmark/`P` + pilot light, **ámbar tint** — plus the **Timón
+glyph (ship's wheel, lucide `ShipWheel`)** as the app mark. RFC 0008 Q1 (2026-06-17)
+**adopted the per-app nautical glyph** as the differentiator: the maritime identity
+lives in this mark, which is why the name can stay the plain "Números." (This supersedes
+the earlier "tint only / glyph out of scope" note.)
 
 ---
 
@@ -187,17 +204,21 @@ only its degree of family-rhyme changes.
 
 ---
 
-## 8. Pending RFC 0008 (what can still change)
+## 8. RFC 0008 status (resolved 2026-06-17)
 
-| Item | This doc's working assumption | RFC 0008 ref |
+| Item | Locked value | RFC 0008 ref |
 |---|---|---|
-| Sub-name | **Timón** | open-q #1 |
-| Family naming theme | undecided (maritime / nature / abstract) | open-q #1, §7 above |
-| Separator | `·` | open-q #1 |
-| Evocative vs functional ("Timón" vs "ERP") reconciliation | both shown; lockup uses evocative + functional sublabel | open-q #2 |
-| Accent allocation | Navy `#003A70` | open-q #6 |
-| Token-contract base | inherit shared contract (shadcn vars) | open-q #4 |
-| Dark / `cobol` theme | inherit family decision | open-q #7 |
+| User-facing name | **Números** (semi-functional) | Q1 ✅ |
+| Maritime identity | the **Timón ship's-wheel glyph** (in the logo, not the word) | Q1 ✅ |
+| Family naming theme | maritime — via glyphs + lighthouse parent | Q1 ✅ |
+| Separator | `·` | Q1 ✅ |
+| Name reconciliation | functional **ERP** (RFC 0004) ↔ user-facing **Números** (layered) | Q2 ✅ |
+| Accent | **Ámbar** `#7A5D00` / `#E6C34D` (navy superseded) | Q6 ✅ |
+| Token-contract base | inherit shared contract (shadcn vars + status palette) | Q4 ✅ |
+| Dark / `cobol` theme | `.dark` class; cobol dropped | Q7 ✅ |
+| Type | Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono (data) | Q5 ✅ |
+
+> ⏸ Remaining: a courtesy SKuger ratify of the names (he was present for the walk).
 
 > Note: [`../BRAND.md`](../BRAND.md) / [`../BACKBONE.md`](../BACKBONE.md) were
 > reconciled to the umbrella model (Pháros = family; QC = surfaces inside LIS;
