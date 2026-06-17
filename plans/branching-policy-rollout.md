@@ -435,6 +435,15 @@ Tracked org-wide in [#42](https://github.com/Interval-Col/.github/issues/42)
   bundles** (out of git), so the gate guards the tracking tree going forward, not
   the archived bundle contents. Net after this: **10 compliant · 3 partial ·
   8 non-compliant.**
+- **2026-06-16 · `biuman-lis` → ✅ compliant** (was ❌, ⚠️ chrome). Active Biuman
+  clinical LIS (FastAPI + Nuxt), `develop` branch (12 ahead of `main`). gitleaks
+  gate landed **additively on both** `main` (`ffdcdf9`) and `develop` (`833fde6`) —
+  existing PR template preserved, only the missing chrome added; both branches
+  protected requiring `gitleaks`, both green; pre-scan clean (192 commits);
+  merge-only already set. Done via an isolated git worktree (a parallel WIP branch
+  was checked out — left untouched). ruff/eslint pre-commit deferred; the
+  `ci-cd.yml` build-once-promote migration is separate. Net after this:
+  **11 compliant · 3 partial · 7 non-compliant.**
 
 ---
 
