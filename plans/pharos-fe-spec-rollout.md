@@ -9,7 +9,7 @@
 > imperative; each app has explicit **VERIFY** commands. Judgment-heavy steps are tagged
 > **🟠 ESCALATE** (human/architect decides — do NOT guess); everything else is **🔵 mechanical**.
 > Grounded in a 2026-06-17 per-app FE characterization. All repos branch off **`develop`**.
-> Tracking issue: see `.github` (RFC 0008 FE rollout).
+> Tracking issue: [`.github`#43](https://github.com/Interval-Col/.github/issues/43).
 
 ## Execution protocol (read first, implementing agent)
 
