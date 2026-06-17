@@ -427,6 +427,14 @@ Tracked org-wide in [#42](https://github.com/Interval-Col/.github/issues/42)
   requiring `gitleaks`, both green; pre-scan clean (103 commits); merge-only
   already set. ruff/eslint pre-commit hooks deferred. Net after this: **9 compliant ·
   3 partial · 9 non-compliant.**
+- **2026-06-16 · `legacy-repositories` → ✅ compliant** (was ❌). Archive repo
+  (cold storage for retired repos, RFC 0009); `main`-only, merge-only already set.
+  gitleaks gate + `.gitleaks.toml` + archive-style policy pre-commit + chrome
+  (merge `7153a88`); `gitleaks` green; `main` protection requiring `gitleaks`.
+  Pre-scan of the tracking tree clean — the retired repos live as **release-asset
+  bundles** (out of git), so the gate guards the tracking tree going forward, not
+  the archived bundle contents. Net after this: **10 compliant · 3 partial ·
+  8 non-compliant.**
 
 ---
 
