@@ -20,7 +20,14 @@ package (RFC 0008 Q3).
 | `tokens.css` | The token contract — shadcn-vue vars + accent-independent status palette + the 4-font system + the 5 LOCKED sub-brand accent themes (`.theme-*`) + `-bg` status tints + `.dark` theme. **Authoritative.** |
 | `frontend-standards.md` | Nuxt 4 / Vue 3 / Tailwind v4 authoring conventions for any Pháros app (the former `instructions/nuxt-standards`, re-cut onto this contract). |
 | `surfaces/*.md` | Per-surface design guidance (Finanzas/ERP, Laboratorio, Calidad, Reportes, Administración, Portal Pacientes) — the durable intent ported from the old `ds-lch-*` instructions, re-expressed on the shadcn token contract. |
-| `../../../scripts/sync-pharos-registry.sh` | The copy-in sync script (skeleton) — drops `tokens.css` (and, later, components) into a consuming app. |
+| `scripts/check-no-hex-colors.mjs` | CI gate: forbids hardcoded hex literals outside `app/assets/css/`. Escape hatch: `lint-allow-hex` comment or per-file ALLOWLIST. |
+| `scripts/check-no-palette-colors.mjs` | CI gate: forbids raw Tailwind palette utilities (`text-green-600`, `bg-amber-100`, etc.) outside `app/components/ui/`. Escape hatch: `lint-allow-palette`. |
+| `scripts/check-no-raw-html.mjs` | CI gate: forbids raw HTML form primitives (`<button>`, `<input>`, `<select>`, `<table>`, `<textarea>`) in `app/pages/` + `app/layouts/`. Exceptions: `type="file"` inputs + reka-ui combobox. |
+| `scripts/check-no-scoped-pages.mjs` | CI gate: forbids `<style scoped>` in `app/pages/` + `app/layouts/`. No exceptions — migrate the file. |
+| `eslint.config.mjs` | ESLint template (`withNuxt(...)` wrapper + Pháros overrides). Requires `@nuxt/eslint` + `nuxt prepare`. Copied verbatim by the sync; **overwritten on each sync run**. |
+| `.github/workflows/pharos-lint-check.yml` | Standalone GitHub Actions workflow (`pnpm lint-check`). Dedicated file so the sync can overwrite it without touching the app's main `ci.yml`. |
+| `pre-commit.snippet.yaml` | Reference block to **merge** into an app's existing `.pre-commit-config.yaml` (never replaces it — org policy hooks live there). |
+| `../../../scripts/sync-pharos-registry.sh` | The copy-in sync script — distributes tokens, gate scripts, ESLint template, and the lint-check workflow into a consuming app. |
 
 ## How an app consumes it (copy-in)
 
