@@ -9,7 +9,9 @@
 > imperative; each app has explicit **VERIFY** commands. Judgment-heavy steps are tagged
 > **🟠 ESCALATE** (human/architect decides — do NOT guess); everything else is **🔵 mechanical**.
 > Grounded in a 2026-06-17 per-app FE characterization. All repos branch off **`develop`**.
-> Tracking issue: [`.github`#43](https://github.com/Interval-Col/.github/issues/43).
+> Tracking issue: [`.github`#43](https://github.com/Interval-Col/.github/issues/43). **Charts**
+> (RFC 0008 Q11) are folded into this plan — see **§Charts → @unovis** below (former
+> `.github`#25 / `chart-unovis-migration-plan.md`, now archived).
 
 ## Execution protocol (read first, implementing agent)
 
@@ -25,8 +27,9 @@ For each app, work its section top-to-bottom as one branch:
 `design-studio` (PR #4) or `finance-lch/frontend`. The shell/tokens/lockup come from the registry
 (Step 0). Lucide glyph imports: `Radar`, `Anchor`, `ShipWheel`, `Telescope` from `lucide-vue-next`.
 
-**Global ESCALATE list (never let a Sonnet agent guess these):** the system-health **beacon backend
-contract**; **chart** migrations (statistical parity — defer to `.github`#25, pair with a human);
+**Global ESCALATE list (never let a Sonnet agent guess these):** enriching an app's **beacon health
+definition** beyond the backend-liveness default (see **§System-health beacon** — the default + mechanism
+are 🔵 decided); **chart** migrations (the **lab-qc QC chart** = statistical parity — pair with a human; see **§Charts → @unovis**);
 **admission cashier/queue** flow refactors; mapping an app's ad-hoc palette (emerald/gray) to
 semantic roles when the intent is ambiguous.
 
@@ -58,7 +61,7 @@ Done when all hold and `pnpm lint-check` + visual-regression are green:
 - [ ] **Sub-brand**: the app's glyph + accent + `Pháros · <name>` lockup (wordmark = Fraunces burgundy `#782F40` + red `#E4002B` pilot light, never re-tinted).
 - [ ] **Gates + compliance testing**: 4 design gates + ESLint in `pnpm lint-check`, a pre-commit hook, a required CI check, Playwright visual-regression, + token-drift/contrast/font checks — see **FE brand-compliance testing** below (Layers A–D).
 - [ ] **Registry**: shell + tokens **copied in** from `.github/brands/pharos_brand/` (not a package).
-- [ ] **Charts** 🟠: `@unovis` + brand-fixed `--chart-1..5` (RFC 0008 Q11; via `.github`#25).
+- [ ] **Charts** 🟠: `@unovis` + brand-fixed `--chart-1..5` (RFC 0008 Q11). Tokens **already in the registry** — see **§Charts → @unovis**.
 
 ### Per-app sub-brand (RFC 0008 Q1/Q6 — LOCKED 2026-06-17)
 
@@ -78,12 +81,12 @@ from the three proven impls — **pharos-lis** (shell + gates, cleanest), **fina
 pipeline), **`design-studio`** (already prototypes the Faro+Instrumento shell, the live beacon, the
 lockup, the per-sub-brand accent model) — into `.github/brands/pharos_brand/`:
 
-- [ ] **Token contract** copy-in CSS: shadcn vars + status palette + `--sidebar-*` + the **5 sub-brand accent themes** + brand-fixed `--chart-1..5`.
+- [ ] **Token contract** copy-in CSS: shadcn vars + status palette + `--sidebar-*` + the **5 sub-brand accent themes** + brand-fixed `--chart-1..5` (**chart tokens already landed** in `registry/tokens.css`).
 - [ ] **App-shell registry component(s)**: `Sidebar collapsible="icon"` + beacon rail + ⌘K + live pilot-light beacon + breadcrumb-topbar (harden from `design-studio`).
 - [ ] **Wordmark/lockup component**: reuse `design-studio`'s `AppLogo` (beacon-over-"P" already correct).
 - [ ] **4 gate scripts + `eslint.config.mjs` + visual-regression scaffold** — promote the `design-studio`/`finance-lch` copies as canonical.
 - [ ] **Copy-in sync mechanism** (committed script; resolve `npx shadcn add` vs thin copy).
-- [ ] **🟠 Decide the beacon backend health contract** (endpoint + shape) — blocks the beacon in every app.
+- [ ] 🔵 **Beacon contract + default**: define the shared `/health` contract + the FE poll/map component, and the **default health source = the app's own backend liveness** — so the beacon ships live everywhere with **no per-app blocker** (see **§System-health beacon**). *(Richer per-app health definitions are an optional later 🟠.)*
 - [ ] **Refine this plan** with what the first pass surfaces, then unblock steps 1–3.
 
 > Roles stay distinct: `design-studio` = prototype/validation (local-dev) · registry = source of truth · `pharos-ui` (future) = component library.
@@ -97,8 +100,8 @@ Already conforms: stack · `.dark` · `Sidebar collapsible=icon` · breadcrumb-n
 - [ ] 🔵 **Accent PINK → TEAL.** In `app/assets/css/main.css` (~L51–97) replace `--primary`/`--accent`/`--sidebar-accent` (+ the `.dark` block + `@theme inline`): pink `#e4002b`/`#fc9bb3` → teal `#1B6B5A` (light) / `#4CD1B0` (dark). Burgundy stays the wordmark constant. *(Resolves shipped-pink-vs-burgundy.)*
 - [ ] 🔵 **Inter → DM Sans**: `nuxt.config.ts` (~L23) `{ name: 'Inter' … }` → `{ name: 'DM Sans', weights: [400,500,600] }`; update `--font-sans` in `main.css @theme`.
 - [ ] 🔵 **Lockup**: `PharosLogo.vue` → `Pháros · Clínico` + Sonda/`Radar` glyph; sublabel `CONTROL DE CALIDAD` → `CLÍNICO`.
-- [ ] 🟠 **Beacon**: add the live pilot-light health beacon to the topbar — needs the Step-0 backend contract.
-- [ ] 🟠 **Charts → @unovis** (`pages/analytics/media-movil.vue`, Chart.js today) — statistical-parity port via `.github`#25.
+- [ ] 🔵 **Beacon**: wire the shared beacon component to the backend `/health` endpoint; **default source = backend liveness** (see **§System-health beacon**). Richer LIS signals (analyzers/backlog) are optional later 🟠.
+- [ ] 🟠 **Charts → @unovis** — only `pages/analytics/media-movil.vue` is live today (Chart.js, reads `--chart-*` via `getComputedStyle`); port it as a **statistical-parity** port (🛑 human sign-off — see **§Charts → @unovis**). `correlacion-metodos.vue` + `clsi-ep15.vue` are **placeholders** → build greenfield on @unovis, not ports.
 - [ ] 🔵 **Registry copy-in**: repoint shell + tokens + `public/brand/` to the extracted registry (dogfood the sync).
 - **VERIFY**: `pnpm lint-check` green · `grep -rn "#e4002b\|#fc9bb3" app/` → 0 · DM Sans renders · teal correct in light+dark across sidebar/breadcrumb/buttons/badges.
 
@@ -129,7 +132,7 @@ Token reference: stack/status-palette/**gates clean · 0 violations**. Gaps are 
 - [ ] 🔵 **DROP cobol**: remove the ~140-line terminal theme + VT323 import + the 3rd toggle option (→ 2-way light/dark). Add a read-time fallback: `if (stored === 'cobol') stored = 'light'`. **VERIFY** `grep -rni "cobol\|vt323" app/` → 0.
 - [ ] 🔵 **Fonts**: add Fraunces (display) + **DM Sans** (UI) + import JetBrains Mono (data); keep IBM Plex Mono (labels).
 - [ ] 🔵 **Accent**: define `--accent` = ámbar `#7A5D00`/`#E6C34D` (currently only `--status-warning`). Drain residual **"Pulso"** strings + Spanish bridge aliases (`grep -rni "pulso" app/`).
-- [ ] 🟠 **Define + migrate charts**: `--chart-1..5` (referenced-but-undefined) → brand-fixed @unovis palette; KpiCard/KpiTrendModal off Chart.js via `.github`#25 (statistical parity).
+- [ ] 🔵 **Migrate charts → @unovis**: `--chart-1..5` are **now defined** in the registry — reference them and drop the `getChartPalette()` JS bridge. Port `KpiCard` + `KpiTrendModal` off `chart.js`/`vue-chartjs`; **visual + behavioral parity** (standard KPI/trend — *not* statistical). See **§Charts → @unovis**.
 - [ ] 🔵 **Shell**: custom CSS-grid → registry `Sidebar collapsible=icon` + ⌘K + beacon.
 - [ ] 🔵 **Sub-brand**: `Pháros · Números` wordmark + Timón/`ShipWheel` glyph.
 - **VERIFY**: `pnpm lint-check` green · 0 `data-theme`/`cobol`/`vt323` · `--chart-1..5` defined · ámbar accent both themes · no "Pulso" in user-facing strings.
@@ -153,6 +156,81 @@ Least mature — a **shell build**. shadcn **declared but never initialized** (n
 - **VERIFY**: `pnpm lint-check` green · `app/components/ui/` exists · `app/layouts/default.vue` renders the shell · `.dark` toggles · ámbar-claro accent both themes.
 
 ---
+
+## Charts → @unovis (RFC 0008 Q11) — folded in from the former chart-migration plan
+
+> Replaces the standalone `chart-unovis-migration-plan.md` (archived) and its tracker `.github`#25
+> — now part of this rollout (`#43`). The chart-token **foundation is done**: `--chart-1..5` ship
+> brand-fixed in `.github/brands/pharos_brand/registry/tokens.css` (navy/blue/teal/yellow/lilac).
+
+**Decision (RFC 0008 Q11).** `@unovis` is the charting standard for all Pháros apps; the shared
+token shape is numbered **`--chart-1..5`**, brand-colored from the family palette (shadcn-vue's
+native convention — its chart components are built on @unovis). Chosen over Chart.js: SVG +
+**CSS-variable-native** (charts obey the token cascade — no manual JS color bridge), consumed
+**copy-in** via the registry (own the source, never trapped), F5-backed + Apache-2.0. Semantic
+chart tokens stay as **per-app extensions** where a domain needs them (lab-qc QC stats).
+
+**Inventory — only two apps have charts today.** admission-patient + commercial-lch have **none**
+(verified — no `chart.js`/`@unovis` dep); they adopt @unovis natively when they first build charts,
+so there is nothing to migrate there.
+
+| App | Surfaces on Chart.js today | Risk | Parity bar |
+|---|---|---|---|
+| **finance-lch** | `KpiCard`, `KpiTrendModal` (`chart.js ^4.5.1` + `vue-chartjs ^5.3.3`) | Low–med | **visual + behavioral** |
+| **pharos-lis** (lab-qc) | `analytics/media-movil.vue` (`chart.js ^4.4.1`, reads `--chart-*` via `getComputedStyle`) | **High** | **statistical** 🛑 |
+
+> `lab-qc/analytics/correlacion-metodos.vue` + `clsi-ep15.vue` are **placeholders today**
+> (redirect / not-built). They get built **greenfield on @unovis**, so they are *not* Chart.js
+> ports and carry **no parity-against-Chart.js burden**. Levey-Jennings likewise, when built.
+
+**Per-app tasks** (these are the same chart bullets that appear in the app sections above):
+- [ ] 🔵 **finance-lch** — port `KpiCard` + `KpiTrendModal` to the shared @unovis components; replace the `getChartPalette()` JS bridge with token-native `--chart-1..5`; remove `chart.js` + `vue-chartjs` once no surface uses them; **visual + behavioral parity** check in the browser.
+- [ ] 🟠 **pharos-lis** — port `media-movil.vue` to @unovis as a **statistical-parity** port: control limits / regression / EP15-style bands verified to **match the current Chart.js computed output exactly — not eyeballed**; map lab-qc's semantic chart tokens onto `--chart-1..5` where possible, keep as per-app extensions otherwise; remove `chart.js` when the QC surface is ported.
+
+🛑 **HUMAN DECISION — lab-qc statistical-parity sign-off (@gczuluaga / QC owner).** The QC chart
+encodes clinical statistics. An agent must **not** declare parity by eyeballing the render — a
+port that looks right but computes bands wrong is a correctness bug. Verify against the current
+Chart.js *computed* output and record it on the tracking issue before the QC chart is "done".
+
+**Shared chart components** (area/bar/line/donut + legend/tooltip) live in the registry and are
+covered by the Playwright **visual-regression** pass (Layer C below), built/validated in the
+`design-studio` playground. *(Fuller bilingual rationale, glossary, and step-by-step checkpoints:
+the archived `plans/archive/chart-unovis-migration-plan.md`.)*
+
+---
+
+## System-health beacon (Faro pilot-light) — contract + per-app source
+
+The beacon is the shell's live pilot-light: steady "en orden", a slow pulse "derivando", a fast
+pulse "fuera de rango" (the one element BRAND §6.6 lets move). Two layers — the **mechanism is
+shared** (decided once, identical everywhere) and the **health source is per-app** (with a default
+so nothing blocks).
+
+**Shared mechanism (foundation · 🔵 · identical in every app).**
+- Each app's backend exposes a health endpoint (path per the backend's own API convention + `proxy` routing) returning the **contract shape**:
+  ```json
+  { "status": "ok" | "drift" | "out", "checkedAt": "<iso8601>", "subsystems": [ { "name": "...", "status": "ok|drift|out" } ] }
+  ```
+  `subsystems` is optional and powers a hover/popover breakdown.
+- The **shared FE beacon component** (from the registry; prototyped in `design-studio`) polls it on a **calm cadence (~45s)**, sets `data-status` on `<html>`, and maps `status` → pulse via the existing `.pharos-pilot` animation. Same component, copy-in — never reinvented per app.
+- **Failure mode**: if the endpoint is unreachable/errors → render **`drift`** (degraded, *not* alarmist); never crash the shell.
+- **🔒 PHI guardrail (non-negotiable)**: the endpoint returns **structure + aggregate status only** — subsystem *names* + states, never patient/row values. Read-only. (This is the prod/PHI boundary.)
+- **Humane-tech**: calm by default — steady at rest, gentle escalation, no sound/modal/red-flood; just the dot's rhythm.
+
+**Per-app health source (decided per app · DEFAULT unblocks).**
+- **Default (every app, day one · 🔵):** `status` = the app's **own main backend health** — process up + reachable critical deps (its DB schema + SSO). Enough to ship the beacon **live everywhere** with zero bespoke design. **If an app decides nothing, this is what it gets.**
+- **Optional richer signals (owner + that app's backend add later · 🟠 · no FE or contract change):**
+
+| App | Default source | Optional richer health (later, owner's call) |
+|---|---|---|
+| pharos-lis (Clínico) | backend + DB + SSO | analyzer/instrument connectivity · pending-validation backlog · cobolql facade reachable |
+| admission-patient (Recepción) | backend + DB + SSO | queue service · cashier/caja online · label/printer service |
+| finance-lch (Números) | backend + DB + SSO | DIAN/Siigo sync health · cuadre/close status |
+| commercial-lch (Clientes) | backend + DB + SSO | (none beyond default expected at launch) |
+
+**Disposition.** Mechanism + default = **🔵 decided here** (copy-in, no blocker). Enriching an app's
+health *definition* beyond the default = **🟠** the owner + that app's backend decide what trips
+`drift`/`out`, always within the PHI guardrail.
 
 ## FE brand-compliance testing (hooks + CI/CD) — keep apps from drifting back
 
