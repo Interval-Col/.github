@@ -54,6 +54,7 @@ import AppLogo from '~/components/AppLogo.vue'
 import CommandPalette from '~/components/CommandPalette.vue'
 import SystemBeacon from '~/components/SystemBeacon.vue'
 import SystemOcean from '~/components/SystemOcean.vue'
+import MakerCredit from '~/components/MakerCredit.vue'
 
 import { isNavSubGroup, menu } from '~/navigation/menu'
 import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
@@ -67,9 +68,12 @@ withDefaults(defineProps<{
   /** Descriptive sidebar sublabel under the wordmark (mono label), e.g.
    *  "LIS · Laboratorio clínico" (RFC 0008 Q1 — lockup = solo logo + sublabel). */
   subLabel?: string
-  /** A lucide icon name for the sub-brand glyph, e.g. "Radar". */
+  /** A lucide icon name for the sub-brand glyph, e.g. "Radar". Rendered as the
+   *  accent mark beside the wordmark (the "logo náutico") + echoed in the breadcrumb. */
   glyph?: string
-}>(), { subName: '', subLabel: '', glyph: 'Radar' })
+  /** Content density — Amplia | Media | Compacta (RFC 0008). Locked default: media. */
+  density?: 'amplia' | 'media' | 'compacta'
+}>(), { subName: '', subLabel: '', glyph: 'Radar', density: 'media' })
 
 const route = useRoute()
 const isSidebarOpen = ref(true)
@@ -179,14 +183,24 @@ onMounted(() => {
   >
     <!-- ── Sidebar: the lit lighthouse beam (beacon rail CSS keys off data-pg-sidebar) ── -->
     <Sidebar collapsible="icon" data-pg-sidebar>
-      <SidebarHeader class="min-h-16 justify-center group-data-[collapsible=icon]:items-center group-data-[state=expanded]:items-start group-data-[state=expanded]:gap-1 group-data-[state=expanded]:px-3">
-        <!-- Lockup (RFC 0008 Q1): the Pháros wordmark ONLY ("solo logo"). The
-             sub-brand is carried by the descriptive mono sublabel below and echoed
-             at the root of the breadcrumb — never an accented sub-name. -->
-        <AppLogo :variant="isSidebarOpen ? 'navbar' : 'icon'" />
+      <SidebarHeader class="min-h-16 justify-center group-data-[collapsible=icon]:items-center group-data-[state=expanded]:items-start group-data-[state=expanded]:gap-0.5 group-data-[state=expanded]:px-3">
+        <!-- Lockup (RFC 0008 Q1 / playground): the Pháros wordmark + the sub-brand
+             nautical glyph (accent) seated beside it — "solo logo", NO sub-name word;
+             with the descriptive mono sublabel under the wordmark's "P". The name is
+             echoed at the breadcrumb root, never as an accented sub-name here. -->
+        <div class="flex min-w-0 items-center gap-1.5 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:justify-center">
+          <AppLogo class="shrink-0" :variant="isSidebarOpen ? 'navbar' : 'icon'" />
+          <component
+            :is="resolveIcon(glyph)"
+            v-if="isSidebarOpen && resolveIcon(glyph)"
+            class="size-6 shrink-0 text-primary group-data-[collapsible=icon]:hidden"
+            :stroke-width="1.75"
+            aria-hidden="true"
+          />
+        </div>
         <span
           v-if="isSidebarOpen && subLabel"
-          class="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground group-data-[collapsible=icon]:hidden"
+          class="truncate pl-[7px] font-mono text-[9px] uppercase leading-none tracking-[0.18em] text-muted-foreground group-data-[collapsible=icon]:hidden"
         >
           {{ subLabel }}
         </span>
@@ -253,15 +267,17 @@ onMounted(() => {
         </SidebarGroup>
       </SidebarContent>
 
-      <!-- Auth/user block injected by the app via the slot. -->
-      <SidebarFooter class="relative z-10">
-        <slot name="user" />
+      <!-- Footer: the app's user/session block (slot) + the REQUIRED Interval maker
+           ribbon (BRAND.md §10), floating (z-10) above the "oleaje" sea (z-0, clipped
+           to the footer band) — the lighthouse + crew rise from the sea. Sea-state
+           follows the health beacon via <html data-status>. -->
+      <SidebarFooter class="relative min-h-[4.5rem] justify-end gap-2 overflow-hidden border-t border-sidebar-border p-2">
+        <SystemOcean />
+        <div class="relative z-10 flex flex-col gap-2">
+          <slot name="user" />
+          <MakerCredit />
+        </div>
       </SidebarFooter>
-
-      <!-- "Oleaje": the calm ukiyo-e sea the lighthouse rises from — RFC 0008
-           family motif (oleaje sí · altura Medio · tinte Acento · espuma + barco).
-           Sea-state follows the health beacon via <html data-status>. -->
-      <SystemOcean />
     </Sidebar>
 
     <!-- ── Main area: topbar + content ── -->
@@ -385,8 +401,9 @@ onMounted(() => {
         </div>
       </header>
 
-      <!-- Page content. NO <h1> (breadcrumb is the title), NO playground panel/letterbox. -->
-      <main class="flex-1 overflow-y-auto p-6">
+      <!-- Page content. NO <h1> (breadcrumb is the title). Padding follows the
+           density axis (Amplia/Media/Compacta) via pharos-components.css. -->
+      <main class="flex-1 overflow-y-auto" data-pg-content :data-density="density">
         <slot />
       </main>
     </SidebarInset>
