@@ -27,8 +27,9 @@ For each app, work its section top-to-bottom as one branch:
 `design-studio` (PR #4) or `finance-lch/frontend`. The shell/tokens/lockup come from the registry
 (Step 0). Lucide glyph imports: `Radar`, `Anchor`, `ShipWheel`, `Telescope` from `lucide-vue-next`.
 
-**Global ESCALATE list (never let a Sonnet agent guess these):** the system-health **beacon backend
-contract**; **chart** migrations (the **lab-qc QC chart** = statistical parity — pair with a human; see **§Charts → @unovis**);
+**Global ESCALATE list (never let a Sonnet agent guess these):** enriching an app's **beacon health
+definition** beyond the backend-liveness default (see **§System-health beacon** — the default + mechanism
+are 🔵 decided); **chart** migrations (the **lab-qc QC chart** = statistical parity — pair with a human; see **§Charts → @unovis**);
 **admission cashier/queue** flow refactors; mapping an app's ad-hoc palette (emerald/gray) to
 semantic roles when the intent is ambiguous.
 
@@ -85,7 +86,7 @@ lockup, the per-sub-brand accent model) — into `.github/brands/pharos_brand/`:
 - [ ] **Wordmark/lockup component**: reuse `design-studio`'s `AppLogo` (beacon-over-"P" already correct).
 - [ ] **4 gate scripts + `eslint.config.mjs` + visual-regression scaffold** — promote the `design-studio`/`finance-lch` copies as canonical.
 - [ ] **Copy-in sync mechanism** (committed script; resolve `npx shadcn add` vs thin copy).
-- [ ] **🟠 Decide the beacon backend health contract** (endpoint + shape) — blocks the beacon in every app.
+- [ ] 🔵 **Beacon contract + default**: define the shared `/health` contract + the FE poll/map component, and the **default health source = the app's own backend liveness** — so the beacon ships live everywhere with **no per-app blocker** (see **§System-health beacon**). *(Richer per-app health definitions are an optional later 🟠.)*
 - [ ] **Refine this plan** with what the first pass surfaces, then unblock steps 1–3.
 
 > Roles stay distinct: `design-studio` = prototype/validation (local-dev) · registry = source of truth · `pharos-ui` (future) = component library.
@@ -99,7 +100,7 @@ Already conforms: stack · `.dark` · `Sidebar collapsible=icon` · breadcrumb-n
 - [ ] 🔵 **Accent PINK → TEAL.** In `app/assets/css/main.css` (~L51–97) replace `--primary`/`--accent`/`--sidebar-accent` (+ the `.dark` block + `@theme inline`): pink `#e4002b`/`#fc9bb3` → teal `#1B6B5A` (light) / `#4CD1B0` (dark). Burgundy stays the wordmark constant. *(Resolves shipped-pink-vs-burgundy.)*
 - [ ] 🔵 **Inter → DM Sans**: `nuxt.config.ts` (~L23) `{ name: 'Inter' … }` → `{ name: 'DM Sans', weights: [400,500,600] }`; update `--font-sans` in `main.css @theme`.
 - [ ] 🔵 **Lockup**: `PharosLogo.vue` → `Pháros · Clínico` + Sonda/`Radar` glyph; sublabel `CONTROL DE CALIDAD` → `CLÍNICO`.
-- [ ] 🟠 **Beacon**: add the live pilot-light health beacon to the topbar — needs the Step-0 backend contract.
+- [ ] 🔵 **Beacon**: wire the shared beacon component to the backend `/health` endpoint; **default source = backend liveness** (see **§System-health beacon**). Richer LIS signals (analyzers/backlog) are optional later 🟠.
 - [ ] 🟠 **Charts → @unovis** — only `pages/analytics/media-movil.vue` is live today (Chart.js, reads `--chart-*` via `getComputedStyle`); port it as a **statistical-parity** port (🛑 human sign-off — see **§Charts → @unovis**). `correlacion-metodos.vue` + `clsi-ep15.vue` are **placeholders** → build greenfield on @unovis, not ports.
 - [ ] 🔵 **Registry copy-in**: repoint shell + tokens + `public/brand/` to the extracted registry (dogfood the sync).
 - **VERIFY**: `pnpm lint-check` green · `grep -rn "#e4002b\|#fc9bb3" app/` → 0 · DM Sans renders · teal correct in light+dark across sidebar/breadcrumb/buttons/badges.
@@ -197,6 +198,39 @@ covered by the Playwright **visual-regression** pass (Layer C below), built/vali
 the archived `plans/archive/chart-unovis-migration-plan.md`.)*
 
 ---
+
+## System-health beacon (Faro pilot-light) — contract + per-app source
+
+The beacon is the shell's live pilot-light: steady "en orden", a slow pulse "derivando", a fast
+pulse "fuera de rango" (the one element BRAND §6.6 lets move). Two layers — the **mechanism is
+shared** (decided once, identical everywhere) and the **health source is per-app** (with a default
+so nothing blocks).
+
+**Shared mechanism (foundation · 🔵 · identical in every app).**
+- Each app's backend exposes a health endpoint (path per the backend's own API convention + `proxy` routing) returning the **contract shape**:
+  ```json
+  { "status": "ok" | "drift" | "out", "checkedAt": "<iso8601>", "subsystems": [ { "name": "...", "status": "ok|drift|out" } ] }
+  ```
+  `subsystems` is optional and powers a hover/popover breakdown.
+- The **shared FE beacon component** (from the registry; prototyped in `design-studio`) polls it on a **calm cadence (~45s)**, sets `data-status` on `<html>`, and maps `status` → pulse via the existing `.pharos-pilot` animation. Same component, copy-in — never reinvented per app.
+- **Failure mode**: if the endpoint is unreachable/errors → render **`drift`** (degraded, *not* alarmist); never crash the shell.
+- **🔒 PHI guardrail (non-negotiable)**: the endpoint returns **structure + aggregate status only** — subsystem *names* + states, never patient/row values. Read-only. (This is the prod/PHI boundary.)
+- **Humane-tech**: calm by default — steady at rest, gentle escalation, no sound/modal/red-flood; just the dot's rhythm.
+
+**Per-app health source (decided per app · DEFAULT unblocks).**
+- **Default (every app, day one · 🔵):** `status` = the app's **own main backend health** — process up + reachable critical deps (its DB schema + SSO). Enough to ship the beacon **live everywhere** with zero bespoke design. **If an app decides nothing, this is what it gets.**
+- **Optional richer signals (owner + that app's backend add later · 🟠 · no FE or contract change):**
+
+| App | Default source | Optional richer health (later, owner's call) |
+|---|---|---|
+| pharos-lis (Clínico) | backend + DB + SSO | analyzer/instrument connectivity · pending-validation backlog · cobolql facade reachable |
+| admission-patient (Recepción) | backend + DB + SSO | queue service · cashier/caja online · label/printer service |
+| finance-lch (Números) | backend + DB + SSO | DIAN/Siigo sync health · cuadre/close status |
+| commercial-lch (Clientes) | backend + DB + SSO | (none beyond default expected at launch) |
+
+**Disposition.** Mechanism + default = **🔵 decided here** (copy-in, no blocker). Enriching an app's
+health *definition* beyond the default = **🟠** the owner + that app's backend decide what trips
+`drift`/`out`, always within the PHI guardrail.
 
 ## FE brand-compliance testing (hooks + CI/CD) — keep apps from drifting back
 
