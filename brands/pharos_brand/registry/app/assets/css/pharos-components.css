@@ -21,3 +21,44 @@
 @media (prefers-reduced-motion: reduce) {
   .pharos-pilot { animation: none; opacity: 1; transform: none; }
 }
+
+/* ─── Beacon rail — the DEFAULT app-shell treatment (RFC 0008) ───────────────
+   The sidebar is a lit lighthouse beam; the active item burns like a beacon.
+   Lifted from design-studio's :root[data-spine="beacon"] block but RE-ROOTED:
+   the data-spine gate is removed so this is the unconditional, only treatment
+   (no runtime spine toggle). Keyed to [data-pg-sidebar] (the attr the shell
+   layout puts on <Sidebar>). The lit beam keys off [data-active="true"], which
+   the vendored SidebarMenuButton emits on the active item. All colors are
+   var()/color-mix — no new hex (the .pharos-pilot fallback above is grandfathered). */
+[data-pg-sidebar] {
+  border-right: 1px solid color-mix(in oklab, var(--primary) 35%, var(--sidebar-border));
+  background: linear-gradient(to right, color-mix(in oklab, var(--primary) 9%, transparent), transparent 30%), var(--sidebar);
+}
+[data-pg-sidebar] [data-active="true"] {
+  position: relative;
+  background: color-mix(in oklab, var(--primary) 16%, transparent);
+  box-shadow: inset 0 0 20px color-mix(in oklab, var(--primary) 16%, transparent);
+}
+[data-pg-sidebar] [data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 82%;
+  border-radius: 0 9999px 9999px 0;
+  background: var(--primary);
+  box-shadow: 0 0 12px 1px color-mix(in oklab, var(--primary) 70%, transparent);
+  transform-origin: center;
+  /* The lighthouse "turns": the lit beam sweeps in when the active route changes.
+     Always-on (the data-beam gate is dropped), still guarded by reduced-motion. */
+  animation: beam-sweep 0.45s ease-out;
+}
+@keyframes beam-sweep {
+  from { transform: translateY(-50%) scaleY(0); opacity: 0; }
+  to   { transform: translateY(-50%) scaleY(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pg-sidebar] [data-active="true"]::before { animation: none; }
+}
