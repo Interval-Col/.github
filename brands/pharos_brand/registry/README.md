@@ -39,7 +39,7 @@ package (RFC 0008 Q3).
 - Three fonts: Fraunces / Inter / IBM Plex Mono (JetBrains dropped).
 - `.dark` class theming; `cobol` theme dropped; light+dark only.
 - ERP · Timón accent = LCH Navy `#003A70` (+ teal success).
-- Charts: `@unovis` + numbered `--chart-1..5` (migration tracked: `plans/chart-unovis-migration-plan.md`).
+- Charts: `@unovis` + numbered `--chart-1..5` (migration folded into `plans/pharos-fe-spec-rollout.md` → §Charts → @unovis, `.github`#43).
 
 **Open — NOT in this foundation (for @SKuger01 / the brand playground, RFC 0008 Q1/Q6):**
 - Non-ERP sub-brand **accents** (LIS clínico, LIS deportivo, Admisiones, CRM, Archivo).
