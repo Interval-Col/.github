@@ -3,8 +3,9 @@
 # sync-pharos-registry.sh — copy the shared Pháros design-system foundation
 # into a consuming app (RFC 0008 Q3: copy-in registry, NOT a runtime package).
 #
-# Syncs: tokens.css · gate scripts (check-no-*.mjs) · eslint.config.mjs template
-#        · pharos-lint-check.yml GitHub Actions workflow.
+# Syncs: tokens.css (+ .sha256 drift sidecar) · the 7 gate scripts (check-*.mjs)
+#        · eslint.config.mjs template · pharos-lint-check.yml (its working-directory
+#        + pnpm cache path auto-set to the app's FE subdir) · registry/app/**.
 #
 # Does NOT overwrite: the app's .pre-commit-config.yaml or main ci.yml (those
 # carry org policy hooks and backend/test jobs — see pre-commit.snippet.yaml).
@@ -49,6 +50,24 @@ if [[ ! -d "$REPO_ROOT" ]]; then
   exit 1
 fi
 
+# Resolve to absolute paths so the monorepo FE-subdir can be derived.
+APP_FE_DIR="$(cd "$APP_FE_DIR" && pwd)"
+REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
+
+# FE dir relative to the repo root — drives the copied workflow's
+# working-directory + pnpm cache-dependency-path, so the CI works for monorepos
+# (e.g. lab-qc/frontend, frontend) AND single-app repos (FE_REL=".") with NO
+# manual patching that a re-sync would clobber.
+if [[ "$APP_FE_DIR" == "$REPO_ROOT" ]]; then
+  FE_REL="."
+else
+  FE_REL="${APP_FE_DIR#"$REPO_ROOT/"}"
+  if [[ "$FE_REL" == /* || "$FE_REL" == "$APP_FE_DIR" ]]; then
+    echo "error: app-fe-dir ($APP_FE_DIR) is not inside repo-root ($REPO_ROOT)" >&2
+    exit 1
+  fi
+fi
+
 # ── Copy helper ──────────────────────────────────────────────────────────────
 copy_file() {
   local src="$1"
@@ -86,10 +105,24 @@ copy_file \
   "$REGISTRY_DIR/eslint.config.mjs" \
   "$APP_FE_DIR/eslint.config.mjs"
 
-# ── 4. Dedicated lint-check workflow ─────────────────────────────────────────
-copy_file \
-  "$REGISTRY_DIR/.github/workflows/pharos-lint-check.yml" \
-  "$REPO_ROOT/.github/workflows/pharos-lint-check.yml"
+# ── 4. Dedicated lint-check workflow (working-directory parameterized per app) ─
+# Single-app repos keep the template's `.`; monorepos get FE_REL substituted in,
+# so the copied CI runs in the right dir + caches the right lockfile.
+WORKFLOW_SRC="$REGISTRY_DIR/.github/workflows/pharos-lint-check.yml"
+WORKFLOW_DEST="$REPO_ROOT/.github/workflows/pharos-lint-check.yml"
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "[dry-run] would copy: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=$FE_REL)"
+elif [[ "$FE_REL" == "." ]]; then
+  mkdir -p "$(dirname "$WORKFLOW_DEST")"
+  cp "$WORKFLOW_SRC" "$WORKFLOW_DEST"
+  echo "synced: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=.)"
+else
+  mkdir -p "$(dirname "$WORKFLOW_DEST")"
+  sed -e "s#working-directory: \.#working-directory: $FE_REL#g" \
+      -e "s#cache-dependency-path: pnpm-lock\.yaml#cache-dependency-path: $FE_REL/pnpm-lock.yaml#g" \
+      "$WORKFLOW_SRC" > "$WORKFLOW_DEST"
+  echo "synced: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=$FE_REL)"
+fi
 
 # ── 4b. Component tree — beacon (+ shell / lockup / ui primitives as they land) ─
 # Mirrors registry/app/** into the consuming app's app/** at the same paths.
