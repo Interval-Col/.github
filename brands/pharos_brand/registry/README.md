@@ -9,7 +9,7 @@ package (RFC 0008 Q3).
 > Strategy & meaning: [`../BACKBONE.md`](../BACKBONE.md). How Pháros looks/sounds/
 > behaves: [`../BRAND.md`](../BRAND.md). Palette origin (tenant): [`../../hematologico/LCH-BRAND.md`](../../hematologico/LCH-BRAND.md).
 > The decision record this registry implements: `rfcs/0008-pharos-design-system.md`
-> + the decision-walk `rfcs/0008-cocreation-prep.md`.
+> (the decision-walk + playground export are now its Appendix A / B).
 
 ---
 
