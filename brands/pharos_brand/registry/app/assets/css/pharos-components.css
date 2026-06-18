@@ -104,3 +104,12 @@
   .pharos-ocean .ocean-back, .pharos-ocean .ocean-front, .pharos-ocean .ocean-foam { animation: none; }
   .pharos-boat { display: none; }
 }
+
+/* ─── Density (RFC 0008 — Amplia / Media / Compacta) ─────────────────────────
+   Locked default = Media. Only the content-area padding changes (sidebar + topbar
+   are unaffected); the layout sets data-density on [data-pg-content]. Decoupled
+   from radius (Carácter). */
+[data-pg-content] { padding: 1.5rem; }                         /* media (default) */
+[data-pg-content][data-density="amplia"]   { padding: 2.5rem; }
+[data-pg-content][data-density="media"]    { padding: 1.5rem; }
+[data-pg-content][data-density="compacta"] { padding: 0.875rem; }
