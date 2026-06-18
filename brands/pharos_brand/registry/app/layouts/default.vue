@@ -54,6 +54,7 @@ import AppLogo from '~/components/AppLogo.vue'
 import CommandPalette from '~/components/CommandPalette.vue'
 import SystemBeacon from '~/components/SystemBeacon.vue'
 import SystemOcean from '~/components/SystemOcean.vue'
+import SystemNotifications from '~/components/SystemNotifications.vue'
 import MakerCredit from '~/components/MakerCredit.vue'
 
 import { isNavSubGroup, menu } from '~/navigation/menu'
@@ -267,15 +268,20 @@ onMounted(() => {
         </SidebarGroup>
       </SidebarContent>
 
-      <!-- Footer: the app's user/session block (slot) + the REQUIRED Interval maker
-           ribbon (BRAND.md §10), floating (z-10) above the "oleaje" sea (z-0, clipped
-           to the footer band) — the lighthouse + crew rise from the sea. Sea-state
-           follows the health beacon via <html data-status>. -->
-      <SidebarFooter class="relative min-h-[4.5rem] justify-end gap-2 overflow-hidden border-t border-sidebar-border p-2">
-        <SystemOcean />
-        <div class="relative z-10 flex flex-col gap-2">
+      <!-- Footer (RFC 0008): the app's user/session block (slot) sits in its OWN
+           clean band so it is never crowded or clipped by the sea; below it the
+           REQUIRED Interval maker ribbon (BRAND.md §10) rides the "oleaje" sea
+           (clipped to its own band, z-0). Sea-state follows the health beacon via
+           <html data-status>. The crew stands on deck; the ribbon rides the swell. -->
+      <SidebarFooter class="gap-0 border-t border-sidebar-border p-0">
+        <div class="p-2">
           <slot name="user" />
-          <MakerCredit />
+        </div>
+        <div class="relative flex h-14 items-end overflow-hidden border-t border-sidebar-border/50">
+          <SystemOcean />
+          <div class="relative z-10 w-full pb-1.5">
+            <MakerCredit />
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
@@ -381,11 +387,14 @@ onMounted(() => {
           </ol>
         </nav>
 
-        <!-- Right cluster — spec order: spacer · ⌘K · SystemBeacon · theme · user. -->
+        <!-- Right cluster — spec order: spacer · ⌘K · SystemBeacon · notifications · theme · user.
+             The notifications bell defaults to the shell's SystemNotifications (empty/quiet);
+             an app fills #notifications to pass its own wired bell (:items + @view-all). -->
         <div class="ml-auto flex items-center gap-3">
           <CommandPalette class="hidden md:block" :nav="menu" @toggle-theme="toggleTheme" />
           <slot name="topbar-end" />
           <SystemBeacon />
+          <slot name="notifications"><SystemNotifications /></slot>
           <Button
             type="button"
             variant="outline"
