@@ -1,4 +1,4 @@
-<!-- spec-version: bbe68096 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 5c38266d · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Números — especificación de sub-marca
 
@@ -9,7 +9,7 @@
 - **Intensidad** Sutil (difusión en superficies neutras; estado + gráficas intactos).
 - **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Números» · náutico «Timón» · glyph lucide `ShipWheel` (logo náutico sí, RFC 0008 Q1).
-- **Lockup** sidebar = logo Pháros + glyph `ShipWheel` (acento) + sublabel "ERP · Finanzas y operaciones"; eco en breadcrumb «Números». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
+- **Lockup** sidebar = logo Pháros + glyph `ShipWheel` (acento — `text-primary`/`--primary`) + sublabel "ERP · Finanzas y operaciones"; eco en breadcrumb «Números». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
 - **Paleta de estado** Referencia (actual) (independiente del acento). → `registry/tokens.css (--status-* + -bg)`.
 
 ### Consumir (junior / Sonnet)
