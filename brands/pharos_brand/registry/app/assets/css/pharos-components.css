@@ -126,3 +126,36 @@
   font-weight: 600;
   letter-spacing: 0;
 }
+
+/* ─── "Faro + Instrumento" — chronometer tick textures (RFC 0008) ────────────
+   The "Instrumento" half of the shell concept: a measurement tick-ruler along
+   the topbar's lower edge + a hairline tick rule under card headers. Ported from
+   the playground's data-concept="faro-instrumento" block (design-studio main.css)
+   as the canonical, UN-GATED default — the registry shell IS "Faro + Instrumento".
+   Only the instrument TEXTURE is adopted; card-title typography stays énfasis
+   "Sobrio" (DM Sans, above), NOT the mono-engraved instrumento titles. All colors
+   are var() tokens; pointer-events:none so the ticks are purely decorative. */
+[data-pg-topbar] { position: relative; }
+[data-pg-topbar]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background-image: repeating-linear-gradient(to right, var(--muted-foreground) 0 1px, transparent 1px 16px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+[data-pg-content] [data-slot="card-header"] { position: relative; }
+[data-pg-content] [data-slot="card-header"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 5px;
+  background-image: repeating-linear-gradient(to right, var(--border) 0 1px, transparent 1px 12px);
+  opacity: 0.6;
+  pointer-events: none;
+}
