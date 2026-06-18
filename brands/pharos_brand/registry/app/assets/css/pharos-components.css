@@ -113,3 +113,16 @@
 [data-pg-content][data-density="amplia"]   { padding: 2.5rem; }
 [data-pg-content][data-density="media"]    { padding: 1.5rem; }
 [data-pg-content][data-density="compacta"] { padding: 0.875rem; }
+
+/* ─── Carácter · énfasis "Sobrio" (RFC 0008) ────────────────────────────────
+   Content card titles stay restrained DM Sans — never the Fraunces display serif
+   (the registry keeps Fraunces for the wordmark only). Baked flat: every Pháros
+   sub-brand is "Sobrio" (no editorial divergence), so this is the family default,
+   not a per-brand axis. Mirrors the playground's :root[data-emphasis="sobrio"]
+   rule; scoped to [data-pg-content] so the lockup/wordmark + shell chrome are
+   untouched. */
+[data-pg-content] [data-slot="card-title"] {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 0;
+}
