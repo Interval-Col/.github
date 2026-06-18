@@ -44,7 +44,7 @@ permitting — but **Stage 0 (below) must merge first**, it blocks A *and* C acc
 | 3 | Backend data scope for first adoption | **Mock-first** through Stages 1–3; real backend only at Stage-5 owner sign-off. |
 | 4 | finance-lch 3rd "cobol" theme | **Retire** — `.dark`-only (full theme-mechanism reconciliation, not a one-block delete). |
 | 5 | RBAC nav gating (finance) | **Amend the registry contract to a `useMenu()` composable** — shell imports a reactive, auth-filtered nav instead of a static `menu` const. One-time shell change benefiting all apps; needs re-sync + an RFC 0008 note. |
-| 6 | Dark accents for the pastel themes | **Derived + AA-checked, pending German's final nod:** `.dark.theme-recepcion` `#ff6b85` (6.7:1), `.dark.theme-clientes` `#f59e3c` (7.1:1). The pastel themes currently have **no** `.dark` block → without these, dark mode falls back to navy. |
+| 6 | Dark accents for the pastel themes | **APPROVED (German, 2026-06-18):** `.dark.theme-recepcion` `#ff6b85` (6.7:1 AA), `.dark.theme-clientes` `#f59e3c` (7.1:1 AA). The pastel themes currently have **no** `.dark` block → without these, dark mode falls back to navy. |
 | 7 | Track C quotes-page raw HTML | **In-track prep stage** to rewrite the quotes pages to shadcn primitives; Track C re-budgeted M/High. |
 
 ## ⚠️ De-risk corrections (read before executing — from the 2026-06-18 adversarial pass)
@@ -73,9 +73,68 @@ A Sonnet agent carries stages **1–3**; the owner/architect carries **4–5**.
 | 3 | **Validate** | App's own `e2e/shell-contract.spec.ts` + `test:contract` script + `test-contract` CI job green; **verified by running** (screenshots L+D, nav group expanded to an active leaf) |
 | 4 | **Deploy** | `ci-cd.yml` (owner-gated) |
 | 5 | **Sign-off** | Owner validates against **real backend**; bump `.implemented.json` |
+| 6 | **Retro Gate** | Back-propagate lessons into downstream tracks + prove standard conformance; **next track blocked until the Retro PR merges** (§Retro Gate) |
 
 **Never hand-edit registry-owned files** (`tokens.css`, `registry/app/**`, gate scripts, the lint
 workflow) — fix the registry → re-sync.
+
+### Retro Gate (mandatory handoff) · 🟠 architect-gated
+
+A track does **not** hand off on a green VERIFY block. Between one track's **Stage 5** and the
+**next track's owner starting**, a mandatory **Retro Gate** runs — to stop three failures: (1) the
+next track starting from a **stale plan**, (2) tracks **drifting** off the identical non-negotiable
+contract, (3) lessons **dying with the finishing owner**. The chain compounds: **skuger** finishes
+Track A → his retro back-propagates into **both** B & C → only then is B handed to **egomez**;
+egomez finishes B → his retro refines the remaining **C** → only then is C handed to **crincon04**.
+
+**The gate is ONE PR** against this repo (`.github`), labeled **`retro-gate`**, landing three things
+in a single merge-commit:
+
+1. 🔵 **Retro doc** — fill `plans/pharos-track-retro.<track>.md` from
+   [`pharos-track-retro.template.md`](pharos-track-retro.template.md). Every lesson row is
+   **file-anchored** (symptom → the plan line it contradicts/extends → the downstream edit it
+   produced). For the **canary (A)**, reconcile **every** §De-risk punch-list item — resolved or
+   explicitly carried, **none silently dropped**.
+2. 🔵 **Back-propagation — VERIFIABLE.** The **same PR** must edit the **not-yet-started** tracks'
+   sections of this file. The **`retro-gate` CI check** (required on `.github` `main`) **fails**
+   unless the diff shows a **non-empty** change in each downstream section. A genuine "nothing to
+   carry" is allowed **only** via an explicit line the check greps for:
+   `> Back-propagation: NONE — <one-line justification>` per downstream track. **"No change" is
+   visibly suspicious — German reviews the rendered diff.**
+3. 🔵 **STANDARD conformance — machine-proven** (assert + paste outputs in the retro doc):
+   shell-contract + `test-contract` green · **7-gate `Pháros — lint-check` green** · drift ledger
+   bumped **paired with `check-spec-drift` green** (a bare bump fails) · **ZERO registry-owned
+   hand-edits** — paste `sync-pharos-registry.sh --dry-run <fe-dir> <root>` showing **nothing to
+   copy** · **next repo armed** (its `Pháros — lint-check` registered **required on `develop` AND
+   `main`** — see §Enforcement setup).
+
+**Handoff is a machine state, not a conversation.** The next track's tracking issue (**#47** B /
+**#48** C) is held by a **native blocked-by** link to the Retro PR **plus** a **`blocked:retro-gate`**
+label owners have **no authority** to remove. **German** merges (merge-commit only — preserves the
+diff) **and** removes the label — that single act, not any verbal "go," unblocks the next track.
+Ritual: *retro-gate CI green · downstream sections diffed · not an `--admin` override of a red
+retro-gate check* (`enforce_admins` is OFF by design — the gate binds contributors hard; for German
+it rests on this ritual until a second code-owner exists).
+
+### Enforcement setup (one-time, admin/German) — arms the "dictatorial standard"
+
+> ⚠️ **Gap found by the de-risk recon: `pharos-lint-check` is NOT a required check in *any* target
+> repo today** (it's 404 in all three) — so the design-system standard is currently **unenforced at
+> CI**. These steps arm it; the Retro Gate then verifies the *next* repo is armed before each handoff.
+
+- **(critical)** Per target repo: sync to land `pharos-lint-check.yml`, push to `develop` once so the
+  context reports, then register **`Pháros — lint-check`** (confirm the exact context string) as a
+  **required status check on `develop` AND `main`** via `gh api … /branches/{develop,main}/protection/required_status_checks`.
+  Required checks on `develop` **block even direct pushes** — the load-bearing lever (per `BRANCHING-AND-DEPLOY.md`).
+- Add a **`retro-gate.yml`** check to `.github` (fails a `retro-gate`-labeled PR unless it diffs the
+  retro doc + each downstream track section; honors the `> Back-propagation: NONE — …` escape);
+  register it **required on `.github` `main`**.
+- Create labels **`retro-gate`** (`.github`) + **`blocked:retro-gate`** (target repos); optional
+  self-healing guard re-applies the block label if removed by anyone but @gczuluaga.
+- Minor parity: enable `dismiss_stale_reviews` on **commercial-lch** `main`; add **@SKuger01** to
+  **admission-patient** CODEOWNERS.
+- **Deferred escalation:** leave `enforce_admins` **OFF** (keeps your solo-merge flow); once a second
+  code-owner exists, turn it ON for `.github` so even you can't merge a red `retro-gate` check.
 
 ## Corrected spec values — live `registry/spec/*`
 
@@ -157,6 +216,10 @@ mirror lab-qc) + CI job → **VERIFY** → deploy → sign-off + bump `admisione
 to an active leaf (rosa beam `#ff3d63` / dark `#ff6b85` + parent-group beam; `Anchor` glyph is `--primary`,
 not gray) · `pnpm test:contract` green · `nuxi typecheck` clean · Minio `server/api/accounting/**` respond.
 
+**Stage 6 · Retro Gate (handoff to B & C):** open the `retro-gate` PR — back-propagate every
+transferable lesson into the **Track B & C** sections of this plan (the `retro-gate` check fails on an
+empty downstream diff) + assert standard conformance; **#46 → #47/#48 blocked until German merges.** See §Retro Gate.
+
 ## Track B — finance-lch «Números» · owner egomez
 
 Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
@@ -188,6 +251,9 @@ Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
 **VERIFY (B):** lint-check green · build · screenshots L+D · active-leaf ámbar beam (`#7A5D00`/`#E6C34D`) ·
 cobol gone · charts still colored · RBAC nav hides ungated items per user · `pnpm test:contract` green.
 
+**Stage 6 · Retro Gate (handoff to C):** open the `retro-gate` PR — back-propagate into the **Track C**
+section + assert conformance; **#48 blocked until German merges.** See §Retro Gate.
+
 ## Track C — commercial-lch «Clientes» · owner crincon04 · **M/High**
 
 Nuxt 4, `app/` srcDir ✓, FE at `commercial-lch/frontend`. **Not** a blank slate.
@@ -214,6 +280,9 @@ tab `Pháros — Clientes`; bump `crm.md`.
 
 **VERIFY (C):** deps install `--frozen-lockfile` · lint-check green (incl. no-raw-html on rewritten pages) ·
 build · screenshots L+D · active-leaf `#e37600` beam · `pdf-render` route intact · `pnpm test:contract` green.
+
+**Stage 6 · Retro Gate (rollout close):** Track C is last — the retro records final lessons + confirms
+standard conformance (no downstream back-prop). Closes the rollout. See §Retro Gate.
 
 ## RFC 0008 amendment (durable decisions — German merges)
 
