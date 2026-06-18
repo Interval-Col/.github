@@ -1,15 +1,27 @@
 ---
-status: blocked
+status: superseded
 created: 2026-06-13
-updated: 2026-06-15
+updated: 2026-06-17
 owner: gczuluaga
-implementation: TBD
+implementation: folded into pharos-fe-spec-rollout.md
 language: English body; Spanish "Resumen" + decision/criteria glosses.
-tracking-issue: Interval-Col/.github#25
-blocked-on: RFC 0008 acceptance + Phase 0 foundation (shared chart tokens + components)
+tracking-issue: Interval-Col/.github#25 (folded into #43)
+superseded-by: pharos-fe-spec-rollout.md (§Charts → @unovis) · Interval-Col/.github#43
+superseded-on: 2026-06-17
 ---
 
 # Charting migration → @unovis (org standard) · Migración de gráficos a @unovis
+
+> ⚠️ **SUPERSEDED 2026-06-17 — folded into the FE-spec rollout.** This standalone plan and its
+> tracker `.github`#25 are now part of **`pharos-fe-spec-rollout.md` → §Charts → @unovis** (`#43`).
+> *Why fold:* the chart-token foundation (`--chart-1..5`) already shipped in
+> `.github/brands/pharos_brand/registry/tokens.css`, and the live chart surface is just two apps
+> the rollout already owns (finance-lch + pharos-lis/lab-qc) — `correlacion-metodos.vue` +
+> `clsi-ep15.vue` are placeholders, so they are greenfield @unovis, not parity ports. **Kept here
+> for history:** the bilingual rationale, glossary, and the QC statistical-parity checkpoints below
+> remain the reference for the lab-qc QC port.
+> *(ES) Plan archivado: el trabajo vive ahora en `pharos-fe-spec-rollout.md` (§Charts → @unovis,
+> issue #43). Se conserva aquí por su detalle bilingüe y los checkpoints de paridad estadística QC.*
 
 > **Resumen (ES).** Estandarizamos los gráficos de todos los apps Pháros sobre
 > **`@unovis`** (decisión de RFC 0008 Q11). Hoy `finance-lch` y `lab-qc` arman
