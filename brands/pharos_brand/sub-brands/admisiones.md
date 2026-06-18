@@ -32,9 +32,22 @@ front-desk role.
 - **Accent** `--primary` = rosa `#FFE0E6`; status colours accent-independent (Q4). Being a light
   pastel, the accent reads as a soft tint — pair with strong foreground for AA contrast on text.
 - **Glyph** the «Muelle» anchor mark (lucide `Anchor`) as the app icon.
-- **Lockup** `Pháros` + `·` + Muelle glyph + `Recepción` + optional sublabel
-  `ADMISIONES · RECEPCIÓN` (IBM Plex Mono, uppercase, tracked, muted).
+- **Lockup** ver §Lockup a continuación.
 - Everything else inherited unchanged from `../BRAND.md`.
+
+### Lockup (contrato de sidebar — playground 2026-06-17)
+
+El sidebar muestra **solo el logo Pháros** (marca compartida de la familia) y una etiqueta
+descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto al logo.
+
+| Elemento | Valor |
+|---|---|
+| Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
+| Sublabel descriptivo | `Admisiones · Recepción` (IBM Plex Mono, uppercase, tracked, muted) |
+| Eco en breadcrumb | Sí — «Recepción» aparece como primer nodo del breadcrumb |
+| Glyph de app | «Muelle» → `Anchor` (lucide), tintado rosa; identidad marítima vive en la marca, no en la palabra |
+
+> Fuente: RFC 0008 Q1 · playground 2026-06-17.
 
 > ⏸ **Tune (RFC 0008 Q6):** the rosa accent currently reuses one pastel on **both** light and
 > dark grounds (no distinct dark value) — pick a legible dark variant in the playground.

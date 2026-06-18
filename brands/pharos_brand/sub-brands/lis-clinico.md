@@ -35,9 +35,22 @@ fuera-de-control / alerta) — a recognizable status language, **not** the app a
   the curated family set; status colours are **accent-independent** (RFC 0008 Q4).
 - **Glyph** the «Sonda» radar mark (lucide `Radar`) as the app icon; maritime identity lives in
   the mark, so the name stays the plain "Clínico".
-- **Lockup** `Pháros` + `·` + Sonda glyph + `Clínico` + optional sublabel
-  `LIS · LABORATORIO CLÍNICO` (IBM Plex Mono, uppercase, tracked, muted).
+- **Lockup** ver §Lockup a continuación.
 - Everything else (type, shell, spacing, flatness) **inherited unchanged** from `../BRAND.md`.
+
+### Lockup (contrato de sidebar — playground 2026-06-17)
+
+El sidebar muestra **solo el logo Pháros** (marca compartida de la familia) y una etiqueta
+descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto al logo.
+
+| Elemento | Valor |
+|---|---|
+| Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
+| Sublabel descriptivo | `LIS · Laboratorio clínico` (IBM Plex Mono, uppercase, tracked, muted) |
+| Eco en breadcrumb | Sí — «Clínico» aparece como primer nodo del breadcrumb |
+| Glyph de app | «Sonda» → `Radar` (lucide), tintado teal; identidad marítima vive en la marca, no en la palabra |
+
+> Fuente: RFC 0008 Q1 · playground 2026-06-17.
 
 ## 4. Voice
 
