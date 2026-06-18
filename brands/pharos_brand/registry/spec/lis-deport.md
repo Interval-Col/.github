@@ -1,4 +1,4 @@
-<!-- spec-version: 16056997 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 85cb038e · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Deportivo — especificación de sub-marca
 
@@ -9,7 +9,7 @@
 - **Intensidad** Neutro (difusión en superficies neutras; estado + gráficas intactos).
 - **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Deportivo» · náutico «Vela» · glyph lucide `Sailboat` (logo náutico sí, RFC 0008 Q1).
-- **Lockup** sidebar = logo Pháros + glyph `Sailboat` (acento) + sublabel "LIS · Laboratorio deportivo"; eco en breadcrumb «Deportivo». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
+- **Lockup** sidebar = logo Pháros + glyph `Sailboat` (acento — `text-primary`/`--primary`) + sublabel "LIS · Laboratorio deportivo"; eco en breadcrumb «Deportivo». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
 - **Paleta de estado** Referencia (actual) (independiente del acento). → `registry/tokens.css (--status-* + -bg)`.
 
 ### Consumir (junior / Sonnet)

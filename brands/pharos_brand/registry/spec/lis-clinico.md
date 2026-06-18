@@ -1,4 +1,4 @@
-<!-- spec-version: 8c00bf8e · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 52802ac5 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Laboratorio — especificación de sub-marca
 
@@ -9,7 +9,7 @@
 - **Intensidad** Neutro (difusión en superficies neutras; estado + gráficas intactos).
 - **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Laboratorio» · náutico «Sonda» · glyph lucide `Radar` (logo náutico sí, RFC 0008 Q1).
-- **Lockup** sidebar = logo Pháros + glyph `Radar` (acento) + sublabel "LIS · Laboratorio clínico"; eco en breadcrumb «Laboratorio». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
+- **Lockup** sidebar = logo Pháros + glyph `Radar` (acento — `text-primary`/`--primary`) + sublabel "LIS · Laboratorio clínico"; eco en breadcrumb «Laboratorio». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
 - **Paleta de estado** Referencia (actual) (independiente del acento). → `registry/tokens.css (--status-* + -bg)`.
 
 ### Consumir (junior / Sonnet)
