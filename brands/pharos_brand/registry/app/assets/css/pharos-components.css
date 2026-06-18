@@ -1,0 +1,23 @@
+/* pharos-components.css — component-layer CSS. Apps @import this alongside pharos-tokens.css.
+   It powers the live pilot light on the Pháros logo (RFC 0008 §6.6); the animation cadence
+   quickens when <html data-status> is set to "drift" or "out" by the health-beacon plugin. */
+
+/* ─── Live pilot light — the dot over the logo's "P" ───────────────────
+   The ONE live beacon (BRAND §6.6): steady at rest, quickening as the
+   system-health beacon reports drift/out via <html data-status> (set by
+   app/plugins/health-beacon.client.ts). Always brand red — never recolored. */
+.pharos-pilot {
+  fill: var(--pharos-red, #E4002B);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pharos-pilot 3.8s ease-in-out infinite;
+}
+@keyframes pharos-pilot {
+  0%, 100% { opacity: 0.5; transform: scale(0.9); filter: drop-shadow(0 0 0 transparent); }
+  50%      { opacity: 1; transform: scale(1.18); filter: drop-shadow(0 0 4px color-mix(in oklab, var(--pharos-red, #E4002B) 60%, transparent)); }
+}
+:root[data-status="drift"] .pharos-pilot { animation-duration: 2.2s; }
+:root[data-status="out"]   .pharos-pilot { animation-duration: 1.2s; }
+@media (prefers-reduced-motion: reduce) {
+  .pharos-pilot { animation: none; opacity: 1; transform: none; }
+}
