@@ -74,8 +74,14 @@ const RULES = [
   /font-family\s*:\s*([^;}{]+)[;}]/gi, // CSS / inline style / @font-face
   /font-\[(['"]?)([^\]]+?)\1\]/gi, // Tailwind arbitrary: font-['Segoe UI']
   /--font-[a-z-]+\s*:\s*([^;]+);/gi, // token stacks
-  /\bname\s*:\s*['"]([^'"]+)['"]/gi, // @nuxt/fonts { name: 'X' }
 ]
+// @nuxt/fonts families read `{ name: 'X', weights/provider… }`. A bare `name:`
+// is NOT a font on its own — it also matches i18n locales, Pinia store ids,
+// route/component names — so only treat it as a family when a font-declaration
+// sibling key (weights/provider/subsets/style/…) sits nearby.
+const FONT_NAME_RE = /\bname\s*:\s*['"]([^'"]+)['"]/gi
+const FONT_CTX_RE = /\b(?:weights?|provider|subsets|styles?|fallbacks|display|src)\s*:/i
+const FONT_CTX_WINDOW = 200
 
 for (const file of files) {
   const text = readFileSync(file, 'utf8')
@@ -92,6 +98,19 @@ for (const file of files) {
           violations.push({ file: relative(REPO_ROOT, file), line, fam, ctx: lines[line - 1]?.trim().slice(0, 90) })
         }
       }
+    }
+  }
+  // @nuxt/fonts family names — only when guarded by a nearby font-declaration key.
+  FONT_NAME_RE.lastIndex = 0
+  let mn
+  while ((mn = FONT_NAME_RE.exec(text)) !== null) {
+    const around = text.slice(Math.max(0, mn.index - FONT_CTX_WINDOW), mn.index + FONT_CTX_WINDOW)
+    if (!FONT_CTX_RE.test(around)) continue // not a @nuxt/fonts family entry
+    const bad = familiesFrom(mn[1])
+    if (!bad.length) continue
+    const line = text.slice(0, mn.index).split('\n').length
+    for (const fam of bad) {
+      violations.push({ file: relative(REPO_ROOT, file), line, fam, ctx: lines[line - 1]?.trim().slice(0, 90) })
     }
   }
 }

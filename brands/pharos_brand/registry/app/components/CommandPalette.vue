@@ -23,7 +23,7 @@ import {
 import { isNavSubGroup } from '~/navigation/menu'
 import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
 
-const props = defineProps<{ nav: NavGroup[] }>()
+defineProps<{ nav: NavGroup[] }>()
 const emit = defineEmits<{ (e: 'toggle-theme'): void }>()
 
 const router = useRouter()

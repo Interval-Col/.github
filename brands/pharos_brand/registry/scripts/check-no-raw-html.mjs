@@ -53,6 +53,22 @@ function isFileInput(lines, startIndex) {
   return false
 }
 
+// reka-ui exposes its combobox input headlessly as
+// `<ComboboxInput(Primitive) as-child>` projecting onto a single native
+// <input> child — the API REQUIRES that <input>, so it is an allowed
+// exception (documented above). Detect it by scanning backward from the
+// <input> for the ComboboxInput opening tag carrying `as-child`.
+const COMBOBOX_OPEN_RE = /<ComboboxInput(Primitive)?\b/
+const AS_CHILD_RE = /\bas-child\b/
+function isComboboxInput(lines, startIndex) {
+  let sawAsChild = false
+  for (let i = startIndex; i >= Math.max(0, startIndex - 10); i--) {
+    if (AS_CHILD_RE.test(lines[i])) sawAsChild = true
+    if (COMBOBOX_OPEN_RE.test(lines[i])) return sawAsChild
+  }
+  return false
+}
+
 function* walk(root) {
   let entries
   try { entries = readdirSync(root) } catch { return }
@@ -83,6 +99,7 @@ for (const root of SCAN_ROOTS) {
       const m = lines[i].match(BANNED_TAG_RE)
       if (!m) continue
       if (m[1] === 'input' && isFileInput(lines, i)) continue
+      if (m[1] === 'input' && isComboboxInput(lines, i)) continue
       hits.push({ lineNumber: startLine + i, content: lines[i].trim() })
     }
     if (hits.length) offenders.push({ rel, hits })
