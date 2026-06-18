@@ -9,7 +9,8 @@
 # Does NOT overwrite: the app's .pre-commit-config.yaml or main ci.yml (those
 # carry org policy hooks and backend/test jobs — see pre-commit.snippet.yaml).
 #
-# Components (app-shell / AppLogo / health-beacon) arrive in Phase 0b.
+# Components: registry/app/** (the live beacon now; shell / AppLogo / ui primitives
+# as they land) is mirrored into the consuming app's app/** at the same paths.
 #
 # Usage:
 #   scripts/sync-pharos-registry.sh [--dry-run] <app-fe-dir> [repo-root]
@@ -66,6 +67,15 @@ copy_file \
   "$REGISTRY_DIR/tokens.css" \
   "$APP_FE_DIR/app/assets/css/pharos-tokens.css"
 
+# ── 1b. token-drift sidecar — sha256 of the registry source (check-token-drift) ─
+TOKENS_SHA_DEST="$APP_FE_DIR/app/assets/css/pharos-tokens.css.sha256"
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "[dry-run] would write: $TOKENS_SHA_DEST"
+else
+  ( cd "$REGISTRY_DIR" && shasum -a 256 tokens.css | awk '{print $1}' ) > "$TOKENS_SHA_DEST"
+  echo "wrote:  $TOKENS_SHA_DEST"
+fi
+
 # ── 2. Gate scripts ──────────────────────────────────────────────────────────
 for script in "$REGISTRY_DIR/scripts"/check-no-*.mjs; do
   copy_file "$script" "$APP_FE_DIR/scripts/$(basename "$script")"
@@ -81,6 +91,15 @@ copy_file \
   "$REGISTRY_DIR/.github/workflows/pharos-lint-check.yml" \
   "$REPO_ROOT/.github/workflows/pharos-lint-check.yml"
 
+# ── 4b. Component tree — beacon (+ shell / lockup / ui primitives as they land) ─
+# Mirrors registry/app/** into the consuming app's app/** at the same paths.
+if [[ -d "$REGISTRY_DIR/app" ]]; then
+  while IFS= read -r src; do
+    rel="${src#"$REGISTRY_DIR/app/"}"
+    copy_file "$src" "$APP_FE_DIR/app/$rel"
+  done < <(find "$REGISTRY_DIR/app" -type f)
+fi
+
 # ── 5. Pre-commit: never overwrite — print merge instructions ─────────────────
 echo
 echo "─────────────────────────────────────────────────────────────────────────"
@@ -94,8 +113,9 @@ echo "────────────────────────�
 echo
 echo "Manual follow-ups required in the app:"
 echo
-echo "  a) Import pharos-tokens.css in app/assets/css/main.css:"
-echo "       @import \"./pharos-tokens.css\";"
+echo "  a) Import the registry CSS in app/assets/css/main.css:"
+echo "       @import \"./pharos-tokens.css\";       /* token contract */"
+echo "       @import \"./pharos-components.css\";   /* component layer (pilot light, …) */"
 echo
 echo "  b) Load the four Pháros fonts (via @nuxt/fonts or a CDN link):"
 echo "       Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono"
