@@ -60,7 +60,7 @@
   --secondary:             #F5F5F4;
   --secondary-foreground:  #000000;
   --muted:                 #F5F5F4;
-  --muted-foreground:      #888B8D;   /* was --text-secondary / --text-muted */
+  --muted-foreground:      #6B6E70;   /* was --text-secondary / --text-muted; darkened from #888B8D to clear WCAG AA on --muted (check-contrast) */
   --accent:                #F0F0EF;   /* shadcn NEUTRAL hover surface — NOT the brand accent */
   --accent-foreground:     #000000;
   --destructive:           #E4002B;   /* = --pharos-red (destructive actions) */
