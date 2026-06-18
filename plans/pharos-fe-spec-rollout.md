@@ -81,11 +81,11 @@ from the three proven impls — **pharos-lis** (shell + gates, cleanest), **fina
 pipeline), **`design-studio`** (already prototypes the Faro+Instrumento shell, the live beacon, the
 lockup, the per-sub-brand accent model) — into `.github/brands/pharos_brand/`:
 
-- [ ] **Token contract** copy-in CSS: shadcn vars + status palette + `--sidebar-*` + the **5 sub-brand accent themes** + brand-fixed `--chart-1..5` (**chart tokens already landed** in `registry/tokens.css`).
+- [x] **Token contract** copy-in CSS — **DONE 2026-06-17** (`registry/tokens.css`): shadcn vars + accent-independent `--status-*`+`-bg` + `--sidebar-*` + the **5 `.theme-*` sub-brand accents** + `--chart-1..5`, on the **4-font** stack (Fraunces · DM Sans UI · IBM Plex Mono labels · JetBrains Mono data). Accents now encoded as `.theme-*` classes; **ERP/Números → ámbar `#7A5D00`** (navy superseded, Q6); default/neutral = navy (Archivo).
 - [ ] **App-shell registry component(s)**: `Sidebar collapsible="icon"` + beacon rail + ⌘K + live pilot-light beacon + breadcrumb-topbar (harden from `design-studio`).
 - [ ] **Wordmark/lockup component**: reuse `design-studio`'s `AppLogo` (beacon-over-"P" already correct).
-- [ ] **4 gate scripts + `eslint.config.mjs` + visual-regression scaffold** — promote the `design-studio`/`finance-lch` copies as canonical.
-- [ ] **Copy-in sync mechanism** (committed script; resolve `npx shadcn add` vs thin copy).
+- [ ] **4 gate scripts + `eslint.config.mjs` + visual-regression scaffold** — gate scripts + the **Nuxt-coupled `eslint.config.mjs` template** + a dedicated **`pharos-lint-check.yml`** CI workflow + a **`pre-commit.snippet.yaml`** (`pharos-design-gates` hook) are being **promoted from `design-studio` now**. The Playwright **visual-regression scaffold is net-new** (Phase 0b — it does *not* exist in any app yet; design-studio/finance/pharos-lis only carry domain/smoke e2e).
+- [ ] **Copy-in sync mechanism** — **RESOLVED 2026-06-17**: thin **copy-in / overwrite** via `scripts/sync-pharos-registry.sh <app-fe-dir> [repo-root]` (registry **mirrors the app tree**); shadcn primitives are **vendored copy-in, NOT `npx shadcn add`**. See **§Foundation consumption** below.
 - [ ] 🔵 **Beacon contract + default**: define the shared `/health` contract + the FE poll/map component, and the **default health source = the app's own backend liveness** — so the beacon ships live everywhere with **no per-app blocker** (see **§System-health beacon**). *(Richer per-app health definitions are an optional later 🟠.)*
 - [ ] **Refine this plan** with what the first pass surfaces, then unblock steps 1–3.
 
@@ -104,6 +104,58 @@ Already conforms: stack · `.dark` · `Sidebar collapsible=icon` · breadcrumb-n
 - [ ] 🟠 **Charts → @unovis** — only `pages/analytics/media-movil.vue` is live today (Chart.js, reads `--chart-*` via `getComputedStyle`); port it as a **statistical-parity** port (🛑 human sign-off — see **§Charts → @unovis**). `correlacion-metodos.vue` + `clsi-ep15.vue` are **placeholders** → build greenfield on @unovis, not ports.
 - [ ] 🔵 **Registry copy-in**: repoint shell + tokens + `public/brand/` to the extracted registry (dogfood the sync).
 - **VERIFY**: `pnpm lint-check` green · `grep -rn "#e4002b\|#fc9bb3" app/` → 0 · DM Sans renders · teal correct in light+dark across sidebar/breadcrumb/buttons/badges.
+
+---
+
+## Foundation consumption — how steps 1–3 adopt the registry (decisions LOCKED 2026-06-17)
+
+Step 0 resolved *how* every app pulls in the foundation. Apply this **verbatim** in
+**admission-patient · finance-lch · commercial-lch**:
+
+- **Sub-brand = a theme class, never hand-rolled accent vars.** The 5 accents ship as
+  `.theme-*` blocks in `registry/tokens.css`; add your class to `<html>` (+ `dark` for
+  dark mode) and override nothing by hand:
+
+  | App | Theme class | Accent light / dark |
+  |---|---|---|
+  | admission-patient | `theme-recepcion` | rosa `#FFE0E6` (light + dark) |
+  | finance-lch | `theme-numeros` | ámbar `#7A5D00` / `#E6C34D` (navy superseded, Q6) |
+  | commercial-lch | `theme-clientes` | ámbar-claro `#FFB86B` (light + dark) |
+  | pharos-lis | `theme-clinico` | teal `#1B6B5A` / `#4CD1B0` |
+
+  Default/neutral (no class) = LCH Navy `#003A70` (Archivo). The light pastels (rosa,
+  ámbar-claro) are exactly what the **Layer-D contrast check** guards at WCAG AA.
+
+- **Type contract — 4 families, distinct roles:** `font-display` Fraunces · `font-sans`
+  **DM Sans** (UI default) · `font-mono` **IBM Plex Mono** (LABELS only — uppercase/
+  tracked) · `font-data` **JetBrains Mono** (figures/cifras, `tabular-nums`). Load all
+  four. **Data ≠ labels** — numeric values go to `font-data`, not `font-mono`.
+
+- **Status = `--status-{success,warning,error,info}` + `-bg`**, accent-independent
+  (utilities `bg-status-*` / `text-status-*` / `bg-status-*-bg`) — never the sub-brand accent.
+
+- **Sync command (copy-in, overwrites):**
+  `scripts/sync-pharos-registry.sh <app-fe-dir> [repo-root]` — `<app-fe-dir>` = the dir
+  that contains `app/` (`frontend`, `lab-qc/frontend`, or the repo root for admission);
+  `[repo-root]` (optional) = where `.github/workflows/` lives; `--dry-run` previews. It
+  **overwrites** (the registry owns these): `app/assets/css/pharos-tokens.css`,
+  `scripts/check-no-*.mjs`, `eslint.config.mjs`, `.github/workflows/pharos-lint-check.yml`.
+
+- **It does NOT touch your `ci.yml` or `.pre-commit-config.yaml`** (they carry your
+  backend/test jobs + the org policy hooks gitleaks/conventional-commit/branch-name).
+  Lint-check CI ships as the standalone `pharos-lint-check.yml`; **merge**
+  `registry/pre-commit.snippet.yaml` (the `pharos-design-gates` local hook) into your
+  existing `.pre-commit-config.yaml`.
+
+- **ESLint is a Nuxt-coupled template** (`withNuxt(./.nuxt/eslint.config.mjs)`): the app
+  needs `@nuxt/eslint` + a `nuxt prepare` (postinstall) for it to resolve. The sync
+  overwrites `eslint.config.mjs` — keep it verbatim. Add the `lint-check` script to
+  `package.json` (the sync prints the exact line).
+
+- **Components** (the Faro+Instrumento shell + `AppLogo`/lockup + the live health beacon
+  + the `sidebar`/`command` primitives they need) are **vendored copy-in** (NOT
+  `npx shadcn add`); they land in **Phase 0b** and the sync extends to copy them. Until
+  then, build/dogfood from pharos-lis.
 
 ---
 
