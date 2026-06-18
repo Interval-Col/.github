@@ -62,3 +62,45 @@
 @media (prefers-reduced-motion: reduce) {
   [data-pg-sidebar] [data-active="true"]::before { animation: none; }
 }
+
+/* ─── "Oleaje" — the calm ukiyo-e sea at the foot of the sidebar (SystemOcean) ──
+   RFC 0008 family decision: oleaje sí · altura Medio (4rem) · tinte Acento
+   (var(--primary), low-opacity line-art) · espuma sí · barco sí. The lighthouse
+   rises from it. Layers tile every 50% (w-200%) → translateX(-50%) loops
+   seamlessly; sea-state follows <html data-status> (calm at "ok", quickening on
+   drift/out). Decoupled from the playground store — config baked here. */
+.pharos-ocean {
+  height: 4rem; /* altura Medio */
+  color: var(--primary); /* tinte Acento — waves recolour with the sub-brand accent */
+}
+@keyframes pharos-ocean-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.pharos-ocean .ocean-back  { animation: pharos-ocean-drift 38s linear infinite; }
+.pharos-ocean .ocean-front { animation: pharos-ocean-drift 24s linear infinite; }
+.pharos-ocean .ocean-foam  { animation: pharos-ocean-drift 16s linear infinite; }
+:root[data-status="drift"] .pharos-ocean .ocean-back  { animation-duration: 22s; }
+:root[data-status="drift"] .pharos-ocean .ocean-front { animation-duration: 14s; }
+:root[data-status="drift"] .pharos-ocean .ocean-foam  { animation-duration: 10s; }
+:root[data-status="out"]   .pharos-ocean .ocean-back  { animation-duration: 13s; }
+:root[data-status="out"]   .pharos-ocean .ocean-front { animation-duration: 8s; }
+:root[data-status="out"]   .pharos-ocean .ocean-foam  { animation-duration: 6s; }
+
+/* the little boat: arrives from the horizon, crosses, then waits off-screen a
+   long while ("once in a while"). A gentle bob rides the swell. */
+@keyframes pharos-boat-cross {
+  0%   { left: 106%; opacity: 0; }
+  7%   { opacity: 0.9; }
+  47%  { opacity: 0.9; }
+  54%  { left: -16%; opacity: 0; }
+  100% { left: -16%; opacity: 0; }
+}
+@keyframes pharos-boat-bob {
+  0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+  50%      { transform: translateY(1.5px) rotate(1.2deg); }
+}
+.pharos-boat { animation: pharos-boat-cross 52s linear infinite; }
+.pharos-boat .pharos-boat-hull { display: block; animation: pharos-boat-bob 3.4s ease-in-out infinite; }
+:root[data-status="out"] .pharos-boat { animation-duration: 30s; }
+@media (prefers-reduced-motion: reduce) {
+  .pharos-ocean .ocean-back, .pharos-ocean .ocean-front, .pharos-ocean .ocean-foam { animation: none; }
+  .pharos-boat { display: none; }
+}
