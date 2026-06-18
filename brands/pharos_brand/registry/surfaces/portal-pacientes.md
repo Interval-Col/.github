@@ -9,11 +9,12 @@ formación técnica.
 resultados (la cara pública del LIS clínico).
 **Prioridades:** accesibilidad, legibilidad, calidez humana, simplicidad radical.
 
-> **Accent — TBD.** Pháros LIS no es ERP · Timón, así que su acento todavía NO está
-> fijado (RFC 0008 Q1/Q6 — @SKuger01 / brand playground). Use `--primary` de forma
-> genérica; **nunca invente un acento concreto** para esta superficie. Todo lo que
-> hay abajo se expresa contra los slots semánticos, de modo que cuando se cierre el
-> acento de Pháros LIS la superficie lo herede sin reescritura.
+> **Accent — Clínico (teal), LOCKED.** Pháros LIS hereda el acento **Clínico**
+> (`.theme-clinico` en `tokens.css`: teal `#1B6B5A` light / `#4CD1B0` dark), aplicado
+> añadiendo la clase al `<html>` (RFC 0008 — ACCEPTED 2026-06-17). Todo lo que hay
+> abajo se expresa contra los slots semánticos, de modo que el portal hereda el acento
+> Clínico sin reescritura; el tema sólo sobreescribe los slots de acento
+> (`--primary/--ring/--sidebar-primary` + foregrounds), el resto se hereda.
 
 ---
 
@@ -24,23 +25,23 @@ Esta superficie no define paleta propia: consume el contrato compartido
 
 | Rol en el portal | Token (NO inventar valores) |
 |---|---|
-| Acción primaria / CTA / enlaces | `--primary` / `--primary-foreground` (acento TBD del sub-brand) |
+| Acción primaria / CTA / enlaces | `--primary` / `--primary-foreground` (acento Clínico / teal del sub-brand) |
 | Superficie suave de tarjeta / sección | `--card`, `--secondary`, `--accent` (hover suave) |
 | Fondo de página | `--background` |
 | Texto principal | `--foreground` |
 | Texto secundario / helpers / captions | `--muted-foreground` |
 | Bordes de inputs y tarjetas | `--border` / `--input` |
-| Resultado **Normal / OK** | `--success` / `--success-foreground` |
-| Resultado **a revisar** | `--warning` / `--warning-foreground` |
-| Resultado **crítico** / peligro / error | `--error` (= `--destructive`) / `--error-foreground` |
-| Información / resuelto | `--info` / `--info-foreground` |
+| Resultado **Normal / OK** | `--status-success` / `--status-success-bg` |
+| Resultado **a revisar** | `--status-warning` / `--status-warning-bg` |
+| Resultado **crítico** / peligro / error | `--status-error` (= `--destructive`) / `--status-error-bg` |
+| Información / resuelto | `--status-info` / `--status-info-bg` |
 
 **Regla cromática clave (corrige el portal LCH):** el archivo anterior usaba el
 **mismo rojo** para los CTAs primarios y para "crítico/peligro". Aquí se separan:
 
-- **Acciones primarias → `--primary`** (el acento del sub-brand, TBD).
-- **Crítico / peligro / destructivo → `--error` / `--destructive`.**
-- El **rojo** (`--pharos-red` / `--error`) queda reservado para **error + el
+- **Acciones primarias → `--primary`** (el acento del sub-brand, Clínico / teal).
+- **Crítico / peligro / destructivo → `--status-error` / `--destructive`.**
+- El **rojo** (`--pharos-red` / `--status-error`) queda reservado para **error + el
   pilot-light de marca** — **nunca** es una acción primaria.
 
 ### Tailwind v4 — utilidades de uso frecuente
@@ -52,22 +53,23 @@ text-primary             → links, acciones
 text-foreground          → encabezados
 text-muted-foreground    → texto secundario, helpers
 border-border            → bordes de inputs y tarjetas
-bg-success/30  text-success-foreground   → estado "Normal/OK"
-bg-warning/40  text-warning-foreground   → estado "Revisar"
-bg-error/10    text-error                → estado "Crítico"
+bg-status-success-bg  text-status-success   → estado "Normal/OK"
+bg-status-warning-bg  text-status-warning   → estado "Revisar"
+bg-status-error-bg    text-status-error     → estado "Crítico"
 ```
 Sub-brand re-acentúa sólo `--primary/--accent/--ring/--sidebar-primary`; la paleta
-de estado (success/warning/error/info) **no** se mueve.
+de estado (status-success/warning/error/info) **no** se mueve.
 
 ---
 
 ## Tipografía
 
 ```css
-/* UI sans (Inter) por defecto; display (Fraunces) para hero/encabezados grandes */
-font-family: var(--font-sans);   /* Inter — system-ui fallback */
+/* UI sans (DM Sans) por defecto; display (Fraunces) para hero/encabezados grandes */
+font-family: var(--font-sans);   /* DM Sans — system-ui fallback */
 /* Hero / display */ font-family: var(--font-display); /* Fraunces */
-/* Datos (valores de laboratorio) */ font-family: var(--font-mono); /* IBM Plex Mono */
+/* Etiquetas / labels */ font-family: var(--font-mono); /* IBM Plex Mono */
+/* Datos (valores de laboratorio / cifras) */ font-family: var(--font-data); /* JetBrains Mono, tabular-nums */
 ```
 
 | Nivel | Escala |
@@ -77,10 +79,10 @@ font-family: var(--font-sans);   /* Inter — system-ui fallback */
 | H2 | `1.5rem`, `font-weight: 600` |
 | Body | `1rem`, `line-height: 1.8` (mayor espaciado para pacientes) |
 | Caption | `0.875rem`, `text-muted-foreground` |
-| Valor de laboratorio | `font-mono` + `tabular-nums`, `1.5rem`, `font-weight: 500` |
+| Valor de laboratorio | `font-data` + `tabular-nums`, `1.5rem`, `font-weight: 500` |
 
-- **Datos / números → `font-mono` (IBM Plex Mono) + `tabular-nums`.** Sin JetBrains
-  Mono, sin Apax.
+- **Datos / números / cifras → `font-data` (JetBrains Mono) + `tabular-nums`.**
+  Las **etiquetas / labels** usan `font-mono` (IBM Plex Mono). Sin Apax.
 - **Regla clave:** tamaño mínimo `text-base` (16px). Nunca menos en este portal.
 
 ---
@@ -129,11 +131,11 @@ Props: `examen: string`, `fecha: string`, `resultado: string | number`,
 Estado visual (paleta de estado, acento-independiente):
 ```vue
 <!-- Normal -->
-<span class="bg-success/30 text-success-foreground text-xs font-medium px-3 py-1 rounded-full">Normal</span>
+<span class="bg-status-success-bg text-status-success text-xs font-medium px-3 py-1 rounded-full">Normal</span>
 <!-- Revisar -->
-<span class="bg-warning/40 text-warning-foreground text-xs font-medium px-3 py-1 rounded-full">Revisar</span>
+<span class="bg-status-warning-bg text-status-warning text-xs font-medium px-3 py-1 rounded-full">Revisar</span>
 <!-- Crítico -->
-<span class="bg-error/10 text-error text-xs font-medium px-3 py-1 rounded-full">Crítico</span>
+<span class="bg-status-error-bg text-status-error text-xs font-medium px-3 py-1 rounded-full">Crítico</span>
 ```
 
 ### `PharosPortalDescargaBtn` — Botón de descarga PDF
@@ -186,7 +188,7 @@ Props: `title?: string`, `subtitle?: string`
 
 ### Valor de resultado de laboratorio
 ```vue
-<div class="font-mono text-2xl font-medium text-foreground tabular-nums">
+<div class="font-data text-2xl font-medium text-foreground tabular-nums">
   {{ resultado }}
 </div>
 <div class="font-sans text-sm text-muted-foreground">{{ unidad }}</div>
@@ -204,9 +206,9 @@ Props: `title?: string`, `subtitle?: string`
 ## Accesibilidad obligatoria
 - Todos los inputs con `aria-label` o `<label>` asociado.
 - Botones con texto claro — nunca sólo ícono sin `aria-label`.
-- Contraste mínimo AA: usar siempre los pares `*-foreground` del contrato
-  (`--warning-foreground` sobre `--warning`, etc.). **Nunca** texto claro sobre
-  `--warning` (amarillo).
+- Contraste mínimo AA: usar siempre los pares de estado del contrato
+  (`--status-warning` sobre `--status-warning-bg`, etc.). **Nunca** texto claro sobre
+  el tinte de advertencia (`--status-warning-bg`, amarillo).
 - Focus ring visible: `focus:ring-2 focus:ring-ring`.
 - `min-h-[48px]` en todos los elementos interactivos táctiles.
 
@@ -216,8 +218,8 @@ Props: `title?: string`, `subtitle?: string`
 - Light + dark vía la clase **`.dark`** de shadcn (no `[data-theme]`, no tema CRT).
 - No se hardcodean colores: todo resuelve contra los tokens, por lo que el portal
   se invierte correctamente en modo oscuro sin cambios de marcado. Verificar que los
-  estados (success/warning/error/info) mantienen contraste con sus `*-foreground`
-  tanto en claro como en oscuro.
+  estados (status-success/warning/error/info) mantienen contraste con sus tintes
+  `-bg` tanto en claro como en oscuro.
 
 ---
 
@@ -234,21 +236,23 @@ Props: `title?: string`, `subtitle?: string`
 ---
 
 ## Ported from `ds-lch-portal-pacientes`; what changed
-- **Acento del sub-brand:** marcado **TBD** (RFC 0008 Q1/Q6, @SKuger01). Pháros LIS
-  no es ERP · Timón; no se inventa acento — se usa `--primary` genérico.
+- **Acento del sub-brand:** **Clínico (teal), LOCKED** (RFC 0008 — ACCEPTED
+  2026-06-17). Pháros LIS hereda `.theme-clinico` (teal `#1B6B5A` light / `#4CD1B0`
+  dark); la superficie consume `--primary` y recibe el acento por la clase de tema.
 - **CTA ≠ peligro (corregido):** el portal LCH usaba el mismo rojo (`--pp-primary` =
   `--color-brand-red`) para CTAs y para "crítico". Ahora **primario → `--primary`** y
-  **crítico/peligro → `--error`/`--destructive`**; el rojo queda reservado para
+  **crítico/peligro → `--status-error`/`--destructive`**; el rojo queda reservado para
   error + el pilot-light, nunca para una acción primaria.
 - **Tokens:** eliminados todos los `--pp-*`, `var(--color-navy)`, `var(--color-brand-red)`,
   `var(--color-*)` LCH y hex crudos. Reemplazados por tokens semánticos shadcn +
-  paleta de estado acento-independiente (`--success/--warning/--error/--info`).
-  Mapeo: normal → `--success`, revisar → `--warning`, crítico → `--error`,
-  info/resuelto → `--info`.
-- **Tipografía:** valores de laboratorio pasan de `font-['JetBrains_Mono']` a
-  `font-mono` (**IBM Plex Mono**) + `tabular-nums`. La fuente de marca Apax
-  (`--font-brand`) se sustituye por `font-display` (**Fraunces**) para hero y
-  `font-sans` (**Inter**) para UI. Sin JetBrains Mono, sin Apax.
+  paleta de estado acento-independiente
+  (`--status-success/--status-warning/--status-error/--status-info`, cada uno con su
+  tinte `-bg`). Mapeo: normal → `--status-success`, revisar → `--status-warning`,
+  crítico → `--status-error`, info/resuelto → `--status-info`.
+- **Tipografía:** valores de laboratorio usan `font-data` (**JetBrains Mono**) +
+  `tabular-nums` para cifras; las etiquetas usan `font-mono` (**IBM Plex Mono**). La
+  fuente de marca Apax (`--font-brand`) se sustituye por `font-display` (**Fraunces**)
+  para hero y `font-sans` (**DM Sans**) para UI. Sin Apax.
 - **Componentes:** prefijo `Lch…` → `PharosPortal…` (tenant no antepone su nombre);
   props/emits y patrones UX (búsqueda, tarjeta de resultado, descarga PDF, empty
   state, hero) se conservan.
