@@ -1,4 +1,4 @@
-<!-- spec-version: 93f2eb80 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: cb47c317 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Pacientes — especificación de sub-marca
 
@@ -9,7 +9,7 @@
 - **Intensidad** Neutro (difusión en superficies neutras; estado + gráficas intactos).
 - **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Pacientes» · náutico «Muelle» · glyph lucide `Anchor` (logo náutico sí, RFC 0008 Q1).
-- **Lockup** sidebar = logo Pháros + glyph `Anchor` (acento) + sublabel "Admisiones · Recepción"; eco en breadcrumb «Pacientes». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
+- **Lockup** sidebar = logo Pháros + glyph `Anchor` (acento — `text-primary`/`--primary`) + sublabel "Admisiones · Recepción"; eco en breadcrumb «Pacientes». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
 - **Paleta de estado** Referencia (actual) (independiente del acento). → `registry/tokens.css (--status-* + -bg)`.
 
 ### Consumir (junior / Sonnet)
