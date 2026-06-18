@@ -134,6 +134,13 @@ function findAncestry(path: string): Ancestry | null {
   return null
 }
 
+/** A top-level group is "active" when the current route lives inside it — so the
+ *  parent group highlights (beacon beam + tint) alongside the active leaf, matching
+ *  the playground (the active item AND its parent both carry the beam). */
+function isGroupActive(group: NavGroup): boolean {
+  return findAncestry(route.path)?.group === group
+}
+
 /** First navigable leaf inside a group (for the fallback label-casing only). */
 function lastSlugLabel(path: string): string {
   const slug = path.split('/').filter(Boolean).pop() ?? 'Inicio'
@@ -220,7 +227,7 @@ onMounted(() => {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger as-child>
-                      <SidebarMenuButton :tooltip="group.label" @click="openSidebarIfCollapsed">
+                      <SidebarMenuButton :tooltip="group.label" :is-active="isGroupActive(group)" @click="openSidebarIfCollapsed">
                         <component :is="resolveIcon(group.icon)" v-if="resolveIcon(group.icon)" aria-hidden="true" />
                         <span>{{ group.label }}</span>
                         <ChevronDown
