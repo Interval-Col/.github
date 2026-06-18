@@ -1,4 +1,4 @@
-<!-- spec-version: 8a032836 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 7b5bd0d3 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Clientes — especificación de sub-marca
 
@@ -7,7 +7,7 @@
 - **Clase de tema** `theme-clientes` (+ `dark`). → `registry/tokens.css` (.theme-clientes).
 - **Acento** claro `#FFB86B` / oscuro `#FFB86B`. Solo en `--primary`/`--ring`/`--sidebar-primary` (+ foregrounds).
 - **Intensidad** Neutro (difusión en superficies neutras; estado + gráficas intactos).
-- **Carácter** forma Auto · profundidad Plano · énfasis Equilibrado · movimiento Natural.
+- **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Clientes» · náutico «Catalejo» · glyph lucide `Telescope` (logo náutico sí, RFC 0008 Q1).
 - **Lockup** sidebar = logo Pháros + glyph `Telescope` (acento) + sublabel "CRM · Relaciones comerciales"; eco en breadcrumb «Clientes». → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`.
 - **Paleta de estado** Referencia (actual) (independiente del acento). → `registry/tokens.css (--status-* + -bg)`.
