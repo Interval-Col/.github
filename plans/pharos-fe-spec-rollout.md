@@ -49,6 +49,38 @@ than admission's XL) and can move fast once unblocked.
 
 ---
 
+## Deployable track — per-app Definition of Done (locked 2026-06-18)
+
+Each app is an **independent, fully-deployable track**: the plan carries it all the
+way to *deployed*, not merely *migrated*. A track is **done** only when all five
+stages are green, in order. Each app has a **GitHub tracking issue** (the five stages
+as a checklist, assigned to the owner); the **Track status** table below is the
+cross-repo roll-up and the single source of truth for "where is each app."
+
+| Stage | Gate | What "green" means |
+|---|---|---|
+| **1 · Adopt** | FE contract | shell + tokens + 4 fonts + sub-brand `.theme-*` + i18n policy (literal es-CO, no runtime) + the app's pages migrated; the per-app **VERIFY** block passes |
+| **2 · Gate** | Layers A–B | the pre-commit **`pharos-design-gates`** hook **and** the **`pharos-lint-check`** CI check (a *required* branch-protection check on `develop`/`main`) — both green |
+| **3 · Validate** | Layers C–D + tests | Layer-D (token-drift / contrast / font-allowlist) inside `lint-check` ✓ · **Layer-C visual-regression** baselines committed + **human-reviewed** + green · the app's unit (Vitest) + E2E (Playwright) suites green |
+| **4 · Deploy** | `ci-cd.yml` | the org build-once-promote pipeline green → `:dev` auto-deploys on push to `develop`, `:prod` promotes on push to `main` (self-hosted runner online + per-env ECR/deploy secrets set) |
+| **5 · Sign-off** | owner | the owner runs the app against the **real backend** (smoke) and confirms the sub-brand + VERIFY block, then flips the track to done |
+
+> **🔒 Stages 4–5 are owner/architect-gated** (deploy = the gated pipeline + a live
+> runner; sign-off = a human running it against a real backend). An agent takes a
+> track through stages 1–3; a human carries 4–5. Layer-C baselines are
+> **human-reviewed on first generation** — never agent-blessed (RFC 0008 Q9).
+
+### Track status
+
+| # | App | Track issue | 1 Adopt | 2 Gate (A·B) | 3 Validate (C·D·E2E) | 4 Deploy | 5 Sign-off |
+|---|---|---|:--:|:--:|:--:|:--:|:--:|
+| 0 | **pharos-lis** | [#45](https://github.com/Interval-Col/.github/issues/45) | ✅ | A ✅ · B ✅ | C ⏳baselines · D ✅ · E2E ✅ | wired · dev run queued (runner) | ⏳ @gczuluaga |
+| 1 | admission-patient | [#46](https://github.com/Interval-Col/.github/issues/46) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| 2 | finance-lch | [#47](https://github.com/Interval-Col/.github/issues/47) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| 3 | commercial-lch | [#48](https://github.com/Interval-Col/.github/issues/48) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+
+---
+
 ## The contract — definition of "migrated" (every app)
 
 Done when all hold and `pnpm lint-check` + visual-regression are green:
@@ -325,8 +357,14 @@ then **wires Layer A + B as its first step** (so violations are visible from the
 
 ## Per-repo execution & done
 
-Each owner keeps task-level detail in that repo's **`plans/*.md`** (branch off `develop`). This file
-is the cross-repo coordinator. **RFC 0008 flips `accepted → implemented`** when all four apps pass the
-contract + their per-app VERIFY block with **Layers A–D green** (`pnpm lint-check`, visual-regression,
-token-drift, contrast, fonts) and the sub-brand applied — then update the RFC index row + Implementation
-section.
+Each app is a **deployable track** (see §Deployable track — Definition of Done): the
+owner drives it through the five stages, tracked in that app's **GitHub tracking
+issue** and rolled up in the **Track status** table above. Owners keep task-level
+detail in their repo's **`plans/*.md`** (branch off `develop`); this file is the
+cross-repo coordinator.
+
+A track is **done** when it reaches **stage 5** (deployed via `ci-cd.yml` + owner
+sign-off against a real backend), with Layers A–D green (`pnpm lint-check`,
+visual-regression, token-drift, contrast, fonts), the unit + E2E suites green, and the
+sub-brand applied. **RFC 0008 flips `accepted → implemented`** when **all four tracks
+reach stage 5** — then update the RFC index row + Implementation section.
