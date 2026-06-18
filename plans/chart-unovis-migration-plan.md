@@ -417,7 +417,7 @@ have also been walked. Questions:
 
 ## References
 
-- RFC 0008 Q11 + `rfcs/0008-cocreation-prep.md`.
+- RFC 0008 Q11 (`rfcs/0008-pharos-design-system.md` — decision-walk now inlined as Appendix A).
 - shadcn-vue charts (built on @unovis): <https://www.shadcn-vue.com/charts>.
 - @unovis: <https://unovis.dev/> · <https://github.com/f5/unovis> (Apache-2.0).
 - Tracking issue: Interval-Col/.github#25.
