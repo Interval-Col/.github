@@ -8,7 +8,7 @@
 // a PROP (it does not import `~/navigation/menu`), flattens it to leaves locally,
 // and DELEGATES the theme toggle to the layout (emit) so the DOM-class/localStorage
 // logic lives in ONE place (the layout) — never duplicated here.
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search } from 'lucide-vue-next'
 import {
@@ -21,21 +21,19 @@ import {
   CommandSeparator,
 } from '~/components/ui/command'
 import { isNavSubGroup } from '~/navigation/menu'
-import type { NavItem, NavLeaf } from '~/navigation/menu'
+import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
 
-const props = defineProps<{ nav: NavItem[] }>()
+const props = defineProps<{ nav: NavGroup[] }>()
 const emit = defineEmits<{ (e: 'toggle-theme'): void }>()
 
 const router = useRouter()
 const open = ref(false)
 
-// Flatten groups → leaves (recurse one level of sub-groups). Decoupled: operates
-// on the prop, so any app's tree satisfying the simple nav contract works.
-const leaves = computed<NavLeaf[]>(() =>
-  props.nav.flatMap(item =>
-    isNavSubGroup(item) ? item.items : [item as NavLeaf],
-  ),
-)
+// Recursively collect every NavLeaf from a list of NavItems — handles NavLeaves
+// directly nested in a NavGroup *and* NavLeaves nested inside a NavSubGroup.
+function collectLeaves(items: NavItem[]): NavLeaf[] {
+  return items.flatMap(i => isNavSubGroup(i) ? collectLeaves(i.items) : [i])
+}
 
 function onKey(e: KeyboardEvent) {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -75,17 +73,19 @@ function toggleTheme() {
     <CommandInput placeholder="Buscar o navegar…" />
     <CommandList>
       <CommandEmpty>Sin resultados</CommandEmpty>
-      <CommandGroup heading="Páginas">
-        <CommandItem
-          v-for="leaf in leaves"
-          :key="leaf.to"
-          :value="leaf.label"
-          @select="go(leaf.to)"
-        >
-          {{ leaf.label }}
-        </CommandItem>
-      </CommandGroup>
-      <CommandSeparator />
+      <template v-for="group in nav" :key="group.label">
+        <CommandGroup :heading="group.label">
+          <CommandItem
+            v-for="leaf in collectLeaves(group.items)"
+            :key="leaf.to"
+            :value="leaf.label"
+            @select="go(leaf.to)"
+          >
+            {{ leaf.label }}
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+      </template>
       <CommandGroup heading="Acciones">
         <CommandItem value="cambiar tema claro oscuro" @select="toggleTheme">
           Cambiar tema (claro / oscuro)

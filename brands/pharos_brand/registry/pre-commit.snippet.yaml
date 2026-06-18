@@ -9,7 +9,7 @@
   - repo: local
     hooks:
       - id: pharos-design-gates
-        name: Pháros design gates (ESLint + 4 CI gates)
+        name: Pháros design gates (ESLint + 7 CI gates)
         language: system
         entry: pnpm lint-check
         pass_filenames: false
