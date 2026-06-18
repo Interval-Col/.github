@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<{
   /** A lucide icon NAME, e.g. "Radar", resolved dynamically. Used by the layout
    *  lockup; exposed here so callers can read the resolved glyph component. */
   glyph?: string
-}>(), { variant: 'navbar' })
+}>(), { variant: 'navbar', subName: '', glyph: 'Radar' })
 
 // Resolve the lucide glyph by name (no fixed/vendored glyph map). Falls back to
 // Radar — the brief's default — when the name is missing or unknown.

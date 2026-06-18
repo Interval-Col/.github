@@ -64,7 +64,7 @@ withDefaults(defineProps<{
   subName?: string
   /** A lucide icon name for the sub-brand glyph, e.g. "Radar". */
   glyph?: string
-}>(), { glyph: 'Radar' })
+}>(), { subName: '', glyph: 'Radar' })
 
 const route = useRoute()
 const isSidebarOpen = ref(true)
