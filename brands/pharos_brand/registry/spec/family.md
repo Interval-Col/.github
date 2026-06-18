@@ -1,4 +1,4 @@
-<!-- spec-version: 3faccbef · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 092fa725 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros — especificación de familia (shell + tokens)
 
@@ -12,7 +12,7 @@
 
 ## Shell — "Faro + Instrumento"
 - Estructura **Beacon rail + ⌘K · faro ★** (riel-faro + ⌘K) · radio **Definido** · densidad **Media** (Amplia 2.5rem / Media 1.5rem / Compacta .875rem). → riel `registry/app/assets/css/pharos-components.css ([data-pg-sidebar] [data-active="true"])`; densidad `registry/app/layouts/default.vue (density prop) + pharos-components.css ([data-pg-content][data-density])`; ⌘K `registry/app/navigation/menu.ts (contract) + app/components/CommandPalette.vue`. Breadcrumb-como-título (sin `<h1>`).
-- **Riel-faro · item activo** beam acento — barra de 3px en `var(--primary)` + halo (`color-mix` 70%) con barrido al cambiar de ruta; el item activo lleva fondo `var(--primary)`/16%. Requiere `[data-active="true"]` en la hoja activa. → `registry/app/assets/css/pharos-components.css ([data-pg-sidebar] [data-active="true"])`.
+- **Riel-faro · item activo** beam acento — barra de 3px en `var(--primary)` + halo (`color-mix` 70%) con barrido al cambiar de ruta; **la hoja activa Y su grupo padre** llevan el beam + fondo `var(--primary)`/16%. Requiere `[data-active="true"]` (hoja vía SidebarMenuSubButton; grupo padre vía `is-active` cuando la ruta vive en él). → `registry/app/assets/css/pharos-components.css ([data-pg-sidebar] [data-active="true"])`.
 - **Faro (pilot light)** #E4002B (constante de marca `#E4002B`); halo al latir; ritmo ligado a `<html data-status>`. → `registry/app/components/SystemBeacon.vue + app/plugins/health-beacon.client.ts; pilot in AppLogo.vue + pharos-components.css (.pharos-pilot)`.
 - **Oleaje** sí — altura Medio, tinte Acento, espuma sí, barco sí; estado de mar sigue al faro. → `registry/app/components/SystemOcean.vue + app/assets/css/pharos-components.css (.pharos-ocean)`.
 - **Lockup** marca = Solo logo; sub-nombre con acento: no; sublabel: descriptor completo; eco en breadcrumb: sí; glyph náutico en acento (`text-primary` → `--primary`), nunca el wordmark. → `registry/app/layouts/default.vue (SidebarHeader) + app/components/AppLogo.vue`, `registry/app/layouts/default.vue (crumbs)`.
