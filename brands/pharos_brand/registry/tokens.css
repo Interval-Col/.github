@@ -69,7 +69,7 @@
   --border:                #C8C9C7;
   --input:                 #C8C9C7;
   --ring:                  #003A70;   /* focus ring follows the accent */
-  --radius:                0.5rem;    /* rounded-lg = 8px (modals rounded-xl) */
+  --radius:                0.25rem;   /* radio "Definido" = 4px (RFC 0008); rounded-{sm,md,lg,xl} derived in @theme inline */
 
   /* --- Accent-INDEPENDENT STATUS palette (RFC 0008 Q4) -----------------------
    * Shared by ALL surfaces; NEVER shifts when a sub-brand re-accents. Mapped from
@@ -258,5 +258,12 @@
   --font-mono:    var(--font-mono);
   --font-data:    var(--font-data);
 
-  --radius: var(--radius);
+  --radius:    var(--radius);
+  /* shadcn-vue radius scale derived from --radius (matches the playground @theme,
+     main.css:172-175). Restores the derivation the distillation dropped so a single
+     --radius change (radio "Definido" = 0.25rem) reaches rounded-{sm,md,lg,xl}. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
