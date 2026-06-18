@@ -10,7 +10,8 @@ applyTo: "**/*.vue,**/*.ts"
 > `instructions/nuxt-standards`, bound to the registry token contract.
 >
 > **Source of truth for tokens:** [`tokens.css`](./tokens.css) (shadcn-vue vars +
-> accent-independent status palette + the 3-font system + `.dark` theme).
+> accent-independent status palette + the 4-font system + the 5 sub-brand accent
+> themes (`.theme-*`) + `.dark` theme).
 > Distributed by **copy-in** via `scripts/sync-pharos-registry.sh`, **not** an npm
 > package (RFC 0008 Q3). LCH and Biuman are **tenants** of this contract, not parents.
 
@@ -120,17 +121,19 @@ llega por copy-in desde el registry.
 ```
 
 El contrato define los slots semánticos shadcn-vue y una **paleta de estado
-independiente del acento** (`--success` / `--warning` / `--error` / `--info`
-+ sus `-foreground`). Usa **siempre** estos roles semánticos en las utilidades,
-nunca hex sueltos:
+independiente del acento** (`--status-success` / `--status-warning` /
+`--status-error` / `--status-info`, cada uno con su `-foreground` y una superficie
+`-bg` para tintes de fondo). Es **independiente del acento**: nunca se desplaza
+cuando una sub-marca re-acentúa. Usa **siempre** estos roles semánticos en las
+utilidades, nunca hex sueltos:
 
 ```vue
 <!-- ✅ Roles semánticos del contrato -->
 <div class="bg-card text-card-foreground border border-border rounded-lg">…</div>
 <button class="bg-primary text-primary-foreground">Guardar</button>
-<span class="text-success">En control</span>
-<span class="text-warning-foreground bg-warning">Pendiente</span>
-<span class="text-error">Fuera de control</span>
+<span class="text-status-success bg-status-success-bg">En control</span>
+<span class="text-status-warning bg-status-warning-bg">Pendiente</span>
+<span class="text-status-error bg-status-error-bg">Fuera de control</span>
 <p class="text-muted-foreground">Texto secundario</p>
 
 <!-- ❌ Hex/colores sueltos o utilidades de marca legadas -->
@@ -141,29 +144,45 @@ nunca hex sueltos:
 - **Light + dark únicamente**, conmutados por la clase shadcn **`.dark`** en el
   elemento raíz. No hay tema `cobol`/CRT ni `[data-theme]`.
 - Una **sub-marca** se diferencia overrideando **solo** los slots de acento
-  —`--primary`, `--accent`, `--ring`, `--sidebar-primary`— en un bloque pequeño por
-  app; el resto del contrato (paleta de estado, neutros, constantes de marca, radius)
-  se hereda sin cambios.
-- **`ERP · Timón` = LCH Navy `#003A70`** (+ teal `#A0D1CA` como `--success`) — **LOCKED**.
-- Los acentos no-ERP (`LIS clínico`, `LIS deportivo`, `Admisiones`, `CRM`, `Archivo`)
-  están **OPEN → TBD** (RFC 0008 Q1/Q6 — @SKuger01 / brand playground). **No inventes
-  acentos**: si tu superficie aún no tiene acento asignado, hereda el del contrato y
-  deja el override pendiente.
+  —`--primary`, `--ring`, `--sidebar-primary` y sus foregrounds— vía una clase
+  `.theme-*` que vive en `tokens.css`; el app añade su clase al `<html>`. El resto
+  del contrato (paleta de estado, neutros, constantes de marca, radius) se hereda
+  sin cambios.
+- Los **5 acentos de sub-marca están LOCKED** (RFC 0008 — ACCEPTED 2026-06-17),
+  como clases `.theme-*` (light / dark):
+
+  | Sub-marca | App | Clase | Acento (light / dark) |
+  |---|---|---|---|
+  | Números (ERP/finanzas) | Timón | `.theme-numeros` | ámbar `#7A5D00` / `#E6C34D` |
+  | Clínico (LIS) | pharos-lis | `.theme-clinico` | teal `#1B6B5A` / `#4CD1B0` |
+  | Deportivo (Biuman LIS) | biuman | `.theme-deportivo` | azul `#004F70` / `#16749C` |
+  | Recepción (Admisiones) | admisiones | `.theme-recepcion` | rosa `#FFE0E6` (light+dark) |
+  | Clientes (CRM) | crm | `.theme-clientes` | ámbar claro `#FFB86B` (light+dark) |
+
+  > El **ERP (Números)** pasó de navy a **ámbar `#7A5D00`** (RFC 0008 Q6); el navy
+  > queda superado como acento de ERP.
+- **Default/neutral (sin clase) = LCH Navy `#003A70`** — la familia-neutral / `Archivo`.
+  Una clase `.theme-*` sobre-escribe **solo** los slots de acento; lo demás se hereda
+  del neutro navy.
 
 ## Fuentes
-Tres familias, vía las variables del contrato:
-- **`--font-display`** → **Fraunces** (display / wordmark)
-- **`--font-sans`** → **Inter** (UI sans — texto de interfaz por defecto)
-- **`--font-mono`** → **IBM Plex Mono** (datos + labels)
+Cuatro familias, vía las variables del contrato:
+- **`--font-display`** → **Fraunces** (display / wordmark — clase `font-display`)
+- **`--font-sans`** → **DM Sans** (UI sans — texto de interfaz por defecto — clase `font-sans`)
+- **`--font-mono`** → **IBM Plex Mono** (**labels / etiquetas** únicamente — clase `font-mono`)
+- **`--font-data`** → **JetBrains Mono** (**datos / cifras / figuras**, `tabular-nums` — clase `font-data`)
 
 ```vue
 <h1 class="font-display">Tablero</h1>
 <p class="font-sans">Texto de interfaz</p>
-<span class="font-mono tabular-nums">1.234,56</span>   <!-- valores / códigos / labels -->
+<span class="font-mono">RES-CTRL</span>                  <!-- labels / etiquetas / códigos -->
+<span class="font-data tabular-nums">1.234,56</span>     <!-- datos / cifras / figuras -->
 ```
-> No se usan **JetBrains Mono** ni **Apax** en UI de producto. (Apax es un activo de
-> identidad de marca **LCH** únicamente, no del contrato Pháros.) Carga las tres
-> familias en el app (self-host preferido) y deja que `--font-sans` sea el default.
+> Las **cifras / datos** usan `font-data` (**JetBrains Mono**) con `tabular-nums`;
+> `font-mono` (**IBM Plex Mono**) es solo para **labels**. **Apax** no se usa en UI de
+> producto (es un activo de identidad de marca **LCH** únicamente, no del contrato
+> Pháros). Carga las cuatro familias en el app (self-host preferido) y deja que
+> `--font-sans` sea el default.
 
 ## Naming de componentes
 - Sin el esquema legado `Lch` + prefijo de sección. Usa primitivas **shadcn-vue**
@@ -214,7 +233,7 @@ throw createError({ statusCode: 404, message: 'Record not found' })
 <Icon name="..." class="w-8 h-8 text-muted-foreground" />   <!-- lg: 32px -->
 ```
 Siempre: stroke-based, rounded terminals. Colores solo de los roles semánticos del
-contrato (`text-primary`, `text-success`, `text-muted-foreground`, …), nunca hex.
+contrato (`text-primary`, `text-status-success`, `text-muted-foreground`, …), nunca hex.
 
 ## Commits (Conventional Commits)
 Tipos canónicos (idénticos en branches y commits): **`feat`, `fix`, `refactor`,
