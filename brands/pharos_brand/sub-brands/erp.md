@@ -35,11 +35,12 @@ REPLACES           "Pulso" (finance-lch) — the retired per-app name
 FUNCTIONAL NAME    Pháros ERP                (RFC 0004 §1)
 USER-FACING NAME   Pháros · Números          (RFC 0008 Q1, semi-functional, LOCKED 2026-06-17)
 MARITIME GLYPH     Timón → ship's-wheel mark (lucide ShipWheel)
-DESCRIPTOR         ERP · Finanzas y Operaciones
+DESCRIPTOR         ERP · Finanzas y operaciones
 PERSONA            Contador · COO · jefe de operaciones (the operator who
                    runs the whole holding from one place)
 TENANCY            Multi-tenant (LCH + Biuman + future members) — RFC 0004 §3
 ACCENT (LOCKED)    Ámbar #7A5D00 light / #E6C34D dark  (ONE colour from the family palette)
+ACCENT SPREAD      Sutil (difusión en superficies neutras; estado + gráficas intactos)
 PILOT LIGHT        #E4002B  — SHARED across the family (the constant; never re-tinted)
 WORDMARK           Fraunces, burgundy #782F40 — SHARED construction
 ```
@@ -138,12 +139,19 @@ Deportivo azul profundo, Recepción rosa, Clientes ámbar claro) while sharing t
 restraint. One accent from the curated set, so Números stays a sibling by construction; burgundy
 + red remain family constants (wordmark + pilot light), never this app's accent.
 
-### 4.2 Lockup
+### 4.2 Lockup (contrato de sidebar — playground 2026-06-17)
 
-`Pháros` (Fraunces, burgundy `#782F40`) + red pilot-light dot over the `P`
-+ separator `·` + the **Timón ship's-wheel glyph** + `Números` (sub-name) +
-optional sublabel `ERP · FINANZAS Y OPERACIONES` (IBM Plex Mono, uppercase,
-tracked, muted). Separator `·` is **locked** (RFC 0008 Q1).
+El sidebar muestra **solo el logo Pháros** (marca compartida de la familia) y una etiqueta
+descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto al logo.
+
+| Elemento | Valor |
+|---|---|
+| Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
+| Sublabel descriptivo | `ERP · Finanzas y operaciones` (IBM Plex Mono, uppercase, tracked, muted) |
+| Eco en breadcrumb | Sí — «Números» aparece como primer nodo del breadcrumb |
+| Glyph de app | «Timón» → `ShipWheel` (lucide), tintado ámbar; identidad marítima vive en la marca, no en la palabra |
+
+> Separador `·` bloqueado (RFC 0008 Q1). Fuente: playground 2026-06-17.
 
 ### 4.3 Icon
 

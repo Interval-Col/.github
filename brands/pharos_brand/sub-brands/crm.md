@@ -32,9 +32,22 @@ the semi-functional "Clientes".)*
 - **Accent** `--primary` = ámbar claro `#FFB86B`, applied **Sutil** (a light tint of the neutral
   surfaces); status colours accent-independent (Q4).
 - **Glyph** the «Catalejo» spyglass mark (lucide `Telescope`) as the app icon.
-- **Lockup** `Pháros` + `·` + Catalejo glyph + `Clientes` + optional sublabel
-  `CRM · RELACIONES COMERCIALES` (IBM Plex Mono, uppercase, tracked, muted).
+- **Lockup** ver §Lockup a continuación.
 - Everything else inherited unchanged from `../BRAND.md`.
+
+### Lockup (contrato de sidebar — playground 2026-06-17)
+
+El sidebar muestra **solo el logo Pháros** (marca compartida de la familia) y una etiqueta
+descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto al logo.
+
+| Elemento | Valor |
+|---|---|
+| Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
+| Sublabel descriptivo | `CRM · Relaciones comerciales` (IBM Plex Mono, uppercase, tracked, muted) |
+| Eco en breadcrumb | Sí — «Clientes» aparece como primer nodo del breadcrumb |
+| Glyph de app | «Catalejo» → `Telescope` (lucide), tintado ámbar claro; identidad marítima vive en la marca, no en la palabra |
+
+> Fuente: RFC 0008 Q1 · playground 2026-06-17.
 
 > ⏸ **Tune (RFC 0008 Q6):** Clientes (ámbar claro) and Números (ámbar `#7A5D00`) are the closest
 > family pair — separable by value, but confirm they read as distinct siblings; and pick a
