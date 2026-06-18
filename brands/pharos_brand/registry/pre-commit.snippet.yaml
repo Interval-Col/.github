@@ -1,0 +1,18 @@
+# MERGE this block into the app's existing .pre-commit-config.yaml —
+# do NOT replace the file (the org policy hooks gitleaks /
+# conventional-commit / branch-name live there).
+#
+# Append the following `repo: local` entry (or add the hook to an
+# existing `repo: local` block if one is already present):
+
+  # ── Pháros design gates ────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: pharos-design-gates
+        name: Pháros design gates (ESLint + 7 CI gates)
+        language: system
+        entry: pnpm lint-check
+        pass_filenames: false
+        types_or: [vue, ts, css]
+        files: ^app/.*\.(vue|ts|css)$
+        stages: [pre-commit]

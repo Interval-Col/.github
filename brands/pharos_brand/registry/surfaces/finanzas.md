@@ -13,12 +13,13 @@
 
 ## Accent
 
-Finanzas is the **ERP · Timón** sub-brand, whose accent is **LCH Navy `#003A70`**
-(+ teal `#A0D1CA` as the dark-mode accent / success) — **LOCKED** (RFC 0008 Q6).
-That accent already lives in `--primary` / `--accent` / `--ring` / `--sidebar-primary`
-in `tokens.css`, so this surface needs **no per-app override** — it consumes the
-contract defaults as-is. Use `bg-primary` / `text-primary` / `ring-ring`; never
-hard-code the navy.
+Finanzas is the **Números** (ERP/finance) sub-brand, whose accent is **ámbar
+`#7A5D00`** (light) / **`#E6C34D`** (dark) — **LOCKED** (RFC 0008 Q6, navy
+superseded). That accent lives in the `.theme-numeros` class in `tokens.css`, which
+overrides only the accent slots (`--primary` / `--ring` / `--sidebar-primary` +
+their foregrounds); the rest is inherited from the default contract. The consuming
+app adds `class="theme-numeros"` to its `<html>`. Use `bg-primary` / `text-primary` /
+`ring-ring`; never hard-code the ámbar.
 
 ---
 
@@ -29,10 +30,10 @@ a sub-brand re-accents. Map the finance semantics onto it exactly:
 
 | Finance meaning | Token | Utility |
 |---|---|---|
-| positive / income / paid | `--success` (teal) | `text-success` · `bg-success/20` |
-| pending / due-soon / drift | `--warning` (yellow) | `bg-warning/40` · `text-warning-foreground` |
-| overdue / negative / critical | `--error` / `--destructive` (red) | `text-error` · `bg-error/10` |
-| informational / resolved / voided-note | `--info` (blue) | `text-info` · `bg-info/10` |
+| positive / income / paid | `--status-success` (teal) | `text-status-success` · `bg-status-success-bg` |
+| pending / due-soon / drift | `--status-warning` (yellow) | `bg-status-warning-bg` · `text-status-warning` |
+| overdue / negative / critical | `--status-error` / `--destructive` (red) | `text-status-error` · `bg-status-error-bg` |
+| informational / resolved / voided-note | `--status-info` (blue) | `text-status-info` · `bg-status-info-bg` |
 
 Red is reserved for **error/overdue** (and the family pilot light) — never use it as
 a primary action colour. Primary actions use `--primary`.
@@ -41,15 +42,16 @@ a primary action colour. Primary actions use `--primary`.
 
 ## Typography & numerics
 
-**Fundamental rule:** every monetary value and figure uses `font-mono`
-(**IBM Plex Mono**) with `tabular-nums`. No exceptions. (JetBrains Mono is gone;
-display type is Fraunces, UI sans is Inter.)
+**Fundamental rule:** every monetary value and figure uses `font-data`
+(**JetBrains Mono**) with `tabular-nums`. No exceptions. JetBrains Mono *is* the data
+face. `font-mono` (**IBM Plex Mono**) is reserved for **labels / etiquetas** only.
+Display type is Fraunces; UI sans is DM Sans.
 
 | Role | Tailwind |
 |---|---|
-| KPI amount (large) | `font-mono text-3xl font-semibold tabular-nums tracking-tight` |
-| Table money cell | `font-mono text-sm tabular-nums` |
-| Column header | `font-mono text-xs uppercase tracking-wide font-medium` |
+| KPI amount (large) | `font-data text-3xl font-semibold tabular-nums tracking-tight` |
+| Table money cell | `font-data text-sm tabular-nums` |
+| Column header (label) | `font-mono text-xs uppercase tracking-wide font-medium` |
 | Label / caption | `font-mono text-xs text-muted-foreground` |
 
 All theming is **`.dark`-aware** — because every colour above is a semantic token,
@@ -87,14 +89,14 @@ Props: `label: string`, `amount: number`, `currency?: string`, `trend?: 'up' | '
 <!-- internal pattern -->
 <div class="bg-card text-card-foreground border border-border rounded-lg p-5 shadow-sm">
   <p class="font-mono text-xs text-muted-foreground uppercase tracking-wide">{{ label }}</p>
-  <p class="font-mono text-3xl font-semibold text-foreground tabular-nums mt-2 tracking-tight">
+  <p class="font-data text-3xl font-semibold text-foreground tabular-nums mt-2 tracking-tight">
     {{ formatCurrency(amount) }}
   </p>
   <div class="flex items-center gap-1 mt-2">
     <Icon :name="trend === 'up' ? 'arrow-up' : 'arrow-down'" class="w-4 h-4"
-          :class="trend === 'up' ? 'text-success' : 'text-error'" />
-    <span class="font-mono text-sm"
-          :class="trend === 'up' ? 'text-success' : 'text-error'">{{ delta }}%</span>
+          :class="trend === 'up' ? 'text-status-success' : 'text-status-error'" />
+    <span class="font-data text-sm"
+          :class="trend === 'up' ? 'text-status-success' : 'text-status-error'">{{ delta }}%</span>
   </div>
 </div>
 ```
@@ -127,11 +129,11 @@ Props: `estado: 'pagado' | 'pendiente' | 'vencido' | 'anulado'`
 
 ```vue
 <!-- pagado    → success -->
-<span class="bg-success/20 text-success-foreground px-3 py-1 rounded-full text-xs font-medium">Pagado</span>
+<span class="bg-status-success-bg text-status-success px-3 py-1 rounded-full text-xs font-medium">Pagado</span>
 <!-- pendiente → warning -->
-<span class="bg-warning/40 text-warning-foreground px-3 py-1 rounded-full text-xs font-medium">Pendiente</span>
+<span class="bg-status-warning-bg text-status-warning px-3 py-1 rounded-full text-xs font-medium">Pendiente</span>
 <!-- vencido   → error -->
-<span class="bg-error/10 text-error px-3 py-1 rounded-full text-xs font-medium">Vencido</span>
+<span class="bg-status-error-bg text-status-error px-3 py-1 rounded-full text-xs font-medium">Vencido</span>
 <!-- anulado   → muted/info -->
 <span class="bg-muted text-muted-foreground px-3 py-1 rounded-full text-xs font-medium">Anulado</span>
 ```
@@ -162,8 +164,8 @@ Props: `format: 'pdf' | 'excel' | 'csv'`, `loading?: boolean`
 
 ### Positive / negative money cell
 ```vue
-<td class="px-4 py-3 text-right font-mono text-sm tabular-nums"
-    :class="amount >= 0 ? 'text-success' : 'text-error'">
+<td class="px-4 py-3 text-right font-data text-sm tabular-nums"
+    :class="amount >= 0 ? 'text-status-success' : 'text-status-error'">
   {{ formatCurrency(amount) }}
 </td>
 ```
@@ -173,7 +175,7 @@ Props: `format: 'pdf' | 'excel' | 'csv'`, `loading?: boolean`
 <tfoot class="border-t-2 border-primary bg-accent">
   <tr>
     <td class="px-4 py-3 font-semibold text-foreground">Total</td>
-    <td class="px-4 py-3 text-right font-mono font-semibold text-foreground tabular-nums">
+    <td class="px-4 py-3 text-right font-data font-semibold text-foreground tabular-nums">
       {{ formatCurrency(total) }}
     </td>
   </tr>
@@ -201,17 +203,19 @@ pages/finanzas/reportes.vue
 - **Tokens.** Removed the whole `--fin-*` block plus `var(--color-navy)`,
   `var(--color-brand-red)`, `--color-blue/-yellow/-gray-*` and every raw hex
   (`text-[#00843D]`, `bg-lch-*`). Re-expressed on shadcn semantic tokens + the
-  accent-independent status palette: positive/income → `--success`,
-  pending → `--warning`, overdue/negative → `--error`/`--destructive`,
-  informational/voided → `--info`. Surfaces use `bg-card`/`bg-background`,
+  accent-independent status palette: positive/income → `--status-success`,
+  pending → `--status-warning`, overdue/negative → `--status-error`/`--destructive`,
+  informational/voided → `--status-info`. Surfaces use `bg-card`/`bg-background`,
   text uses `text-foreground`/`text-muted-foreground`, borders use `border-border`.
-- **Accent.** This surface is **ERP · Timón**, so the accent is the LOCKED LCH Navy
-  `#003A70` already in `--primary`; the surface consumes contract defaults with no
-  override. The old off-palette green `#00843D` for "positive" is replaced by the
-  shared `--success` teal the audit flagged.
-- **Fonts.** All money/figures moved from `font-['JetBrains_Mono']` to `font-mono`
-  (IBM Plex Mono); labels likewise (no more literal `font-['IBM_Plex_Mono']`).
-  No JetBrains Mono, no Apax.
+- **Accent.** This surface is the **Números** (ERP/finance) sub-brand, so the accent
+  is the LOCKED ámbar `#7A5D00` (light) / `#E6C34D` (dark) supplied by `.theme-numeros`
+  (navy superseded, RFC 0008 Q6); the surface inherits the rest of the contract. The
+  old off-palette green `#00843D` for "positive" is replaced by the shared
+  `--status-success` teal the audit flagged.
+- **Fonts.** All money/figures moved from `font-['JetBrains_Mono']` to `font-data`
+  (JetBrains Mono — the data face — with `tabular-nums`); labels moved to `font-mono`
+  (IBM Plex Mono, labels-only) instead of the literal `font-['IBM_Plex_Mono']`.
+  No Apax.
 - **Theming.** Now `.dark`-aware purely via semantic tokens — no hard-coded light
   surfaces (`bg-white`, `bg-[#F4F7FA]`, `text-white`).
 - **Naming / tenancy.** Dropped the `LchFinanzas*` component prefix → `KpiCard`,

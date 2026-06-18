@@ -1,42 +1,170 @@
 #!/usr/bin/env bash
 # =============================================================================
-# sync-pharos-registry.sh — copy the shared Pháros design-system foundation into
-# a consuming app (RFC 0008 Q3: copy-in registry, NOT a runtime package).
+# sync-pharos-registry.sh — copy the shared Pháros design-system foundation
+# into a consuming app (RFC 0008 Q3: copy-in registry, NOT a runtime package).
 #
-# Skeleton. Phase 1 will extend this to also sync the shadcn-vue component set
-# once the component library is built (it is intentionally not built yet — see
-# brands/pharos_brand/registry/README.md "Decided vs open").
+# Syncs: tokens.css (+ .sha256 drift sidecar) · the 7 gate scripts (check-*.mjs)
+#        · eslint.config.mjs template · pharos-lint-check.yml (its working-directory
+#        + pnpm cache path auto-set to the app's FE subdir) · registry/app/**.
+#
+# Does NOT overwrite: the app's .pre-commit-config.yaml or main ci.yml (those
+# carry org policy hooks and backend/test jobs — see pre-commit.snippet.yaml).
+#
+# Components: registry/app/** (the live beacon now; shell / AppLogo / ui primitives
+# as they land) is mirrored into the consuming app's app/** at the same paths.
 #
 # Usage:
-#   scripts/sync-pharos-registry.sh <path-to-app-repo>
+#   scripts/sync-pharos-registry.sh [--dry-run] <app-fe-dir> [repo-root]
 #
-# Copies:
-#   brands/pharos_brand/registry/tokens.css  ->  <app>/app/assets/css/pharos-tokens.css
-#
-# The app then `@import`s pharos-tokens.css from its main.css and themes its
-# sub-brand by overriding only the accent slots (--primary/--accent/--ring/
-# --sidebar-primary). See registry/README.md.
+#   <app-fe-dir>   The directory that CONTAINS app/ (e.g. frontend,
+#                  lab-qc/frontend, or the repo root for single-app repos
+#                  like admission-patient). REQUIRED.
+#   [repo-root]    Where .github/workflows/ lives. Defaults to <app-fe-dir>
+#                  (correct for single-app repos). Pass the repo root for
+#                  monorepos (e.g. the checkout root when fe is under frontend/).
+#   --dry-run      Print what WOULD be copied; write nothing.
 # =============================================================================
 set -euo pipefail
 
 REGISTRY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../brands/pharos_brand/registry" && pwd)"
-APP_DIR="${1:?usage: sync-pharos-registry.sh <path-to-app-repo>}"
 
-if [[ ! -d "$APP_DIR" ]]; then
-  echo "error: app dir not found: $APP_DIR" >&2
+# ── Argument parsing ─────────────────────────────────────────────────────────
+DRY_RUN=false
+POSITIONAL=()
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=true ;;
+    *) POSITIONAL+=("$arg") ;;
+  esac
+done
+
+APP_FE_DIR="${POSITIONAL[0]:?usage: sync-pharos-registry.sh [--dry-run] <app-fe-dir> [repo-root]}"
+REPO_ROOT="${POSITIONAL[1]:-$APP_FE_DIR}"
+
+if [[ ! -d "$APP_FE_DIR" ]]; then
+  echo "error: app-fe-dir not found: $APP_FE_DIR" >&2
+  exit 1
+fi
+if [[ ! -d "$REPO_ROOT" ]]; then
+  echo "error: repo-root not found: $REPO_ROOT" >&2
   exit 1
 fi
 
-DEST_CSS_DIR="$APP_DIR/app/assets/css"
-mkdir -p "$DEST_CSS_DIR"
-cp "$REGISTRY_DIR/tokens.css" "$DEST_CSS_DIR/pharos-tokens.css"
-echo "synced tokens.css -> $DEST_CSS_DIR/pharos-tokens.css"
+# Resolve to absolute paths so the monorepo FE-subdir can be derived.
+APP_FE_DIR="$(cd "$APP_FE_DIR" && pwd)"
+REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
 
+# FE dir relative to the repo root — drives the copied workflow's
+# working-directory + pnpm cache-dependency-path, so the CI works for monorepos
+# (e.g. lab-qc/frontend, frontend) AND single-app repos (FE_REL=".") with NO
+# manual patching that a re-sync would clobber.
+if [[ "$APP_FE_DIR" == "$REPO_ROOT" ]]; then
+  FE_REL="."
+else
+  FE_REL="${APP_FE_DIR#"$REPO_ROOT/"}"
+  if [[ "$FE_REL" == /* || "$FE_REL" == "$APP_FE_DIR" ]]; then
+    echo "error: app-fe-dir ($APP_FE_DIR) is not inside repo-root ($REPO_ROOT)" >&2
+    exit 1
+  fi
+fi
+
+# ── Copy helper ──────────────────────────────────────────────────────────────
+copy_file() {
+  local src="$1"
+  local dest="$2"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "[dry-run] would copy: $src -> $dest"
+  else
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
+    echo "synced: $src -> $dest"
+  fi
+}
+
+# ── 1. tokens.css ────────────────────────────────────────────────────────────
+copy_file \
+  "$REGISTRY_DIR/tokens.css" \
+  "$APP_FE_DIR/app/assets/css/pharos-tokens.css"
+
+# ── 1b. token-drift sidecar — sha256 of the registry source (check-token-drift) ─
+TOKENS_SHA_DEST="$APP_FE_DIR/app/assets/css/pharos-tokens.css.sha256"
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "[dry-run] would write: $TOKENS_SHA_DEST"
+else
+  ( cd "$REGISTRY_DIR" && shasum -a 256 tokens.css | awk '{print $1}' ) > "$TOKENS_SHA_DEST"
+  echo "wrote:  $TOKENS_SHA_DEST"
+fi
+
+# ── 2. Gate scripts ──────────────────────────────────────────────────────────
+for script in "$REGISTRY_DIR/scripts"/check-*.mjs; do
+  copy_file "$script" "$APP_FE_DIR/scripts/$(basename "$script")"
+done
+
+# ── 3. ESLint config template ────────────────────────────────────────────────
+copy_file \
+  "$REGISTRY_DIR/eslint.config.mjs" \
+  "$APP_FE_DIR/eslint.config.mjs"
+
+# ── 4. Dedicated lint-check workflow (working-directory parameterized per app) ─
+# Single-app repos keep the template's `.`; monorepos get FE_REL substituted in,
+# so the copied CI runs in the right dir + caches the right lockfile.
+WORKFLOW_SRC="$REGISTRY_DIR/.github/workflows/pharos-lint-check.yml"
+WORKFLOW_DEST="$REPO_ROOT/.github/workflows/pharos-lint-check.yml"
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "[dry-run] would copy: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=$FE_REL)"
+elif [[ "$FE_REL" == "." ]]; then
+  mkdir -p "$(dirname "$WORKFLOW_DEST")"
+  cp "$WORKFLOW_SRC" "$WORKFLOW_DEST"
+  echo "synced: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=.)"
+else
+  mkdir -p "$(dirname "$WORKFLOW_DEST")"
+  sed -e "s#working-directory: \.#working-directory: $FE_REL#g" \
+      -e "s#cache-dependency-path: pnpm-lock\.yaml#cache-dependency-path: $FE_REL/pnpm-lock.yaml#g" \
+      "$WORKFLOW_SRC" > "$WORKFLOW_DEST"
+  echo "synced: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=$FE_REL)"
+fi
+
+# ── 4b. Component tree — beacon (+ shell / lockup / ui primitives as they land) ─
+# Mirrors registry/app/** into the consuming app's app/** at the same paths.
+if [[ -d "$REGISTRY_DIR/app" ]]; then
+  while IFS= read -r src; do
+    rel="${src#"$REGISTRY_DIR/app/"}"
+    copy_file "$src" "$APP_FE_DIR/app/$rel"
+  done < <(find "$REGISTRY_DIR/app" -type f)
+fi
+
+# ── 5. Pre-commit: never overwrite — print merge instructions ─────────────────
 echo
-echo "Next steps in the app:"
-echo "  1. @import \"./pharos-tokens.css\";  in app/assets/css/main.css"
-echo "  2. Load Fraunces + Inter + IBM Plex Mono (see registry/frontend-standards.md)"
-echo "  3. Override ONLY the accent slots for this sub-brand"
-echo "  4. Toggle light/dark with the shadcn .dark class"
+echo "─────────────────────────────────────────────────────────────────────────"
+echo "pre-commit: DO NOT overwrite the app's .pre-commit-config.yaml."
+echo "  Merge the block from:"
+echo "    $REGISTRY_DIR/pre-commit.snippet.yaml"
+echo "  into: $REPO_ROOT/.pre-commit-config.yaml"
+echo "─────────────────────────────────────────────────────────────────────────"
+
+# ── 6. Manual follow-ups ──────────────────────────────────────────────────────
 echo
-echo "TODO (Phase 1): sync the shadcn-vue component set once built."
+echo "Manual follow-ups required in the app:"
+echo
+echo "  a) Import the registry CSS in app/assets/css/main.css:"
+echo "       @import \"./pharos-tokens.css\";       /* token contract */"
+echo "       @import \"./pharos-components.css\";   /* component layer (pilot light, …) */"
+echo
+echo "  b) Load the four Pháros fonts (via @nuxt/fonts or a CDN link):"
+echo "       Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono"
+echo "     See registry/frontend-standards.md for the @nuxt/fonts config."
+echo
+echo "  c) Add the sub-brand theme class to <html> in app.vue / nuxt.config:"
+echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepcion | .theme-clientes"
+echo "     (Default/neutral = no class — LCH Navy.)"
+echo
+echo "  d) Ensure package.json has the lint-check script. Add if missing:"
+echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs\""
+echo
+echo "  e) Install ESLint + generate Nuxt types:"
+echo "       pnpm add -D @nuxt/eslint"
+echo "     Ensure nuxt prepare runs before lint (postinstall hook recommended):"
+echo "       \"postinstall\": \"nuxt prepare\""
+echo "     The eslint.config.mjs template imports from ./.nuxt/eslint.config.mjs"
+echo "     which is generated by nuxt prepare."
+echo

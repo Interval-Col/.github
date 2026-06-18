@@ -1,0 +1,44 @@
+# REGISTRY-OWNED WORKFLOW — copied verbatim into each app by sync-pharos-registry.sh.
+# This is a standalone, dedicated workflow so the sync can overwrite it without
+# touching the app's own ci.yml (which carries backend jobs, test suites, deploy
+# steps, etc.). The app's ci.yml remains untouched.
+#
+# The sync copies this to: <repo-root>/.github/workflows/pharos-lint-check.yml
+
+name: "Pháros — lint-check"
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  lint-check:
+    name: ESLint + design gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          # monorepo apps set cache-dependency-path to their FE lockfile,
+          # e.g. frontend/pnpm-lock.yaml or lab-qc/frontend/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        # monorepo apps set working-directory to their FE dir,
+        # e.g. frontend   or   lab-qc/frontend
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint + design gates
+        # monorepo apps set working-directory to their FE dir (same as above)
+        working-directory: .
+        run: pnpm lint-check
