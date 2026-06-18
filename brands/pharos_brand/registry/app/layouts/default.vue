@@ -53,6 +53,7 @@ import { Button } from '~/components/ui/button'
 import AppLogo from '~/components/AppLogo.vue'
 import CommandPalette from '~/components/CommandPalette.vue'
 import SystemBeacon from '~/components/SystemBeacon.vue'
+import SystemOcean from '~/components/SystemOcean.vue'
 
 import { isNavSubGroup, menu } from '~/navigation/menu'
 import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
@@ -60,11 +61,15 @@ import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
 // ── App lockup props (the app sets these in app.vue via <NuxtLayout> or here) ──
 // Exposed as layout props so an app picks its sub-brand without forking the shell.
 withDefaults(defineProps<{
-  /** Sub-brand name shown beside the wordmark, e.g. "Clínico". */
+  /** Sub-brand name — echoed (with the glyph) at the root of the breadcrumb,
+   *  e.g. "Clínico". NOT shown as an accented sub-name beside the logo. */
   subName?: string
+  /** Descriptive sidebar sublabel under the wordmark (mono label), e.g.
+   *  "LIS · Laboratorio clínico" (RFC 0008 Q1 — lockup = solo logo + sublabel). */
+  subLabel?: string
   /** A lucide icon name for the sub-brand glyph, e.g. "Radar". */
   glyph?: string
-}>(), { subName: '', glyph: 'Radar' })
+}>(), { subName: '', subLabel: '', glyph: 'Radar' })
 
 const route = useRoute()
 const isSidebarOpen = ref(true)
@@ -174,17 +179,16 @@ onMounted(() => {
   >
     <!-- ── Sidebar: the lit lighthouse beam (beacon rail CSS keys off data-pg-sidebar) ── -->
     <Sidebar collapsible="icon" data-pg-sidebar>
-      <SidebarHeader class="min-h-16 justify-center group-data-[collapsible=icon]:items-center group-data-[state=expanded]:flex-row group-data-[state=expanded]:items-center group-data-[state=expanded]:gap-2 group-data-[state=expanded]:px-3">
-        <!-- Lockup row: AppLogo wordmark + (expanded & subName) the "· glyph subName"
-             sub-brand composition. font-heading so the "·" + name read as one mark. -->
+      <SidebarHeader class="min-h-16 justify-center group-data-[collapsible=icon]:items-center group-data-[state=expanded]:items-start group-data-[state=expanded]:gap-1 group-data-[state=expanded]:px-3">
+        <!-- Lockup (RFC 0008 Q1): the Pháros wordmark ONLY ("solo logo"). The
+             sub-brand is carried by the descriptive mono sublabel below and echoed
+             at the root of the breadcrumb — never an accented sub-name. -->
         <AppLogo :variant="isSidebarOpen ? 'navbar' : 'icon'" />
         <span
-          v-if="isSidebarOpen && subName"
-          class="flex items-center gap-1.5 font-display text-lg text-muted-foreground group-data-[collapsible=icon]:hidden"
+          v-if="isSidebarOpen && subLabel"
+          class="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground group-data-[collapsible=icon]:hidden"
         >
-          <span aria-hidden="true">·</span>
-          <component :is="resolveIcon(glyph)" v-if="resolveIcon(glyph)" class="size-5" :stroke-width="1.75" aria-hidden="true" />
-          {{ subName }}
+          {{ subLabel }}
         </span>
       </SidebarHeader>
 
@@ -249,10 +253,15 @@ onMounted(() => {
         </SidebarGroup>
       </SidebarContent>
 
-      <!-- Auth/user block injected by the app (NO SidebarUser/MakerCredit/SidebarOcean). -->
-      <SidebarFooter>
+      <!-- Auth/user block injected by the app via the slot. -->
+      <SidebarFooter class="relative z-10">
         <slot name="user" />
       </SidebarFooter>
+
+      <!-- "Oleaje": the calm ukiyo-e sea the lighthouse rises from — RFC 0008
+           family motif (oleaje sí · altura Medio · tinte Acento · espuma + barco).
+           Sea-state follows the health beacon via <html data-status>. -->
+      <SystemOcean />
     </Sidebar>
 
     <!-- ── Main area: topbar + content ── -->
@@ -265,6 +274,12 @@ onMounted(() => {
              segment is the bold current page. NO <h1> anywhere. -->
         <nav aria-label="Breadcrumb" class="flex min-w-0 flex-wrap items-center gap-1.5 text-[0.95rem]">
           <ol class="inline-flex min-w-0 flex-wrap items-center gap-1.5">
+            <!-- Sub-brand echo at the root (RFC 0008 Q1 — "eco en breadcrumb"). -->
+            <li v-if="subName" class="inline-flex items-center gap-1.5">
+              <component :is="resolveIcon(glyph)" v-if="resolveIcon(glyph)" class="size-4 text-muted-foreground" :stroke-width="1.75" aria-hidden="true" />
+              <span class="font-medium text-muted-foreground">{{ subName }}</span>
+              <span class="text-muted-foreground" aria-hidden="true">/</span>
+            </li>
             <li
               v-for="(seg, i) in crumbs"
               :key="`${seg.kind}-${seg.label}-${i}`"
