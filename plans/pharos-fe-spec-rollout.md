@@ -97,12 +97,12 @@ Done when all hold and `pnpm lint-check` + visual-regression are green:
 
 ### Per-app sub-brand (RFC 0008 Q1/Q6 — LOCKED 2026-06-17)
 
-| App | Name | Glyph (lucide) | Accent light / dark |
-|---|---|---|---|
-| pharos-lis | **Clínico** | Sonda → `Radar` | `#1B6B5A` / `#4CD1B0` (teal) |
-| admission-patient | **Recepción** | Muelle → `Anchor` | `#FFE0E6` (rosa) |
-| finance-lch | **Números** | Timón → `ShipWheel` | `#7A5D00` / `#E6C34D` (ámbar) |
-| commercial-lch | **Clientes** | Catalejo → `Telescope` | `#FFB86B` (ámbar claro) |
+| App | Name | Glyph (lucide) | Accent light / dark | Sublabel (sidebar) | Accent intensity |
+|---|---|---|---|---|---|
+| pharos-lis | **Clínico** | Sonda → `Radar` | `#1B6B5A` / `#4CD1B0` (teal) | `LIS · Laboratorio clínico` | **Neutro** |
+| admission-patient | **Recepción** | Muelle → `Anchor` | `#FFE0E6` (rosa) | `Admisiones · Recepción` | **Neutro** |
+| finance-lch | **Números** | Timón → `ShipWheel` | `#7A5D00` / `#E6C34D` (ámbar) | `ERP · Finanzas y operaciones` | **Sutil** |
+| commercial-lch | **Clientes** | Catalejo → `Telescope` | `#FFB86B` (ámbar claro) | `CRM · Relaciones comerciales` | **Sutil** |
 
 ---
 
@@ -162,6 +162,17 @@ Step 0 resolved *how* every app pulls in the foundation. Apply this **verbatim**
   **DM Sans** (UI default) · `font-mono` **IBM Plex Mono** (LABELS only — uppercase/
   tracked) · `font-data` **JetBrains Mono** (figures/cifras, `tabular-nums`). Load all
   four. **Data ≠ labels** — numeric values go to `font-data`, not `font-mono`.
+
+- **Lockup contract (cada app, sin excepción — RFC 0008 Q1 · playground 2026-06-17).** El
+  sidebar muestra el **logo Pháros únicamente** + un sublabel descriptivo en IBM Plex Mono
+  (ver columna "Sublabel (sidebar)" en la tabla de sub-marcas). El acento de sub-marca **nunca**
+  aparece como sub-nombre junto al logo. El nombre de la sub-marca ecoa como primer nodo del
+  breadcrumb (ej. `Clínico / Pacientes / …`). No cambiar este patrón per-app sin decisión RFC 0008.
+
+- **Motivo marino — oleaje (familia completa).** El shell del registry incluye el motivo de oleaje
+  para toda la familia Pháros: altura **Medio**, tinte **Acento** (hereda el acento de la sub-marca),
+  espuma sí, barco sí, sea-state ligado al estado del beacon (pilot-light). Se activa en el shell de
+  la familia — no es una configuración per-app. (Fuente: playground 2026-06-17.)
 
 - **Status = `--status-{success,warning,error,info}` + `-bg`**, accent-independent
   (utilities `bg-status-*` / `text-status-*` / `bg-status-*-bg`) — never the sub-brand accent.

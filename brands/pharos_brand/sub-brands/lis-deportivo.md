@@ -36,9 +36,22 @@ while sharing the Pháros foundation — siblings by construction, not strangers
 - **Accent** `--primary` = azul profundo `#004F70` (light) / `#16749C` (dark); status colours
   accent-independent (Q4).
 - **Glyph** the «Vela» sailboat mark (lucide `Sailboat`) as the app icon.
-- **Lockup** `Pháros` + `·` + Vela glyph + `Deportivo` + optional sublabel
-  `LIS · LABORATORIO DEPORTIVO` (IBM Plex Mono, uppercase, tracked, muted).
+- **Lockup** ver §Lockup a continuación.
 - Everything else inherited unchanged from `../BRAND.md`.
+
+### Lockup (contrato de sidebar — playground 2026-06-17)
+
+El sidebar muestra **solo el logo Pháros** (marca compartida de la familia) y una etiqueta
+descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto al logo.
+
+| Elemento | Valor |
+|---|---|
+| Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
+| Sublabel descriptivo | `LIS · Laboratorio deportivo` (IBM Plex Mono, uppercase, tracked, muted) |
+| Eco en breadcrumb | Sí — «Deportivo» aparece como primer nodo del breadcrumb |
+| Glyph de app | «Vela» → `Sailboat` (lucide), tintado azul profundo; identidad marítima vive en la marca, no en la palabra |
+
+> Fuente: RFC 0008 Q1 · playground 2026-06-17.
 
 ## 4. Voice
 
