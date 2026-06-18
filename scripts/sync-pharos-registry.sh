@@ -77,7 +77,7 @@ else
 fi
 
 # ── 2. Gate scripts ──────────────────────────────────────────────────────────
-for script in "$REGISTRY_DIR/scripts"/check-no-*.mjs; do
+for script in "$REGISTRY_DIR/scripts"/check-*.mjs; do
   copy_file "$script" "$APP_FE_DIR/scripts/$(basename "$script")"
 done
 
@@ -126,7 +126,7 @@ echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepci
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
-echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs\""
+echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs\""
 echo
 echo "  e) Install ESLint + generate Nuxt types:"
 echo "       pnpm add -D @nuxt/eslint"
