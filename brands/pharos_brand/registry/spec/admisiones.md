@@ -1,11 +1,12 @@
-<!-- spec-version: cb47c317 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 94b02840 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Pacientes — especificación de sub-marca
 
 > Hereda la spec de familia. Una sub-marca difiere SOLO en el acento + la identidad; el resto se hereda sin cambios. Para implementar: añade la clase de tema a `<html>` y fija las perillas del lockup; nunca toques `--primary`/`--chart-*` a mano.
 
 - **Clase de tema** `theme-recepcion` (+ `dark`). → `registry/tokens.css` (.theme-recepcion).
-- **Acento** claro `#FFE0E6` / oscuro `#FFE0E6`. Solo en `--primary`/`--ring`/`--sidebar-primary` (+ foregrounds).
+- **Acento** claro `#ff3d63` / oscuro `#ff6b85`. Solo en `--primary`/`--ring`/`--sidebar-primary` (+ foregrounds).
+- **Wash decorativo** claro `#FFE0E6` / oscuro `#FFE0E6` → `--brand-wash`. SOLO decorativo (no interactivo); nunca en `--primary`/`--ring`/`--sidebar-primary` ni en ningún slot funcional. → `registry/tokens.css` (.theme-recepcion).
 - **Intensidad** Neutro (difusión en superficies neutras; estado + gráficas intactos).
 - **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Pacientes» · náutico «Muelle» · glyph lucide `Anchor` (logo náutico sí, RFC 0008 Q1).
