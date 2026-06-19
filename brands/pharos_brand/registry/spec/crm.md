@@ -1,11 +1,12 @@
-<!-- spec-version: b4e4f78a · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 9d131f69 · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Clientes — especificación de sub-marca
 
 > Hereda la spec de familia. Una sub-marca difiere SOLO en el acento + la identidad; el resto se hereda sin cambios. Para implementar: añade la clase de tema a `<html>` y fija las perillas del lockup; nunca toques `--primary`/`--chart-*` a mano.
 
 - **Clase de tema** `theme-clientes` (+ `dark`). → `registry/tokens.css` (.theme-clientes).
-- **Acento** claro `#FFB86B` / oscuro `#FFB86B`. Solo en `--primary`/`--ring`/`--sidebar-primary` (+ foregrounds).
+- **Acento** claro `#e37600` / oscuro `#f59e3c`. Solo en `--primary`/`--ring`/`--sidebar-primary` (+ foregrounds).
+- **Wash decorativo** claro `#FFB86B` / oscuro `#FFB86B` → `--brand-wash`. SOLO decorativo (no interactivo); nunca en `--primary`/`--ring`/`--sidebar-primary` ni en ningún slot funcional. → `registry/tokens.css` (.theme-clientes).
 - **Intensidad** Neutro (difusión en superficies neutras; estado + gráficas intactos).
 - **Carácter** forma Auto · profundidad Plano · énfasis Sobrio · movimiento Natural.
 - **Nomenclatura** nombre «Clientes» · náutico «Catalejo» · glyph lucide `Telescope` (logo náutico sí, RFC 0008 Q1).
