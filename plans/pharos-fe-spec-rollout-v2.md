@@ -5,7 +5,7 @@
 > v1 predated `spec(3)` + the pixel-spec reproducibility work and carried two stale sub-brand values.
 > This v2 bakes the corrected spec, records **pharos-lis as the DONE reference**, resolves the open
 > decisions (German, 2026-06-18), and adapts each track to the **real, current FE** of each app —
-> **hardened by an adversarial de-risk pass (2026-06-18): 4 Opus auditors + an empirical canary build**
+> **hardened by an adversarial de-risk pass (2026-06-18): 4 Opus auditors + an empirical lead-track build**
 > (see the §De-risk corrections callout).
 >
 > **Written to be executed by a Sonnet-class agent under Opus review.** Steps are file-anchored +
@@ -19,20 +19,22 @@
 - **Step 0 · pharos-lis «Laboratorio» — ✅ DONE (reference).** `lab-qc/frontend` on `develop @ 3b17aa8`:
   canonical shell, 6 fidelity fixes, reproducible spec (family `092fa725`, lis-clinico `52802ac5`),
   `shell-contract` CI gate green. **This is the pattern every track copies.**
-- **Track A · admission-patient «Pacientes» — ⬜ CANARY (next). Migration empirically proven green.**
+- **Track A · admission-patient «Pacientes» — ⬜ LEAD ROLLOUT TRACK (Step 1, next) · XL. srcDir migration empirically proven green.**
 - **Track B · finance-lch «Números» — ⬜.**
 - **Track C · commercial-lch «Clientes» — ⬜. Re-scoped S→M/High (raw-HTML rewrite + all deps missing).**
 - **biuman-lis «Deportivo» — DEFERRED** (out of scope; RFC 0008 Phase 3, separate plan).
 
-## Owners & order (sequencing locked 2026-06-18 — hardest-first canary)
+## Owners & order (sequencing locked 2026-06-18 — hardest-first)
+
+> Terminology: **pharos-lis «Laboratorio» is the foundation/reference** (Step 0 — the proven first instance, done). The three apps below are the **rollout tracks**; admission-patient is the **lead track** (first + hardest), not a second proof.
 
 | # | Track | App | FE dir | Owner | Effort | Risk |
 |---|---|---|---|---|---|---|
-| **A** | Pacientes | admission-patient | repo root (no `frontend/`) | **skuger** | L | **High** — srcDir migration + deps + pastel + color-mode |
-| **B** | Números | finance-lch | `frontend/` | **egomez** | M | Med — replace rich shell, cobol→.dark reconciliation, RBAC |
+| **A** | Pacientes | admission-patient | repo root (no `frontend/`) | **skuger** | **XL** | **High** — srcDir migration + missing deps + pastel + color-mode + 2 layouts |
+| **B** | Números | finance-lch | `frontend/` | **egomez-lch** | M | Med — replace rich shell, cobol→.dark reconciliation, RBAC |
 | **C** | Clientes | commercial-lch | `frontend/` | **crincon04** | **M** | **High** — raw-HTML page rewrite + all shell deps missing |
 
-Track A is the canary on purpose. B and C may overlap once A's pattern is confirmed, owner schedules
+Track A goes first on purpose — it's the hardest rollout track, so it surfaces the unknowns early. B and C may overlap once A's pattern is confirmed, owner schedules
 permitting — but **Stage 0 (below) must merge first**, it blocks A *and* C accents.
 
 ## Decisions locked (German, 2026-06-18)
@@ -84,8 +86,8 @@ A track does **not** hand off on a green VERIFY block. Between one track's **Sta
 **next track's owner starting**, a mandatory **Retro Gate** runs — to stop three failures: (1) the
 next track starting from a **stale plan**, (2) tracks **drifting** off the identical non-negotiable
 contract, (3) lessons **dying with the finishing owner**. The chain compounds: **skuger** finishes
-Track A → his retro back-propagates into **both** B & C → only then is B handed to **egomez**;
-egomez finishes B → his retro refines the remaining **C** → only then is C handed to **crincon04**.
+Track A → his retro back-propagates into **both** B & C → only then is B handed to **egomez-lch**;
+egomez-lch finishes B → his retro refines the remaining **C** → only then is C handed to **crincon04**.
 
 **The gate is ONE PR** against this repo (`.github`), labeled **`retro-gate`**, landing three things
 in a single merge-commit:
@@ -93,7 +95,7 @@ in a single merge-commit:
 1. 🔵 **Retro doc** — fill `plans/pharos-track-retro.<track>.md` from
    [`pharos-track-retro.template.md`](pharos-track-retro.template.md). Every lesson row is
    **file-anchored** (symptom → the plan line it contradicts/extends → the downstream edit it
-   produced). For the **canary (A)**, reconcile **every** §De-risk punch-list item — resolved or
+   produced). For the **lead track (A)**, reconcile **every** §De-risk punch-list item — resolved or
    explicitly carried, **none silently dropped**.
 2. 🔵 **Back-propagation — VERIFIABLE.** The **same PR** must edit the **not-yet-started** tracks'
    sections of this file. The **`retro-gate` CI check** (required on `.github` `main`) **fails**
@@ -141,11 +143,11 @@ it rests on this ritual until a second code-owner exists).
 | Sub-brand | spec-ver | theme class | `--primary` light / **dark** | glyph | subLabel | sub-name | Intensidad | tab |
 |---|---|---|---|---|---|---|---|---|
 | **Números** (erp) | `5c38266d` | `theme-numeros` | `#7A5D00` / `#E6C34D` | `ShipWheel` | `ERP · Finanzas y operaciones` | Números | **Sutil** | `Pháros — Números` |
-| **Clientes** (crm) | `b4e4f78a` | `theme-clientes` | fn `#e37600` / **`#f59e3c`** · wash `#FFB86B` | `Telescope` | `CRM · Relaciones comerciales` | Clientes | **Neutro** | `Pháros — Clientes` |
-| **Pacientes** (admisiones) | `cb47c317` | `theme-recepcion` | fn `#ff3d63` / **`#ff6b85`** · wash `#FFE0E6` | `Anchor` | `Admisiones · Recepción` | **Pacientes** | Neutro | `Pháros — Pacientes` |
+| **Clientes** (crm) | `9d131f69` | `theme-clientes` | fn `#e37600` / **`#f59e3c`** · wash `#FFB86B` | `Telescope` | `CRM · Relaciones comerciales` | Clientes | **Neutro** | `Pháros — Clientes` |
+| **Pacientes** (admisiones) | `94b02840` | `theme-recepcion` | fn `#ff3d63` / **`#ff6b85`** · wash `#FFE0E6` | `Anchor` | `Admisiones · Recepción` | **Pacientes** | Neutro | `Pháros — Pacientes` |
 
-Ledger bumps on Stage-5 sign-off: `admisiones 091d6523 → cb47c317` · `erp 8be5e785 → 5c38266d` ·
-`crm 8a032836 → b4e4f78a` (re-stamp if the Stage-0 wash/dark changes a spec hash).
+Ledger bumps on Stage-5 sign-off: `admisiones 091d6523 → 94b02840` · `erp 8be5e785 → 5c38266d` ·
+`crm 8a032836 → 9d131f69` (re-stamped 2026-06-18 by the Stage-0 pastel split + `--brand-wash`; regenerated headlessly via `pnpm regen-spec`).
 
 ---
 
@@ -169,13 +171,13 @@ design-studio changes are **German-merged**.
    return reactive auth-filtered nav (Decision 5). Update `CommandPalette` + `findAncestry` to consume it.
 4. 🔵 **Registry breadcrumb bug**: `registry/app/components/ui/breadcrumb/{BreadcrumbEllipsis,BreadcrumbSeparator}.vue`
    import a non-existent `@lucide/vue` → change to `lucide-vue-next`. (Latent; fix before any app renders breadcrumb subcomponents.)
-5. 🔵 **Regenerate** `admisiones.md`/`crm.md`; reconcile spec-versions + ledger.
+5. 🔵 **Regenerate** `admisiones.md`/`crm.md` via the headless `pnpm regen-spec` CLI (no browser); reconcile spec-versions + ledger.
 6. 🔵 **Re-sync pharos-lis** + run its `shell-contract` → zero regression. Run `check-contrast`:
    `#ff3d63`/`#e37600` pass AA (5.30/4.91) **with the dark foregrounds — do NOT switch `--primary-foreground` to white** (would hard-fail). Confirm the new `.dark.theme-*` blocks pass too.
 
 ---
 
-## Track A — admission-patient «Pacientes» (CANARY) · owner skuger
+## Track A — admission-patient «Pacientes» (LEAD ROLLOUT TRACK · XL) · owner skuger
 
 Repo root *is* the Nuxt app. **The srcDir migration is empirically proven green** (baseline build →
 migrate → rebuild, 2345 modules, worktree-tested). Sync+shell+knobs is the next, not-yet-built step.
@@ -220,7 +222,7 @@ not gray) · `pnpm test:contract` green · `nuxi typecheck` clean · Minio `serv
 transferable lesson into the **Track B & C** sections of this plan (the `retro-gate` check fails on an
 empty downstream diff) + assert standard conformance; **#46 → #47/#48 blocked until German merges.** See §Retro Gate.
 
-## Track B — finance-lch «Números» · owner egomez
+## Track B — finance-lch «Números» · owner egomez-lch
 
 Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
 
