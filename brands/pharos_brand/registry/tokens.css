@@ -191,18 +191,32 @@
   --sidebar-primary: #16749C;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #16749C;
 }
 
-/* Recepción · Admisiones — rosa #FFE0E6 (light + dark; a light pastel — Layer-D
- * contrast check guards the AA floor) */
+/* Recepción · Admisiones — rosa functional #ff3d63 / #ff6b85 (pastel-split: the
+ * old #FFE0E6 pastel survives ONLY as the decorative --brand-wash; functional
+ * accent slots carry an AA-safe rosa, foregrounds stay dark text) */
 .theme-recepcion {
-  --primary: #FFE0E6;  --primary-foreground: #2A0A12;  --ring: #FFE0E6;
-  --sidebar-primary: #FFE0E6;  --sidebar-primary-foreground: #2A0A12;  --sidebar-ring: #FFE0E6;
+  --primary: #ff3d63;  --primary-foreground: #2A0A12;  --ring: #ff3d63;
+  --sidebar-primary: #ff3d63;  --sidebar-primary-foreground: #2A0A12;  --sidebar-ring: #ff3d63;
+  --brand-wash: #FFE0E6;  /* decorative wash only — never a functional slot */
+}
+.dark.theme-recepcion {
+  --primary: #ff6b85;  --primary-foreground: #2A0A12;  --ring: #ff6b85;
+  --sidebar-primary: #ff6b85;  --sidebar-primary-foreground: #2A0A12;  --sidebar-ring: #ff6b85;
+  --brand-wash: #FFE0E6;  /* decorative wash only — never a functional slot */
 }
 
-/* Clientes · CRM — ámbar claro #FFB86B (light + dark; light pastel — Layer-D
- * contrast check guards the AA floor) */
+/* Clientes · CRM — ámbar functional #e37600 / #f59e3c (pastel-split: the old
+ * #FFB86B pastel survives ONLY as the decorative --brand-wash; functional accent
+ * slots carry an AA-safe ámbar, foregrounds stay dark text) */
 .theme-clientes {
-  --primary: #FFB86B;  --primary-foreground: #2E2606;  --ring: #FFB86B;
-  --sidebar-primary: #FFB86B;  --sidebar-primary-foreground: #2E2606;  --sidebar-ring: #FFB86B;
+  --primary: #e37600;  --primary-foreground: #2E2606;  --ring: #e37600;
+  --sidebar-primary: #e37600;  --sidebar-primary-foreground: #2E2606;  --sidebar-ring: #e37600;
+  --brand-wash: #FFB86B;  /* decorative wash only — never a functional slot */
+}
+.dark.theme-clientes {
+  --primary: #f59e3c;  --primary-foreground: #2E2606;  --ring: #f59e3c;
+  --sidebar-primary: #f59e3c;  --sidebar-primary-foreground: #2E2606;  --sidebar-ring: #f59e3c;
+  --brand-wash: #FFB86B;  /* decorative wash only — never a functional slot */
 }
 
 /* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).
@@ -228,6 +242,10 @@
   --color-border:                var(--border);
   --color-input:                 var(--input);
   --color-ring:                  var(--ring);
+
+  /* decorative-only wash (pastel-split): set per sub-brand theme block; not a
+     functional slot. Resolves bg-brand-wash etc. where a theme defines it. */
+  --color-brand-wash:            var(--brand-wash);
 
   --color-status-success:        var(--status-success);
   --color-status-success-bg:     var(--status-success-bg);
