@@ -1,3 +1,7 @@
+> ⛔ **SUPERSEDED** by [`plans/pharos-fe-spec-rollout-v2.md`](../pharos-fe-spec-rollout-v2.md) (2026-06-18).
+> Step 0 (pharos-lis «Laboratorio») shipped from this plan and is the DONE reference; the v2 plan
+> rolls the hardened spec to the 3 remaining apps with the open decisions resolved. Kept here for history.
+
 # Pháros FE-spec rollout — single-sweep migration of the 4 pre-launch apps
 
 > **Execution plan for [RFC 0008](https://github.com/Interval-Col/rfcs/blob/main/0008-pharos-design-system.md) (ACCEPTED 2026-06-17), Phases 1–3.**
