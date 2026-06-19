@@ -1,7 +1,8 @@
 name: Pháros — retro-gate
 # Enforces the Retro Gate handoff (plans/pharos-fe-spec-rollout-v2.md → §Retro Gate).
-# Fires ONLY on PRs labeled `retro-gate`. Fails unless the PR (a) lands a track retro doc AND
-# (b) back-propagates into the rollout plan — or explicitly declares `Back-propagation: NONE`.
+# Runs on EVERY PR (so it's safe as a required check) but only VERIFIES `retro-gate`-labeled PRs.
+# On a `retro-gate` PR it fails unless the PR (a) lands a track retro doc AND (b) back-propagates
+# into the rollout plan — or explicitly declares `Back-propagation: NONE`.
 # v1: file-level + non-empty-diff enforcement. TODO(refine): assert the change lands inside the
 # specific downstream `## Track <X>` section, not just anywhere in the plan file.
 on:
@@ -14,7 +15,6 @@ permissions:
 
 jobs:
   retro-gate:
-    if: contains(github.event.pull_request.labels.*.name, 'retro-gate')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,10 +22,20 @@ jobs:
           fetch-depth: 0
       - name: Verify retro doc + back-propagation
         env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
+
+          # SAFE-TO-REQUIRE: this job always runs + reports, so it can be a required check on
+          # EVERY PR. Only `retro-gate`-labeled PRs get the real verification; any other PR
+          # passes through immediately (a required check that is *skipped* would block all PRs).
+          case ",${LABELS}," in
+            *,retro-gate,*) : ;;
+            *) echo "Not a retro-gate PR — passing through (required check always reports green)."; exit 0 ;;
+          esac
+
           CHANGED="$(git diff --name-only "$BASE...$HEAD")"
           echo "Changed files:"; echo "$CHANGED"
 
