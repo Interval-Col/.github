@@ -19,7 +19,7 @@
 - **Step 0 · pharos-lis «Laboratorio» — ✅ DONE (reference).** `lab-qc/frontend` on `develop @ 3b17aa8`:
   canonical shell, 6 fidelity fixes, reproducible spec (family `092fa725`, lis-clinico `52802ac5`),
   `shell-contract` CI gate green. **This is the pattern every track copies.**
-- **Track A · admission-patient «Pacientes» — ⬜ LEAD ROLLOUT TRACK (Step 1, next) · XL. srcDir migration empirically proven green.**
+- **Track A · admission-patient «Pacientes» — 🟡 IN PROGRESS · XL. Stage 1 Adopt DONE** (srcDir migration + deps + registry sync + shell wired: nav/knobs/apps-switcher/bell; renders rosa light+dark; `pnpm build` green). On `feat/pharos-design-system`. **Next: Stage 2 gate-fit (page conformance — ~11/14 pages: raw HTML→shadcn ui, hardcoded colors→tokens).**
 - **Track B · finance-lch «Números» — ⬜.**
 - **Track C · commercial-lch «Clientes» — ⬜. Re-scoped S→M/High (raw-HTML rewrite + all deps missing).**
 - **biuman-lis «Deportivo» — DEFERRED** (out of scope; RFC 0008 Phase 3, separate plan).
