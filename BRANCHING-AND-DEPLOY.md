@@ -282,6 +282,42 @@ Every repo uses GitHub Actions. Two workflow files per repo:
 - If you need a deploy without a code change (env-var rotation,
   re-pull a tag), use `workflow_dispatch` with `action: deploy-only`.
 
+### Deploying over a remote daemon (`DOCKER_HOST=ssh`) — gotchas
+
+The deploy jobs run on a **self-hosted runner** but target the app host
+via `DOCKER_HOST=ssh://<user>@<host>`, so `docker compose pull`/`up`
+execute on the **remote** daemon, not the runner. Three traps follow
+from that — all three bit the pharos-lis prod-DB-TLS deploy
+(pharos-lis `#34`, `#35`):
+
+1. **ECR auth must reach the *remote* daemon.** The `Login to Amazon
+   ECR` step only configures the runner's docker; the remote daemon has
+   no creds, so the pull fails with `no basic auth credentials`. Inside
+   the deploy step, re-login into a **clean `DOCKER_CONFIG`** (no
+   `credsStore`) so the token is stored as base64 and forwarded to the
+   remote daemon via the `X-Registry-Auth` header on pull:
+   ```bash
+   export DOCKER_CONFIG="$(mktemp -d)"
+   aws ecr get-login-password --region "$AWS_REGION" \
+     | DOCKER_HOST= docker login --username AWS --password-stdin "$AWS_REGISTRY"
+   docker compose ... pull ...
+   ```
+   Works even if the app host has no AWS access. **This applies to every
+   repo with the self-hosted-runner → remote-docker deploy shape.**
+
+2. **A shared compose file is parsed in full by *every* deploy job.**
+   `docker compose up <one-service>` still **validates all services** in
+   the file. So an env-var bind-mount source that only one job sets
+   (e.g. a cert path exported by the backend job) is blank in the other
+   jobs → `invalid spec: :/path:ro: empty section between colons`. Give
+   such mounts a default: `${VAR:-/dev/null}`.
+
+3. **Stage host-side files into the deploy user's `$HOME`, not `/opt`.**
+   The deploy user (e.g. `manager`) is unprivileged and can't write
+   root-owned dirs. Resolve the path at deploy time
+   (`ssh … 'echo "$HOME"'`), write there, and export the absolute path
+   via `$GITHUB_ENV` for the compose bind mount.
+
 ### Per-environment secrets
 
 GitHub Secrets are populated from Bitwarden via the per-environment
