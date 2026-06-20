@@ -318,6 +318,51 @@ from that — all three bit the pharos-lis prod-DB-TLS deploy
    (`ssh … 'echo "$HOME"'`), write there, and export the absolute path
    via `$GITHUB_ENV` for the compose bind mount.
 
+### Landing an app on prod — go-live checklist
+
+Distilled from the **pharos-lis** go-live (the first app on the shared prod
+`nucleus-db`, 2026-06-20). A *green deploy is not a working app* — the chain
+below is what actually has to be true. **Most of it needs no server login** —
+GH secrets/vars, PRs, and `workflow_dispatch` only. The 🖥️ items touch the
+host/DB and are **senior/infra work via git/Ansible/dispatch**, not for the app
+implementer (see the org rule: app deploys must be junior-runnable without SSH).
+
+1. **DB connectivity (🖥️ first).** App's prod DB role + password exist
+   (Bitwarden `SRV_Nucleus-db`) and grants are applied (nucleus-db
+   `apply-grants`); a `hostssl <app-host>/32 … scram-sha-256` line is in
+   nucleus-db `operations/pg_hba.prod.conf` (PR → nucleus-db prod deploy); ufw
+   allows the app host (infra `firewall_scoped_rules`) + a FortiGate policy if
+   cross-subnet (Yanna).
+2. **App-side DB TLS.** `DATABASE_URL` → `?sslmode=verify-full&sslrootcert=…`
+   (psycopg2 reads it from the URL; **asyncpg does not**). `DB_SSLMODE`
+   pipeline-forced to `verify-full` in prod (dev `prefer`). Ship the **public CA
+   cert** as a GH **variable** (`bw | gh`), staged at deploy into the deploy
+   user's **`$HOME`** (never `/opt`), mounted read-only; give the compose mount a
+   default (`${CA_CERT_HOST_PATH:-/dev/null}`).
+3. **ECR auth on the remote daemon** — the deploy step re-logs into a clean
+   `DOCKER_CONFIG` (see the gotchas above) so `compose pull` over
+   `DOCKER_HOST=ssh` authenticates.
+4. **Base + API base (the #1 silent breaker).** `NUXT_APP_BASE_URL=/<app>/`
+   (served under a path prefix) and **`NUXT_PUBLIC_API_BASE=https://<apps-host>/<app>/api`**
+   — the full prefixed, **same-origin** URL. Empty/bare-host → root-relative
+   calls → 404. It's **runtime** config: set the var + `deploy-only`, no rebuild.
+5. **Proxy routes — live BEFORE go-live.** Add `location /<app>` (→ frontend)
+   **and** `location /<app>/api` (rewrite + → backend) to **both**
+   `intervalica-api.conf` (api host) **and** `lch-apps.conf` (apps host) in the
+   `proxy` repo. The proxy **bakes config into its image**: merge to `master`,
+   then run **`deploy_production` from `master` HEAD** (build is master-only;
+   promoting a feature-branch commit → `no such manifest`). Recreating the proxy
+   is an org-wide few-second blip.
+6. **Auth (`iam`) + SSO registration.** Auth pipeline-forced to `iam` in prod
+   (never silent `mock` on PHI). Register the SSO **capability**: match on the
+   **live route** (`/<app>`, add both the **APP** and **API** routes), grant to
+   the **prod** group (not `devapps`); the capability *label* can be the brand
+   name.
+7. **Promote + verify (no login).** `develop → main` build-once-promote (ship the
+   bit-identical dev image). Verify via `curl`/browser only: `…/<app>/api/health`
+   & `/ready` → 200, `whoami`/`permissions` → 200, FE bounces to SSO, one real
+   login. Then **48 h soak**.
+
 ### Per-environment secrets
 
 GitHub Secrets are populated from Bitwarden via the per-environment
