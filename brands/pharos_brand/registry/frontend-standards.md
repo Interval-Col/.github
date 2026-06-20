@@ -295,8 +295,17 @@ móvil de QC). La cota del **lado de datos** —agregación en SQL, `statement_t
   datos: rango + tamaño de la serie) para forzar un re-montaje limpio al cambiar el
   dataset, de modo que el *crosshair* de @unovis no lea datos obsoletos/vacíos y
   rompa en hover.
+- **Múltiples vistas como toggles de cliente.** Cuando una distribución admite más de
+  una lectura honesta, ofrécelas como un toggle que re-renderiza en el cliente (sin
+  refetch): p. ej. *cajas por día* (box-whisker), *bandas* (áreas) y *puntos*
+  (resultados individuales). Para cubetas discretas (una por día) prefiere siluetas
+  por día sobre rellenos continuos: el relleno insinúa una interpolación entre días
+  que no existe. Los puntos individuales se muestran sólo hasta un tope; superado,
+  degrada a la dispersión agregada (el tope vive en las normas de datos del app).
+- **Leyenda obligatoria en gráficos multi-marca.** Un gráfico con más de un tipo de
+  marca (línea + puntos + banda/caja) necesita leyenda; que se adapte al modo activo.
 
-Impl de referencia: pharos-lis `analytics/media-movil` (PR #27).
+Impl de referencia: pharos-lis `analytics/media-movil` (PRs #27, #29, #30).
 
 ## Commits (Conventional Commits)
 Tipos canónicos (idénticos en branches y commits): **`feat`, `fix`, `refactor`,
