@@ -267,6 +267,37 @@ throw createError({ statusCode: 404, message: 'Record not found' })
 Siempre: stroke-based, rounded terminals. Colores solo de los roles semánticos del
 contrato (`text-primary`, `text-status-success`, `text-muted-foreground`, …), nunca hex.
 
+## Gráficos y datos masivos (analítica)
+Para superficies con muchos datos (series de un *fact table* grande, p. ej. la media
+móvil de QC). La cota del **lado de datos** —agregación en SQL, `statement_timeout`,
+índice por predicado— vive en las normas de backend/datos del app (en lab-qc,
+`docs/STANDARDS.md` → "Analytics & big-data queries"). Lado **frontend**:
+
+- **Botón explícito de construir/aplicar, no fetch por cambio.** Las consultas
+  costosas se disparan con un botón ("Generar"), no en cada cambio de control. El
+  botón refleja estado *dirty* (variant `default`/primario cuando hay cambios sin
+  aplicar; apagado/`outline` cuando el gráfico está al día). Colapsa N fetches
+  reactivos en 1 deliberado.
+- **`AbortController` + guard de respuesta obsoleta en todo fetch.** Cancela la
+  solicitud en curso al reconstruir/desmontar y descarta respuestas superadas (un
+  `requestId` que invalida las tardías). Evita el *pile-up* y que una respuesta lenta
+  pise a una nueva.
+- **Separar controles de *vista* de los de *consulta*.** Lo que es transformación
+  puramente cliente (tamaño de ventana de suavizado, zoom, orden) se recalcula en el
+  cliente y **no** vuelve a consultar. Los ejes y el título quedan **acoplados a los
+  datos construidos**, no a los inputs en vivo: cambiar una fecha marca el botón como
+  pendiente, pero el eje no se mueve hasta reconstruir.
+- **Tope de marcas renderizadas.** @unovis dibuja un nodo SVG por punto (sin
+  decimación). Agrega/submuestrea antes de renderizar —idealmente del lado servidor,
+  ≤ unos cientos de puntos— para no congelar el hilo principal.
+- **El *loading* no borra un gráfico ya dibujado.** Muestra el spinner sólo en la
+  primera carga; en recargas deja el gráfico visible. Usa `:key` (identidad de los
+  datos: rango + tamaño de la serie) para forzar un re-montaje limpio al cambiar el
+  dataset, de modo que el *crosshair* de @unovis no lea datos obsoletos/vacíos y
+  rompa en hover.
+
+Impl de referencia: pharos-lis `analytics/media-movil` (PR #27).
+
 ## Commits (Conventional Commits)
 Tipos canónicos (idénticos en branches y commits): **`feat`, `fix`, `refactor`,
 `test`, `chore`, `docs`, `hotfix`, `ci`**. Merge-commit en todos lados (squash
