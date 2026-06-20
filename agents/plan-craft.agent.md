@@ -345,3 +345,22 @@ the issue; link to it.
 A separate template for the issue body lives at
 `.github/templates/issue-template.md` (alongside the plan template);
 keep them aligned.
+
+## When NOT to write a plan · Cuándo NO escribir un plan
+
+Not all work earns a plan. **Exploratory / "vibe coding" sessions** — a
+time-boxed spike to learn something or try an idea — must **not** be forced
+through the plan template. Track them as a lightweight **`spike` issue**
+(`.github/ISSUE_TEMPLATE/spike.md`): *goal · timebox · outcome*. It lands on the
+board like any item, with no bilingual scaffold and no preamble.
+
+The rule of thumb: **the board item is the issue; the plan is optional
+heavyweight context attached to it.** A spike is an issue *without* a plan — the
+mirror image of a plan's `issue: none`. This also tracks with the
+profile axis above: a senior spiking needs an issue, not a junior onboarding doc.
+
+**Graduation path.** If a spike produces something with legs, it graduates to a
+plan — the same funnel as the `operations/tech-debt.md` inbox → plans. The spike
+issue links forward to the plan it spawned. *(ES: no todo trabajo merece un
+plan; las sesiones exploratorias se registran como un issue `spike`
+—objetivo/timebox/resultado— y si tienen futuro, gradúan a plan.)*
