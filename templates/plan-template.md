@@ -22,13 +22,35 @@ not as exact-density references):
   - admission-patient/plans/archive/org-standards-harmonization-plan.md
   - commercial-lch/plans/mvp-quote-generation-plan.md
 
+FRONTMATTER SCHEMA v2 (ratified 2026-06-20). Eight keys are REQUIRED on every
+plan; CI checks them. They exist to populate the GitHub project board.
+  status  — controlled enum (= board columns):
+            proposed → active → in-progress → blocked → done
+            terminal: superseded | abandoned
+  owner   — the accountable lead, ONE github handle.
+  created — doc creation date (YYYY-MM-DD).
+  updated — bump on every meaningful edit (YYYY-MM-DD).
+  issue   — the linked GH issue: `Interval-Col/<repo>#NN`. This is the board
+            item AND the team-facing entry point (see plan-craft "Plan ≠ Issue").
+            Every plan gets one UNLESS it opts out with `issue: none — <reason>`.
+  start   — scheduled start date → board "Start" field (YYYY-MM-DD).
+  target  — due / target date    → board "Target" field (YYYY-MM-DD).
+  implementation — who executes (github handle or "TBD").
+Then `language` (the bilingual contract). Blessed-optional keys you MAY add:
+  rfc, parent, supersedes, superseded-by, related.
+Do NOT use `completed:` (use `status: done` + `updated:`) or `tracking-issue:`
+(use `issue:`). Devops/deploy/ops plans use `ops-plan-template.md` instead.
+
 Delete this comment when you start filling in.
 -->
 ---
-status: pending
+status: proposed
+owner: <github-handle>
 created: <YYYY-MM-DD>
 updated: <YYYY-MM-DD>
-owner: <github-handle>
+issue: <Interval-Col/repo#NN  ·  or:  none — reason>
+start: <YYYY-MM-DD>
+target: <YYYY-MM-DD>
 implementation: <github-handle or "TBD">
 language: English body; Spanish "Resumen" + decision/criteria glosses.
 ---
