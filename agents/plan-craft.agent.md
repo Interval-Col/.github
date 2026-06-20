@@ -40,11 +40,29 @@ Decide the home **before** you author. The reflex *"the target repo's
 deploys & infra (devops), or about building a product feature?* — DevOps →
 `operations/plans/`; feature → `<app>/plans/`.
 
-**DevOps plans are Sonnet-runnable.** Author them to this same standard
-(self-contained Steps, Done-when, 🛑 escalation) so a `claude-sonnet-4-6`
-agent executes them without Opus-level judgment. A routine that runs one
-sets `model: claude-sonnet-4-6` and lists the target repo(s) as `sources`;
-`operations` carries the plan. *(Convention recorded 2026-06-13.)*
+**DevOps plans are Sonnet-runnable, and use a lighter template.** Author them
+from **`.github/templates/ops-plan-template.md`** — same self-contained Steps /
+Done-when / 🛑-escalation rigor, but it **omits the canonical preamble trio**
+(How-to-use · Conventions · Working-rules). That preamble exists to onboard the
+junior, Spanish-native team; devops/deploy/ops plans are executed by the lead or
+a `claude-sonnet-4-6` agent, so the trio is dead weight there. The frontmatter
+schema v2 and the bilingual surfaces (title, top Resumen, per-phase Resumen,
+Glossary) still apply. A routine that runs one sets `model: claude-sonnet-4-6`
+and lists the target repo(s) as `sources`; `operations` carries the plan.
+*(Sonnet-runnable convention recorded 2026-06-13; lighter template ratified
+2026-06-20.)*
+
+**Scaffolding also keys off the implementer's profile.** The two templates are
+the two ends of one axis: `plan-template.md` (full bilingual preamble) is the
+**junior, Spanish-native** default; `ops-plan-template.md` (no preamble trio) is
+the **senior / lead** shape. Choose by who `implementation` names — match the
+plan's scaffolding to that operator's profile
+(`agents/operator-profile-template.md`, `agents/operator-calibration.agent.md`).
+A senior running a product plan may take the lighter shape; a junior handed an
+ops task still gets the full preamble. The frontmatter schema v2 is required
+**regardless of profile** — only the preamble/verbosity flexes.
+*(Profile-driven scaffolding recorded 2026-06-20; formalize against the
+operator-profile registry as it matures.)*
 
 ## Audience model — assume this is who reads the plan
 
@@ -66,8 +84,21 @@ sets `model: claude-sonnet-4-6` and lists the target repo(s) as `sources`;
 
 ### Required structure (in this order)
 
-1. Frontmatter — `status`, `created`, `updated`, `owner`, `implementation`
-   (if known), `language` note.
+1. Frontmatter — **schema v2, ratified 2026-06-20**. Eight keys are
+   **required on every plan** (CI-checked; they populate the GitHub project
+   board): `status` · `owner` · `created` · `updated` · `issue` · `start` ·
+   `target` · `implementation`. Then the `language` note.
+   - `status` is a **controlled enum (= the board columns)**:
+     `proposed → active → in-progress → blocked → done`; terminal:
+     `superseded | abandoned`. Do **not** invent free-form statuses.
+   - `issue` is the linked GH issue (`Interval-Col/<repo>#NN`) — the **board
+     item and the team-facing entry point**. **Every plan gets one unless it
+     explicitly opts out** with `issue: none — <reason>` (see "Plan ≠ Issue").
+   - `start`/`target` feed the board's Start/Target date fields; `created`/
+     `updated` are *doc* dates (written/edited), kept distinct from the schedule.
+   - Blessed-optional keys: `rfc`, `parent`, `supersedes`, `superseded-by`,
+     `related`. **Retired:** `completed:` (use `status: done` + `updated:`)
+     and `tracking-issue:` (use `issue:`).
 2. Title, bilingual: `# <project name> · <Spanish equivalent>`.
 3. A top-level `> **Resumen (ES).** …` blockquote — 3–6 lines, the
    whole project in Spanish so a monolingual reader is oriented before
