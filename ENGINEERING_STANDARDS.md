@@ -245,6 +245,18 @@ only when the secret is genuinely repo-scoped. When a credential
 rotates: update Bitwarden first, then the org-level secret, then any
 repo-level overrides.
 
+**The shared CI/CD credentials are org-level — repos *reference*, never recreate.**
+`AWS_OIDC_ROLE_ARN`, `AWS_REGION`, `AWS_REGISTRY`, the `DEV_*`/`PROD_*` host triples
+(`*_HOST` / `*_USER` / `*_KEY`), and `BUILDER_*` are **org-level GitHub secrets inherited
+by every repo** — the `AWS_OIDC_ROLE_ARN` role trusts `repo:Interval-Col/*` with `repository/*`
+ECR perms, so a migrated repo needs **no new IAM**. Its workflow simply `secrets.*`-references
+them; **do not create per-repo copies.** Only **app-specific, per-environment** values (service
+ports, GraphQL/SSO endpoints, licenses, SMB/host paths) are set per-repo, scoped to the repo's
+GitHub Environments. ⚠️ Environment **required-reviewers are *not* available on our plan** for
+private repos (`422`) — gate prod deploys with an in-workflow flag (e.g. `<APP>_PROD_DEPLOY_ENABLED`,
+default off), not environment protection. Seeding a migrated repo's per-env values: see
+`Interval-Col/operations` → `runbooks/ci-cd-secrets-seeding.md` (Docker → Bitwarden → GitHub, no value echoed).
+
 ---
 
 ## 📄 Project Documentation
