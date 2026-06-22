@@ -6,7 +6,7 @@
 
 - **Track / app / FE dir:** `A` · `admission-patient` · `.` (root `app/` srcDir)
 - **Owner:** `skuger`  **Date:** `2026-06-22`  **Handed off from commit:** `3b0a304` (`develop` merge of #27)
-- **Next track unblocked:** `B` · tracking issue `#47`
+- **Next track(s) unblocked:** `B` **and** `C` — **parallel handoff** (lead's call; both sections were back-propagated, so C does not wait on B) · tracking issues `#47`, `#48`
 
 > ⚠️ **Honesty note (read first):** the FE rollout (Stages 1–3) is **done and merged to `develop`**.
 > Three §3 conformance items are **still pending external/infra unblocks** and are documented as such
@@ -48,5 +48,5 @@
 ## 4. Handoff (German / @gczuluaga only)
 
 - [ ] Retro PR merged (merge-commit) — `<PR link>`
-- [ ] `blocked:retro-gate` removed from **#47** + native blocked-by cleared → Track B unblocked
+- [ ] `blocked:retro-gate` removed from **#47 AND #48** + blocked-by cleared → **Tracks B & C unblocked (parallel)**
 - [ ] Ritual confirmed: retro-gate CI green · downstream sections diffed · **not** an `--admin` override
