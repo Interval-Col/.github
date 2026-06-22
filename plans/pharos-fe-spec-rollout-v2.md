@@ -248,6 +248,14 @@ Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
 - 🟠 **Charts (FE only plots; backend owns stats):** keep `chart.js`; **do not delete `--lch-*`/`--status-*`**.
   `@unovis` migration is OUT of scope.
 
+**🔁 Carried from Track A's retro** ([`pharos-track-retro.A.md`](pharos-track-retro.A.md)):
+- **Gate-fit = page *+ its components* for colours** — the colour gates scan all of `app/`, not just `pages/` (`no-raw-html` scans only `pages/`/`layouts/`). **Purge dead/legacy components first** (verify 0 refs repo-wide + build-green) before tokenizing — Track A cleared ~158 hits by deleting ~20 dead files.
+- ⚠️ **shadcn `<Input>` drops the `v-model.number` modifier** — **critical here, finance is number-heavy**: bind `:model-value` + `@update:model-value="x = Number($event)"`, else amounts become strings and `money()`/math break.
+- **`ui/` may lack `Table`/`Textarea`** — vendor thin pass-through primitives to close `no-raw-html` on data tables.
+- **e2e auth (SSR):** if finance auth runs server-side, the headless `shell-contract` can't auth in CI (no SSO → logout → no shell). Plan a test/dev auth path (an `import.meta.dev`-guarded bypass or a mock-SSO) **before** wiring `test-contract`.
+- **Tooling:** set `nuxt.config.devServer.port` (else the Playwright webServer hangs); point vitest `~`/`@` → `app/` + `exclude: e2e`; **Node 22+** (eslint 10 crashes on Node ≤20). On sync, **drop `packageManager`** (or pin it to the workflow's pnpm version) — `pnpm/action-setup@v4` errors on a mismatch.
+- **Visual cohesion (conform, don't patch — gates green ≠ done):** no stray/half-tokenized styles · **no double-sidebar/double-chrome** (side panels = in-flow `<aside>` at page level, never covering the shell nav; full-bleed `-m-6 h-[calc(100%+3rem)]`) · re-check **dark mode** end-to-end (alternating row bg → divider rows) · no stray vertical scroll · breadcrumb-as-title (no duplicated `<h1>`) · status→badges · drop gratuitous shadows · align popovers (`align="end"`).
+
 **Stages 2–5** as Track A (own shell-contract; tab `Pháros — Números`; bump `erp.md`).
 
 **VERIFY (B):** lint-check green · build · screenshots L+D · active-leaf ámbar beam (`#7A5D00`/`#E6C34D`) ·
@@ -276,6 +284,14 @@ Nuxt 4, `app/` srcDir ✓, FE at `commercial-lch/frontend`. **Not** a blank slat
   `title: 'Clientes'`. `#user` → commercial auth store. Preserve `server/api/pdf-render.post.ts`.
 - 🟠 **Depends on Stage 0** being merged + re-synced (theme-clientes still ships `#FFB86B` until then —
   do not hand-edit `tokens.css`).
+
+**🔁 Carried from Track A's retro** ([`pharos-track-retro.A.md`](pharos-track-retro.A.md)):
+- ⚠️ **`#e37600` (ámbar) white-on-accent trap** — forcing white button text on the ámbar accent **fails the contrast gate** (white-on-ámbar < AA 4.5) **and** drifts the registry-owned `tokens.css`. Keep the **registry foreground**; **never hand-edit `tokens.css`**. (Track A hit this exact trap with rosa `#ff3d63` — reverted the white override to green contrast + drift.)
+- **Quotes-page rewrite = *vendor* `Table`/`Textarea` primitives, not just rename** — the `ui/` set likely lacks them (thin pass-through wrappers close `no-raw-html`). And **shadcn `<Input>` drops `v-model.number`** → quote amounts become strings; use `:model-value` + `@update:model-value` with `Number()`.
+- **Gate-fit = page *+ its components* for colours**; **purge dead/legacy first** (0 refs + build-green).
+- **e2e auth (SSR):** plan a test/dev auth path (an `import.meta.dev`-guarded bypass or mock-SSO) **before** wiring `test-contract` — SSR auth can't be mocked headlessly (no SSO in CI → logout → no shell).
+- **Tooling:** set `nuxt.config.devServer.port`; vitest `~`/`@` → `app/` + `exclude: e2e`; **Node 22+**; on sync **drop `packageManager`** (pnpm-version mismatch breaks `pnpm/action-setup@v4`).
+- **Visual cohesion (conform, don't patch — gates green ≠ done):** no stray styles · **no double-sidebar/double-chrome** (in-flow `<aside>` at page level, full-bleed, never covering the shell nav) · **dark mode** end-to-end (divider rows, not alternating bg) · no stray vertical scroll · breadcrumb-as-title · status→badges · drop gratuitous shadows · align popovers (`align="end"`).
 
 **Stages 2–5:** e2e greenfield — add Playwright + config + `shell-contract.spec.ts` + `test-contract` job;
 tab `Pháros — Clientes`; bump `crm.md`.
