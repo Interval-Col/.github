@@ -766,6 +766,8 @@ Steps:
 Do not cherry-pick — the merge-forward is more reliable and surfaces
 conflicts in a reviewable PR.
 
+- **Orphaned commit after a merged PR.** A commit pushed to a feature branch *after* that branch's PR has already merged lands on **no merged ref** — it never reaches `main` (or `develop`), silently. (2026-06-22: a `verify-full` cert fix `7817b1f`, pushed onto an already-merged #28 branch, left prod cert-less; re-landed via a fresh PR #31 + promote #32.) **Always re-land late work via a new PR; never assume a `git push` to the old branch reaches a deploy ref.** When in doubt: `git branch --contains <sha>`.
+
 ---
 
 ## Stale branches

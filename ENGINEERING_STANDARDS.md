@@ -257,6 +257,17 @@ private repos (`422`) — gate prod deploys with an in-workflow flag (e.g. `<APP
 default off), not environment protection. Seeding a migrated repo's per-env values: see
 `Interval-Col/operations` → `runbooks/ci-cd-secrets-seeding.md` (Docker → Bitwarden → GitHub, no value echoed).
 
+### SSO auth debugging — "User not found" can mean LOCKED
+
+The SSO (`sso-backend`, `POST /auth/v1/session/login`) returns a misleading `"User not found"` (status flips 404/422) when an account is **rate-limited / locked** by a login burst (~3 failed logins → exponential ~5 min × attempt) — *not only* for a genuinely-unknown user, and the *same* error also covers a wrong password. Rules for any service authing to this SSO:
+
+1. On a login `404` / "User not found", **suspect lockout first** — prove the creds with a single browser/one-shot login (a `200` resets the counter) **before** changing any secret.
+2. **Never bulk-retry logins** — manual loops trip *and* sustain the lock (shared `failed_login_attempts`).
+3. **Cache the token and pace the caller** — a cached token + scheduler cadence is the safe steady state.
+4. SSO clients **SHOULD ship a login circuit-breaker** — negative-cache failed logins + exponential backoff past the lock window. Reference implementation: `cobol-migration/services/etl/auth.py`.
+
+See `operations/incidents/2026-06-sso-lockout-user-not-found.md`.
+
 ---
 
 ## 📄 Project Documentation
