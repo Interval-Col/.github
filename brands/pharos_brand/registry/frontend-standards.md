@@ -267,6 +267,27 @@ throw createError({ statusCode: 404, message: 'Record not found' })
 Siempre: stroke-based, rounded terminals. Colores solo de los roles semánticos del
 contrato (`text-primary`, `text-status-success`, `text-muted-foreground`, …), nunca hex.
 
+## Higiene de dependencias — gate `check-fe-bloat`
+Una compuerta de CI (`scripts/check-fe-bloat.mjs`, sincronizada del registry y
+encadenada en `lint-check`) previene el bloat de dependencias que vimos en
+admission-patient (íconos y librerías duplicadas). Reglas **deterministas** (cero
+falsos positivos):
+
+- **Sin monolito de íconos.** `@iconify/json` (~400 MB, todas las colecciones) está
+  prohibido. Instala solo los paquetes per-collection `@iconify-json/<prefix>` que
+  de verdad usas; `@iconify/tailwind` los resuelve **antes** que el monolito, así que
+  el CSS generado es idéntico y la instalación baja muchísimo (399 MB → solo lo usado).
+- **Una sola librería por categoría.** A lo sumo una librería por propósito (p. ej.
+  una de Lucide-para-Vue: `lucide-vue-next` *o* `@lucide/vue`; una de Radix/Reka
+  headless-UI: `reka-ui` *o* `radix-vue`). Dos libs que hacen lo mismo inflan
+  instalación y bundle.
+
+Excepciones: `ALLOWLIST` dentro del script (mínima y justificada, con fecha de
+retiro). Fast-follow ([Interval-Col/.github#70]): deps muertas vía `knip` y un
+presupuesto de tamaño de bundle (chequeo post-build).
+
+[Interval-Col/.github#70]: https://github.com/Interval-Col/.github/issues/70
+
 ## Gráficos y datos masivos (analítica)
 Para superficies con muchos datos (series de un *fact table* grande, p. ej. la media
 móvil de QC). La cota del **lado de datos** —agregación en SQL, `statement_timeout`,

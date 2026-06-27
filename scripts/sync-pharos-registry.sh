@@ -3,7 +3,7 @@
 # sync-pharos-registry.sh — copy the shared Pháros design-system foundation
 # into a consuming app (RFC 0008 Q3: copy-in registry, NOT a runtime package).
 #
-# Syncs: tokens.css (+ .sha256 drift sidecar) · the 7 gate scripts (check-*.mjs)
+# Syncs: tokens.css (+ .sha256 drift sidecar) · the 8 gate scripts (check-*.mjs)
 #        · eslint.config.mjs template · pharos-lint-check.yml (its working-directory
 #        + pnpm cache path auto-set to the app's FE subdir) · registry/app/**.
 #
@@ -159,7 +159,7 @@ echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepci
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
-echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs\""
+echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs\""
 echo
 echo "  e) Install ESLint + generate Nuxt types:"
 echo "       pnpm add -D @nuxt/eslint"
