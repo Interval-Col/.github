@@ -326,6 +326,32 @@ Every repo uses GitHub Actions. Two workflow files per repo:
 - If you need a deploy without a code change (env-var rotation,
   re-pull a tag), use `workflow_dispatch` with `action: deploy-only`.
 
+### Concurrency — collapse the queue, never pile up
+
+Every workflow sets a `concurrency` group so superseded runs don't stack on the
+self-hosted runners. A pile-up of `develop` deploys waiting on one busy runner
+can starve (and has OOM-ed) the fleet — concurrency makes the queue self-collapse
+to the latest instead.
+
+- **Deploy (`ci-cd.yml`)** — one run per branch; pending runs collapse to the
+  newest; a *running* deploy is **never** interrupted (no half-deploys):
+  ```yaml
+  concurrency:
+    group: deploy-${{ github.ref }}
+    cancel-in-progress: false   # let the live deploy finish; collapse the pending queue
+  ```
+- **PR gate (`ci.yml`)** — cancel superseded runs for the same PR/branch (saves
+  runner time; safe to interrupt a build):
+  ```yaml
+  concurrency:
+    group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+    cancel-in-progress: true
+  ```
+
+`cancel-in-progress: false` on deploys is deliberate: GitHub still collapses
+multiple *pending* runs to the newest while the in-flight one finishes — you get
+the de-dup without ever interrupting a deploy mid-rollout.
+
 ### Deploying over a remote daemon (`DOCKER_HOST=ssh`) — gotchas
 
 The deploy jobs run on a **self-hosted runner** but target the app host
