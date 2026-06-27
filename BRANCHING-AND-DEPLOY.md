@@ -786,6 +786,28 @@ action). Same config in every repo.
 Drafts that explicitly say "blocked on X" can opt out with the
 `do-not-stale` label.
 
+### Don't let branches drift (author hygiene)
+
+The bot above is a backstop for *inactive* PRs — not a substitute for
+keeping your own branches current. Two rules:
+
+- **Delete a branch at merge.** Auto-delete-on-merge is enabled (see
+  [Auto-delete branches](#auto-delete-branches)) — don't leave merged
+  branches lying around on the remote *or* locally.
+- **Rebase long-lived branches onto `develop` regularly.** A branch that
+  drifts far enough becomes *un-mergeable*: one that predates a structural
+  change (a framework/dir migration like Nuxt's `app/` move, a schema
+  cutover) will fight every relocated file, and by then its work is often
+  already done elsewhere. If a branch is too stale to merge cleanly,
+  **do not blind-merge it** — you'll resurrect the old structure. Rebase
+  it, or cherry-pick only the still-relevant commits onto the current
+  tree, checking each isn't already superseded.
+
+Rule of thumb: a branch should merge or rebase within **days, not
+months**. A real example that cost a cleanup: a feature branch left ~150
+commits behind (across the `app/` migration) whose headline feature had
+since been built in two other places — it had to be dropped, not merged.
+
 ---
 
 ## CODEOWNERS
