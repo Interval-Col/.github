@@ -97,11 +97,25 @@ No escalator (no develop branch); just close the bypass hole. Add strict up-to-d
 - `transmisiones`, `port-mapper` — still on `master`; fold in on the `master→main` rename (tracked in #42 / RFC 0009).
 - `legacy-repositories` — archive.
 
+## Plus: workflow concurrency (every repo with CI/CD)
+
+Folded in 2026-06-27 after a `develop`-deploy pile-up starved + OOM-ed the dev
+runner fleet. **Every repo's workflows get a `concurrency` block** so superseded
+runs self-collapse instead of queueing N-deep (see `BRANCHING-AND-DEPLOY.md`
+§"Concurrency"):
+- **`ci-cd.yml` (deploy):** `group: deploy-${{ github.ref }}`, **`cancel-in-progress: false`** (collapse the pending queue to the newest; never interrupt a live deploy).
+- **`ci.yml` (PR gate):** `group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}`, `cancel-in-progress: true`.
+
+This is a quick per-repo workflow edit; bundle it with each repo's escalator PR.
+(Related infra fix, tracked separately: move runners to a dedicated VM + push
+build/test to GitHub-hosted so CI can't starve app hosts — RFC 0007.)
+
 ## ✅ Done-when (per repo)
 1. `gh api repos/Interval-Col/<repo>/branches/main/protection/enforce_admins` → `enabled: true`.
 2. `main` required status checks include `main-only-from-develop` (for develop/main repos) + `gitleaks`.
 3. A test PR from a `feat/*` branch **into `main` fails** the guard; a `develop → main` PR **passes**.
-4. The repo's row here is checked.
+4. `ci-cd.yml` + `ci.yml` carry the `concurrency` block (no more queue pile-ups).
+5. The repo's row here is checked.
 
 ## 🚦 Checkpoint (per group)
 Show @gczuluaga: the `gh api … protection` output for one repo in the group + a screenshot of a feature→main PR being blocked by the guard. Confirm before moving to the next group.
