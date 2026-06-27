@@ -3,6 +3,7 @@
 Org-wide community-health files + engineering standards for **Interval-Col**.
 
 ## Guides & standards
+- [Knowledge Management](KNOWLEDGE-MANAGEMENT.md) — **start here.** The org knowledge hub: the four buckets (decisions / methodologies / lessons / guides), RFC-vs-ADR threshold, how to capture (`/decision`, `/guide`), and the cross-repo decision ledger.
 - [Engineering Standards](ENGINEERING_STANDARDS.md) — stack, structure, conventions, design gates.
 - [Branching & Deploy](BRANCHING-AND-DEPLOY.md) — branching model, CI, deploy.
 - [Issue Title Style](ISSUE_TITLE_STYLE.md) — `[Área]` + plain-English outcome, ≤60 chars (hard max 70), so the board reads like a plan.
