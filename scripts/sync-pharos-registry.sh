@@ -149,6 +149,12 @@ echo
 echo "  a) Import the registry CSS in app/assets/css/main.css:"
 echo "       @import \"./pharos-tokens.css\";       /* token contract */"
 echo "       @import \"./pharos-components.css\";   /* component layer (pilot light, …) */"
+echo "       @import \"./pharos-icons.css\";        /* <Icon> safelist + @iconify plugin */"
+echo
+echo "  a2) Component-library adoption deps (per primitive used):"
+echo "       <Icon>      → pnpm add -D @iconify-json/lucide @iconify-json/material-symbols @iconify/tailwind"
+echo "       <DatePicker>→ pnpm add @internationalized/date"
+echo "       (per-collection icon pkgs only — never @iconify/json; check-fe-bloat-safe)"
 echo
 echo "  b) Load the four Pháros fonts (via @nuxt/fonts or a CDN link):"
 echo "       Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono"

@@ -192,10 +192,10 @@ Cuatro familias, vía las variables del contrato:
 - Composables: `usePatientResults.ts`, `useLabMetrics.ts`
 - Stores: `useFinanceStore.ts`, `useLaboratoryStore.ts`
 - Tipos: `patient.ts`, `labResult.ts`, `invoice.ts`
-> La **biblioteca de componentes del registry** (los SFC shadcn-vue compartidos) es
-> el follow-up de **Fase 1** (RFC 0008): hoy el registry distribuye tokens +
-> convenciones + guía por superficie; los componentes se construyen en el brand
-> playground. Hasta entonces, cada app mantiene sus SFC alineados a estas convenciones.
+> La **biblioteca de componentes del registry** (Fase 1, RFC 0008) ya está **publicada**:
+> los primitivos compartidos viven en `registry/app/components/` + `registry/app/composables/`
+> y se distribuyen copy-in vía `sync-pharos-registry.sh`. Ver «Biblioteca de componentes
+> (Fase 1)» abajo. Las apps consumen estos primitivos en vez de re-implementarlos.
 
 ## API — Integración con FastAPI
 ```ts
@@ -259,13 +259,46 @@ throw createError({ statusCode: 404, message: 'Record not found' })
   `text-sidebar-foreground`, `bg-sidebar-primary`, …).
 
 ## Iconos
+Un solo tag **`<Icon>`** (`app/components/ui/icon/Icon.vue`) sobre `@iconify/tailwind`.
+Acepta una **clave del registro curado** (`app/components/ui/icon/icons.ts`, ~94 claves:
+Lucide como set principal + un subconjunto clínico de Material Symbols) **o** un id crudo
+`prefix:name`.
 ```vue
-<Icon name="..." class="w-5 h-5 text-primary" />            <!-- sm: 20px -->
-<Icon name="..." class="w-6 h-6 text-foreground" />         <!-- md: 24px -->
-<Icon name="..." class="w-8 h-8 text-muted-foreground" />   <!-- lg: 32px -->
+<Icon name="search" />                       <!-- size 4 = 16px (inline, por defecto) -->
+<Icon name="patient" :size="5" />            <!-- size 5 = 20px (botones / nav) -->
+<Icon name="calendar" :size="6" class="text-primary" />  <!-- size 6 = 24px (encabezados) -->
+<Icon name="stethoscope" label="Médico" />   <!-- significativo: role="img" + aria-label -->
 ```
-Siempre: stroke-based, rounded terminals. Colores solo de los roles semánticos del
-contrato (`text-primary`, `text-status-success`, `text-muted-foreground`, …), nunca hex.
+- **Escala** `size` = 4 / 5 / 6 → 16 / 20 / 24 px (BRAND.md §8).
+- **Color** solo por roles semánticos del contrato (`text-primary`, `text-status-success`,
+  `text-muted-foreground`, …), nunca hex. Siempre stroke-based, terminaciones redondeadas.
+- **a11y**: decorativo por defecto (`aria-hidden`); pasa `label` para iconos significativos.
+- El wrapper construye la clase `icon-[…]` en runtime, así que el registro curado se
+  **fuerza** vía `app/assets/css/pharos-icons.css` (el safelist `@source`, sincronizado con
+  `icons.ts`). La app adopta con una línea en su `main.css`: `@import "./pharos-icons.css";`
+  + las deps per-collection (`@iconify-json/lucide`, `@iconify-json/material-symbols`,
+  `@iconify/tailwind`) — todas seguras para `check-fe-bloat` (no el monolito `@iconify/json`).
+
+## Biblioteca de componentes (Fase 1)
+Primitivos compartidos Pháros, en `registry/app/components/ui/**` + `registry/app/composables/**`,
+distribuidos copy-in (`sync-pharos-registry.sh`). Úsalos en vez de re-implementar. Cada app
+añade las **deps de adopción** indicadas (todas seguras para `check-fe-bloat`).
+
+| Primitivo | Ruta | Para qué | Deps de adopción |
+|---|---|---|---|
+| **SearchableSelect** | `ui/searchable-select` | Desplegable con filtro al teclear (estático o `searchFn` async); maneja valor vacío sin sentinel | — |
+| **EntityLookup** (+ `ScopedSearchInput`, `PatientLookup`, `PhysicianLookup`) | `ui/entity-lookup`, `ui/scoped-search` | Búsqueda de persona con chips de filtro guiados (cédula con tipo de doc, nombre, orden…) → resultados → selección | — |
+| **PageHeader** | `ui/page-header` | Encabezado de contenido (título/descripción/`#actions`/`#toolbar`); título `<h2>`, breadcrumb-as-title | — |
+| **Icon** | `ui/icon` | Un solo tag de icono sobre `@iconify/tailwind` + registro curado (~94) | `@iconify-json/lucide`, `@iconify-json/material-symbols`, `@iconify/tailwind`, `@import "./pharos-icons.css"` |
+| **FlowSteps** | `ui/flow-steps` | Indicador de pasos para flujos multi-paso (estado por paso) | — |
+| **FormField** | `ui/form-field` | Wrapper de campo (label + control + error/hint/required); **agnóstico de validación** | — |
+| **DatePicker** | `ui/date-picker` | Fecha es-CO: campo segmentado `dd/mm/aaaa` + calendario; `v-model` ISO; rellenable por escaneo de cédula | `@internationalized/date` |
+| **useFlow** | `composables/useFlow.ts` | Back-stack + estado de diálogo (pasos como config; `goBack` real preserva datos) | — |
+| **useAsyncState** | `composables/useAsyncState.ts` | Envoltura de fetch (`data/status/loading/error/isEmpty/refresh`); AbortController + guard de respuesta stale; `isEmpty` explícito | — |
+
+> Decisiones parqueadas para la sesión de co-creación (refinamientos; copy-in es barato de
+> revisar): FormField atado-a-vee-validate vs agnóstico · ruteo chips→backend de EntityLookup ·
+> migración del estado persistido de `useProcessState`→`useFlow` · tipo del modelo de DatePicker.
 
 ## Higiene de dependencias — gate `check-fe-bloat`
 Una compuerta de CI (`scripts/check-fe-bloat.mjs`, sincronizada del registry y
