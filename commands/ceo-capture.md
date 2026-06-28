@@ -48,39 +48,31 @@ Do NOT copy commit messages verbatim — translate to business-legible language
 (e.g. "se activó el rol finance_user en prod DB", not
 "feat: nucleus-db role provisioning step 3").
 
-## 2 · Ask German for the business framing (in Spanish)
+## 2 · Draft the business framing YOURSELF, then confirm with German
 
-Prompt German with the following (adapt to what you found in step 1). Keep
-the ask to **1–3 lines**; don't force a number.
+**You write the framing — never hand German a blank form.** This is the whole point:
+from step 1, translate what shipped into business terms and **draft the complete bullet
+yourself** (all four fields filled, your best read). Then show it to German to **approve
+or tweak in one line** — he confirms/edits; he does not fill blanks.
 
----
+- **Pick the strategic bet yourself** and label your pick "(Recomendada)", listing the
+  alternatives so he can override in one word:
+  - Pháros · productización del conocimiento
+  - Habilitador · decomisión COBOL + plataforma de datos
+  - Biuman · lab deportivo
+  - _(otras del tablero, para un movimiento no-código: Molecular/ThyroidPrint · Centro
+    Médico · Oviedo · Ecoparking · Turismo médico · 5 sedes propias)_
+- **Show the drafted bullet verbatim (in Spanish)** followed by one line:
+  *"¿Lo agrego así, o ajusto algo?"*
 
-**Prompt to show German (in Spanish):**
+**The one hard boundary:** never fabricate a **business NUMBER** (ingresos / EBITDA / FCF /
+caja / clientes) — those German hand-enters from lch-strategic. Engineering facts (PR#,
+filas migradas, chequeos) ARE fine to include. If you genuinely can't read a field, use
+your best guess and tag it `(confirmar)` — never leave it blank for German to complete.
 
-> Lo que moví esta sesión: _<tu resumen 1–2 líneas del paso 1>_.
->
-> Para el registro ejecutivo necesito tu encuadre de negocio (breve):
->
-> 1. **¿Qué se movió?** (una línea, en términos de negocio — no de código)
-> 2. **¿Sobre qué apuesta estratégica?** — elige la que mejor aplica.
->    **Las que normalmente mueve la ingeniería:**
->    - Pháros · productización del conocimiento _(de-concentración pura)_
->    - Habilitador · decomisión COBOL + plataforma de datos
->    - Biuman · lab deportivo
->
->    **Otras apuestas del tablero** (por si capturas un movimiento no-código):
->    Molecular/ThyroidPrint · Centro Médico ambulatorio · Sede Oviedo · Ecoparking ·
->    Turismo médico · 5 sedes propias · _(u otra que identifiques)_
-> 3. **¿Por qué le importa a la junta?** (una línea — impacto en negocio,
->    riesgo reducido, cliente ganado, margen, etc.)
-> 4. **Referencia opcional** — PR#, issue#, o cifra (ej. "917K filas
->    migradas"). Puedes omitirla.
-
----
-
-Wait for German's answers before proceeding to step 3. Do not fabricate
-business framing — if German skips a field, leave it as `<sin dato>` rather
-than guessing.
+Append **after his OK/edit**. If German says "captúralo" / asks you to just do it, append
+your draft directly and invite a one-line correction (the ledger is append-only, so a fix
+is a new line, not a rewrite).
 
 ## 3 · Append the dated bullet to ~/lch-strategic/ceo-captures.md
 
