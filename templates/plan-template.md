@@ -22,8 +22,10 @@ not as exact-density references):
   - admission-patient/plans/archive/org-standards-harmonization-plan.md
   - commercial-lch/plans/mvp-quote-generation-plan.md
 
-FRONTMATTER SCHEMA v2 (ratified 2026-06-20). Eight keys are REQUIRED on every
-plan; CI checks them. They exist to populate the GitHub project board.
+FRONTMATTER SCHEMA v2.1 (v2 ratified 2026-06-20; `effort` added 2026-06-28).
+Eight keys are REQUIRED + CI-checked (they populate the GitHub project board);
+`effort` is the v2.1 addition — required on new plans (CI enforcement + a
+backfill of existing plans are a tracked follow-up).
   status  — controlled enum (= board columns):
             proposed → active → in-progress → blocked → done
             terminal: superseded | abandoned
@@ -36,6 +38,9 @@ plan; CI checks them. They exist to populate the GitHub project board.
   start   — scheduled start date → board "Start" field (YYYY-MM-DD).
   target  — due / target date    → board "Target" field (YYYY-MM-DD).
   implementation — who executes (github handle or "TBD").
+  effort  — relative size estimate: XS · S · M · L · XL. Set at authoring,
+            refine as scope firms; populates board sizing. Scope it per track on
+            a multi-track plan (e.g. "Track A = L; Track B = XL").
 Then `language` (the bilingual contract). Blessed-optional keys you MAY add:
   rfc, parent, supersedes, superseded-by, related.
 Do NOT use `completed:` (use `status: done` + `updated:`) or `tracking-issue:`
@@ -52,6 +57,7 @@ issue: <Interval-Col/repo#NN  ·  or:  none — reason>
 start: <YYYY-MM-DD>
 target: <YYYY-MM-DD>
 implementation: <github-handle or "TBD">
+effort: <XS · S · M · L · XL  —  per-track if multi-track>
 language: English body; Spanish "Resumen" + decision/criteria glosses.
 ---
 

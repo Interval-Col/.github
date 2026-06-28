@@ -84,10 +84,12 @@ operator-profile registry as it matures.)*
 
 ### Required structure (in this order)
 
-1. Frontmatter — **schema v2, ratified 2026-06-20**. Eight keys are
-   **required on every plan** (CI-checked; they populate the GitHub project
-   board): `status` · `owner` · `created` · `updated` · `issue` · `start` ·
-   `target` · `implementation`. Then the `language` note.
+1. Frontmatter — **schema v2.1** (v2 ratified 2026-06-20; `effort` added
+   2026-06-28). Eight keys are **required + CI-checked** (they populate the
+   GitHub project board): `status` · `owner` · `created` · `updated` · `issue` ·
+   `start` · `target` · `implementation`; plus **`effort`** — relative size
+   `XS·S·M·L·XL` (v2.1: required on new plans; CI enforcement + backfill
+   pending). Then the `language` note.
    - `status` is a **controlled enum (= the board columns)**:
      `proposed → active → in-progress → blocked → done`; terminal:
      `superseded | abandoned`. Do **not** invent free-form statuses.
