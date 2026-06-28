@@ -3,10 +3,10 @@ status: proposed
 owner: gczuluaga
 created: 2026-06-28
 updated: 2026-06-28
-issue: none — filed on approval (board entry created in Phase 0)
-start: 2026-06-30
-target: 2026-08-29
-implementation: SKuger01
+issue: Interval-Col/.github#73
+start: 2026-06-28
+target: 2026-06-29
+implementation: gczuluaga
 language: English body; Spanish "Resumen" + decision/criteria glosses.
 rfc: rfcs/0008-pharos-design-system.md
 related: .github/plans/pharos-fe-spec-rollout-v2.md
