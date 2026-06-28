@@ -21,7 +21,7 @@ doc is the detailed reference.
 | Commit & PR title format | Conventional Commits, **enforced on both** |
 | Merge mode | **Merge commit** (everywhere) — PR-gated; no direct pushes to protected branches |
 | Auto-delete merged branches | **Yes** |
-| PR required for `main` | **Yes** — 1 reviewer + green CI |
+| PR required for `main` | **Yes** — green CI incl. the `main-only-from-develop` guard; **`enforce_admins` ON** (no bypass); reviewers **0** while solo / **1** with a 2nd reviewer |
 | PR required for `develop` | No — direct push allowed; CI still required |
 | Force-push on `main` / `develop` | **Never** (protected) |
 | Required CI on PR-to-`main` | `gitleaks` (the one universally-required context) + the repo's lint, unit-test and API-contract checks — **exact job/context names are per-repo** (illustratively `lint-frontend`/`test-backend`/`verify-api-contract`) — plus any repo-specific design-system gates. Docs-only repos require `gitleaks` only. |
@@ -194,41 +194,43 @@ ruleset model). Apply the rule to the named branch.
 | Setting | Value |
 |---|---|
 | Require a pull request before merging | ✅ **(the gate — the only way an arc reaches `main`; no direct pushes)** |
-| Required approvals | **1** |
+| Required approvals | **0** while the org is a solo gatekeeper (the CI gate below is the enforcement, not a human approval); **1** once a 2nd reviewer exists |
 | Dismiss stale pull-request approvals when new commits are pushed | ✅ |
 | Require review from Code Owners | ✅ |
 | Require status checks to pass before merging | ✅ |
-| Required status checks | **`gitleaks`** (secret scan — the one context required on every repo, even docs-only). Code repos additionally require their lint, unit-test and API-contract checks; **the job/context names are per-repo** and must be set to match that repo's actual CI (illustratively `lint-frontend`/`lint-backend`/`test-frontend`/`test-backend`/`verify-api-contract`), plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. |
+| Required status checks | **`gitleaks`** (secret scan — the one context required on every repo, even docs-only). Code repos additionally require their lint, unit-test and API-contract checks; **the job/context names are per-repo** and must be set to match that repo's actual CI (illustratively `lint-frontend`/`lint-backend`/`test-frontend`/`test-backend`/`verify-api-contract`), plus any repo-specific design-system gates (e.g. `block-mock-iam-in-deploy`). Code-less repos require only **`gitleaks`**. On every repo that has a `develop` branch, also require **`main-only-from-develop`** (the promotion guard — see below). |
 | Require branches to be up to date before merging | ✅ (anchors each arc to current `main`) |
 | Require conversation resolution before merging | ✅ |
 | Require linear history | ❌ (incompatible with merge commits — intentionally off; the PR-required gate above keeps history clean instead) |
 | Lock branch | ❌ |
-| Do not allow bypassing the above settings | ⚠️ — off today (escalation, see below) |
+| Do not allow bypassing the above settings (`enforce_admins`) | ✅ **ON** — the rules bind admins too; no `--admin` override. This is what makes the gate *enforced*, not advisory. |
 | Allow force pushes | ❌ (never) |
 | Allow deletions | ❌ |
 
-> **Solo-maintainer reality (today).** With a single Code Owner (`@gczuluaga`),
-> GitHub won't let an author approve their own PR — so the **Required approvals: 1**
-> + **Require review from Code Owners** rules above are unsatisfiable on the
-> gatekeeper's *own* PRs. That is why **"Do not allow bypassing" is off**: the
-> gatekeeper merges their own PRs via **admin override**
-> (`gh pr merge <n> --admin --merge`), while the 1-approval / Code-Owner gate still
-> binds any PR authored by a future second contributor. The escalation below
-> (bypass on; rules apply to admins too) lands once there's a second reviewer to
-> satisfy the gate without an override.
+> **Solo-maintainer reality.** With a single Code Owner (`@gczuluaga`), GitHub
+> won't let an author approve their own PR, so a **Required approvals: 1** rule
+> would be unsatisfiable on the gatekeeper's own PRs. The tempting fix — turn
+> `enforce_admins` *off* and merge via `--admin` override — also bypasses the CI
+> gate, which makes the escalator merely advisory (an admin can push anything to
+> `main`). So the standard instead sets **Required approvals: 0** and keeps
+> **`enforce_admins` ON**: the **CI checks become the gate** — `gitleaks` + the
+> `main-only-from-develop` guard must pass, and nobody (admin included) can bypass
+> them. When a second reviewer joins, bump approvals to **1** (the other person
+> satisfies it) and keep `enforce_admins` on. This is the only configuration that
+> *enforces* the escalator for a solo gatekeeper instead of relying on discipline.
 
 ### `main` — planned escalation
 
-When the team is ready, tighten to:
+`enforce_admins` (do-not-allow-bypassing) is **already standard** (see the table
+above) — it moved out of this section once the *Required approvals: 0*
+accommodation made it solo-compatible. The one remaining future tightening:
 
 | Setting | Value |
 |---|---|
 | Require signed commits | ✅ |
-| Do not allow bypassing the above settings | ✅ (rules apply to admins too) |
 
-These add setup friction (GPG/SSH signing per developer, no admin
-override on emergencies); the escalation lands when the team has the
-key-management workflow in place.
+This adds setup friction (GPG/SSH signing per developer); it lands when the team
+has the key-management workflow in place.
 
 ### `develop` — today
 
@@ -248,6 +250,48 @@ was used.
 
 No protection. Free-for-all on `feat/*`, `fix/*`, etc. — including
 force-push within your own feature branch.
+
+### Promotion guard — `main-only-from-develop`
+
+GitHub can't natively restrict a PR's *source* branch, so a tiny required check
+enforces the escalator: **a PR into `main` must come from `develop`.** Combined
+with `enforce_admins` on, this guarantees **`main ⊆ develop`** — nothing reaches
+`main` (→ prod) that wasn't on `develop` (→ deployed + tested on dev) first. Add
+it to every repo that has a `develop` branch and wire `main-only-from-develop`
+into `main`'s required status checks.
+
+```yaml
+# .github/workflows/guard-promotion.yml
+name: Promotion guard
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  main-only-from-develop:
+    name: main-only-from-develop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main PRs to originate from develop
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ "$HEAD_REF" != "develop" ]]; then
+            echo "::error::PR into 'main' must come from 'develop' (got '$HEAD_REF'). Promote via develop → main; never merge a feature branch straight to main."
+            exit 1
+          fi
+          echo "✓ main PR originates from develop."
+```
+
+> **The check only becomes selectable as "required" after it has run once** — open
+> the first `develop → main` promote PR, let the guard run (it passes, since the
+> head *is* `develop`), then add `main-only-from-develop` to `main`'s required
+> checks. Reference implementation: `Interval-Col/nucleus-db`
+> (`.github/workflows/guard-promotion.yml` + `docs/PROMOTION.md`).
+
+Repos **without** a `develop` branch (docs-only) skip the guard — they have no
+escalator; their rails are `enforce_admins` + `gitleaks` + PR-required.
 
 ---
 
@@ -281,6 +325,32 @@ Every repo uses GitHub Actions. Two workflow files per repo:
   prod deploy approval. The PR review is the human gate.
 - If you need a deploy without a code change (env-var rotation,
   re-pull a tag), use `workflow_dispatch` with `action: deploy-only`.
+
+### Concurrency — collapse the queue, never pile up
+
+Every workflow sets a `concurrency` group so superseded runs don't stack on the
+self-hosted runners. A pile-up of `develop` deploys waiting on one busy runner
+can starve (and has OOM-ed) the fleet — concurrency makes the queue self-collapse
+to the latest instead.
+
+- **Deploy (`ci-cd.yml`)** — one run per branch; pending runs collapse to the
+  newest; a *running* deploy is **never** interrupted (no half-deploys):
+  ```yaml
+  concurrency:
+    group: deploy-${{ github.ref }}
+    cancel-in-progress: false   # let the live deploy finish; collapse the pending queue
+  ```
+- **PR gate (`ci.yml`)** — cancel superseded runs for the same PR/branch (saves
+  runner time; safe to interrupt a build):
+  ```yaml
+  concurrency:
+    group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+    cancel-in-progress: true
+  ```
+
+`cancel-in-progress: false` on deploys is deliberate: GitHub still collapses
+multiple *pending* runs to the newest while the in-flight one finishes — you get
+the de-dup without ever interrupting a deploy mid-rollout.
 
 ### Deploying over a remote daemon (`DOCKER_HOST=ssh`) — gotchas
 
