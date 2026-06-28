@@ -1,0 +1,20 @@
+/* =============================================================================
+ * pharos-icons.css — the Pháros <Icon> mechanism, registry-owned + synced.
+ *
+ * The <Icon> wrapper (app/components/ui/icon/Icon.vue) builds @iconify/tailwind
+ * `icon-[prefix--name]` classes at RUNTIME, which Tailwind's source scanner can't
+ * see — so the curated registry (app/components/ui/icon/icons.ts) is force-
+ * generated here via `@source inline(...)`. This file IS the safelist, and it is
+ * kept IN SYNC with icons.ts: an id added there must be added below, or it
+ * renders blank. Lucide is the house set; Material Symbols (outline) covers the
+ * clinical glyphs Lucide lacks.
+ *
+ * Adopting app: add ONE line to your app/assets/css/main.css —
+ *     @import "./pharos-icons.css";
+ * and install the per-collection deps (check-fe-bloat-safe; NOT @iconify/json):
+ *     @iconify-json/lucide  @iconify-json/material-symbols  @iconify/tailwind
+ * Distributed by sync-pharos-registry.sh (registry/app/** → app/**).
+ * ========================================================================== */
+@plugin "./iconify-tw-plugin.cjs";
+@source inline("icon-[lucide--{search,check,x,plus,pencil,trash-2,user,users,calendar,clock,phone,mail,settings,chevron-down,chevron-right,chevrons-up-down,arrow-left,filter,download,upload,printer,info,triangle-alert,circle-check,circle-x,circle-alert,refresh-cw,eye,file-text,house,log-out,menu,loader-circle,sliders-horizontal,ambulance,anchor,undo,arrow-right,ban,bell,building,calendar-check,calendar-days,calendar-plus,calendar-arrow-up,calendar-x,mouse-pointer-click,clock-plus,copy,door-open,ellipsis-vertical,ellipsis,grid-3x3,lock-open,rotate-cw,play,table,variable,wand,waves,dollar-sign,map-pin,moon,sun,user-round,users-round,panel-left,clipboard-list,banknote,radar,hourglass,alarm-clock-off,app-window}]");
+@source inline("icon-[material-symbols--{patient-list-outline,stethoscope-outline,labs-outline,vaccines-outline,syringe-outline,medical-services-outline,prescriptions-outline,bloodtype-outline,monitor-heart-outline,clinical-notes-outline,emergency-outline,glucose-outline,event-busy-outline,receipt-outline,cardiology-outline,respiratory-rate-outline,science-outline,apps,manage-accounts-outline,sort}]");
