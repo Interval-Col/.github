@@ -5,7 +5,7 @@ owner: SKuger01
 implementation: SKuger01
 language: English body; Spanish "Resumen".
 builds-on: plans/branching-policy-rollout.md (baseline) + issue #42
-tracking-issue: TBD (filed alongside this plan)
+tracking-issue: https://github.com/Interval-Col/.github/issues/69
 ---
 
 # Escalator enforcement rollout — `feature → develop → main`, made binding
