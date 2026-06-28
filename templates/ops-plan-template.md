@@ -10,14 +10,14 @@ WHAT THIS TEMPLATE DROPS vs the full plan-template: the canonical preamble trio
 junior, Spanish-native team; ops plans are run by the lead or a Sonnet agent,
 so they are dead weight here. Everything else still applies.
 
-STILL REQUIRED: the frontmatter schema v2 (eight keys), the bilingual title,
+STILL REQUIRED: the frontmatter schema v2.1 (eight keys + `effort`), the bilingual title,
 the top-of-plan Spanish Resumen, the per-phase Spanish Resumen with a
 one-line-per-task list, ✅ Done-when on every phase, 🛑 escalation on choices an
 agent must not make, and 🚦 Checkpoints on real gates. Keep Steps
 self-contained so `claude-sonnet-4-6` can execute without Opus-level judgment.
 
-FRONTMATTER SCHEMA v2 — see plan-template.md / plan-craft.agent.md. The eight
-required keys populate the GitHub project board. `status` enum (= board
+FRONTMATTER SCHEMA v2.1 — see plan-template.md / plan-craft.agent.md. The eight
+required keys + `effort` (XS·S·M·L·XL) populate the GitHub project board. `status` enum (= board
 columns): proposed → active → in-progress → blocked → done; terminal:
 superseded | abandoned. `issue` is the board item + entry point — every plan
 gets one unless `issue: none — <reason>`.
@@ -33,6 +33,7 @@ issue: <Interval-Col/operations#NN  ·  or:  none — reason>
 start: <YYYY-MM-DD>
 target: <YYYY-MM-DD>
 implementation: <github-handle or "TBD">
+effort: <XS · S · M · L · XL  —  per-track if multi-track>
 model: claude-sonnet-4-6
 sources: [<target-repo>, <target-repo-2>]
 language: English body; Spanish "Resumen" + decision/criteria glosses.
