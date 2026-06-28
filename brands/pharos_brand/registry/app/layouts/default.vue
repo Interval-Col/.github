@@ -57,7 +57,8 @@ import SystemOcean from '~/components/SystemOcean.vue'
 import SystemNotifications from '~/components/SystemNotifications.vue'
 import MakerCredit from '~/components/MakerCredit.vue'
 
-import { isNavSubGroup, menu } from '~/navigation/menu'
+import { isNavSubGroup, menu as authoredMenu } from '~/navigation/menu'
+import * as navModule from '~/navigation/menu'
 import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
 
 // ── App lockup props (the app sets these in app.vue via <NuxtLayout> or here) ──
@@ -79,6 +80,24 @@ withDefaults(defineProps<{
 const route = useRoute()
 const isSidebarOpen = ref(true)
 
+// ── Optional release projection (opt-in; app-AGNOSTIC) ────────────────────────
+// An app MAY export `filterMenuForRelease(menu, prod)` from ~/navigation/menu to
+// hide unreleased routes when `public.showProduction` is truthy (e.g. a prod cut
+// that ships only released modules while dev shows the full tree). Apps that DON'T
+// export it — the default — get the authored menu unchanged. Projecting HERE, in
+// the one place that walks the nav, gates the sidebar + breadcrumb + ⌘K at once.
+// Both reads are cast (optional export / optional config key) so the shell stays
+// non-breaking for apps that use neither.
+const config = useRuntimeConfig()
+const projectForRelease = (navModule as Record<string, unknown>).filterMenuForRelease as
+  | ((m: typeof authoredMenu, prod: boolean) => typeof authoredMenu)
+  | undefined
+const menu = computed(() =>
+  projectForRelease
+    ? projectForRelease(authoredMenu, Boolean((config.public as Record<string, unknown>).showProduction))
+    : authoredMenu,
+)
+
 // ── Theme (self-contained, single source of truth) ───────────────────────────
 const themeMode = ref<'light' | 'dark'>('light')
 function toggleTheme() {
@@ -92,7 +111,7 @@ function toggleTheme() {
 // All groups start collapsed; when the rail itself collapses to icon-only, every
 // group resets to closed so the next open gives a clean tree.
 const groupOpenStates = ref<Record<string, boolean>>(
-  Object.fromEntries(menu.map(g => [g.label, false])),
+  Object.fromEntries(menu.value.map(g => [g.label, false])),
 )
 watch(isSidebarOpen, (open) => {
   if (!open) {
@@ -120,7 +139,7 @@ function resolveIcon(icon?: Component | string): Component | null {
 type Ancestry = { group: NavGroup; subGroup?: NavItem & { items: NavLeaf[] }; leaf: NavLeaf }
 
 function findAncestry(path: string): Ancestry | null {
-  for (const group of menu) {
+  for (const group of menu.value) {
     for (const entry of group.items) {
       if (isNavSubGroup(entry)) {
         for (const leaf of entry.items) {
