@@ -75,8 +75,8 @@ This plan closes RFC 0008's own deferred Phase-1 follow-up — **the shared Phá
 
 | Layer | Where | Owns |
 |---|---|---|
-| **Decision** | `rfcs/0008-pharos-design-system.md` (amendment block) | *that* the 7 primitives are the Phase-1 library; each primitive's API intent; that composables are now a sanctioned registry artifact class |
-| **Implementation + distribution** | `.github/brands/pharos_brand/registry/` | the actual SFCs (`registry/app/components/(ui/)`) + a **new** `registry/app/composables/`; surface docs (`registry/surfaces/*.md`); the new gate scripts (`registry/scripts/`) |
+| **Decision** | `rfcs/0008-pharos-design-system.md` (amendment block) | *that* the 7 primitives are the Phase-1 library; each primitive's API intent; that the registry's existing composables convention (precedent: `useHealthBeacon`) covers the new shared composables |
+| **Implementation + distribution** | `.github/brands/pharos_brand/registry/` | the actual SFCs (`registry/app/components/(ui/)`) + the established `registry/app/composables/` (already shipping `useHealthBeacon`); surface docs (`registry/surfaces/*.md`); the new gate scripts (`registry/scripts/`) |
 | **Execution** | this plan (`.github/plans/`) | the rollout. `admission-patient/plans/` gets only a pointer + a Track entry — it is a *consumer*, not the owner of the standard |
 
 ## Reuse, don't rebuild — the infra is already here
@@ -84,7 +84,7 @@ This plan closes RFC 0008's own deferred Phase-1 follow-up — **the shared Phá
 The v2 rollout proved all of this in production. This plan **adds to it**, it does not fork it:
 
 - **The registry** — single source of truth; the component library is its own named open item (RFC 0008 §5). Do **not** create a new home.
-- **`sync-pharos-registry.sh`** — copy-in distributor. Its `find registry/app -type f` mirror (§4b) is path-agnostic, so new SFCs **and** composables distribute with **zero new tooling**. (Caveat: `registry/app/composables/` has never been synced — Phase 2 verifies it with `--dry-run`.)
+- **`sync-pharos-registry.sh`** — copy-in distributor. Its `find registry/app -type f` mirror (§4b) is path-agnostic, so new SFCs **and** composables distribute with **zero new tooling**. (Proven: `registry/app/composables/useHealthBeacon.ts` already syncs into all three apps and is live in `SystemBeacon.vue` — the composables path is established, not theoretical.)
 - **The 8-gate `pharos-lint-check`** (eslint + no-scoped-pages / no-raw-html / no-hex / palette / token-drift / contrast / font-allowlist / **fe-bloat** — the last merged via #71) — new primitives add **one new `check-*.mjs` each** to this synced chain. No parallel enforcer.
 - **The escalator** (main-only-from-develop + required-check-blocks-push) — a new gate inherits binding force automatically once it is in the chain.
 - **The design-studio playground** + `buildSpec`/`regen-spec` → `registry/spec/*.md` + `check-spec-drift` — the co-creation + drift-tracking surface.
@@ -136,21 +136,21 @@ Inherits RFC 0008's locked governance (Decisions 2026-06-17): **@gczuluaga = gat
 
 > **Resumen (ES) — Fase 0: Constituir la biblioteca + construir el puente.**
 >
-> Ratificamos que las 7 primitivas son la biblioteca Phase-1, bendecimos los composables como nuevo tipo de artefacto del registro, y construimos lo único que falta: el script que **promueve** un componente del playground al registro.
+> Ratificamos que las 7 primitivas son la biblioteca Phase-1 (los composables compartidos siguen el patrón ya establecido en el registro, `useHealthBeacon`), y construimos lo único que falta: el script que **promueve** un componente del playground al registro.
 >
 > En orden, las tareas:
 >
 > 1. **0.1** — Escribir el bloque de enmienda en la RFC 0008 (decisión + contrato de API por primitiva).
-> 2. **0.2** — Bendecir `registry/app/composables/` como artefacto sincronizado.
+> 2. **0.2** — Registrar en la enmienda que los composables compartidos (`useFlow`, `useAsyncState`) extienden el patrón ya vivo (`useHealthBeacon`).
 > 3. **0.3** — Construir y probar el script `promote-to-registry` (design-studio → registro).
 > 4. **0.4** — Crear stubs de intención de diseño por primitiva en `registry/surfaces/`.
 > 5. **0.5** — Abrir el issue de tablero para este plan.
 >
 > Decisión humana: el alcance de automatización del promote-script (ya decidido "construirlo primero"; confirmar si es manual-asistido o totalmente automático).
 
-- [ ] **0.1** — Author the **RFC 0008 amendment block** `Decisions resolved (2026-06-XX): shared component library`, mirroring the existing dated blocks (e.g. 2026-06-18) and the `useMenu()` amendment. It records: (a) the 7 primitives are ratified as the Phase-1 component library; (b) each primitive's **one-paragraph API-intent contract** (props/emits/slots at the level of intent, not code); (c) that `registry/app/composables/` is a **sanctioned, synced artifact class** (precedent-setting — the registry has only ever shipped CSS + SFCs + gates); (d) the icon standard (Decisions 4–5). Update RFC 0008 §5 / Phase 1 to mark the open item as in-progress.
+- [ ] **0.1** — Author the **RFC 0008 amendment block** `Decisions resolved (2026-06-XX): shared component library`, mirroring the existing dated blocks (e.g. 2026-06-18) and the `useMenu()` amendment. It records: (a) the 7 primitives are ratified as the Phase-1 component library; (b) each primitive's **one-paragraph API-intent contract** (props/emits/slots at the level of intent, not code); (c) that the shared **composables** (`useFlow`, `useAsyncState`) join the registry's **existing** composables convention (precedent: `useHealthBeacon` — already synced + live in all three apps); (d) the icon standard (Decisions 4–5). Update RFC 0008 §5 / Phase 1 to mark the open item as in-progress.
   - **Why:** the component library is RFC 0008's *own* named open item — this closes it, it does not open a new RFC. The amendment is the durable decision record the registry implements.
-- [ ] **0.2** — In the amendment, explicitly bless `registry/app/composables/` and confirm `sync-pharos-registry.sh` is expected to mirror it (it works mechanically — `find registry/app` is path-agnostic — but has never been exercised; Phase 2 proves it).
+- [ ] **0.2** — In the amendment, record that the shared composables (`useFlow`, `useAsyncState`) extend the registry's **already-live** composables convention — `registry/app/composables/useHealthBeacon.ts` is synced into all three apps and used in `SystemBeacon.vue`, so the mechanism is proven; no new artifact class to sanction.
 - [ ] **0.3** — Build the **`promote-to-registry` script** (the one missing piece of infra). Today `design-studio` only *consumes* the registry (copy-in) and exports `spec/*.md` via `regen-spec`; there is **no** mechanism to push a composed SFC/composable from the playground into `registry/app/`. The script lifts a named primitive from `design-studio/app/{components,composables}/**` into `registry/app/**` at the correct path, normalizing imports. Dry-run first; @gczuluaga gates the registry PR it produces.
   - **Why:** without it, primitives get hand-copied inconsistently and drift from their playground source — the exact incoherence this plan exists to kill.
 - [ ] **0.4** — Create per-primitive **design-intent stubs** in `registry/surfaces/` using the `finanzas.md` template (audience → component inventory with Props + Vue blocks → domain patterns → target paths → "ported from"). One stub per primitive; they get filled as each lands.
@@ -207,25 +207,25 @@ Inherits RFC 0008's locked governance (Decisions 2026-06-17): **@gczuluaga = gat
 
 ---
 
-## Phase 2 — Flow: useFlow (the first registry composable)
+## Phase 2 — Flow: useFlow (back-stack + dialog-state composable)
 
 > **Resumen (ES) — Fase 2: Flujo y navegación-hacia-atrás.**
 >
-> Generalizamos el `useProcessState` de admission-patient a un `useFlow` reutilizable — y como es el **primer composable** del registro, probamos explícitamente que la sincronización de `registry/app/composables/` funciona.
+> Generalizamos el `useProcessState` de admission-patient a un `useFlow` reutilizable, siguiendo el patrón de composables ya establecido en el registro (`useHealthBeacon`).
 >
 > En orden:
 >
 > 1. **2.1** — Prototipar `useFlow` (back-stack arbitrario + estado de diálogo) desde `useProcessState`.
 > 2. **2.2** — Aterrizar `registry/app/composables/useFlow.ts` + su surface doc.
-> 3. **2.3** — Verificar el camino de sync de composables con `--dry-run` (nunca antes ejercido).
+> 3. **2.3** — Sanity-check con `--dry-run` que `useFlow` se sincroniza (el camino de composables ya está probado con `useHealthBeacon`).
 > 4. **2.4** — Decidir SSR-safety + persistencia (`skipHydrate`).
 >
 > Decisión humana: la migración del estado persistido en `localStorage` de órdenes en vuelo.
 
 - [ ] **2.1** — Prototype **useFlow** in design-studio: arbitrary back-stack + dialog-state, **steps as config** (labels + status), exposing the same `goNext`/`goBack`/`resetSteps`/`setStepStatus`/persist contract as `useProcessState` but **not hardcoded** to Paciente/Orden. Standardize dialog open-state on `v-model:open` (retire the `ref(boolean)` / `ref(object-of-flags)` variants).
-- [ ] **2.2** — Land **`registry/app/composables/useFlow.ts`** (the first registry composable) + its surface doc. Decide orders/create's identity in the showcase: modal-in-flow OR full page with a visible *Volver* — not a modal-on-a-route dead-end.
-- [ ] **2.3** — **Explicitly verify** `sync-pharos-registry.sh --dry-run` mirrors `registry/app/composables/**` correctly — this path has **never** been exercised. If it misses, fix the sync (registry-side) before relying on it.
-  - **Why:** composables are a new artifact class for the registry (CSS + SFCs + gates only, until now). A silent sync miss here would break every downstream composable; prove it on the first one.
+- [ ] **2.2** — Land **`registry/app/composables/useFlow.ts`** (alongside the existing `useHealthBeacon`) + its surface doc. Decide orders/create's identity in the showcase: modal-in-flow OR full page with a visible *Volver* — not a modal-on-a-route dead-end.
+- [ ] **2.3** — Sanity-check `sync-pharos-registry.sh --dry-run` mirrors `useFlow.ts` into a consumer at the right path. (The composables sync path is already proven by `useHealthBeacon` — this is a cheap regression check, not a discovery.)
+  - **Why:** the registry already ships + syncs a composable, so distribution is settled; the only real risk in this phase is the **API shape** of the generalized `useFlow`, not whether it reaches the apps.
 - [ ] **2.4** — Decide SSR-safety + persistence (`skipHydrate`) per `frontend-standards`; ensure a mid-flow reload keeps the operator on the right step.
 
 🛑 **HUMAN DECISION — in-flight persisted-state migration.** `useProcessState` persists order steps to `localStorage` under specific keys. Generalizing it risks breaking admission-patient's mid-order reload behavior if the keys/shape change. Confirm the migration handling (key remap vs one-time reset) before adoption in Phase 4. *(ES: confirmar cómo migrar el estado persistido de órdenes en vuelo.)*
@@ -235,7 +235,7 @@ Inherits RFC 0008's locked governance (Decisions 2026-06-17): **@gczuluaga = gat
 - `sync --dry-run` is shown mirroring a file under `registry/app/composables/` into a consumer. *(ES: el sync copia composables — probado.)*
 - The design-studio showcase drives at least the Recepción intake back-nav with `useFlow` (steps passed as config), verified in the browser. *(ES: useFlow maneja la navegación de Recepción en el playground.)*
 
-🚦 **Checkpoint 2.** Show @gczuluaga: the composables sync `--dry-run` output + the flow showcase with a working back path. Question: why must the composables sync path be proven on the *first* composable rather than assumed? *(ES: ¿por qué probar el sync de composables en el primero?)*
+🚦 **Checkpoint 2.** Show @gczuluaga: the `useFlow` showcase with a working back path + the `--dry-run` confirming it syncs. Question: what does the generalized `useFlow` (steps-as-config) add over a hand-rolled flow, and how does its API avoid the over-coupling that locked `useProcessState` to Paciente/Orden? *(ES: ¿qué aporta `useFlow` y cómo evita el acoplamiento de `useProcessState`?)*
 
 ---
 
@@ -253,7 +253,7 @@ Inherits RFC 0008's locked governance (Decisions 2026-06-17): **@gczuluaga = gat
 >
 > Decisión humana: ¿la primitiva de fetch exige codegen o solo el wrapper? · ¿FormField atado a vee-validate o agnóstico?
 
-- [ ] **3.1** — Land **`registry/app/composables/useAsyncState.ts`** (the second registry composable): `useAsyncState(fetcher, {default})` returning `{data, status, loading, error, isEmpty, refresh}`, honoring the `frontend-standards` `useFetch` contract (camelCase FE / snake_case BE, same-origin relative base, **AbortController + stale-response guard**). Source the wrapper + error-normalizer from finance-lch `apiFetch`; the component-facing `loading/error/items` shape from lab-qc `useApi()`. Document the rule: `useAsyncData` for idempotent reads, the wrapper for mutations; **empty is modeled explicitly, never conflated with error.**
+- [ ] **3.1** — Land **`registry/app/composables/useAsyncState.ts`** (alongside `useHealthBeacon` + `useFlow`): `useAsyncState(fetcher, {default})` returning `{data, status, loading, error, isEmpty, refresh}`, honoring the `frontend-standards` `useFetch` contract (camelCase FE / snake_case BE, same-origin relative base, **AbortController + stale-response guard**). Source the wrapper + error-normalizer from finance-lch `apiFetch`; the component-facing `loading/error/items` shape from lab-qc `useApi()`. Document the rule: `useAsyncData` for idempotent reads, the wrapper for mutations; **empty is modeled explicitly, never conflated with error.**
 - [ ] **3.2** — Build **`FormField.vue`** (+ a `FormItem` context): label + control slot + inline error, on the admission-patient validation convention (`vee-validate` + `@vee-validate/zod` + `toTypedSchema`). Land in the registry. First refactor target (Phase 4) = admission-patient `PatientForm`/`PhysicianForm` (removes ~58 manual `errors[…]` blocks in `PatientForm` alone).
 - [ ] **3.3** — Add optional adoption gates in WARN (e.g. `check-formfield-usage`); update `registry/frontend-standards.md` "Naming de componentes" from *"Fase-1 follow-up, built in the playground"* to **"shipped — these primitives live in `registry/app/**`."**
 
@@ -324,7 +324,7 @@ Inherits RFC 0008's locked governance (Decisions 2026-06-17): **@gczuluaga = gat
 
 - **Multi-source integration coherence** → the form primitive (admission-patient zod idiom) and the fetch primitive (finance-lch `apiFetch` idiom) come from different apps and could feel like two grafts. **Mitigation:** reconcile them in design-studio in Phase 3 so a validated form submitting through the standard wrapper is one showcase, not two.
 - **Riskiest-first integrator** → admission-patient is PHI-adjacent, socket-driven, with a 1341-LOC Reception; primitive churn lands there first. **Mitigation:** sequence the copy-in behind admission-patient's existing design-gate + E2E smoke; verify in **dev** before any prod promote (Phase 4 / Checkpoint 4).
-- **Composables sync never exercised** → `registry/app/composables/` could silently fail to mirror. **Mitigation:** Phase 2 proves it with `--dry-run` on the first composable before anything depends on it.
+- **Composable API over-coupling** → `useFlow`/`useAsyncState`, generalized from one app's call-sites, could grow awkward APIs (as `useProcessState` did, hardcoded to Paciente/Orden). **Mitigation:** ground each in admission-patient's real call-sites first (it's the first consumer), then lift; the synced-composable *mechanism* is already proven by `useHealthBeacon`, so only the API shape is at risk, not distribution.
 - **Copy-in blast radius** → a primitive defect propagates to every app on next sync. **Mitigation:** admission-patient-dev as canary; version/changelog discipline on registry PRs; never flip a gate to hard-fail before the canary is green.
 - **WARN→hard-fail timing** → flipping too early red-walls every repo. **Mitigation:** flip only after the lead consumer conforms (Phase 4), the v2 color-gate posture.
 - **Over-generalization** → `SearchPatient` is patient-specific and `useProcessState` is a 2-step wizard; forcing fully generic APIs up front risks an API nobody uses well. **Mitigation:** ground each generalization in admission-patient's real call-sites (it's the first consumer), then lift.
