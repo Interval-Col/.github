@@ -56,6 +56,23 @@ export type NavMenu = NavGroup[]
 export const isNavSubGroup = (i: NavItem): i is NavSubGroup =>
   'items' in i && !('to' in i)
 
+// ── OPTIONAL: release projection ──────────────────────────────────────────────
+// If your app ships a reduced nav in production (a "minimal prod" cut) while dev
+// shows the full tree, export a `filterMenuForRelease(menu, prod)` here. The
+// shell auto-detects it and applies it (gated by `public.showProduction`) across
+// the sidebar, breadcrumb, and ⌘K at once. Omit it entirely and the shell uses
+// the authored `menu` unchanged. Example — keep only an allowlist of `to` paths
+// when prod is true:
+//
+//   const RELEASED = new Set<string>(['/datos/catalogo', '/admin/users'])
+//   export function filterMenuForRelease(source: NavMenu, prod: boolean): NavMenu {
+//     if (!prod) return source
+//     return source
+//       .map(g => ({ ...g, items: g.items.filter(i =>
+//         isNavSubGroup(i) ? true : RELEASED.has(i.to)) }))
+//       .filter(g => g.items.length)
+//   }
+
 // ── Sample tree (replace in your app) ─────────────────────────────────────
 // Demonstrates: a group with a sub-group + a direct leaf (Control de calidad),
 // a group with only a sub-group (Experimentos), and flat groups (Datos, Admin).
