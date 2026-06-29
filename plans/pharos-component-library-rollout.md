@@ -1,8 +1,9 @@
 ---
-status: proposed
+status: in-progress
 owner: gczuluaga
 created: 2026-06-28
 updated: 2026-06-28
+effort: XL
 issue: Interval-Col/.github#73
 start: 2026-06-28
 target: 2026-06-29
@@ -11,6 +12,16 @@ language: English body; Spanish "Resumen" + decision/criteria glosses.
 rfc: rfcs/0008-pharos-design-system.md
 related: .github/plans/pharos-fe-spec-rollout-v2.md
 ---
+
+> **Status (2026-06-28).** Phases 0–3 **done**: the 8 primitives + 2 composables were
+> prototyped in `design-studio` and the library is **promoted to the registry** (PR #77,
+> merged). The icon registry was expanded to ~94 keys so adoption won't blank admission's
+> glyphs (icon cross-check). **Next = Phase 4: adoption in admission-patient** — its own
+> executable plan at `admission-patient/plans/pharos-component-adoption-plan.md` (tracking
+> #80), which ends by fanning out per-app adoption plans for the other 4 consumers
+> (lis/crm/erp/biuman). The co-creation session (ratify the parked API decisions) runs
+> alongside. *(Scope note: the set grew from 7 to **8** primitives — DatePicker was added
+> for the prereception cédula-scan birthdate flow.)*
 
 # Pháros component library — shared FE primitives · Biblioteca de componentes Pháros
 
