@@ -126,9 +126,30 @@ fi
 
 # ── 4b. Component tree — beacon (+ shell / lockup / ui primitives as they land) ─
 # Mirrors registry/app/** into the consuming app's app/** at the same paths.
+#
+# EXCEPTION — app-owned PRESETS. The EntityLookup presets (PatientLookup /
+# PhysicianLookup) are SCAFFOLDS: each consuming app wires their `searchFn` to its
+# OWN endpoints, so they MUST diverge from the registry's mock versions. The
+# registry copy is a starting point an app copies ONCE; re-syncing it would CLOBBER
+# the app's real-endpoint wiring. So the sync SKIPS them — they are app-owned after
+# first adoption. (The primitives they build on — EntityLookup, ScopedSearchInput —
+# ARE synced verbatim.) If a preset's reusable shell needs changing, make it
+# prop-driven in the registry instead.
+SYNC_SKIP_RELPATHS=(
+  "components/ui/entity-lookup/PatientLookup.vue"
+  "components/ui/entity-lookup/PhysicianLookup.vue"
+)
 if [[ -d "$REGISTRY_DIR/app" ]]; then
   while IFS= read -r src; do
     rel="${src#"$REGISTRY_DIR/app/"}"
+    skip=false
+    for skip_rel in "${SYNC_SKIP_RELPATHS[@]}"; do
+      [[ "$rel" == "$skip_rel" ]] && { skip=true; break; }
+    done
+    if [[ "$skip" == "true" ]]; then
+      echo "skip (app-owned preset): $rel"
+      continue
+    fi
     copy_file "$src" "$APP_FE_DIR/app/$rel"
   done < <(find "$REGISTRY_DIR/app" -type f)
 fi

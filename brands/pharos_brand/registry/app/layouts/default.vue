@@ -419,7 +419,12 @@ onMounted(() => {
              The notifications bell defaults to the shell's SystemNotifications (empty/quiet);
              an app fills #notifications to pass its own wired bell (:items + @view-all). -->
         <div class="ml-auto flex items-center gap-3">
-          <CommandPalette class="hidden md:block" :nav="menu" @toggle-theme="toggleTheme" />
+          <!-- Wrap in a div: CommandPalette renders a fragment root, so a `class` on
+               the component can't auto-inherit (Vue warns). The wrapper carries the
+               responsive hide-on-mobile instead. -->
+          <div class="hidden md:block">
+            <CommandPalette :nav="menu" @toggle-theme="toggleTheme" />
+          </div>
           <slot name="topbar-end" />
           <SystemBeacon />
           <slot name="notifications"><SystemNotifications /></slot>
