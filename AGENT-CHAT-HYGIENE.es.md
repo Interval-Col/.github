@@ -4,7 +4,7 @@
 
 > 🇬🇧 **Fuente en inglés:** [`AGENT-CHAT-HYGIENE.md`](AGENT-CHAT-HYGIENE.md). Los bloques de código se mantienen idénticos al inglés (una sola fuente de verdad para los comandos).
 
-**TL;DR (valores por defecto seguros):** mantén el conocimiento duradero en el repo o en la memoria — nunca _solo_ en el chat. Luego: **un chat por tarea**; **`/compact`** para terminar la tarea actual; **`/clear`** (o un chat nuevo) para cambiar de tarea o empezar un nuevo día; **consérvalo** ante la duda (los transcripts se borran solos a los 30 días); **borra** solo un transcript verdaderamente agotado. Todo lo de abajo es el _porqué_.
+**TL;DR (valores por defecto seguros):** mantén el conocimiento duradero en el repo o en la memoria — nunca _solo_ en el chat. Luego: **un chat por tarea**; **`/compact`** para terminar la tarea actual; **`/clear`** (o un chat nuevo) para cambiar de tarea o empezar un nuevo día; **consérvalo** ante la duda (los transcripts se borran solos a los 30 días); **borra** solo un transcript verdaderamente agotado; cuando **abras varios** sub-agentes, usa el modelo más barato que sirva y prefiere un agente fresco sobre un `fork` (§11). Todo lo de abajo es el _porqué_.
 
 ---
 
@@ -214,7 +214,35 @@ Si no quieres el recordatorio, no hagas nada — nada de esto es obligatorio.
 
 ---
 
-## 11. Hoja de referencia rápida
+## 11. Cuando abres varios agentes — gasto multi-agente
+
+Todo lo de arriba es sobre un _solo_ chat. En el momento en que empiezas a abrir sub-agentes — llamadas `Agent`, `fork`s, o etapas de `Workflow` — entra una segunda curva de costo, y escala más rápido de lo que uno espera. Medimos nuestro propio uso (auditoría interna, jun-2026): casi todo el gasto en sub-agentes venía de tres cosas evitables. No se trata de tacañería — un fan-out más ajustado normalmente da _mejor_ trabajo: menos ruido en el contexto, agentes más enfocados.
+
+**La fórmula del costo:** gasto multi-agente = **modelo × contexto que carga cada agente × ancho del fan-out.** Casi todo sobrecosto es uno de esos tres mal calibrado, no "los agentes son caros" en general.
+
+**Tres ganancias para todos (aplícalas desde hoy):**
+
+1. **Usa el modelo más barato que haga el trabajo.** Haiku para lo mecánico (grep, listar, convertir formato); **Sonnet para el grueso** (buscar, leer, explorar, transformar, resumir); **Opus solo para razonamiento difícil** (arquitectura, depuración, el juicio o la síntesis final). Poner Opus en una búsqueda o en una revisión archivo-por-archivo cuesta ~5× sin ganar calidad — en nuestra auditoría fue la mayor fuga (~70% de la salida de sub-agentes era Opus, casi toda en pasos mecánicos).
+2. **Un chat enfocado por tarea — y prefiere un agente _fresco_ sobre un `fork`.** Un `fork` hereda _toda_ la conversación, así que re-paga el transcript completo en su primer turno (la trampa de §2, un nivel más abajo). Abre fresco cuando el agente no necesita todo el ida y vuelta.
+3. **Ajusta el ancho del fan-out a la tarea.** Tres exploradores que cubren el terreno valen más que diez. Y si ya delegaste una búsqueda, no la repitas tú en paralelo — se paga doble.
+
+**Si orquestas con Workflows (avanzado):**
+
+- **Revisión por ítem = Sonnet, no Opus.** "Sonnet construye cada archivo + Opus revisa cada archivo" _parece_ prudente, pero multiplica Opus por la cantidad de archivos. Deja Sonnet (o Haiku) en la revisión por ítem y reserva **un solo** Opus para la síntesis o el veredicto sobre todo el conjunto.
+- **Menos agentes, más gruesos.** Un agente que procesa 5 archivos amortiza el costo de "calentar" su contexto; cinco agentes de 1 archivo lo pagan 5 veces. Agrupa ítems por agente y mantén liviano el contexto de cada uno.
+- **`effort: 'low'`** en las etapas mecánicas; reserva el effort alto para verificar o sintetizar.
+- **Profundidad de verificación según el riesgo:** un paso para un chequeo rápido; el panel adversarial de 3–5 votos es para "audita esto a fondo", no para trabajo rutinario.
+
+**El gut-check de 4 preguntas antes de abrir un agente:**
+
+1. ¿De verdad necesito un agente, o lo resuelvo yo directo?
+2. ¿Fresco o `fork`? (fresco por defecto)
+3. ¿Cuál es el modelo más barato que sirve?
+4. ¿El ancho del fan-out está ajustado a la tarea?
+
+---
+
+## 12. Hoja de referencia rápida
 
 | Situación | Haz esto | ¿Destruye algo? |
 |---|---|---|
@@ -223,6 +251,7 @@ Si no quieres el recordatorio, no hagas nada — nada de esto es obligatorio.
 | Tarea lista, conocimiento externalizado (§4), sin valor de auditoría/onboarding, no la retomarás | **Borra** el `.jsonl` (usa el one-liner de §7; revisa primero) | Sí — lo quita del selector de resume |
 | Trabajo en curso, aún no externalizado, podrías retomarlo, o tiene valor de auditoría/PR/depuración/onboarding | **Consérvalo** (la auto-limpieza lo maneja a los 30 días) | — |
 | Quieres un empujón al final de la sesión hacia el comando de borrado | **Opta por el hook `SessionEnd` de §10** (settings personales) | No — solo imprime |
+| Abres sub-agentes o un fan-out de Workflow | **El modelo más barato que sirva** (Haiku/Sonnet para el grueso, Opus solo para verificar/sintetizar), **fresco sobre `fork`**, ancho ajustado a la tarea (§11) | — |
 
 **El hilo conductor:** pon el conocimiento duradero donde sobrevive (repo + memoria), mantén cada chat acotado a una tarea, y luego trata el transcript como barato. Compacta para terminar, limpia (`/clear`) para cambiar, conserva ante la duda, borra solo cuando esté verdaderamente agotado.
 

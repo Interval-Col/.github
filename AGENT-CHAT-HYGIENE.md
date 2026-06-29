@@ -4,7 +4,7 @@
 
 > 🇪🇸 **Versión en español:** [`AGENT-CHAT-HYGIENE.es.md`](AGENT-CHAT-HYGIENE.es.md). Code blocks are kept identical to the English (a single source of truth for the commands).
 
-**TL;DR (safe defaults):** keep durable knowledge in the repo or memory — never _only_ in the chat. Then: **one chat per task**; **`/compact`** to finish the current task; **`/clear`** (or a new chat) to switch tasks or start a new day; **keep** when in doubt (transcripts auto-delete after 30 days); **delete** only a truly-spent transcript. Everything below is the _why_.
+**TL;DR (safe defaults):** keep durable knowledge in the repo or memory — never _only_ in the chat. Then: **one chat per task**; **`/compact`** to finish the current task; **`/clear`** (or a new chat) to switch tasks or start a new day; **keep** when in doubt (transcripts auto-delete after 30 days); **delete** only a truly-spent transcript; when you **fan out** sub-agents, use the cheapest model that fits and prefer a fresh agent over a `fork` (§11). Everything below is the _why_.
 
 ---
 
@@ -214,7 +214,35 @@ If you don't want the reminder, do nothing — none of this is required.
 
 ---
 
-## 11. Decision cheat-sheet
+## 11. When you fan out — multi-agent & sub-agent spend
+
+Everything above is about a _single_ chat. The moment you start spawning sub-agents — `Agent` calls, `fork`s, or `Workflow` stages — a second cost curve kicks in, and it scales faster than people expect. We measured our own usage (internal audit, Jun 2026): the bulk of sub-agent spend came from three avoidable things. This isn't about being stingy — a leaner fan-out is usually _better_ work too: less noise in context, sharper agents.
+
+**The cost shape:** multi-agent spend = **model tier × context each agent carries × fan-out width.** Almost every overrun is one of those three mis-set, not "agents are expensive" in general.
+
+**Three wins anyone can apply today:**
+
+1. **Use the cheapest model that does the job.** Haiku for the mechanical (grep, list, format-convert); **Sonnet for the bulk** (search, read, explore, transform, summarize); **Opus only for hard reasoning** (architecture, debugging, the final judgment/synthesis). Putting Opus on a search or a per-file review costs ~5× for no quality gain — in our audit it was the single biggest leak (~70% of sub-agent output was Opus, mostly on mechanical passes).
+2. **One focused chat per task — and prefer a _fresh_ agent over a `fork`.** A `fork` inherits the _entire_ conversation, so it re-pays the whole transcript on its first turn (the §2 trap, one level down). Spawn fresh when the agent doesn't need the full back-and-forth.
+3. **Match fan-out width to the task.** Three explorers that cover the ground beat ten. And once you've delegated a search, don't also run it yourself in parallel — you pay twice.
+
+**If you orchestrate with Workflows (advanced):**
+
+- **Per-item review = Sonnet, not Opus.** "Sonnet builds each file + Opus reviews each file" _sounds_ careful but multiplies Opus by the file count. Keep Sonnet (or Haiku) on the per-item review and reserve **a single** Opus for the synthesis/verdict across the whole set.
+- **Fewer, coarser agents.** One agent handling 5 files amortizes the cost of priming its context; five one-file agents pay that priming 5×. Batch items per agent and keep each agent's context lean.
+- **`effort: 'low'`** on mechanical stages; save high effort for verify/synthesis.
+- **Verification depth scales with stakes:** one pass for a quick check; the 3–5-vote adversarial panel is for "audit this thoroughly," not routine work.
+
+**The 4-question gut-check before you spawn an agent:**
+
+1. Do I even need an agent, or can I just do it myself?
+2. Fresh or `fork`? (fresh by default)
+3. What's the cheapest model that works?
+4. Is the fan-out width matched to the task?
+
+---
+
+## 12. Decision cheat-sheet
 
 | Situation | Do this | Destroys anything? |
 |---|---|---|
@@ -223,6 +251,7 @@ If you don't want the reminder, do nothing — none of this is required.
 | Task done, knowledge externalized (§4), no audit/onboarding value, won't resume | **Delete** the `.jsonl` (use the §7 one-liner; review first) | Yes — removes it from resume picker |
 | Work in flight, not yet externalized, might resume, or has audit/PR/debug/onboarding value | **Keep** it (auto-cleanup handles it at 30 days) | — |
 | Want an end-of-session nudge toward the delete command | **Opt into the §10 `SessionEnd` hook** (personal settings) | No — it only prints |
+| Spawning sub-agents or a Workflow fan-out | **Cheapest model that fits** (Haiku/Sonnet for bulk, Opus only for verify/synthesis), **fresh over `fork`**, width matched to the task (§11) | — |
 
 **The through-line:** put durable knowledge where it survives (repo + memory), keep each chat scoped to one task, and then treat the transcript as cheap. Compact to finish, clear to switch, keep when in doubt, delete only when it's truly spent.
 
