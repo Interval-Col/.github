@@ -405,8 +405,10 @@ onMounted(() => {
                 </PopoverContent>
               </Popover>
 
-              <!-- Current page → bold, no dropdown. -->
-              <span v-else class="truncate font-semibold text-foreground" aria-current="page">
+              <!-- Current page → THE page title (breadcrumb-as-title): emphasized
+                   (larger + bold) so it reads as the page heading. Pages do NOT
+                   repeat it in a PageHeader (DRY). -->
+              <span v-else class="truncate text-lg font-semibold text-foreground" aria-current="page">
                 {{ seg.label }}
               </span>
             </li>
