@@ -1,3 +1,18 @@
+---
+status: in-progress
+owner: gczuluaga
+created: 2026-06-18
+updated: 2026-06-29
+issue: Interval-Col/.github#48
+start: TBD
+target: TBD
+implementation: crincon04
+effort: XL
+language: English body; Spanish "Resumen" + decision/criteria glosses.
+---
+
+# Pháros FE-spec rollout v2 — design system adoption across finance, admission, and commercial apps · Despliegue Pháros FE-spec v2 — adopción del sistema de diseño en finanzas, admisión y clientes
+
 # Pháros FE-spec rollout v2 — registry adoption across the 3 remaining apps
 
 > ⛔ **Supersedes** [`plans/archive/pharos-fe-spec-rollout.md`](archive/pharos-fe-spec-rollout.md) (v1, 2026-06-17).
