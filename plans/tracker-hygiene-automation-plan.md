@@ -1,7 +1,11 @@
 ---
 status: active
 created: 2026-06-01
-updated: 2026-06-15
+updated: 2026-06-29
+issue: none — board item pending (operations#38)
+start: TBD
+target: TBD
+effort: M
 owner: gczuluaga
 implementation: gczuluaga
 language: English body; Spanish "Resumen" + decision/criteria glosses.
