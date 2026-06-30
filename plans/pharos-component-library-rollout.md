@@ -8,6 +8,8 @@ issue: Interval-Col/.github#73
 start: 2026-06-28
 target: 2026-06-29
 implementation: gczuluaga
+model: claude-sonnet-4-6
+sources: [.github, design-studio, admission-patient, rfcs]
 language: English body; Spanish "Resumen" + decision/criteria glosses.
 rfc: rfcs/0008-pharos-design-system.md
 related: .github/plans/pharos-fe-spec-rollout-v2.md

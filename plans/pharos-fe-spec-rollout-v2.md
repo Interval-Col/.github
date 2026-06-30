@@ -1,4 +1,23 @@
-# Pháros FE-spec rollout v2 — registry adoption across the 3 remaining apps
+---
+status: in-progress
+owner: gczuluaga
+created: 2026-06-18
+updated: 2026-06-29
+issue: Interval-Col/.github#48
+start: TBD
+target: TBD
+implementation: crincon04
+effort: XL
+model: claude-sonnet-4-6
+sources: [admission-patient, finance-lch, commercial-lch]
+language: English body; Spanish "Resumen" + decision/criteria glosses.
+---
+
+# Pháros FE-spec rollout v2 — design system adoption across finance, admission, and commercial apps · Despliegue Pháros FE-spec v2 — adopción del sistema de diseño en finanzas, admisión y clientes
+
+> **Resumen (ES).** Este plan ejecuta el despliegue del sistema de diseño Pháros (RFC 0008, Fases 1–3) sobre las tres apps pendientes: *Admisiones* (Track A, XL, `skuger`), *Finanzas* (Track B, M, `egomez-lch`) y *Clientes* (Track C, M/High, `crincon04`). El punto de referencia es `pharos-lis «Laboratorio»`, ya adoptado y verde. El modelo de trabajo son cinco etapas (Adopt → Gate → Validate → Deploy → Sign-off) con una *Retro Gate* obligatoria y bloqueante entre pistas — German la fusiona, y solo ese acto desbloquea la siguiente. El Stage 0 actualiza el registro y los tokens antes de que cualquier pista arranque. Toda edición a archivos propios del registro se aplica vía el registro; nunca a mano.
+
+## Pháros FE-spec rollout v2 — registry adoption across the 3 remaining apps
 
 > ⛔ **Supersedes** [`plans/archive/pharos-fe-spec-rollout.md`](archive/pharos-fe-spec-rollout.md) (v1, 2026-06-17).
 > **Execution plan for [RFC 0008](https://github.com/Interval-Col/rfcs/blob/main/0008-pharos-design-system.md) (ACCEPTED 2026-06-17), Phases 1–3 — the FE rollout.**
@@ -13,6 +32,8 @@
 > (owner/architect decides — do **not** guess); everything else is **🔵 mechanical**. All repos
 > branch off **`develop`** (confirm PR base at open — `origin/HEAD→main` on finance/commercial is the
 > GitHub default).
+
+> **Markers** — ✅ **Done-when** (verifiable definition of done) · 🚦 **Checkpoint** (stop, show owner the named evidence) · 🛑 **HUMAN DECISION** (an agent must not pick this — escalate to owner) · 💡 **Heuristic** (a task-earned lesson) · 🔵 **Mechanical** (Sonnet-executable, no judgment required) · 🟠 **Escalate** (architect/owner decides, do not guess). *(ES: ✅ terminado-cuando · 🚦 punto de control · 🛑 decisión humana · 💡 heurística · 🔵 mecánico · 🟠 escalar al arquitecto.)*
 
 ## Status
 
@@ -151,7 +172,53 @@ Ledger bumps on Stage-5 sign-off: `admisiones 091d6523 → 94b02840` · `erp 8be
 
 ---
 
+## Glossary · Glosario
+
+> **Resumen (ES).** Términos técnicos en inglés que se repiten en este plan, con su traducción y una línea de qué significan en contexto. Si hay un término del plan que no está aquí, pregúntale al agente — no es una falla tuya.
+
+| English | Español | Means |
+|---|---|---|
+| design token | token de diseño | CSS custom property (e.g. `--primary`, `--brand-wash`) owned by the registry, consumed by the app |
+| registry | registro | The `.github` shell + token package — source of truth for tokens, components, gates, and sync scripts |
+| shell | cáscara / shell de navegación | The shared Nuxt layout (`layouts/default.vue`) + nav primitives synced from the registry into each app |
+| srcDir migration | migración de srcDir | Moving Nuxt source files under `app/` so `nuxt.config.ts` sets `srcDir: "app"` |
+| spec-drift | deriva de especificación | Divergence between registry spec and the app's live token values; detected by `check-spec-drift` |
+| lint-check | chequeo de gates | The `pharos-lint-check.yml` CI workflow that runs the 7 design-system gates on every PR |
+| lockfile | archivo de bloqueo | `pnpm-lock.yaml` — must be committed and current; CI runs `pnpm install --frozen-lockfile` |
+| Retro Gate | gate retrospectivo | Mandatory PR between one track's Stage 5 and the next track's start; back-propagates lessons |
+| gate-fit | ajuste al gate | Pre-Stage-2 work to remove forbidden raw HTML elements and non-allowlisted font CDNs |
+| sub-brand | sub-marca | Per-app theme variant (e.g. `theme-recepcion`, `theme-numeros`, `theme-clientes`) |
+| Layer A/B/C/D | capa A/B/C/D | Gate layers: A = pre-commit hook; B = CI lint-check; C = shell-contract e2e; D = drift/contrast/font |
+
+## Out of scope · Fuera de alcance
+
+> **Resumen (ES).** Lo siguiente **no** es parte de este plan — está diferido o corresponde a otro RFC o equipo. Si un agente sugiere construir algo de esta lista, no lo hagas.
+
+- **biuman-lis «Deportivo»** — deferred to RFC 0008 Phase 3; separate plan.
+- **@unovis charts migration (Track B)** — out of scope; keep `chart.js` and the `--lch-*`/`--status-*` token layer intact.
+- **Real backend integration in Stages 1–3** — mock-first; backend wired only at Stage-5 owner sign-off.
+- **Pixel-level visual baselines** — no Chromatic/Percy; Layer-C is lean (deterministic shell-contract only, no bless churn).
+- **Design-studio playground UI changes beyond Stage-0 spec** — registry tooling maintenance; not an app-facing track.
+- **SSO/auth backend changes** — apps wire their existing auth stores into the shell; this plan does not touch auth logic.
+
+---
+
 ## Stage 0 (rollout-wide pre-req) — pastel SPLIT + contract amendments · 🟠 architect
+
+> **Resumen (ES) — Stage 0: Pre-requisito global del rollout.**
+>
+> Actualiza la fuente de verdad (design-studio, `tokens.css`, contratos) antes de que cualquier track arranque. Los Tracks A y C están bloqueados en sus acentos de color hasta que este stage se fusione. Todas las fusiones del registro las aprueba y fusiona German.
+>
+> En orden, las tareas:
+>
+> 1. **0.1** — Actualizar `design-studio` con los valores funcionales y el campo `wash` para los acentos pastel.
+> 2. **0.2** — Actualizar `registry/tokens.css`: slots funcionales, `--brand-wash`, y bloques `.dark.theme-recepcion`/`.dark.theme-clientes` faltantes.
+> 3. **0.3** — Enmendar el contrato de navegación a un composable `useMenu()` (Decisión 5).
+> 4. **0.4** — Corregir el bug de `@lucide/vue` → `lucide-vue-next` en los componentes de breadcrumb del registro.
+> 5. **0.5** — Regenerar `admisiones.md`/`crm.md` via `pnpm regen-spec` y reconciliar versiones y ledger.
+> 6. **0.6** — Re-sincronizar `pharos-lis`, correr `shell-contract` y `check-contrast`; cero regresiones.
+>
+> Decisión humana: German aprueba y fusiona todos los cambios del registro.
 
 Blocks Tracks A & C accents. **Fix render + registry + spec + generator together.** All registry /
 design-studio changes are **German-merged**.
@@ -175,9 +242,28 @@ design-studio changes are **German-merged**.
 6. 🔵 **Re-sync pharos-lis** + run its `shell-contract` → zero regression. Run `check-contrast`:
    `#ff3d63`/`#e37600` pass AA (5.30/4.91) **with the dark foregrounds — do NOT switch `--primary-foreground` to white** (would hard-fail). Confirm the new `.dark.theme-*` blocks pass too.
 
+✅ **Done-when:** `design-studio` emits functional accents + `--brand-wash` without re-injecting pastels on regen. `tokens.css` has both `.dark.theme-recepcion` (`#ff6b85`) and `.dark.theme-clientes` (`#f59e3c`) blocks. `useMenu()` composable contract is in `registry/app/navigation/menu.example.ts` and `layouts/default.vue`. `pharos-lis` `shell-contract` CI is green after re-sync. `check-contrast` passes for `#ff3d63`/`#e37600` with dark foregrounds. *(ES: registry fusionado; pharos-lis en cero regresiones; check-contrast verde; bloques `.dark.theme-*` presentes.)*
+
+🚦 **Checkpoint 0.** Show @gczuluaga: (1) the merged Stage-0 PR diff with new `.dark.theme-*` blocks and `--brand-wash` token visible; (2) `pharos-lis` `shell-contract` CI run green after re-sync.
+
 ---
 
 ## Track A — admission-patient «Pacientes» (LEAD ROLLOUT TRACK · XL) · owner skuger
+
+> **Resumen (ES) — Track A: Adopción en admission-patient «Pacientes» (lead track).**
+>
+> El track más difícil y el primero en ejecutarse: migración de srcDir probada, sincronización del shell, conformance de 14 páginas con todos sus componentes hijo, y armado de la gate de CI como check requerido. Solo termina cuando la Retro Gate (Stage 6) es fusionada por German, desbloqueando los Tracks B y C.
+>
+> En orden, las etapas:
+>
+> 1. **Stage 1 (Adopt)** — Migración de srcDir a `app/`, delta de dependencias, sync del registro, wiring de color-mode y knobs, mapeo del nav con rutas exactas del router.
+> 2. **Stage 2 (Gate)** — Gate-fit en 14 páginas + componentes; Layers A, B y D verdes.
+> 3. **Stage 3 (Validate)** — Shell-contract e2e + script `test:contract` + job CI verde.
+> 4. **Stage 4 (Deploy)** — `ci-cd.yml` owner-gated.
+> 5. **Stage 5 (Sign-off)** — Owner valida contra backend real; bump de `admisiones.md`.
+> 6. **Stage 6 (Retro Gate)** — PR con lecciones back-propagadas a B y C; German fusiona; #47/#48 desbloqueados.
+>
+> Decisiones humanas: wiring de color-mode (🟠 Stage 1); mapeo de nav a rutas exactas del router (🟠 Stage 1).
 
 Repo root *is* the Nuxt app. **The srcDir migration is empirically proven green** (baseline build →
 migrate → rebuild, 2345 modules, worktree-tested). Sync+shell+knobs is the next, not-yet-built step.
@@ -218,11 +304,30 @@ mirror lab-qc) + CI job → **VERIFY** → deploy → sign-off + bump `admisione
 to an active leaf (rosa beam `#ff3d63` / dark `#ff6b85` + parent-group beam; `Anchor` glyph is `--primary`,
 not gray) · `pnpm test:contract` green · `nuxi typecheck` clean · Minio `server/api/accounting/**` respond.
 
+✅ **Done-when:** All VERIFY (A) criteria are literally true and verified in the browser. `pharos-lint-check` is registered as a required check on `develop` and `main` in the `admission-patient` repo. Stage-6 Retro Gate PR is merged by @gczuluaga with the `retro-gate` CI check green and non-empty downstream Track B/C diffs in the plan. *(ES: todos los VERIFY verdes y verificados; gate registrado como required; Retro Gate fusionada por German.)*
+
+🚦 **Checkpoint A.** Show @gczuluaga: (1) `pnpm lint-check` green log; (2) browser screenshots light + dark with rosa beam (`#ff3d63`) and Anchor glyph visible; (3) `pnpm test:contract` green CI run URL; (4) the Retro Gate PR URL showing non-empty Track B/C downstream diff.
+
 **Stage 6 · Retro Gate (handoff to B & C):** open the `retro-gate` PR — back-propagate every
 transferable lesson into the **Track B & C** sections of this plan (the `retro-gate` check fails on an
 empty downstream diff) + assert standard conformance; **#46 → #47/#48 blocked until German merges.** See §Retro Gate.
 
 ## Track B — finance-lch «Números» · owner egomez-lch
+
+> **Resumen (ES) — Track B: Adopción en finance-lch «Números».**
+>
+> App Nuxt 4 con srcDir ya migrado — sin migración de carpetas. El trabajo principal: retirar el tema `cobol`, reconciliar el bloque de tokens `.dark`, añadir `@nuxt/fonts`, sincronizar el shell, y mapear el nav RBAC con el composable `useMenu()`. Comienza solo cuando la Retro Gate del Track A está fusionada.
+>
+> En orden, las etapas:
+>
+> 1. **Stage 1 (Adopt)** — Delta de dependencias, sync del registro, reemplazo del layout, retiro completo del tema cobol, wiring de `useMenu()` para el nav RBAC.
+> 2. **Stage 2 (Gate)** — Gate-fit; 7 gates verdes preservando la capa de tokens `--lch-*`/`--status-*`.
+> 3. **Stage 3 (Validate)** — Shell-contract e2e + script `test:contract` + job CI verde.
+> 4. **Stage 4 (Deploy)** — `ci-cd.yml` owner-gated.
+> 5. **Stage 5 (Sign-off)** — Owner valida contra backend real; bump de `erp.md`.
+> 6. **Stage 6 (Retro Gate)** — Back-propagation de lecciones a Track C; German fusiona; #48 desbloqueado.
+>
+> Decisión humana: wiring de `useMenu()` con la lógica RBAC existente de finance (🟠).
 
 Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
 
@@ -261,10 +366,29 @@ Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
 **VERIFY (B):** lint-check green · build · screenshots L+D · active-leaf ámbar beam (`#7A5D00`/`#E6C34D`) ·
 cobol gone · charts still colored · RBAC nav hides ungated items per user · `pnpm test:contract` green.
 
+✅ **Done-when:** All VERIFY (B) criteria are literally true and verified in the browser. Cobol theme fully retired — no `:root[data-theme='cobol']` blocks remain. `--lch-*`/`--status-*` token layer intact and charts still colored. `pharos-lint-check` registered as required on `develop`/`main`. Stage-6 Retro Gate PR merged with non-empty Track C downstream diff. *(ES: VERIFY verde; cobol retirado; charts intactos; gate required; Retro Gate fusionada.)*
+
+🚦 **Checkpoint B.** Show @gczuluaga: (1) build green; (2) browser screenshots light + dark with ámbar beam (`#7A5D00`/`#E6C34D`); (3) RBAC nav hiding an ungated section for a test user; (4) `pnpm test:contract` green CI run URL; (5) Retro Gate PR URL with non-empty Track C downstream diff.
+
 **Stage 6 · Retro Gate (handoff to C):** open the `retro-gate` PR — back-propagate into the **Track C**
 section + assert conformance; **#48 blocked until German merges.** See §Retro Gate.
 
 ## Track C — commercial-lch «Clientes» · owner crincon04 · **M/High**
+
+> **Resumen (ES) — Track C: Adopción en commercial-lch «Clientes».**
+>
+> App Nuxt 4 con srcDir ya migrado. El trabajo más distintivo es la reescritura de las páginas de cotizaciones (HTML crudo → primitivas shadcn) y la instalación del conjunto completo de dependencias del shell (todas ausentes hoy). Comienza solo cuando la Retro Gate del Track B está fusionada.
+>
+> En orden, las etapas:
+>
+> 1. **Stage 1 (Adopt)** — Delta completo de dependencias, retirar Google Fonts CDN, reescritura de páginas de cotizaciones (`quotes/{index,[id],new}.vue`), sync del registro, knobs.
+> 2. **Stage 2 (Gate)** — Gate-fit; 7 gates verdes incluyendo `no-raw-html` sobre las páginas reescritas.
+> 3. **Stage 3 (Validate)** — Playwright greenfield + shell-contract + job `test-contract` CI verde.
+> 4. **Stage 4 (Deploy)** — `ci-cd.yml` owner-gated.
+> 5. **Stage 5 (Sign-off)** — Owner valida contra backend real; bump de `crm.md`.
+> 6. **Stage 6 (Retro Gate de cierre)** — Documenta lecciones finales; confirma conformance estándar; cierra el rollout.
+>
+> Decisión humana: si el alcance de la reescritura supera `quotes/{index,[id],new}.vue`, escalar a @gczuluaga antes de continuar (🟠).
 
 Nuxt 4, `app/` srcDir ✓, FE at `commercial-lch/frontend`. **Not** a blank slate.
 
@@ -299,6 +423,10 @@ tab `Pháros — Clientes`; bump `crm.md`.
 **VERIFY (C):** deps install `--frozen-lockfile` · lint-check green (incl. no-raw-html on rewritten pages) ·
 build · screenshots L+D · active-leaf `#e37600` beam · `pdf-render` route intact · `pnpm test:contract` green.
 
+✅ **Done-when:** All VERIFY (C) criteria are literally true and verified in the browser. No raw `<input|select|table|button|textarea>` in `pages/`. `pdf-render` route responds correctly. `pharos-lint-check` registered as required on `develop`/`main`. Stage-6 Retro Gate PR merged, rollout officially closed. *(ES: VERIFY verde; sin raw HTML; pdf-render funcional; rollout cerrado y conformance confirmada.)*
+
+🚦 **Checkpoint C.** Show @gczuluaga: (1) `pnpm install --frozen-lockfile` green; (2) browser screenshots light + dark with ámbar (`#e37600`) beam; (3) a rewritten quotes page functional in the browser (shadcn components, no raw HTML); (4) `pnpm test:contract` green CI run URL; (5) Stage-6 Retro Gate PR merged — rollout officially closed.
+
 **Stage 6 · Retro Gate (rollout close):** Track C is last — the retro records final lessons + confirms
 standard conformance (no downstream back-prop). Closes the rollout. See §Retro Gate.
 
@@ -317,3 +445,50 @@ RBAC without per-app shell forks.
   `menu.ts`, the quotes-page rewrite, each `shell-contract.spec.ts`, CI jobs.
 
 🛑 chart statistical parity stays the architect's call. Doc prose English; UI literals es-CO; code/DB English.
+
+---
+
+## Decisions · Decisiones
+
+> Resolved decisions during planning are logged in the **§Decisions locked** table above. Open execution-time decisions appear here and move to that table once resolved, with date.
+
+**Open:**
+
+- 🛑 **color-mode wiring (Track A, Stage 1)** — Whether to register `@nuxtjs/color-mode` and wire the shell toggle to `useColorMode()`, or confirm the synced shell ships its own `.dark`/localStorage wiring. Pending: @skuger01 escalates at Stage 1 start; @gczuluaga decides and records here.
+- 🛑 **nav route mapping (Track A, Stage 1)** — Exact PascalCase routes for the 8 `AdmisionSidebar` sections. Pre-listed in §Track A Stage 1; verify against the live router before committing `menu.ts`. Escalate any ambiguous route to @gczuluaga.
+
+**Resolved during planning:**
+
+- **Pastel contrast split** — `#FFE0E6`/`#FFB86B` kept as decorative `--brand-wash`; functional `--primary` = `#ff3d63`/`#e37600`. *(2026-06-18.)*
+- **srcDir migration** — Migrate to `app/` srcDir, empirically proven. *(2026-06-18.)*
+- **Mock-first backend** — Real backend wired only at Stage-5 sign-off. *(2026-06-18.)*
+- **Cobol theme retirement** — Full `.dark` reconciliation in finance-lch (not a one-block delete). *(2026-06-18.)*
+- **RBAC nav via `useMenu()` composable** — Registry contract amended so shell calls a reactive, auth-filtered nav. *(2026-06-18.)*
+- **Dark accents approved** — `.dark.theme-recepcion` `#ff6b85` (6.7:1 AA); `.dark.theme-clientes` `#f59e3c` (7.1:1 AA). *(2026-06-18.)*
+- **Track C quotes-page rewrite** — In-track prep stage added; Track C re-budgeted M/High. *(2026-06-18.)*
+
+## Risks · Riesgos
+
+> **Resumen (ES).** Los riesgos principales son: lockfile desactualizado que bloquea CI, HTML crudo o CDN prohibido que falla los gates, deriva del registro por edición directa en la app, y autenticación headless que impide el test-contract.
+
+- **Stale lockfile** → CI `--frozen-lockfile` aborts; all stages blocked. **Mitigation:** regenerate and commit lockfile immediately after every `pnpm add` in Stage 1 of each track.
+- **Font CDN not removed** → `check-font-allowlist` hard-fails Gate Layer B. **Mitigation:** remove Google Fonts/Inter `<link>` and VT323 `@import` at Stage 1 before running lint-check; do not defer.
+- **Raw HTML remaining in pages/components** → `check-no-raw-html` hard-fails Gate Layer B. **Mitigation:** Track C quotes rewrite must be complete before Stage 2; vendor thin `Table`/`Textarea` primitives in Track B where needed.
+- **Hand-editing registry-owned files** → spec-drift fires forever; re-sync overwrites the edit. **Mitigation:** never hand-edit `tokens.css`, gate scripts, or `registry/app/**`; fix in the registry, then re-sync.
+- **Stage 0 not merged before any track starts** → dark mode de-brands to navy; accent values are pastels not functional. **Mitigation:** Stage 0 must be merged and re-synced before any track's Stage 1 begins.
+- **CI headless auth failure for `test-contract`** → SSR auth (no SSO in CI) causes logout → shell not visible → contract test fails. **Mitigation:** add `import.meta.dev`-guarded bypass or mock-SSO path before wiring `test-contract` (documented as a retro carry for Tracks B and C).
+- **`v-model.number` stripped by shadcn `<Input>`** → amounts become strings; math breaks silently. **Mitigation:** use `:model-value` + `@update:model-value="x = Number($event)"` on all numeric inputs in Track B (finance) and Track C (quotes).
+- **Retro Gate label removed prematurely** → standard drifts; lessons don't carry to the next track. **Mitigation:** `blocked:retro-gate` label on #47/#48; only @gczuluaga removes it on Retro Gate merge.
+
+## References
+
+- [RFC 0008 — Pháros design system + co-creation](https://github.com/Interval-Col/rfcs/blob/main/0008-pharos-design-system.md)
+- [pharos-lis — reference implementation (`lab-qc/frontend`, Step 0, DONE)](../pharos-lis/)
+- [v1 plan (superseded)](archive/pharos-fe-spec-rollout.md)
+- [Retro Gate fill template](pharos-track-retro.template.md)
+- [Track A retro (post Stage 5)](pharos-track-retro.A.md)
+- [Tracking issue Interval-Col/.github#48](https://github.com/Interval-Col/.github/issues/48) — Track C / rollout
+- [Track B issue Interval-Col/.github#47](https://github.com/Interval-Col/.github/issues/47)
+- [Track A issue Interval-Col/.github#46](https://github.com/Interval-Col/.github/issues/46)
+- [BRANCHING-AND-DEPLOY.md](../.github/BRANCHING-AND-DEPLOY.md) — org CI/branching standards
+- [ops-plan-template.md](../templates/ops-plan-template.md) — this plan's template
