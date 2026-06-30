@@ -1,3 +1,18 @@
+---
+status: in-progress
+owner: gczuluaga
+created: 2026-06-18
+updated: 2026-06-29
+issue: none — admin runbook; related open tracking issues Interval-Col/.github#43 and #73
+start: TBD
+target: TBD
+implementation: gczuluaga
+effort: S
+language: English body; Spanish "Resumen" + decision/criteria glosses.
+---
+
+# Pháros Enforcement Setup — Branch-Protection & Retro-Gate Admin Runbook · Configuración de controles Pháros — runbook de branch-protection y Retro Gate
+
 # Pháros rollout — enforcement setup (admin runbook · @gczuluaga only)
 
 > ⚠️ These change **branch-protection / repo settings** — run by the org admin (German), not by an
