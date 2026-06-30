@@ -1,11 +1,12 @@
 ---
-status: draft
+status: proposed
 created: 2026-06-27
+updated: 2026-06-29
 owner: SKuger01
 implementation: SKuger01
 language: English body; Spanish "Resumen".
 builds-on: plans/branching-policy-rollout.md (baseline) + issue #42
-tracking-issue: https://github.com/Interval-Col/.github/issues/69
+issue: https://github.com/Interval-Col/.github/issues/69
 ---
 
 # Escalator enforcement rollout — `feature → develop → main`, made binding
