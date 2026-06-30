@@ -1,11 +1,11 @@
 ---
-status: open
+status: proposed
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-06-29
 owner: gczuluaga
 implementation: TBD
 language: English body; Spanish "Resumen" + decision glosses.
-tracking-issue: TBD
+issue: TBD
 relates-to: brands/biuman/BIUMAN-BRAND.md · brands/pharos_brand/BRAND.md §10
 ---
 

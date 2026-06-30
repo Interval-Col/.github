@@ -1,7 +1,7 @@
 ---
 status: active
 created: 2026-06-01
-updated: 2026-06-15
+updated: 2026-06-29
 owner: gczuluaga
 implementation: gczuluaga
 language: English body; Spanish "Resumen" + decision/criteria glosses.
