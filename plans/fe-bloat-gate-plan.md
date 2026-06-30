@@ -9,6 +9,8 @@ target: 2026-07-11
 implementation: gczuluaga
 language: English body; Spanish "Resumen" + glosses.
 rfc: 0008
+model: claude-sonnet-4-6
+sources: [.github, admission-patient, finance-lch, pharos-lis, biuman-lis]
 ---
 
 # Pháros FE dependency-hygiene gate (`check-fe-bloat`) · Compuerta de higiene de dependencias FE
@@ -89,17 +91,35 @@ registry, synced into every app and chained into `pnpm lint-check`.
 
 ## Phase 4 — Portfolio rollout · Despliegue al portafolio
 
-> **Resumen (ES).** 4.1 sincronizar el gate a todas las apps Pháros; 4.2 limpiar las que fallen.
+> **Resumen (ES) — Fase 4: Despliegue al portafolio.**
+>
+> Sincronizar el script canónico a todas las apps Pháros y corregir cualquier violación
+> que el gate detecte, para que el estándar quede activo en todo el portafolio.
+>
+> En orden, las tareas:
+>
+> 1. **4.1** — Ejecutar `sync-pharos-registry.sh` en finance-lch, lab-qc, biuman-lis y design-studio; añadir `check-fe-bloat.mjs` al `lint-check` de cada `package.json`.
+> 2. **4.2** — Corregir las apps que fallen el gate (mismo patrón de limpieza que admission-patient #53).
 
 - [ ] **4.1** — Run `sync-pharos-registry.sh` for finance-lch, lab-qc, biuman-lis, design-studio;
       add `check-fe-bloat.mjs` to each `package.json` `lint-check`.
 - [ ] **4.2** — Fix any app that fails the gate (same cleanup pattern as admission-patient #53).
+
+✅ **Done-when:** `check-fe-bloat.mjs` is wired into `lint-check` in every Pháros FE app and CI is green across all of them; any violations found in 4.2 are fixed and merged. *(ES: el gate está activo y pasando en todo el portafolio.)*
 
 🚦 **Checkpoint 4.** Every Pháros FE app passes `check-fe-bloat` in CI; the standard is live portfolio-wide.
 
 ## Decisions · Decisiones
 - ✅ 2026-06-27 — Start with the 2 deterministic rules; defer knip + bundle-budget (need tuning). Rationale: ship zero-false-positive value now; avoid blocking merges on noisy checks.
 - 🛑 OPEN — warn-vs-fail for knip (Phase 2.2), and the per-app bundle budgets (Phase 3.2).
+
+## Risks · Riesgos
+
+> **Resumen (ES).** Tres vectores de riesgo principales: falsos positivos que bloquean CI, allowlist de knip que nunca converge, y apps nuevas que se unen al portafolio sin pasar por el sync.
+
+- **False-positive block on a live CI pipeline** → a gap in the `ALLOWLIST` causes a legitimate dep to be flagged, blocking merges in an app. **Mitigation:** verify the gate passes on the clean tree (Phase 1.4 precedent) before chaining into `lint-check` in each app during 4.1; treat any new failure as a tuning gap, not a rollback trigger.
+- **knip allowlist never stabilises (Phase 2)** → noisy output delays chaining into `lint-check` indefinitely. **Mitigation:** the 🛑 HUMAN DECISION in 2.2 forces an explicit warn-vs-fail call; if tuning drags past one sprint, record the decision and ship knip in warn mode to preserve partial value rather than blocking on perfection.
+- **Portfolio drift** → a new Pháros FE app is added without running `sync-pharos-registry.sh`, skipping the gate entirely. **Mitigation:** add a "run sync after any new app scaffold" reminder to `registry/frontend-standards.md` and the onboarding checklist for new Pháros apps.
 
 ## References
 - Interval-Col/.github#70 — tracking issue.

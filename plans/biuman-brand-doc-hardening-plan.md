@@ -40,6 +40,46 @@ are **provisional-but-trusted**, not canonical.
 
 ---
 
+## How to use this plan · Cómo usar este plan
+
+**EN.** This plan is written to be executed with AI-agent assistance —
+that is expected and encouraged. The plan, not the agent, makes the
+technical decisions. Your job has three parts: **execute** the tasks,
+**verify** each one against its Done-when list, and **escalate** the
+decisions the plan marks for a human.
+
+Read each task fully — including its **Why** and **Done-when** — *before*
+you start it. A task is not finished because an agent said so; it is
+finished when every Done-when line is literally true and you have
+checked it yourself.
+
+If a task or its **Why** doesn't make sense, that is a gap in *this
+plan*, not a failing in you — stop and ask gczuluaga. A question costs
+minutes; a misunderstanding shipped costs days.
+
+**If the English here slows you down:** every section opens with a
+Spanish **Resumen**, and your AI agent will translate or explain any
+part of this plan in Spanish if you ask it — that is a completely
+legitimate thing to do. Don't let the language be the reason a task
+stalls.
+
+**ES.** Este plan está escrito para ejecutarse con ayuda de agentes de
+IA — eso se espera y se fomenta. Las decisiones técnicas las toma el
+plan, no el agente. Tu trabajo tiene tres partes: **ejecutar** las
+tareas, **verificar** cada una contra su lista *Done-when*, y **escalar**
+las decisiones que el plan marca para un humano.
+
+Lee cada tarea completa — incluyendo su **Why** y su **Done-when** —
+*antes* de empezarla. Una tarea no está terminada porque un agente lo
+diga; está terminada cuando cada línea *Done-when* es literalmente cierta
+y tú mismo la verificaste.
+
+Si una tarea o su **Why** no te quedan claras, eso es un vacío de *este
+plan*, no una falla tuya — pregúntale a gczuluaga. Y si el inglés te
+frena: cada sección tiene un **Resumen** en español, y tu agente de IA
+te traduce o explica cualquier parte en español si se lo pides — hazlo
+sin problema.
+
 ## Conventions · Convenciones
 
 | Marker | Meaning |
@@ -53,6 +93,87 @@ are **provisional-but-trusted**, not canonical.
 *accurate*; P2 makes shipping lockups *unambiguous*; P3 gives web *real vectors*;
 P4 is the *legal/ops gate* before any production font use; P5 is cleanup. Each
 phase is independent — you can land them in any order — but P1 should not wait.
+
+## Working rules · Reglas de trabajo
+
+These apply to every phase.
+
+- **Commit and push after every slice.** When a task group or a phase is
+  done and its Done-when checks pass, commit and push to GitHub
+  **immediately**. Work that lives only on your laptop cannot be seen,
+  reviewed, helped with, or recovered. *(ES: haz commit y push a GitHub
+  apenas termines — el trabajo que solo vive en tu laptop no existe para
+  el equipo.)*
+- **Commit messages — Conventional Commits, scope required.**
+  `type(scope): description` — e.g. `docs(biuman-brand): verify palette against Brandbook pp.22–23`.
+  `type` ∈ `feat|fix|refactor|test|chore|docs|hotfix|ci`. The `(scope)` is
+  **mandatory**. Branch names mirror it: `type/scope-short-description`.
+  *(ES: Conventional Commits; el `(scope)` es obligatorio; la rama
+  refleja el commit.)*
+- **Review the frontend yourself, in the browser.** A phase that touches
+  the UI is **not verified** because the backend endpoint returned `200`
+  — it is verified when you have opened the app, clicked through what
+  you built, and seen it work the way a real user would use it. *(ES:
+  revisa el frontend tú mismo, en el navegador — un `200` del backend no
+  es una funcionalidad que sirve.)*
+- **Which AI tool:** Claude **Sonnet** by default; **Opus** when a task
+  is hard or you are stuck; **Copilot** for inline autocomplete and
+  quick questions — not for executing a whole task. *(ES: Sonnet por
+  defecto; Opus cuando es difícil o te atascas; Copilot para
+  autocompletar.)*
+- **You can tell your agent to skip the Why boxes — we won't stop you.**
+  But the 🚦 checkpoint questions are asked by a person, and that you
+  cannot outsource. Reading as you go is the cheap way to be ready.
+  *(ES: puedes pedirle a tu agente que se salte las explicaciones — pero
+  las preguntas del checkpoint las hace una persona; eso no se delega.)*
+- **Auto mode is slice-bounded.** Auto mode (running without clarifying
+  questions between turns) is allowed for the duration of **one
+  slice** — a single numbered task, or one phase when the plan groups
+  tasks that way. At the end of every slice, the agent **STOPS**,
+  surfaces what landed (Done-when items verified, files touched,
+  what's next), and waits for explicit human acknowledgement before
+  starting the next slice. At 🚦 Checkpoints the stop is stronger —
+  the human walks the evidence with the agent. Auto mode is **never**
+  "execute the whole plan unattended." *(ES: el modo auto va por
+  slice, no por plan entero. Al final de cada slice, el agente
+  **PARA**, te muestra qué cerró (Done-when, archivos tocados, qué
+  viene) y espera tu visto bueno antes del siguiente slice. En los
+  🚦 el alto es más fuerte — recorres la evidencia con el agente.
+  Auto **nunca** significa "ejecuta el plan completo solo".)*
+
+## Glossary · Glosario
+
+> **Resumen (ES).** Términos técnicos en inglés que vas a ver muchas
+> veces en este plan, con su traducción y una línea de qué significan.
+> Si te encuentras un término del plan que no está aquí y no lo
+> entiendes, pregúntale a tu agente — no es una falla tuya, es un vacío
+> de esta tabla.
+
+| English | Español | Means |
+|---|---|---|
+| lockup | bloqueo de marca | a branded composition of logo + wordmark + descriptor treated as a single printable or digital unit |
+| descriptor | descriptor de marca | the short brand tagline that appears beneath the wordmark in a lockup (e.g. *CIENCIA DEL MOVIMIENTO*) |
+| wordmark | wordmark | the brand name set in its official typeface, without any icon or symbol |
+| isotipo | isotipo | the standalone symbol/icon element of a brand (the `B` mark for Biuman), used without the wordmark |
+| swatch | muestra de color | a printed or digital color patch that displays a specific CMYK/Pantone/hex value |
+| outlined text | texto en curvas | vector text converted to paths — renders correctly with no font file present |
+| Brandbook | manual de marca | the comprehensive brand specification document (here: `Brandbook-BIUMAN.pdf`) |
+| Done-when | terminado-cuando | the literal, checkable list that defines when a task is truly finished — not "the agent said so" |
+| commit + push | hacer commit y push | save to git locally **and** send to GitHub — both steps are required |
+| slice | unidad de trabajo | a single numbered task, or one phase, treated as the boundary for auto mode |
+
+## Out of scope · Fuera de alcance
+
+> **Resumen (ES).** Lo siguiente **no** es parte de este alcance — es
+> v1+ / para después. Si un agente sugiere construir algo de esta lista,
+> no lo hagas.
+
+Explicitly out of scope — not for this plan:
+
+- **Pháros design-system registry token authoring for the Biuman tenant** — this plan verifies the brand identity source of truth; mapping identity specs to registry tokens is a separate downstream step.
+- **Updating product UI to consume the corrected palette** — that is an implementation step that follows once the doc is declared canonical.
+- **Expanding the brand doc beyond the four documented gaps** — new brand decisions or additional sections are out of scope; flag them as a new plan item.
+- **Publishing the brand doc to external design handoff platforms** (Figma, Zeroheight, etc.) — out of scope until the doc is fully canonical.
 
 ---
 

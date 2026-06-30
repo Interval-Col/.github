@@ -7,18 +7,25 @@ implementation: SKuger01
 language: English body; Spanish "Resumen".
 builds-on: plans/branching-policy-rollout.md (baseline) + issue #42
 issue: https://github.com/Interval-Col/.github/issues/69
+start: 2026-06-27
+target: TBD
+effort: M
+model: claude-sonnet-4-6
+sources: [finance-lch, pharos-lis, admission-patient, commercial-lch, cobolql, cobol-migration, biuman-lis, biuman-reports, pdf-render-service, api-calendar, employee-management, inventory-management, accounting-interface, operations, rfcs, .github, design-studio, infrastructure]
 ---
 
-# Escalator enforcement rollout — `feature → develop → main`, made binding
+# Escalator enforcement rollout — `feature → develop → main`, made binding · Aplicación del escalator de enforcement
 
 > **Resumen (ES).** Este plan agrega la **capa de enforcement del escalator** encima
 > de la línea base ya rastreada en `branching-policy-rollout.md` + issue #42 (gitleaks
 > + protección de `main` + chrome). La capa nueva, por repo: (1) el workflow guard
 > **`main-only-from-develop`** (un PR a `main` debe venir de `develop`), (2)
-> **`enforce_admins` ON** (nadie hace bypass, ni el admin), y (3) **review-count 0**
+> **`enforce_admins`** ON (nadie hace bypass, ni el admin), y (3) **review-count 0**
 > mientras seamos solo-maintainer (los checks de CI son la compuerta real, no una
 > aprobación humana). Resultado: **`main ⊆ develop` siempre** → nada llega a prod que
 > no haya pasado primero por dev. Referencia viva: `nucleus-db` (`docs/PROMOTION.md`).
+
+> **Markers** — ✅ **Done-when** (verifiable definition of done) · 🚦 **Checkpoint** (stop, show @gczuluaga the named evidence) · 🛑 **HUMAN DECISION** (an agent must not pick this — escalate to @gczuluaga) · 💡 **Heuristic** (a task-earned lesson). *(ES: ✅ terminado-cuando · 🚦 punto de control · 🛑 decisión humana · 💡 heurística.)*
 
 ## Why this is a separate plan
 
@@ -41,7 +48,35 @@ own PR, and can't bypass). The org standard resolves it as:
 | **`enforce_admins`** | **ON** | No `--admin` bypass — without this, every rule (incl. the guard) is advisory. |
 | **Required approvals** | **0** while solo | The CI checks are the gate, not a human approval. Bump to **1** when a 2nd reviewer joins. |
 
+## Glossary · Glosario
+
+> **Resumen (ES).** Términos técnicos en inglés que se repiten en este plan, con su traducción y una línea de qué significan.
+
+| English | Español | Means |
+|---|---|---|
+| branch protection | protección de rama | GitHub settings requiring checks/reviews before merging to a branch |
+| enforce_admins | forzar en admins | setting that prevents repo admins from bypassing branch rules via `--admin` |
+| guard workflow | workflow de guardia | a CI workflow (`guard-promotion.yml`) that fails if a PR targets `main` from any branch other than `develop` |
+| required status check | verificación requerida | a CI check that must pass before GitHub allows a merge |
+| escalator | escalator / flujo de promoción | the enforced chain `feature → develop → main`; no commit skips a step |
+| baseline | línea base de protección | the foundation set: gitleaks + PR-required + main/develop protection (tracked in #42) |
+| concurrency block | bloque de concurrencia | a `concurrency:` key in a GitHub Actions workflow that collapses duplicate queued runs |
+| promote / promotion | promover / promoción | merge `develop → main` to push verified changes to production |
+| strict up-to-date | actualización estricta | GitHub option requiring a PR branch to be up to date with the base before merging |
+| review count 0 | 0 revisiones requeridas | required approvals set to zero; CI checks are the gate, not a human approval |
+
+## Out of scope · Fuera de alcance
+
+> **Resumen (ES).** Lo siguiente **no** es parte de este alcance — se gestiona en otros planes o issues.
+
+- `transmisiones`, `port-mapper` — still on `master`; fold in on the `master→main` rename (tracked in #42 / RFC 0009).
+- `legacy-repositories` — archive.
+
 ## Per-repo reusable steps (repo that already has baseline + a `develop` branch)
+
+> **Resumen (ES) — Pasos reutilizables por repositorio.**
+>
+> Secuencia de comandos para aplicar el escalator en cualquier repo que ya tenga la línea base y una rama `develop`. Los cuatro pasos: (1) agregar el workflow guard en `develop` y promoverlo a `main`, (2) activar `enforce_admins`, (3) fijar el conteo de revisiones en 0, (4) abrir el primer PR develop→main para que el check quede seleccionable como requerido en la configuración de protección.
 
 ```bash
 R=Interval-Col/<repo>
@@ -61,6 +96,10 @@ gh api -X PATCH repos/$R/branches/main/protection/required_pull_request_reviews 
 > will deadlock a solo owner — do step 3 (review→0) **before/with** step 2.
 
 ## Per-repo checklist (grounded in the 2026-06-27 survey)
+
+> **Resumen (ES) — Lista de repositorios.**
+>
+> Checklist organizado en cinco grupos según el estado actual de cada repo. Aplicar en este orden: primero los que ya tienen línea base (escalator directo), luego los desprotegidos (línea base primero), luego los livianos (solo `enforce_admins`), y finalmente los que requieren crear la rama `develop`. Verificar con el 🚦 Checkpoint entre grupos antes de continuar.
 
 ### ✅ Done (reference)
 - [x] `nucleus-db` — full escalator live (enforce_admins, review 0, guard required, `docs/PROMOTION.md`).
@@ -94,11 +133,11 @@ No escalator (no develop branch); just close the bypass hole. Add strict up-to-d
 ### 🔵 Adopt-develop-first
 - [ ] `infrastructure` — **create a `develop` branch** (IaC → prod hosts; currently merges straight to main), then apply the full escalator. Prioritize: this deploys to prod infrastructure.
 
-### Out of scope (here)
-- `transmisiones`, `port-mapper` — still on `master`; fold in on the `master→main` rename (tracked in #42 / RFC 0009).
-- `legacy-repositories` — archive.
-
 ## Plus: workflow concurrency (every repo with CI/CD)
+
+> **Resumen (ES) — Bloque de concurrencia en todos los workflows.**
+>
+> Agregar un bloque `concurrency:` a cada `ci-cd.yml` (deploy) y `ci.yml` (PR gate) para evitar colas de ejecuciones encadenadas que saturen o derrumben los runners. Incluir este cambio en el mismo PR de escalator de cada repo.
 
 Folded in 2026-06-27 after a `develop`-deploy pile-up starved + OOM-ed the dev
 runner fleet. **Every repo's workflows get a `concurrency` block** so superseded
@@ -120,3 +159,35 @@ build/test to GitHub-hosted so CI can't starve app hosts — RFC 0007.)
 
 ## 🚦 Checkpoint (per group)
 Show @gczuluaga: the `gh api … protection` output for one repo in the group + a screenshot of a feature→main PR being blocked by the guard. Confirm before moving to the next group.
+
+---
+
+## Decisions · Decisiones
+
+**Open:**
+
+- 🛑 **Target date** — No enforcement deadline is set (`target: TBD` in frontmatter). Pending: @gczuluaga sets the timeline and updates the frontmatter `target:` field. *(ES: fecha límite de enforcement — pendiente de definición por @gczuluaga.)*
+
+**Resolved during planning:**
+
+- **Solo-gatekeeper enforcement model** — `enforce_admins` ON + `review:0` resolves the deadlock where an admin cannot approve their own PR and cannot bypass via `--admin`. Bump to `review:1` when a second maintainer joins. *(2026-06-27.)*
+- **Concurrency strategy** — `ci-cd.yml` uses `cancel-in-progress: false` (never interrupt a live deploy); `ci.yml` uses `cancel-in-progress: true` (collapse stale PR gate runs). *(2026-06-27.)*
+- **biuman repos get strict up-to-date flag** — `biuman-lis` and `biuman-reports` currently have only gitleaks as a required check; adding strict up-to-date is noted explicitly in the checklist as a signal to add a real build/test check. *(2026-06-27 survey.)*
+
+## Risks · Riesgos
+
+> **Resumen (ES).** El riesgo principal es habilitar `enforce_admins` antes de que el guard sea un check requerido — el bypass desaparece pero el guard queda advisory. El segundo riesgo es aplicar `review:1` en lugar de `review:0`, lo que bloquea al mantenedor solitario. El orden de los pasos en la sección de pasos reutilizables es la mitigación.
+
+- **`enforce_admins` enabled before guard is a required check** → admin bypass is removed, but a direct feature→main PR can still reach `main` because the guard is only advisory. **Mitigation:** complete step 4 (open the first develop→main PR to trigger the guard check) *before* adding it as a required check in branch settings — the step order in `## Per-repo reusable steps` encodes this sequence.
+- **`review:1` set instead of `review:0` on a solo repo** → deadlock: the admin cannot approve their own PR and cannot use `--admin` bypass. **Mitigation:** step 3 in the reusable steps explicitly sets `required_approving_review_count=0`; verify the API response confirms the new value after running.
+- **`biuman-lis` / `biuman-reports` lack a build/test required check** → the escalator guard alone does not catch code regressions on these repos. **Mitigation:** the checklist note ("add a build/test required check if a pipeline exists") tracks this; treat as a follow-up once CI is added to those repos.
+- **`infrastructure` deploys directly to prod hosts from `main`** → highest blast radius of any repo in scope; creating `develop` is a prerequisite before any escalator steps. **Mitigation:** front-load within the `🔵 Adopt-develop-first` group; @gczuluaga gates the first develop→main promote PR for this repo.
+
+## References
+
+- `plans/branching-policy-rollout.md` — baseline plan (gitleaks + protection) this plan builds on top of.
+- [#42](https://github.com/Interval-Col/.github/issues/42) — baseline tracking issue (gitleaks + protection rollout).
+- [#69](https://github.com/Interval-Col/.github/issues/69) — this plan's linked issue.
+- `BRANCHING-AND-DEPLOY.md` §"Branch protection" and §"Concurrency" — policy of record; updated 2026-06-27.
+- `nucleus-db/docs/PROMOTION.md` — canonical reference implementation of the full escalator.
+- RFC 0009 — Bitbucket→GitHub migration; scope for `transmisiones`, `port-mapper`, and the `master→main` rename.
