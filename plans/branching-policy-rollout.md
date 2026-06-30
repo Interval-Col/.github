@@ -2,6 +2,10 @@
 status: in-progress
 created: 2026-06-04
 updated: 2026-06-16
+issue: none — board item pending (operations#38)
+start: TBD
+target: TBD
+effort: M
 owner: gczuluaga
 implementation: gczuluaga
 language: English body; Spanish "Resumen" + decision/criteria glosses.

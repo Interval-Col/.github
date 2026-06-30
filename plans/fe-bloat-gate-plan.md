@@ -3,6 +3,7 @@ status: proposed
 owner: gczuluaga
 created: 2026-06-27
 updated: 2026-06-27
+effort: M
 issue: Interval-Col/.github#70
 start: 2026-06-27
 target: 2026-07-11
