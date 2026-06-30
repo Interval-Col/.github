@@ -2,6 +2,9 @@
 status: proposed
 created: 2026-06-15
 updated: 2026-06-29
+start: TBD
+target: TBD
+effort: M
 owner: gczuluaga
 implementation: TBD
 language: English body; Spanish "Resumen" + decision glosses.
