@@ -6,7 +6,7 @@ updated: 2026-06-30
 issue: Interval-Col/.github#48
 start: TBD
 target: TBD
-implementation: crincon04
+implementation: skuger (A), egomez-lch (B), crincon04 (C)
 effort: XL
 model: claude-sonnet-4-6
 sources: [admission-patient, finance-lch, commercial-lch]
@@ -15,7 +15,7 @@ language: English body; Spanish "Resumen" + decision/criteria glosses.
 
 # Pháros FE-spec rollout v2 — design system adoption across finance, admission, and commercial apps · Despliegue Pháros FE-spec v2 — adopción del sistema de diseño en finanzas, admisión y clientes
 
-> **Resumen (ES).** Este plan ejecuta el despliegue del sistema de diseño Pháros (RFC 0008, Fases 1–3) sobre las tres apps pendientes: *Admisiones* (Track A, XL, `skuger`), *Finanzas* (Track B, M, `egomez-lch`) y *Clientes* (Track C, M/High, `crincon04`). El punto de referencia es `pharos-lis «Laboratorio»`, ya adoptado y verde. El modelo de trabajo son cinco etapas (Adopt → Gate → Validate → Deploy → Sign-off) con una *Retro Gate* obligatoria y bloqueante entre pistas — German la fusiona, y solo ese acto desbloquea la siguiente. El Stage 0 actualiza el registro y los tokens antes de que cualquier pista arranque. Toda edición a archivos propios del registro se aplica vía el registro; nunca a mano.
+> **Resumen (ES).** Este plan ejecuta el despliegue del sistema de diseño Pháros (RFC 0008, Fases 1–3) sobre las tres apps pendientes: *Admisiones* (Track A, XL, `skuger`), *Finanzas* (Track B, M, `egomez-lch`) y *Clientes* (Track C, M/High, `crincon04`). El punto de referencia es `pharos-lis «Laboratorio»`, ya adoptado y verde. El modelo de trabajo son seis etapas (Adopt → Gate → Validate → Deploy → Sign-off → Retro Gate) donde la *Retro Gate* (Stage 6) es obligatoria y bloqueante entre pistas — German la fusiona, y solo ese acto desbloquea la siguiente. El Stage 0 actualiza el registro y los tokens antes de que cualquier pista arranque. Toda edición a archivos propios del registro se aplica vía el registro; nunca a mano.
 
 ## Pháros FE-spec rollout v2 — registry adoption across the 3 remaining apps
 
@@ -34,6 +34,13 @@ language: English body; Spanish "Resumen" + decision/criteria glosses.
 > GitHub default).
 
 > **Markers** — ✅ **Done-when** (verifiable definition of done) · 🚦 **Checkpoint** (stop, show owner the named evidence) · 🛑 **HUMAN DECISION** (an agent must not pick this — escalate to owner) · 💡 **Heuristic** (a task-earned lesson) · 🔵 **Mechanical** (Sonnet-executable, no judgment required) · 🟠 **Escalate** (architect/owner decides, do not guess). *(ES: ✅ terminado-cuando · 🚦 punto de control · 🛑 decisión humana · 💡 heurística · 🔵 mecánico · 🟠 escalar al arquitecto.)*
+
+> **Scope of this spine (RFC 0011 consolidation).** Three workstreams were folded into this single plan. Each has its own tracking issue:
+> 1. **Shell rollout** ([#48](https://github.com/Interval-Col/.github/issues/48)) — Tracks A / B / C: design-system adoption in admission-patient, finance-lch, commercial-lch.
+> 2. **Component library** ([#73](https://github.com/Interval-Col/.github/issues/73)) — RFC 0008 Phase-1 shared primitives (EntityLookup, SearchableSelect, useFlow, etc.).
+> 3. **FE bloat gate** ([#70](https://github.com/Interval-Col/.github/issues/70)) — `check-fe-bloat.mjs` portfolio rollout.
+>
+> Originals archived under `plans/archive/` (RFC 0011). The three folded-in sections each carry a consolidation note — this block is the single top-level pointer.
 
 ## Status
 
@@ -85,9 +92,9 @@ The original v2 draft assumed "5 knobs, everything else sync-owned." The de-risk
 
 Corrected per-track effort: A and C are both **High**. C is **not** a blank slate.
 
-## The model — 5-stage deployable track
+## The model — 6-stage deployable track
 
-A Sonnet agent carries stages **1–3**; the owner/architect carries **4–5**.
+A Sonnet agent carries stages **1–3**; the owner/architect carries **4–5**, then the Retro Gate (Stage 6) closes the track.
 
 | Stage | Name | Gate / DoD |
 |---|---|---|
@@ -150,16 +157,16 @@ it rests on this ritual until a second code-owner exists).
 
 **A. One-time, before Track A**
 
-- [ ] Merge the v2 plan PR (includes `retro-gate.yml`) + the RFC PR.
-- [ ] Create labels:
+- [x] Merge the v2 plan PR (includes `retro-gate.yml`) + the RFC PR. *(done — `retro-gate.yml` confirmed in `.github/workflows/`, plan on origin/main; 2026-06-18)*
+- [x] Create labels: *(done — labels created for all listed repos; 2026-06-18)*
   ```sh
   gh label create retro-gate -R Interval-Col/.github -c 5319e7 -d 'Pháros track handoff (Retro Gate) PR'
   for r in admission-patient finance-lch commercial-lch; do
     gh label create blocked:retro-gate -R "Interval-Col/$r" -c b60205 -d 'Blocked: awaiting prior track Retro Gate'
   done
   ```
-- [ ] **Register `retro-gate` as a required check on `.github` `main`** — after the workflow has run once on a `retro-gate`-labeled PR. Confirm the exact context name (`Pháros — retro-gate` / `retro-gate`) from that run, then add it to required checks (keep `gitleaks`). 🛑 Confirm exact context string before setting required.
-- [ ] Parity: enable `dismiss_stale_reviews` on `commercial-lch` `main`; add `@SKuger01` to `admission-patient` CODEOWNERS (frontend paths, via PR).
+- [x] **Register `retro-gate` as a required check on `.github` `main`** — after the workflow has run once on a `retro-gate`-labeled PR. Confirm the exact context name (`Pháros — retro-gate` / `retro-gate`) from that run, then add it to required checks (keep `gitleaks`). 🛑 Confirm exact context string before setting required. *(done — required check registered; 2026-06-22)*
+- [x] Parity: enable `dismiss_stale_reviews` on `commercial-lch` `main`; add `@SKuger01` to `admission-patient` CODEOWNERS (frontend paths, via PR). *(done — 2026-06-22)*
 
 ✅ **Done-when (A):** labels exist in all listed repos; `gh api repos/Interval-Col/.github/branches/main/protection --jq '.required_status_checks.contexts'` lists the `retro-gate` context; `gh api repos/Interval-Col/commercial-lch/branches/main/protection --jq '.required_pull_request_reviews.dismiss_stale_reviews'` returns `true`; a PR against `admission-patient` touching frontend paths auto-assigns `@SKuger01`.
 
@@ -222,6 +229,8 @@ Ledger bumps on Stage-5 sign-off: `admisiones 091d6523 → 94b02840` · `erp 8be
 ---
 
 ## Stage 0 (rollout-wide pre-req) — pastel SPLIT + contract amendments · 🟠 architect
+
+> **Status: ✅ DONE — merged (2026-06-18); pharos-lis shell-contract green after re-sync. Track A / B / C may proceed.**
 
 > **Resumen (ES) — Stage 0: Pre-requisito global del rollout.**
 >
@@ -371,7 +380,7 @@ Nuxt 4, clean `app/` srcDir ✓, FE at `finance-lch/frontend`. No migration.
 - 🟠 **Charts (FE only plots; backend owns stats):** keep `chart.js`; **do not delete `--lch-*`/`--status-*`**.
   `@unovis` migration is OUT of scope.
 
-**🔁 Carried from Track A's retro** ([`pharos-track-retro.A.md`](pharos-track-retro.A.md)):
+**🔁 Carried from Track A's retro** ([`archive/pharos-track-retro.A.md`](archive/pharos-track-retro.A.md)):
 - **Gate-fit = page *+ its components* for colours** — the colour gates scan all of `app/`, not just `pages/` (`no-raw-html` scans only `pages/`/`layouts/`). **Purge dead/legacy components first** (verify 0 refs repo-wide + build-green) before tokenizing — Track A cleared ~158 hits by deleting ~20 dead files.
 - ⚠️ **shadcn `<Input>` drops the `v-model.number` modifier** — **critical here, finance is number-heavy**: bind `:model-value` + `@update:model-value="x = Number($event)"`, else amounts become strings and `money()`/math break.
 - **`ui/` may lack `Table`/`Textarea`** — vendor thin pass-through primitives to close `no-raw-html` on data tables.
@@ -427,7 +436,7 @@ Nuxt 4, `app/` srcDir ✓, FE at `commercial-lch/frontend`. **Not** a blank slat
 - 🟠 **Depends on Stage 0** being merged + re-synced (theme-clientes still ships `#FFB86B` until then —
   do not hand-edit `tokens.css`).
 
-**🔁 Carried from Track A's retro** ([`pharos-track-retro.A.md`](pharos-track-retro.A.md)):
+**🔁 Carried from Track A's retro** ([`archive/pharos-track-retro.A.md`](archive/pharos-track-retro.A.md)):
 - ⚠️ **`#e37600` (ámbar) white-on-accent trap** — forcing white button text on the ámbar accent **fails the contrast gate** (white-on-ámbar < AA 4.5) **and** drifts the registry-owned `tokens.css`. Keep the **registry foreground**; **never hand-edit `tokens.css`**. (Track A hit this exact trap with rosa `#ff3d63` — reverted the white override to green contrast + drift.)
 - **Quotes-page rewrite = *vendor* `Table`/`Textarea` primitives, not just rename** — the `ui/` set likely lacks them (thin pass-through wrappers close `no-raw-html`). And **shadcn `<Input>` drops `v-model.number`** → quote amounts become strings; use `:model-value` + `@update:model-value` with `Number()`.
 - **Gate-fit = page *+ its components* for colours**; **purge dead/legacy first** (0 refs + build-green).
@@ -536,7 +545,9 @@ standard conformance (no downstream back-prop). Closes the rollout. See §Retro 
 - [ ] **4.2** — Refactor app-local duplicates onto registry primitives: delete `PhysicianCombobox`/`SearchPatient` internals → `EntityLookup`/`SearchableSelect`; point Recepción intake/queue + `PatientForm`/`PhysicianForm` at `FormField`/`PageHeader`; `useProcessState` → `useFlow` (apply persisted-state migration decision).
 - [ ] **4.3** — Introduce **central fetch wrapper** (`useAsyncState`/`apiFetch`): admission-patient is the outlier (37 composables, no wrapper). Validates the fetch primitive against the most complex consumer.
 - [ ] **4.4** — Migrate **icon sprawl**: 18 collections / 149 usages → Lucide + Material Symbols via `<Icon>`. Extend `check-fe-bloat` to ban `@nuxt/icon` and (post-migration) `lucide-vue-next` as a render path; add `registry/scripts/check-icon-collections.mjs` (allowlist = lucide + material-symbols). Standardize all three apps onto 8 gates.
-- [ ] **4.5** — **Flip new gates WARN → hard-fail** once lead consumer conforms. Update live retro doc (`pharos-track-retro.A.md`) so tracks B/C inherit the primitives on their next sync.
+- [ ] **4.5** — **Flip new gates WARN → hard-fail** once lead consumer conforms. Append a supplement note to `archive/pharos-track-retro.A.md` (see note below) so tracks B/C inherit the primitives on their next sync.
+
+  > **Note (retro doc location):** `pharos-track-retro.A.md` lives at `plans/archive/pharos-track-retro.A.md`. To keep it editable, either un-archive it back to `plans/` via a PR, or append the component-library carry-forward as a dated supplement section directly in the archive copy.
 
 > 💡 Copy-in distribution means a primitive defect propagates to every app at once. Treat admission-patient **dev** as the canary; keep version/changelog discipline on registry PRs; never flip a gate to hard-fail before the canary is green.
 
@@ -612,8 +623,7 @@ RBAC without per-app shell forks.
 
 **Open:**
 
-- 🛑 **color-mode wiring (Track A, Stage 1)** — Whether to register `@nuxtjs/color-mode` and wire the shell toggle to `useColorMode()`, or confirm the synced shell ships its own `.dark`/localStorage wiring. Pending: @skuger01 escalates at Stage 1 start; @gczuluaga decides and records here.
-- 🛑 **nav route mapping (Track A, Stage 1)** — Exact PascalCase routes for the 8 `AdmisionSidebar` sections. Pre-listed in §Track A Stage 1; verify against the live router before committing `menu.ts`. Escalate any ambiguous route to @gczuluaga.
+*(No open decisions — all Stage 1 decisions resolved by Track A Stage 1 completion.)*
 
 **Resolved during planning:**
 
@@ -624,6 +634,8 @@ RBAC without per-app shell forks.
 - **RBAC nav via `useMenu()` composable** — Registry contract amended so shell calls a reactive, auth-filtered nav. *(2026-06-18.)*
 - **Dark accents approved** — `.dark.theme-recepcion` `#ff6b85` (6.7:1 AA); `.dark.theme-clientes` `#f59e3c` (7.1:1 AA). *(2026-06-18.)*
 - **Track C quotes-page rewrite** — In-track prep stage added; Track C re-budgeted M/High. *(2026-06-18.)*
+- **color-mode wiring (Track A, Stage 1)** — Synced shell ships its own `.dark`/localStorage wiring — no separate `@nuxtjs/color-mode` module needed; confirmed by skuger at Stage 1 completion. *(2026-06-18.)*
+- **nav route mapping (Track A, Stage 1)** — Exact PascalCase routes for the 8 `AdmisionSidebar` sections verified against the live router and committed in `menu.ts` at Stage 1. *(2026-06-18.)*
 
 ## Risks · Riesgos
 
@@ -644,7 +656,7 @@ RBAC without per-app shell forks.
 - [pharos-lis — reference implementation (`lab-qc/frontend`, Step 0, DONE)](../pharos-lis/)
 - [v1 plan (superseded)](archive/pharos-fe-spec-rollout.md)
 - [Retro Gate fill template](pharos-track-retro.template.md)
-- [Track A retro (post Stage 5)](pharos-track-retro.A.md)
+- [Track A retro (post Stage 5)](archive/pharos-track-retro.A.md)
 - [Tracking issue Interval-Col/.github#48](https://github.com/Interval-Col/.github/issues/48) — Track C / rollout
 - [Track B issue Interval-Col/.github#47](https://github.com/Interval-Col/.github/issues/47)
 - [Track A issue Interval-Col/.github#46](https://github.com/Interval-Col/.github/issues/46)

@@ -232,7 +232,7 @@ Legend: see the **status-matrix legend** under Conventions above.
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `Interval-Col/.github` | ✅ | n/a (no `develop`) | ✅ (merge-commit-only per policy) | ✅ | ✅ | ✅ | ✅ (4 hooks) | n/a deploy · ✅ gitleaks |
 | `Interval-Col/finance-lch` | ⚠️ hollow (req. checks + CODEOWNERS on `develop` only) | ✅ (no review reqs) | ✅ (merge-commit-only per policy) | ⚠️ develop only | ⚠️ develop only | ⚠️ develop only | ✅ 4/4 on `develop` (absent on `main`) | ✅ build-once-promote · ✅ gitleaks (develop) |
-| `Interval-Col/lab-qc` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ✅ 4/4 on `develop` (`main` stale: 0/4) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
+| `Interval-Col/pharos-lis` | ⚠️ hollow (7 req. checks, 0 producing workflows on main) | ✅ | ✅ (merge-commit-only per policy) | ❌ main (develop only → unenforced) | ❌ main | ❌ main | ✅ 4/4 on `develop` (`main` stale: 0/4) | ✅ build-once-promote · ❌ gitleaks (orphaned required check, wf on develop only) |
 | `Interval-Col/commercial-lch` | ✅ (1 review + CODEOWNERS + 3 checks + conv-res) | ✅ (3 checks, PR-optional) | ✅ (merge-commit-only, auto-delete, discussions) | ✅ | ✅ | ✅ | ✅ 5/5 hooks | ✅ **build-once-promote** (main retags :dev→:prod, PRs CI-only) · ✅ gitleaks gate |
 | `Interval-Col/cobol-migration` | ✅ (gitleaks + 1 review + CODEOWNERS; chrome on `main`) | ✅ (gitleaks, PR-optional) | ✅ (merge-commit, auto-delete, discussions) | ✅ (on `main`) | ⚠️ org-default | ✅ (on `main`) | ✅ 4 hooks (on `main`) | ✅ **build-once-promote** (prod deploy flag-gated) · ✅ gitleaks |
 | `Interval-Col/admission-patient` | ✅ (renamed `master`→`main`) | ✅ | ✅ (merge-commit-only) | ✅ | ✅ | ✅ | ✅ 4/4 hooks | ⚠️ CI-only, **deploy port deferred (H2)** · ✅ gitleaks gate |
@@ -250,10 +250,10 @@ the other repos can copy. See its row above for the concrete artifacts
 (PR Interval-Col/finance-lch#8, the `gh api` ruleset, the `promote-*`
 jobs pattern).
 
-**Update 2026-06-05**: `lab-qc` is **develop-side done** — chrome (CODEOWNERS,
+**Update 2026-06-05**: `pharos-lis` is **develop-side done** — chrome (CODEOWNERS,
 PR template, stale), all 5 pre-commit policy hooks (lockstep with finance-lch),
 `ci-cd.yml` migrated to build-once-promote (merged to `develop` via PR
-Interval-Col/lab-qc#3; the `promote-*` jobs correctly skip on a `develop` push
+Interval-Col/pharos-lis#3; the `promote-*` jobs correctly skip on a `develop` push
 and the dev deploy is green), repo settings (merge-commit-only + auto-delete +
 Discussions), and branch protection on `develop`. **Deferred by the owner**: the
 first `develop → main` promote (which exercises the prod promote path) and branch
@@ -366,7 +366,7 @@ scoped **7 repos**; the audit covers the rest.
 | `rfcs` | ✅ | ✅ | ❌ | — | ❌ | ❌ | ❌ |
 | `pdf-render-service` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `finance-lch` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ |
-| `lab-qc` | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ | ⚠️ |
+| `pharos-lis` | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ | ⚠️ |
 | `operations` | ✅ | ✅ | ✅ | — | ⚠️ | ✅ | ⚠️ |
 | `.github` | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 | `admission-patient` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -543,7 +543,7 @@ ground moves between sessions.
 >    los demás copian. ✅ Hecho.
 > 2. **1.2 `finance-lch`** — implementación de referencia (lado develop);
 >    falta promover el chrome a `main`.
-> 3. **1.3 `lab-qc`** — lado develop hecho; el bundle de prod (promote +
+> 3. **1.3 `pharos-lis`** — lado develop hecho; el bundle de prod (promote +
 >    BP main) ya entró el 06-07.
 > 4. **1.4 `commercial-lch`** — totalmente cumplido, primer pipeline
 >    build-once-promote probado en prod.
@@ -607,7 +607,7 @@ Actual effort: ~3h end-to-end including the chrome, hook configs, CI/CD migratio
 
 ---
 
-### 1.3 `Interval-Col/lab-qc`
+### 1.3 `Interval-Col/pharos-lis`
 
 > ⚠️ **SUPERSEDED by the 2026-06-13 re-verify** (see RE-VERIFY note above). This
 > section's "done" claims are **develop-side only and partly inaccurate**. Live
@@ -622,12 +622,12 @@ Actual effort: ~3h end-to-end including the chrome, hook configs, CI/CD migratio
 
 **Status (2026-06-05):** ⏸️ **DEVELOP-SIDE DONE; prod bundle deferred.** Chrome,
 all 5 pre-commit hooks, build-once-promote migration, repo settings, and branch
-protection on `develop` all landed via PR Interval-Col/lab-qc#3 (merge-commit to
+protection on `develop` all landed via PR Interval-Col/pharos-lis#3 (merge-commit to
 `develop`; dev deploy green). The owner deliberately deferred the first
 `develop → main` promote and branch protection on `main` to a later prod-side
 session — see the 2026-06-05 headline note above.
 
-**Update 2026-06-07:** ✅ `main` branch protection **now enabled** (the previously-deferred prod-side gate) and the server-side **gitleaks gate** added — required on `main` + `develop` (PR Interval-Col/lab-qc#5) — with the repo flipped to the **merge-commit model** (squash off). A one-time full-history gitleaks audit surfaced a real leak: analyte-ETL tokens + a `postgres` dev DB password in `jobs/config.json` + `backend/api/logic.py` history (both files already removed from `develop`). **Rotated by @gczuluaga**; dead values allowlisted in lab-qc's own `.gitleaks.toml` with an incident pointer. Full-history scan: clean (319 commits). *(The `develop → main` build-once-promote deploy itself is separate and still to be exercised — only the `main` branch-protection gate was added here.)*
+**Update 2026-06-07:** ✅ `main` branch protection **now enabled** (the previously-deferred prod-side gate) and the server-side **gitleaks gate** added — required on `main` + `develop` (PR Interval-Col/pharos-lis#5) — with the repo flipped to the **merge-commit model** (squash off). A one-time full-history gitleaks audit surfaced a real leak: analyte-ETL tokens + a `postgres` dev DB password in `jobs/config.json` + `backend/api/logic.py` history (both files already removed from `develop`). **Rotated by @gczuluaga**; dead values allowlisted in lab-qc's own `.gitleaks.toml` with an incident pointer. Full-history scan: clean (319 commits). *(The `develop → main` build-once-promote deploy itself is separate and still to be exercised — only the `main` branch-protection gate was added here.)*
 
 - [x] Add `.github/CODEOWNERS` — adapted to lab-qc's real layout (`backend/`, `backend/alembic/`, `frontend/app/{components,pages,stores}`, `frontend/e2e/`, `.github/`, `docs/`, `plans/`); catch-all → @gczuluaga, frontend → @SKuger01.
 - [x] Add `.github/PULL_REQUEST_TEMPLATE.md` — Why / What / Test plan / Rollout, CC-format reminder.
@@ -846,7 +846,7 @@ jobs:
 Per-repo migration checkbox:
 
 - [x] `finance-lch` — **done 2026-06-04** (PR #8). Split build/deploy; new `promote-*` jobs pull `:dev`, retag as `:prod` + `:<main-sha>`, push. Push-to-`main` auto-triggers the promote path. `config` job refuses to BUILD a prod image from a push event.
-- [x] `lab-qc` — **migrated 2026-06-05** (PR #3). Split build/promote; new `promote-*` jobs pull `:dev`, retag `:prod` + `:<sha>`, push. Proven on `develop` (promote jobs skip correctly; dev deploy green). **Not yet exercised `develop → main`** — deferred with the prod bundle.
+- [x] `pharos-lis` — **migrated 2026-06-05** (PR #3). Split build/promote; new `promote-*` jobs pull `:dev`, retag `:prod` + `:<sha>`, push. Proven on `develop` (promote jobs skip correctly; dev deploy green). **Not yet exercised `develop → main`** — deferred with the prod bundle.
 - [x] `cobol-migration` — **DONE 2026-06-13** (PR #4 + promote #6). Single `etl-cobol` image → one `promote` job retags `:dev`→`:prod` on a main push (no rebuild). Prod deploy **flag-gated** (`COBOL_PROD_DEPLOY_ENABLED`, default off) until prod readiness clears. Verified via `promote-only` dry-run + real main-push (deploy gated-skipped).
 - [x] `commercial-lch` — **DONE 2026-06-13** (PR #19 + cutover #20). Was NOT green-field (live audit: it already rebuilt+deployed dev+prod per env). New `promote` job retags `:dev`→`:prod` on a main push (no rebuild); PRs flipped to CI-only. Verified end-to-end incl. a `promote-only` dry-run with identical digests + a real prod cutover (prod Up on `:prod`). **First repo with a proven build-once-promote pipeline.**
 - [ ] `admission-patient` — H2 blocker (private-pkg + OIDC) **resolved** (alexandria removed in shadcn migration); deploy port still deferred per plan, owned by @ychejne-jpg via issue #21 + `plans/deploy-pipeline-go-live-plan.md`
@@ -871,10 +871,10 @@ Per-repo install checkbox:
 
 - [ ] `.github` — author the canonical configs
 - [x] `finance-lch` — **done 2026-06-04** (PR #8). All 5 policy hooks installed (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push). `default_install_hook_types: [pre-commit, commit-msg, pre-push]` so a single `pre-commit install` activates all stages.
-- [x] `lab-qc` — **done 2026-06-05** (PR #3). All 5 policy hooks (`check-case-conflict`, `gitleaks`, `ruff`/`ruff-format`, `conventional-pre-commit` at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Byte-identical to finance-lch.
+- [x] `pharos-lis` — **done 2026-06-05** (PR #3). All 5 policy hooks (`check-case-conflict`, `gitleaks`, `ruff`/`ruff-format`, `conventional-pre-commit` at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Byte-identical to finance-lch.
 - [x] `commercial-lch` — **done 2026-06-13** (PR #17). All 5 policy hooks (`check-case-conflict`, `gitleaks` v8.21.2, `ruff`/`ruff-format` on `backend/`, `conventional-pre-commit` v3.6.0 at commit-msg, local `scripts/check-branch-name.sh` at pre-push) + `default_install_hook_types`. Existing ruff + frontend `pnpm lint-check` eslint preserved.
 - [x] `cobol-migration` — **done** (PR #1; now on `main` via promote #6). Policy hooks + lint/format baseline created from scratch.
-- [ ] `admission-patient` — copy + commit (only 4 of 5 needed — `check-case-collisions` already present)
+- [x] `admission-patient` — copy + commit (only 4 of 5 needed — `check-case-collisions` already present) — done — 4/4 hooks landed 2026-06-13 (PR #18, via §1.6)
 
 Also add a CI job in each repo that runs `pre-commit run --all-files` so the
 hooks are enforced even when contributors haven't run `pre-commit install`
@@ -1182,7 +1182,7 @@ guardrails live: what stops an unattended wrong write?
 - 🛑 **Admin permission scope** — the audit ran with read-level token access for
   protection endpoints (HTTP 404 on unprotected branches looks the same as "we
   can't see it"). Pending: before any owner runs the enforcement procedure,
-  confirm they have admin on each repo — Gloria + @SKuger01 are the likely set
+  confirm they have admin on each repo — @gczuluaga + @SKuger01 are the likely set
   but not verified. Decides: @gczuluaga.
 - 🛑 **Required status check names** — policy lists "lint + unit tests +
   verify-api-contract + design-system gates" but each repo's check names differ
@@ -1329,15 +1329,15 @@ but valuable) and `commercial-lch` (has no deploy pipeline yet, so the chrome
 `operations` PRs are the most direct precedent for `.github` because both
 are docs/meta repos without a `develop` branch.
 
-**Wave 2 (chrome + protection on repos that already deploy):** ~~`lab-qc` then
+**Wave 2 (chrome + protection on repos that already deploy):** ~~`pharos-lis` then
 `finance-lch`.~~ Originally planned chrome + protection only with the CI/CD
 reshape deferred to Wave 3 — in practice, **`finance-lch` did Waves 2 and 3
 together** on 2026-06-04 because the two were tightly coupled and the team
 was already in flight. That worked; the same one-shot approach is now
-recommended for `lab-qc` too, using `finance-lch`'s PR #8 as the template.
+recommended for `pharos-lis` too, using `finance-lch`'s PR #8 as the template.
 
 **Wave 3 (build-once-promote migration):** ✅ `finance-lch` done (folded
-into Wave 2). Remaining: `lab-qc` → `cobol-migration`. lab-qc copies the
+into Wave 2). Remaining: `pharos-lis` → `cobol-migration`. pharos-lis copies the
 `promote-*` jobs from `finance-lch`/.github/workflows/ci-cd.yml — `environment:
 production` is already wired there, so the migration should be even cleaner.
 `cobol-migration` last because it needs the `chore/etl-cicd` merge to `main`
