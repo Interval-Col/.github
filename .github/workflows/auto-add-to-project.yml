@@ -1,0 +1,26 @@
+# Reusable: add the triggering issue to the org planning board (Project #2).
+# Called by each repo's .github/workflows/add-to-project.yml — RFC 0010 Track C.1.
+name: Auto-add to org board
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted","dev"]'
+    secrets:
+      ADD_TO_PROJECT_PAT:
+        description: Fine-grained PAT with org Projects read/write
+        required: true
+
+jobs:
+  add-to-project:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions: {}
+    steps:
+      - uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+        with:
+          project-url: https://github.com/orgs/Interval-Col/projects/2
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
