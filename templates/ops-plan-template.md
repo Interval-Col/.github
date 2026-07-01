@@ -5,6 +5,10 @@ devops/deploy/ops execution plans: promote `develop→main`, deploy, migrate a
 repo to build-once-promote, rotate secrets, bootstrap a repo, roll out branch
 protection. Product/app-feature plans use `plan-template.md`.
 
+BEFORE you copy this: is it a plan AT ALL? Most peripheral / single-step ops tasks are
+ISSUES under an outcome epic, not plans (RFC 0011). One outcome = one plan; the
+satellites are its issues. See plan-craft "Is it a plan? — the granularity rule".
+
 WHAT THIS TEMPLATE DROPS vs the full plan-template: the canonical preamble trio
 — "How to use this plan", "Conventions", "Working rules". Those onboard the
 junior, Spanish-native team; ops plans are run by the lead or a Sonnet agent,

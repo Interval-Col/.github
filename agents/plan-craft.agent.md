@@ -350,6 +350,28 @@ keep them aligned.
 
 ## When NOT to write a plan · Cuándo NO escribir un plan
 
+> **Ratified in RFC 0011** (plan + issue consolidation, 2026-06-30) after the plan
+> estate hit ~63 active plans for a ~5-person team. **Most of those should have been
+> issues.** Apply this four-tier rule *before* you copy the template.
+
+### Is it a plan? — the granularity rule
+
+| Tier | What it is | Where it lives |
+|---|---|---|
+| **Outcome plan** (epic) | a *release/capability* with ONE clear "done" (e.g. "Pháros Admisiones in production") | one plan `.md` (the spine) + one **epic tracking issue** |
+| **Phase** | a step *of* an outcome | a `## Phase N` section **inside** the outcome plan — never its own plan |
+| **Issue** (no plan) | an independent, small, trackable task under an outcome | a GH issue on the board, `parent`-linked to the epic — **no plan doc** |
+| **Spike** | time-boxed exploration | a `spike` issue — no plan |
+
+**The test:** *"Does this need multi-phase context a junior executes over days, with
+checkpoints?"* → it's a plan. Otherwise it's an **issue under the outcome's epic**.
+Peripheral, single-step, or "and-also" tasks of a release are **issues, not plans**.
+One outcome = one plan; the satellites are its issues. When an outcome grows a new
+angle, add a `## Phase` or file an issue with `parent: <epic>` — do **not** spawn a
+sibling plan. *(ES: un outcome = un plan; las tareas periféricas son issues bajo el
+epic (con `parent:`), no planes sueltos. Antes de copiar la plantilla, aplica esta
+regla de cuatro niveles.)*
+
 Not all work earns a plan. **Exploratory / "vibe coding" sessions** — a
 time-boxed spike to learn something or try an idea — must **not** be forced
 through the plan template. Track them as a lightweight **`spike` issue**
