@@ -59,3 +59,14 @@ regexes = [
   # value), so `\bdev-admin\b` rather than `Bearer dev-admin`.
   '''\bdev-admin\b''',
 ]
+
+
+# ── A committed .env must never land (org audit 2026-07-01) ──────────
+# gitleaks default rules only catch secret *patterns*; this path rule
+# flags ANY tracked `.env` by filename (spares `.env.example`). Verified
+# to fail on a non-secret .env and pass .env.example (gitleaks 8.30.1).
+[[rules]]
+id = "committed-dotenv"
+description = "A .env file must never be committed (use .env.example)"
+regex = '''(?s).*'''
+path = '''(^|/)\.env$'''
