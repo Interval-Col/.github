@@ -14,6 +14,10 @@ glosses, which bloat the doc):
     before the English task block, so a Spanish-native reader gets a
     full map of the phase up front.
 
+BEFORE you copy this: is it a plan AT ALL? Most peripheral / single-step / "and-also"
+tasks are ISSUES under an outcome epic, not plans (RFC 0011). One outcome = one plan;
+the satellites are its issues. See plan-craft "Is it a plan? — the granularity rule".
+
 Full authoring guidance: see `.github/agents/plan-craft.agent.md`.
 Reference plans worth imitating (they predate the Glossary +
 task-by-task Resumen convention, so use them for tone and structure,
