@@ -69,3 +69,16 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         always_run: true
+
+      # ── Policy hook #5 — plan-standards lint (ADVISORY) ────────────
+      # Deterministic schema-v2.1 / status-enum / retired-key check on
+      # changed plan .md files. ADVISORY: it prints findings but exits 0,
+      # so it never blocks a commit. Mirrored server-side (advisory) in
+      # .github/workflows/plan-lint.yml. Promote to --strict once the
+      # status-vocab reconciliation (operations#38) is ratified.
+      - id: plan-lint
+        name: plan standards (advisory, policy hook #5)
+        language: system
+        entry: python3 scripts/plan_lint.py
+        files: (^|/)plans/.+\.md$
+        exclude: /archive/|template

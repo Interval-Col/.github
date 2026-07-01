@@ -1,0 +1,54 @@
+# Plan-standards linter — ADVISORY (annotates, never fails the check).
+#
+# Runs the deterministic `scripts/plan_lint.py` over the plan `.md` files changed
+# in a PR, and surfaces schema-v2.1 / status-enum / retired-key violations as
+# inline annotations. It does NOT block merges.
+#
+# Why advisory: promoting this to a *required* (--strict) check is gated on
+# ratifying the status-enum ↔ board-column reconciliation (operations#38). Until
+# then this is a visible drift signal, not a gate. Tracked in the "promote
+# plan-lint to required" issue.
+#
+# Why self-hosted: the org is on the Team plan with a $0 Actions spending limit —
+# a github-hosted required check risks tipping the cap and killing all runs. This
+# runs on the self-hosted runner, which is unaffected.
+#
+# Rollout: this file + scripts/plan_lint.py copy into the pilot repos
+# (finance-lch, cobol-migration, admission-patient) first; then org-wide.
+
+name: Plan standards (advisory)
+
+on:
+  pull_request:
+    paths:
+      - "**/plans/**.md"
+
+permissions:
+  contents: read
+
+jobs:
+  plan-lint:
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Collect changed plan files
+        id: changed
+        run: |
+          set -euo pipefail
+          base="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}" --quiet || true
+          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '**/plans/**.md' \
+                    | grep -v '/archive/' | grep -v 'template' || true)
+          {
+            echo "files<<EOF"
+            echo "$files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Changed plan files:"; echo "$files"
+      - name: Plan lint (advisory)
+        if: steps.changed.outputs.files != ''
+        run: |
+          # shellcheck disable=SC2086
+          python3 scripts/plan_lint.py ${{ steps.changed.outputs.files }}
