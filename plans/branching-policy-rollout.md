@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-06-04
-updated: 2026-06-16
+updated: 2026-06-30
 issue: none — board item pending (operations#38)
 start: TBD
 target: TBD
@@ -11,17 +11,21 @@ implementation: gczuluaga
 language: English body; Spanish "Resumen" + decision/criteria glosses.
 ---
 
-# Branching & Deploy Policy — Per-Repo Rollout · Política de ramas y despliegue — Despliegue por repo
+# Engineering Platform — Branching, Enforcement & Tracker Hygiene · Plataforma de ingeniería — Ramas, enforcement y higiene de trackers
+
+> *Consolida escalator-enforcement-rollout.md y tracker-hygiene-automation-plan.md (RFC 0011; originales archivados en plans/archive/).*
 
 > **Resumen (ES).** Este plan rastrea, repo por repo, la aplicación de la
-> política de ramas y despliegue (`BRANCHING-AND-DEPLOY.md`). Para cada uno de
-> los siete repos en alcance fija el mismo conjunto: protección de ramas en
-> `main` y `develop`, CODEOWNERS, plantilla de PR, workflow de stale, los 5
-> hooks de pre-commit obligatorios, y la migración CI/CD a build-once-promote.
-> El objetivo es llevar cada repo a "cumplido" sin perder de vista en qué etapa
-> está cada uno. Las decisiones ya cerradas (GitFlow-lite, merge-commit vía PR,
-> conventional commits, build-once-promote) **no** se debaten aquí — solo el
-> trabajo de hacerlas reales por repo.
+> política de ramas y despliegue (`BRANCHING-AND-DEPLOY.md`) en tres capas: (1)
+> **línea base** — protección de ramas en `main` y `develop`, CODEOWNERS,
+> plantilla de PR, workflow de stale, los 5 hooks de pre-commit obligatorios, y
+> la migración CI/CD a build-once-promote; (2) **escalator de enforcement** —
+> el guard `main-only-from-develop`, `enforce_admins` ON, review:0 y bloques de
+> concurrencia que hacen vinculante el flujo `feature→develop→main`; (3)
+> **higiene de trackers** — una rutina programada de Claude Code que reconcilia
+> el trabajo fusionado del día contra las casillas de los issues del org (v1 EN
+> VIVO; v2/v3 aparcadas como ruta de graduación). Las decisiones ya cerradas no
+> se debaten aquí — solo el trabajo de hacerlas reales por repo.
 
 This plan tracks per-repo enforcement of the branching-and-deploy policy that
 landed in [PR Interval-Col/.github#4](https://github.com/Interval-Col/.github/pull/4)
@@ -33,6 +37,13 @@ policy without losing track of which repo is at which stage. Locked decisions
 (GitFlow-lite, merge-commit via PR, conventional commits, 5 pre-commit hooks,
 build-once-promote, etc.) are not up for debate here — only the work to make
 them real per repo.
+
+This plan has been expanded (RFC 0011, 2026-06-30) to cover two additional
+org-level workstreams that build on the same baseline: the **escalator
+enforcement layer** (Phase 3 — `main-only-from-develop` guard + `enforce_admins`
++ workflow concurrency) tracked in [#69](https://github.com/Interval-Col/.github/issues/69),
+and the **EOD tracker-hygiene automation** (Phase 4 — nightly Claude Code
+routine that reconciles merged work against issue checklists).
 
 ---
 
@@ -170,6 +181,16 @@ These apply to every phase.
 | merge-commit model | modelo merge-commit | merges create a merge commit using the PR title; squash and rebase are **off** |
 | Done-when | terminado-cuando | the literal checkable list that means the task is verified |
 | commit + push | hacer commit y push | save to git locally **and** send to GitHub — both verbs |
+| escalator | escalator / flujo de promoción | the enforced chain `feature → develop → main`; no commit skips a step |
+| enforce_admins | forzar en admins | setting that prevents repo admins from bypassing branch rules via `--admin` |
+| guard workflow | workflow de guardia | a CI workflow (`guard-promotion.yml`) that fails if a PR targets `main` from any branch other than `develop` |
+| concurrency block | bloque de concurrencia | a `concurrency:` key in a GitHub Actions workflow that collapses duplicate queued runs |
+| review count 0 | 0 revisiones requeridas | required approvals set to zero; CI checks are the gate, not a human approval |
+| tracker | tracker / issue de seguimiento | the long-lived GitHub issue that holds a project's checklist of work items |
+| routine | rutina (agente programado) | a scheduled Claude Code cloud agent that runs on a cron, here at end-of-day |
+| propose-only | solo-propone | the routine comments a suggestion but never edits the checkbox itself; the human ticks it |
+| EOD | fin de día | end-of-day — when the routine wakes to reconcile the day's merged work |
+| graduation path | camino de graduación | the staged way trust is earned: v1 → v2 → v3, not all at once |
 
 ## Out of scope · Fuera de alcance
 
@@ -187,6 +208,9 @@ Explicitly out of scope — not for this plan:
   standardize as a follow-up.
 - **Prod go-live for `cobol-migration`** (wiring `production` secrets +
   flipping the flag) — owned separately by @ychejne-jpg via issue #7.
+- **`transmisiones`, `port-mapper`** (Phase 3 escalator) — still on `master`; fold in on the `master→main` rename tracked in #42 / RFC 0009.
+- **`legacy-repositories`** (Phase 3 escalator) — archive repo; enforcement not applicable.
+- **Per-dev routines (v2) and unattended auto-ticking (v3)** (Phase 4 tracker hygiene) — parked as the graduation path; v1 is the day-one scope.
 
 ---
 
@@ -903,6 +927,246 @@ procedimiento de protección quedó corrido con merge-commit-only.)*
 
 ---
 
+---
+
+## Phase 3 — Escalator enforcement (`enforce_admins` + guard + concurrency)
+
+> *Consolida escalator-enforcement-rollout.md (RFC 0011; originales archivados en plans/archive/).*
+
+> **Resumen (ES) — Fase 3: Escalator de enforcement.**
+>
+> Esta fase agrega la **capa de enforcement del escalator** encima de la línea
+> base (Fases 1 y 2): (1) el workflow guard **`main-only-from-develop`** (un PR
+> a `main` debe venir de `develop`), (2) **`enforce_admins`** ON (nadie hace
+> bypass, ni el admin), y (3) bloques de **concurrencia** en todos los
+> workflows CI/CD para evitar colas que saturen los runners. El resultado:
+> `main ⊆ develop` siempre — nada llega a prod que no haya pasado primero por
+> dev. Referencia viva: `nucleus-db` (`docs/PROMOTION.md`). Tracking:
+> [#69](https://github.com/Interval-Col/.github/issues/69).
+
+### The model (decided 2026-06-27, @gczuluaga)
+
+For a solo gatekeeper, `enforce_admins` + `review:1` deadlocks (you can't
+approve your own PR, and can't bypass). The org standard resolves it as:
+
+| Rail | Setting | Why |
+|---|---|---|
+| **Promotion guard** | `.github/workflows/guard-promotion.yml` required as `main-only-from-develop` | A PR into `main` must come from `develop`. The CI-enforced escalator. |
+| **`enforce_admins`** | **ON** | No `--admin` bypass — without this, every rule (incl. the guard) is advisory. |
+| **Required approvals** | **0** while solo | The CI checks are the gate, not a human approval. Bump to **1** when a 2nd reviewer joins. |
+
+### Per-repo reusable steps (repo already has baseline + `develop`)
+
+```bash
+R=Interval-Col/<repo>
+# 1. add the guard workflow on develop, then promote it to main (see step 4)
+#    cp the canonical guard-promotion.yml (from nucleus-db) into .github/workflows/ on develop
+# 2. enforce_admins ON
+gh api -X POST repos/$R/branches/main/protection/enforce_admins
+# 3. review count 0 (solo); CI checks are the gate
+gh api -X PATCH repos/$R/branches/main/protection/required_pull_request_reviews \
+  -F required_approving_review_count=0 -F require_code_owner_reviews=false
+# 4. open the first develop→main promote PR → the guard runs (passes) →
+#    Settings → Branches → main → Require status checks → add "main-only-from-develop"
+```
+
+> ⚠️ Order matters: the guard check is only selectable as *required* **after** it has
+> run once (step 4 before adding it to protection). And `enforce_admins` ON + `review:1`
+> will deadlock a solo owner — do step 3 (review→0) **before/with** step 2.
+
+### Workflow concurrency (every repo with CI/CD)
+
+> **Resumen (ES).** Agregar un bloque `concurrency:` a cada `ci-cd.yml` y
+> `ci.yml` para evitar colas de ejecuciones que saturen los runners. Incluir
+> este cambio en el mismo PR de escalator de cada repo.
+
+Folded in 2026-06-27 after a `develop`-deploy pile-up starved + OOM-ed the dev
+runner fleet. **Every repo's workflows get a `concurrency` block** so superseded
+runs self-collapse instead of queueing N-deep (see `BRANCHING-AND-DEPLOY.md`
+§"Concurrency"):
+
+- **`ci-cd.yml` (deploy):** `group: deploy-${{ github.ref }}`, **`cancel-in-progress: false`** (collapse the pending queue to the newest; never interrupt a live deploy).
+- **`ci.yml` (PR gate):** `group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}`, `cancel-in-progress: true`.
+
+Bundle the concurrency change with each repo's escalator PR.
+(Related infra fix, tracked separately: move runners to a dedicated VM + push
+build/test to GitHub-hosted so CI can't starve app hosts — RFC 0007.)
+
+### Per-repo escalator checklist
+
+#### ✅ Done (reference)
+- [x] `nucleus-db` — full escalator live (`enforce_admins`, review 0, guard required, `docs/PROMOTION.md`).
+
+#### 🟡 Baseline already in place + has `develop` — apply escalator now
+Each needs: guard workflow + `enforce_admins` ON + `review:0` + concurrency block.
+(Required checks already include gitleaks + per-repo CI.)
+
+- [ ] `finance-lch` — `enforce_admins` + guard + concurrency (7 CI checks already; review 1→0)
+- [ ] `pharos-lis` — `enforce_admins` + guard + concurrency (7 checks incl. Alembic; review 1→0)
+- [ ] `admission-patient` — `enforce_admins` + guard + concurrency (checks: backend, lint-and-build, gitleaks)
+- [ ] `commercial-lch` — `enforce_admins` + guard + concurrency (Backend/Frontend CI + gitleaks)
+- [ ] `cobolql` — `enforce_admins` + guard + concurrency (Rust CI, main-source-guard, COBOL lint, gitleaks)
+- [ ] `cobol-migration` — `enforce_admins` + guard + concurrency (gitleaks; ETL)
+- [ ] `biuman-lis` — `enforce_admins` + guard + concurrency **+ turn on strict up-to-date** + add a build/test required check (only gitleaks today)
+- [ ] `biuman-reports` — `enforce_admins` + guard + concurrency **+ strict up-to-date** (+ a CI check if a pipeline exists)
+
+#### 🔴 `main` unprotected today — baseline FIRST (#42), then escalator
+These have a `develop` branch but `main` has **zero protection** (no PR required, no checks).
+Do the #42 baseline first, then the escalator steps. Highest risk — front-load.
+
+- [ ] `pdf-render-service` — baseline (#42) → then `enforce_admins` + guard + review 0 + concurrency
+- [ ] `api-calendar` — baseline (#42) → then escalator
+- [ ] `employee-management` — baseline (#42) → then escalator
+- [ ] `inventory-management` — baseline (#42) → then escalator
+- [ ] `accounting-interface` — baseline (#42) → then escalator (handles billing — prioritize within this group)
+
+#### 🟢 Lightweight (docs/playground, **no `develop`**) — `enforce_admins` only (no guard)
+No escalator (no develop branch); just close the bypass hole. Add strict up-to-date where off.
+
+- [ ] `operations` — `enforce_admins`
+- [ ] `rfcs` — `enforce_admins` + strict up-to-date
+- [ ] `.github` — `enforce_admins`
+- [ ] `design-studio` — `enforce_admins` + strict up-to-date
+
+#### 🔵 Adopt-develop-first
+- [ ] `infrastructure` — **create a `develop` branch** (IaC → prod hosts; currently merges straight to main), then apply the full escalator. Prioritize: this deploys to prod infrastructure.
+
+### ✅ Done-when (Phase 3, per repo)
+1. `gh api repos/Interval-Col/<repo>/branches/main/protection/enforce_admins` → `enabled: true`.
+2. `main` required status checks include `main-only-from-develop` (for develop/main repos) + `gitleaks`.
+3. A test PR from a `feat/*` branch **into `main` fails** the guard; a `develop → main` PR **passes**.
+4. `ci-cd.yml` + `ci.yml` carry the `concurrency` block (no more queue pile-ups).
+5. The repo's row in the checklist above is checked.
+
+🚦 **Checkpoint 3 (per group).** Show @gczuluaga: the `gh api … protection` output for one repo in the group + a screenshot of a feature→main PR being blocked by the guard. Confirm before moving to the next group.
+
+---
+
+## Phase 4 — EOD tracker-hygiene automation
+
+> *Consolida tracker-hygiene-automation-plan.md (RFC 0011; originales archivados en plans/archive/).*
+
+> **Resumen (ES) — Fase 4: Automatización de higiene de trackers (fin de día).**
+>
+> Una rutina programada de Claude Code se despierta al final del día laboral,
+> lee el trabajo fusionado del día y lo reconcilia contra las casillas de los
+> trackers de issues del org — en vez de la pasada manual. La confianza se gana
+> por fases: **v1** (central, solo propone) ✅ EN VIVO desde 2026-06-02; **v2**
+> (rutina por dev) y **v3** (auto-aplicar lo de alta confianza) están APARCADAS
+> como la ruta de graduación. El plan vive aquí (org-level) porque toca trackers
+> en cada repo de app.
+
+### The convention it enforces (already agreed)
+
+Announced in the digest thread (Interval-Col/rfcs#4):
+
+1. **Native task-list checkboxes** (`- [ ]` / `- [x]`) are the single source
+   of progress truth — `✅`-in-prose does NOT roll up and is decoration only.
+2. A visible **`Blocked by: #N`** line where a real dependency exists.
+
+💡 **Heuristic.** A *wrong* tick is worse than no tick: it tells the
+gate-keeper something is finished when it isn't. That is exactly why v1 is
+propose-only and trust is earned in phases.
+
+### GitHub connection setup (non-obvious — learned 2026-06-02)
+
+A routine's GitHub access does NOT come from the org GitHub App alone. Two
+non-obvious requirements:
+
+1. **Run `/web-setup` in the TERMINAL CLI** — the VS Code extension does not
+   expose `/web-setup`. Install the standalone CLI (`npm install -g @anthropic-ai/claude-code`),
+   run `claude` in a terminal as the **same account** that owns the routine,
+   then `/web-setup` and authorize GitHub.
+2. **Use the "Interval-Col GH" environment** — after `/web-setup`, `/schedule`
+   offers this named env. The generic "Default" env fails with
+   `github_repo_access_denied`.
+
+🛑 **Failure signature:** routine run → HTTP 400 `github_repo_access_denied`;
+a scheduled run auto-disables with `ended_reason: auto_disabled_repo_access`.
+
+**Red herrings (don't repeat):** installing the org GitHub App; the org's
+OAuth third-party restriction policy; recreating the routine / waiting for
+propagation — none of these fix it.
+
+### Phase 4.1 — v1: Central, propose-only  ✅ LIVE 2026-06-02
+
+- [x] **4.1.1** — Stand up routine `trig_01WTXhtzpJfFzRgZSqnCxdQC` (manage at
+      claude.ai/code/routines), owner @gczuluaga, cron `0 0 * * 2-6` = weekdays
+      19:00 Bogotá, model sonnet-4-6, tools Bash/Read/Grep, env
+      **"Interval-Col GH"**. Manual test run 2026-06-02 returned 200.
+- [x] **4.1.2** — Watch the **4 active execution-trackers** (`eodWatch` set from
+      2026-06-02 triage): `commercial-lch#1`, `admission-patient#4`,
+      `admission-patient#5`, `nucleus-db#5`. (finance-lch#1 + nucleus-db#2 were
+      closed in the triage; co-creation/parked issues excluded as no signal.)
+- [x] **4.1.3** — Read the day's merged PRs across the active repos (by author,
+      from git).
+- [x] **4.1.4** — Post **one "tracker check-in" comment** per active tracker:
+      *"Looks done today: suggest ticking 1.4, 1.5 on #4 — confirm?"* and
+      @-mention the owner. **No auto-edits** — the human ticks the box, zero
+      mismark risk.
+- [x] **4.1.5** — Run it ~1 week; tune which signals it trusts before graduating.
+
+✅ **Done-when (v1):** the routine `trig_01WTXhtzpJfFzRgZSqnCxdQC` exists and
+is enabled on cron `0 0 * * 2-6` under @gczuluaga with env "Interval-Col GH";
+a manual run returns 200; a real nightly run posts exactly one propose-only
+check-in comment per active `eodWatch` tracker, @-mentioning the owner, and
+edits **no** checkboxes itself.
+
+🚦 **Checkpoint 4.1.** Show @gczuluaga: the routine config screen (cron, env,
+model, tools), the 200 from the manual run, and a real night's check-in
+comments on the four `eodWatch` trackers. Questions:
+1. Why is v1 propose-only rather than auto-applying — what's the cost of a
+   wrong tick to the gate-keeper?
+2. Walk one real check-in comment live: did the suggested boxes actually match
+   the day's merged work, and would you have ticked them?
+
+### Phase 4.2 — v2: Per-dev routines  ⏸ PARKED (graduation)
+
+🛑 **HUMAN DECISION — when to graduate from v1 to v2.** An agent must not flip
+this on: it requires confirming that **every dev is on Claude Code and has
+created their own routine** under their own identity. gczuluaga decides when
+the prerequisite is met; log the decision below.
+
+- [ ] **4.2.1** — Each dev runs their **own** EOD routine, under their **own
+      identity**, so it knows their actual day's work and attribution is correct.
+- [ ] **4.2.2** — Confirm the prerequisite is met: every dev is on Claude Code
+      and has created their routine.
+- [ ] **4.2.3** — Compare accuracy + authorship against v1's central model before
+      retiring the central routine.
+
+✅ **Done-when (v2):** every active dev has a personal EOD routine running under
+their own identity; the check-in suggestions carry correct authorship; and the
+central v1 routine is either retired or explicitly kept as a fallback by a
+logged decision.
+
+### Phase 4.3 — v3: Auto-apply high-confidence  ⏸ PARKED (graduation)
+
+🛑 **HUMAN DECISION — turning on unattended writes.** An agent must not enable
+auto-apply: this is the point where the routine starts **writing** to trackers
+unattended. It needs scoped issue-edit permission. Only graduate here **after v1
+has shown the suggestions are reliably right**, with gczuluaga's explicit
+sign-off logged below.
+
+- [ ] **4.3.1** — Routine **auto-ticks only** boxes whose PR explicitly names the
+      issue + item (e.g. branch/title `…#4 1.5`); everything fuzzy stays a
+      *suggestion*.
+- [ ] **4.3.2** — Grant the routine scoped **issue-edit** permission (it already
+      has issue-comment from v1).
+- [ ] **4.3.3** — Re-validate against the write-action guardrails that surfaced
+      during the manual passes before running it unattended.
+
+✅ **Done-when (v3):** the routine auto-ticks **only** boxes whose PR explicitly
+names the issue + item; every fuzzy match remains propose-only; the routine has
+scoped issue-edit permission and runs unattended without tripping the write-action
+guardrails.
+
+🚦 **Checkpoint 4.3 (exit).** Show @gczuluaga: a run where an explicit
+`#N i.j`-named PR auto-ticked its box AND a fuzzy match was left as a suggestion;
+the scoped permission grant; and a clean unattended run. Walk the write-action
+guardrails live: what stops an unattended wrong write?
+
+---
+
 ## Decisions · Decisiones
 
 > Collected 🛑 markers that are still open, and resolved decisions logged below
@@ -937,6 +1201,20 @@ procedimiento de protección quedó corrido con merge-commit-only.)*
   them once it ships. Pending: confirm with the ETL lead whether they're active
   before Wave 1 to avoid surprise archival warnings. Decides: ETL lead /
   @ychejne-jpg.
+- 🛑 **Phase 3 target date** — No enforcement deadline is set for the escalator
+  layer (`target: TBD`). Pending: @gczuluaga sets the timeline and updates the
+  frontmatter. *(ES: fecha límite del escalator — pendiente.)*
+- 🛑 **Graduate v1 → v2 (per-dev routines)** (Phase 4) — flip only once every
+  dev is on Claude Code with their own routine. Pending: @gczuluaga confirms the
+  prerequisite is met.
+- 🛑 **Graduate v1 → v3 (auto-apply unattended writes)** (Phase 4) — enable only
+  after v1 suggestions are proven reliable. Pending: @gczuluaga sign-off + scoped
+  issue-edit permission + write-action guardrail re-validation.
+- 🛑 **Phase 4 scope** — which repos/trackers are "active" enough to be worth a
+  nightly check. *(v1 currently scopes to the 4 `eodWatch` trackers; revisit as
+  the portfolio shifts.)*
+- 🛑 **Phase 4 cost** — cloud-agent tokens × repos × weekdays — confirm
+  acceptable as the portfolio grows.
 
 **Resolved during planning:**
 
@@ -955,6 +1233,28 @@ procedimiento de protección quedó corrido con merge-commit-only.)*
   was run across all 13 GitHub repos, setting **merge-commit-only + auto-delete-on-merge**
   (squash + rebase off). Spot-verified on `.github`, `finance-lch`, `biuman-reports`.
   The script is idempotent and reversible; re-run to re-assert. *(2026-06-15.)*
+- **Solo-gatekeeper enforcement model** (Phase 3) — `enforce_admins` ON + `review:0`
+  resolves the deadlock where an admin cannot approve their own PR and cannot
+  bypass via `--admin`. Bump to `review:1` when a second maintainer joins.
+  *(2026-06-27.)*
+- **Concurrency strategy** (Phase 3) — `ci-cd.yml` uses `cancel-in-progress: false`
+  (never interrupt a live deploy); `ci.yml` uses `cancel-in-progress: true`
+  (collapse stale PR gate runs). *(2026-06-27.)*
+- **biuman repos get strict up-to-date flag** (Phase 3) — `biuman-lis` and
+  `biuman-reports` currently have only gitleaks as a required check; adding strict
+  up-to-date signals the need for a real build/test check. *(2026-06-27 survey.)*
+- **v1 as the starting shape** (Phase 4) — chose v1 (central, propose-only) as
+  the starting shape; parked v2 + v3 as the graduation path. *(gczuluaga,
+  2026-06-01.)*
+- **Plan home is org-level** (Phase 4) — tracker hygiene plan lives in
+  `Interval-Col/.github/plans/` — it's org-level, not finance-specific.
+  *(gczuluaga, 2026-06-01.)*
+- **v1 stood up and verified** (Phase 4) — `trig_01WTXhtzpJfFzRgZSqnCxdQC`, env
+  "Interval-Col GH"; manual run returned 200. Scoped to the 4 `eodWatch`
+  trackers. *(gczuluaga, 2026-06-02.)*
+- **GitHub-connection requirement recorded** (Phase 4) — `/web-setup` in the
+  terminal CLI + a GitHub-connected env, after an hour of dead ends — see
+  Phase 4 Setup section. *(gczuluaga, 2026-06-02.)*
 
 ## Risks · Riesgos
 
@@ -984,6 +1284,32 @@ procedimiento de protección quedó corrido con merge-commit-only.)*
   `feat/etl-*`) get archival warnings once `stale.yml` ships. **Mitigation:**
   confirm active branches with the ETL lead before Wave 1; use the `do-not-stale`
   opt-out label.
+- **`enforce_admins` enabled before guard is a required check** (Phase 3) →
+  admin bypass is removed, but a direct feature→main PR can still reach `main`
+  because the guard is only advisory. **Mitigation:** complete the first develop→main
+  PR (to trigger the guard check) *before* adding it as a required check in branch
+  settings — the step order in Phase 3 reusable steps encodes this.
+- **`review:1` set instead of `review:0` on a solo repo** (Phase 3) → deadlock.
+  **Mitigation:** step 3 in the reusable steps explicitly sets
+  `required_approving_review_count=0`; verify the API response after running.
+- **`biuman-lis`/`biuman-reports` lack a build/test required check** (Phase 3) →
+  the escalator guard alone does not catch code regressions. **Mitigation:**
+  checklist note ("add a build/test required check") tracks this; treat as a
+  follow-up once CI is added.
+- **`infrastructure` deploys directly to prod from `main`** (Phase 3) → highest
+  blast radius; creating `develop` is a prerequisite before any escalator steps.
+  **Mitigation:** front-load within the `🔵 Adopt-develop-first` group; @gczuluaga
+  gates the first develop→main promote.
+- **Wrong tick misleads the gate-keeper** (Phase 4) → a checkbox marked done when
+  the work isn't tells the gate-keeper something shipped that didn't. **Mitigation:**
+  v1 is propose-only; v3 auto-ticks **only** explicit `#N i.j`-named PRs and
+  leaves fuzzy matches as suggestions; gate v3 behind Checkpoint 4.3.
+- **Routine loses GitHub access** (Phase 4) → run returns HTTP 400
+  `github_repo_access_denied`, scheduled run auto-disables. **Mitigation:** keep
+  the `/web-setup`-synced token current and use the "Interval-Col GH" env.
+- **Nightly cost creep** (Phase 4) → cloud-agent tokens × repos × weekdays can
+  grow as the portfolio grows. **Mitigation:** scope to the `eodWatch`
+  active-tracker set and revisit scope as the portfolio shifts.
 
 ---
 
@@ -1030,7 +1356,8 @@ blocker resolved — alexandria removed in the shadcn migration — so the chrom
 ## References
 
 - `Interval-Col/.github/BRANCHING-AND-DEPLOY.md` — the policy this plan enforces
-  (§"Merge mode", §"main — today", §"develop — today").
+  (§"Merge mode", §"main — today", §"develop — today", §"Branch protection",
+  §"Concurrency").
 - [PR Interval-Col/.github#4](https://github.com/Interval-Col/.github/pull/4) —
   where `BRANCHING-AND-DEPLOY.md` landed.
 - [Interval-Col/rfcs#6](https://github.com/Interval-Col/rfcs/discussions/6) —
@@ -1043,3 +1370,15 @@ blocker resolved — alexandria removed in the shadcn migration — so the chrom
   deferred admission-patient deploy port (H2).
 - `.github/templates/plan-template.md` — the canonical plan shape this document
   conforms to.
+- [#42](https://github.com/Interval-Col/.github/issues/42) — baseline tracking
+  issue (gitleaks + protection rollout, all 21 repos).
+- [#69](https://github.com/Interval-Col/.github/issues/69) — Phase 3 escalator
+  enforcement tracking issue.
+- `nucleus-db/docs/PROMOTION.md` — canonical reference implementation of the full
+  escalator (Phase 3 reference).
+- `Interval-Col/rfcs#4` — digest thread where the tracker checklist convention was
+  announced (Phase 4 reference).
+- Routine `trig_01WTXhtzpJfFzRgZSqnCxdQC` (manage at claude.ai/code/routines) —
+  Phase 4 v1 EOD tracker-hygiene routine.
+- Active `eodWatch` set: `commercial-lch#1`, `admission-patient#4`,
+  `admission-patient#5`, `nucleus-db#5` (Phase 4).
