@@ -2,7 +2,7 @@
 status: in-progress
 owner: gczuluaga
 created: 2026-06-18
-updated: 2026-06-29
+updated: 2026-06-30
 issue: Interval-Col/.github#48
 start: TBD
 target: TBD
@@ -141,23 +141,41 @@ it rests on this ritual until a second code-owner exists).
 
 ### Enforcement setup (one-time, admin/German) — arms the "dictatorial standard"
 
+> Consolida pharos-enforcement-setup.md (RFC 0011; originales archivados en plans/archive/).
+
 > ⚠️ **Gap found by the de-risk recon: `pharos-lint-check` is NOT a required check in *any* target
 > repo today** (it's 404 in all three) — so the design-system standard is currently **unenforced at
 > CI**. These steps arm it; the Retro Gate then verifies the *next* repo is armed before each handoff.
+> Run by the org admin (@gczuluaga) only. Confirm exact context strings from a live run before adding them as required checks.
 
-- **(critical)** Per target repo: sync to land `pharos-lint-check.yml`, push to `develop` once so the
-  context reports, then register **`Pháros — lint-check`** (confirm the exact context string) as a
-  **required status check on `develop` AND `main`** via `gh api … /branches/{develop,main}/protection/required_status_checks`.
-  Required checks on `develop` **block even direct pushes** — the load-bearing lever (per `BRANCHING-AND-DEPLOY.md`).
-- Add a **`retro-gate.yml`** check to `.github` (fails a `retro-gate`-labeled PR unless it diffs the
-  retro doc + each downstream track section; honors the `> Back-propagation: NONE — …` escape);
-  register it **required on `.github` `main`**.
-- Create labels **`retro-gate`** (`.github`) + **`blocked:retro-gate`** (target repos); optional
-  self-healing guard re-applies the block label if removed by anyone but @gczuluaga.
-- Minor parity: enable `dismiss_stale_reviews` on **commercial-lch** `main`; add **@SKuger01** to
-  **admission-patient** CODEOWNERS.
-- **Deferred escalation:** leave `enforce_admins` **OFF** (keeps your solo-merge flow); once a second
-  code-owner exists, turn it ON for `.github` so even you can't merge a red `retro-gate` check.
+**A. One-time, before Track A**
+
+- [ ] Merge the v2 plan PR (includes `retro-gate.yml`) + the RFC PR.
+- [ ] Create labels:
+  ```sh
+  gh label create retro-gate -R Interval-Col/.github -c 5319e7 -d 'Pháros track handoff (Retro Gate) PR'
+  for r in admission-patient finance-lch commercial-lch; do
+    gh label create blocked:retro-gate -R "Interval-Col/$r" -c b60205 -d 'Blocked: awaiting prior track Retro Gate'
+  done
+  ```
+- [ ] **Register `retro-gate` as a required check on `.github` `main`** — after the workflow has run once on a `retro-gate`-labeled PR. Confirm the exact context name (`Pháros — retro-gate` / `retro-gate`) from that run, then add it to required checks (keep `gitleaks`). 🛑 Confirm exact context string before setting required.
+- [ ] Parity: enable `dismiss_stale_reviews` on `commercial-lch` `main`; add `@SKuger01` to `admission-patient` CODEOWNERS (frontend paths, via PR).
+
+✅ **Done-when (A):** labels exist in all listed repos; `gh api repos/Interval-Col/.github/branches/main/protection --jq '.required_status_checks.contexts'` lists the `retro-gate` context; `gh api repos/Interval-Col/commercial-lch/branches/main/protection --jq '.required_pull_request_reviews.dismiss_stale_reviews'` returns `true`; a PR against `admission-patient` touching frontend paths auto-assigns `@SKuger01`.
+
+**B. Per-track — during each track's Stage 1–2 (once `pharos-lint-check.yml` is synced)**
+
+- [ ] **(admission-patient)** After `pharos-lint-check.yml` reports at least once on `develop`: confirm exact context string from that run, then add `Pháros — lint-check` to required status checks on **both `develop` and `main`** — alongside existing `gitleaks` + repo required checks; do not remove them.
+- [ ] **(finance-lch)** Same as above for Track B.
+- [ ] **(commercial-lch)** Same as above for Track C.
+
+> Required checks on `develop` block even direct pushes — the load-bearing lever (per `BRANCHING-AND-DEPLOY.md`). The Retro Gate's STANDARD-conformance step verifies the next repo is armed before each handoff.
+
+✅ **Done-when (B, per repo):** `gh api repos/Interval-Col/<repo>/branches/develop/protection --jq '.required_status_checks.contexts'` and same for `main` both list the `pharos-lint-check` context alongside `gitleaks` and the prior required checks.
+
+**C. Deferred — `enforce_admins`**
+
+- [ ] Once a real second code-owner exists in the org: turn ON `enforce_admins` for `Interval-Col/.github` `main` so even an admin cannot merge a red `retro-gate` check. **Leave OFF until then** (keeps the `gh pr merge --admin` solo-merge flow). 🛑 Activation decision logged with date when triggered.
 
 ## Corrected spec values — live `registry/spec/*`
 
@@ -430,6 +448,146 @@ build · screenshots L+D · active-leaf `#e37600` beam · `pdf-render` route int
 **Stage 6 · Retro Gate (rollout close):** Track C is last — the retro records final lessons + confirms
 standard conformance (no downstream back-prop). Closes the rollout. See §Retro Gate.
 
+## Component library rollout — shared FE primitives (RFC 0008 Phase-1 follow-up)
+
+> Consolida pharos-component-library-rollout.md (RFC 0011; originales archivados en plans/archive/).
+
+> **Resumen (ES).** Este bloque cierra el único ítem abierto que dejó la RFC 0008: **la biblioteca de componentes compartida** (RFC 0008 §5). No es una nueva RFC — es una enmienda a RFC 0008 + ejecución. Complementa el rollout del *shell* (arriba); este bloque despliega los *componentes dentro del shell*. El mecanismo de distribución es el mismo copy-in (`sync-pharos-registry.sh`). `admission-patient` es el primer consumidor. Tracking: Interval-Col/.github#73. Phases 0–3 **DONE**; Phase 4 = siguiente.
+
+> **Status (2026-06-28).** Phases 0–3 DONE: 8 primitivas + 2 composables prototipados en `design-studio` y promovidos al registro (PR #77, mergeado). Registro de iconos expandido a ~94 claves (icon cross-check). **Phase 4 next**: adopción en `admission-patient` (`admission-patient/plans/pharos-component-adoption-plan.md`, tracking #80). La sesión de co-creación (ratificar APIs) corre en paralelo. El set creció de 7 a 8 primitivas — `DatePicker` fue añadido para el flujo cédula-scan prereception.
+
+### Component library — decisions locked (German, 2026-06-28)
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| 1 | Where the standard lives | **Elevate to RFC 0008** (org-wide). 3 layers: RFC amendment (decision) · registry (implementation + distribution) · this plan (execution). |
+| 2 | Build venue | **Co-create in `design-studio`** (the playground), not a per-app PoC branch. |
+| 3 | Sequencing | **Foundations → Flow → Rest** (lookup/select/shell → flow/back-nav → fetch/form). |
+| 4 | Icon collection | **Lucide (house) + Material Symbols Outlined** (one governed clinical fallback). |
+| 5 | Icon mechanism | **One shared `<Icon>` tag** (`@iconify/tailwind` CSS classes underneath; collection-agnostic). |
+| 6 | design-studio → registry promote path | **Build `promote-to-registry` script FIRST** (Phase 0). |
+| 7 | Extraction source per primitive | **Best-in-class per pillar** (evidence-based 3-app maturity comparison — see extraction matrix below). |
+
+> 🛑 Four open sub-decisions (Phase 3–4): fetch-codegen mandate · FormField validation binding · gate posture (per-primitive vs consolidated) · `useFlow` persisted-state migration.
+
+### Per-pillar extraction matrix
+
+| # | Pillar | Best source | Key note |
+|---|--------|-------------|----------|
+| 1 | **EntityLookup** (+ PatientLookup/PhysicianLookup presets) | admission-patient `SearchPatient`/`usePatientSearch` | rebuild on finance-lch shadcn Combobox substrate |
+| 2 | **SearchableSelect** | **finance-lch** reka-ui Combobox family | graft admission-patient `PhysicianCombobox` behavior; handle empty/null `v-model` natively (no `NONE_*` sentinel) |
+| 3 | **PageShell + PageHeader** | PageShell = registry sync (already org-owned); **lab-qc** canonical ref | PageHeader is net-new; add full-bleed slot/CSS var to kill `-m-6` hack |
+| 4 | **useAsyncState + fetch** | **finance-lch** `apiFetch` + error normalizer; lab-qc `useApi()` shape for component-facing layer | |
+| 5 | **FormField** (label + control + error) | **Net-new** in design-studio | vee-validate + @vee-validate/zod + toTypedSchema convention |
+| 6 | **useFlow** (back-stack + dialog-state) | admission-patient `useProcessState` | generalize: steps as config, not hardcoded Paciente/Orden |
+| 7 | **Icon standard** (`<Icon>` wrapper) | finance-lch / lab-qc Lucide-only baseline | admission-patient migrates 18-collection/149-usage sprawl → Lucide + Material Symbols |
+| 8 | **DatePicker** | Net-new | Added for prereception cédula-scan birthdate flow |
+
+### CL Phase 0 — Charter the library + build the promote path · 🟠 architect
+
+- [x] **0.1** — Author the RFC 0008 amendment block (7+1 primitives as Phase-1 library; API-intent contracts; composables convention; icon standard).
+- [x] **0.2** — Record that `useFlow` + `useAsyncState` extend the registry's existing composables convention (`useHealthBeacon` is the live precedent).
+- [x] **0.3** — Build + test the **`promote-to-registry` script** (design-studio → registry; dry-run first; @gczuluaga gates the registry PR it produces).
+- [x] **0.4** — Create per-primitive **design-intent stubs** in `registry/surfaces/` using the `finanzas.md` template.
+- [x] **0.5** — File the board issue (Interval-Col/.github#73); update frontmatter `issue:`.
+
+🛑 **HUMAN DECISION (open):** promote-script automation scope — manual-assisted vs fully automated. Recommend manual-assisted v1.
+
+✅ **Done-when (CL Phase 0):** RFC 0008 amendment merged by @gczuluaga; `promote-to-registry --dry-run <primitive>` prints correct `registry/app/**` paths; surface stubs exist per primitive. *(DONE — PR #77 merged.)*
+
+### CL Phase 1 — Foundations: EntityLookup · SearchableSelect · PageShell/PageHeader · Icon wrapper
+
+- [x] **1.1** — Prototype **SearchableSelect** in design-studio (reka-ui Combobox + PhysicianCombobox behavior; empty/null `v-model` natively; land in `registry/app/components/ui/`).
+- [x] **1.2** — Prototype **EntityLookup** on SearchableSelect (PatientLookup + PhysicianLookup presets).
+- [x] **1.3** — **PageHeader** (title + toolbar/actions slots; shell-level full-bleed slot/CSS var); document **PageShell** from lab-qc as canonical reference; settle one page-title mechanism.
+- [x] **1.4** — Build **`<Icon>` wrapper** in design-studio + land in registry; rewrite `registry/frontend-standards.md` §Iconos.
+- [x] **1.5** — Add **`design-studio/app/pages/componentes/iconos.vue`** — live catalog (Lucide + allowlisted Material Symbols, all three sizes, copy-to-clipboard).
+- [x] **1.6** — Add first adoption gates in **WARN** (e.g. `check-no-raw-combobox.mjs`); verify `sync --dry-run` mirrors new SFCs.
+
+✅ **Done-when (CL Phase 1):** 3 SFCs + `<Icon>` in `registry/app/components/(ui/)`; @gczuluaga merged. design-studio showcases render light + dark + rosa accent, browser-verified. `sync --dry-run` shows SFCs at correct paths. New gates green in WARN. *(DONE.)*
+
+### CL Phase 2 — Flow: useFlow (back-stack + dialog-state composable)
+
+- [x] **2.1** — Prototype **useFlow** in design-studio (arbitrary back-stack + dialog-state; steps as config; `goNext`/`goBack`/`resetSteps`/`setStepStatus`/persist; `v-model:open` for dialogs).
+- [x] **2.2** — Land **`registry/app/composables/useFlow.ts`** alongside `useHealthBeacon`; surface doc; settle orders/create's identity in the showcase.
+- [x] **2.3** — Sanity-check `sync --dry-run` mirrors `useFlow.ts` into a consumer.
+- [x] **2.4** — Decide SSR-safety + persistence (`skipHydrate`).
+
+🛑 **HUMAN DECISION (open):** in-flight persisted-state migration for `useProcessState` → `useFlow` (key remap vs one-time reset) — confirm before Phase 4 adoption.
+
+✅ **Done-when (CL Phase 2):** `useFlow.ts` in registry, merged by @gczuluaga; `sync --dry-run` shows composable path; design-studio drives Recepción intake back-nav with useFlow, browser-verified. *(DONE.)*
+
+### CL Phase 3 — The rest: useAsyncState + FormField
+
+- [x] **3.1** — Land **`registry/app/composables/useAsyncState.ts`** (`{data, status, loading, error, isEmpty, refresh}`; AbortController + stale-response guard; camelCase FE / snake_case BE; `useAsyncData` for idempotent reads, wrapper for mutations).
+- [x] **3.2** — Build **`FormField.vue`** (+ `FormItem` context; label + control slot + inline error; vee-validate + @vee-validate/zod + toTypedSchema convention). Land in registry.
+- [x] **3.3** — Add optional adoption gates in WARN (e.g. `check-formfield-usage`); update `registry/frontend-standards.md` "Naming de componentes" from "Fase-1 follow-up" to **"shipped."**
+
+🛑 **HUMAN DECISION (open):** fetch-codegen mandate — does `useAsyncState` require generated typed client, or only the wrapper? Recommend wrapper now, codegen separate.
+🛑 **HUMAN DECISION (open):** FormField validation binding — `vee-validate`-bound vs validation-agnostic.
+
+✅ **Done-when (CL Phase 3):** `useAsyncState.ts` + `FormField.vue` in registry, merged by @gczuluaga; `frontend-standards.md` says "shipped"; all new gates green (WARN). *(DONE — PR #77 merged.)*
+
+### CL Phase 4 — Adopt in admission-patient (first consumer) + flip gates to hard-fail
+
+> Next executable step (tracking: admission-patient#80).
+
+- [ ] **4.1** — Re-sync admission-patient (`scripts/sync-pharos-registry.sh .`) — picks up all 8 primitives + composables. Confirm `--dry-run` shows **zero hand-edits** to registry-owned files.
+- [ ] **4.2** — Refactor app-local duplicates onto registry primitives: delete `PhysicianCombobox`/`SearchPatient` internals → `EntityLookup`/`SearchableSelect`; point Recepción intake/queue + `PatientForm`/`PhysicianForm` at `FormField`/`PageHeader`; `useProcessState` → `useFlow` (apply persisted-state migration decision).
+- [ ] **4.3** — Introduce **central fetch wrapper** (`useAsyncState`/`apiFetch`): admission-patient is the outlier (37 composables, no wrapper). Validates the fetch primitive against the most complex consumer.
+- [ ] **4.4** — Migrate **icon sprawl**: 18 collections / 149 usages → Lucide + Material Symbols via `<Icon>`. Extend `check-fe-bloat` to ban `@nuxt/icon` and (post-migration) `lucide-vue-next` as a render path; add `registry/scripts/check-icon-collections.mjs` (allowlist = lucide + material-symbols). Standardize all three apps onto 8 gates.
+- [ ] **4.5** — **Flip new gates WARN → hard-fail** once lead consumer conforms. Update live retro doc (`pharos-track-retro.A.md`) so tracks B/C inherit the primitives on their next sync.
+
+> 💡 Copy-in distribution means a primitive defect propagates to every app at once. Treat admission-patient **dev** as the canary; keep version/changelog discipline on registry PRs; never flip a gate to hard-fail before the canary is green.
+
+✅ **Done-when (CL Phase 4):** `pnpm build` + existing design-gate + E2E smoke green in admission-patient with new primitives wired. `sync --dry-run` shows zero hand-edits to registry-owned files. New gates **hard-fail** and `pharos-lint-check` green including them; all three apps run 8 gates. HandlePatient and HandlePhysician visibly converged in the browser, verified by @gczuluaga. Retro doc back-propagates to B/C.
+
+🚦 **Checkpoint CL4 (exit).** Show @gczuluaga: admission-patient in the browser (two lookup pages converged; searchable dropdowns; consistent icons; multi-step flow with working back path); green `lint-check` with hard-fail gates; `sync --dry-run` zero-diff. Walk a full Recepción flow live (forward + back; no state lost).
+
+---
+
+## FE dependency-hygiene gate (`check-fe-bloat`) — portfolio rollout
+
+> Consolida fe-bloat-gate-plan.md (RFC 0011; originales archivados en plans/archive/).
+
+> **Resumen (ES).** Compuerta de CI mandatoria (`check-fe-bloat.mjs`), sincronizada del registry Pháros y encadenada en `lint-check`, que previene el bloat de dependencias FE. Phase 1 **DONE** (ya en registro y en admission-patient PR #53). Tracking: Interval-Col/.github#70.
+
+### FE-bloat Phase 1 — Deterministic rules (monolith ban + one-lib-per-category) · DONE
+
+- [x] **B1.1** — `check-fe-bloat.mjs` in the registry: bans `@iconify/json`; enforces one library per "same-purpose" category (Lucide-for-Vue; Radix/Reka headless-UI); tiny justified `ALLOWLIST`. Zero false-positives.
+- [x] **B1.2** — Wire into `lint-check`: add to `sync-pharos-registry.sh`'s canonical chain; the sync loop copies all `check-*.mjs`.
+- [x] **B1.3** — Document in `registry/frontend-standards.md` (§ Higiene de dependencias).
+- [x] **B1.4** — Adopt in admission-patient as proving ground (PR #53): script + `lint-check`. Verified: passes on clean tree, fails on original (`@iconify/json` + 2 dup categories).
+
+✅ **Done-when (B1):** gate in registry + chain, documented, and green in admission-patient. *(DONE.)*
+
+### FE-bloat Phase 2 — Dead-dependency detection (`knip`)
+
+- [ ] **B2.1** — Add `knip` (replacing stray unused `depcheck` in `telemetry`) with shared base config in the registry; per-app `knip.json` for overrides.
+- [ ] **B2.2** — 🛑 **HUMAN DECISION:** tune the allowlist per app until zero false-positives, then decide warn-vs-fail. knip flags runtime-only / type-only / config-only deps that are NOT dead — these need an allowlist before the gate can block merges.
+- [ ] **B2.3** — Chain into `lint-check` once per-app allowlist is clean.
+
+✅ **Done-when (B2):** `knip` runs in CI with no false-positives and blocks genuinely-dead deps.
+
+### FE-bloat Phase 3 — Bundle-size budget
+
+- [ ] **B3.1** — Capture each app's current client bundle size as the baseline.
+- [ ] **B3.2** — Set a budget (baseline + sane headroom margin) per app. 🛑 HUMAN DECISION: per-app bundle budgets.
+- [ ] **B3.3** — Add a post-build size check (not a lint rule — runs after `nuxt build`).
+
+✅ **Done-when (B3):** a bundle that grows past budget fails CI, surfacing build bloat early.
+
+### FE-bloat Phase 4 — Portfolio rollout
+
+- [ ] **B4.1** — Run `sync-pharos-registry.sh` for finance-lch, lab-qc, biuman-lis, design-studio; add `check-fe-bloat.mjs` to each `package.json` `lint-check`.
+- [ ] **B4.2** — Fix any app that fails the gate (same cleanup pattern as admission-patient #53).
+
+✅ **Done-when (B4):** `check-fe-bloat.mjs` wired into `lint-check` in every Pháros FE app and CI green across all of them; violations from B4.2 fixed and merged.
+
+🚦 **Checkpoint B4.** Every Pháros FE app passes `check-fe-bloat` in CI; standard is live portfolio-wide.
+
+---
+
 ## RFC 0008 amendment (durable decisions — German merges)
 
 The `2026-06-18` decisions block (branch `feat/0008-rollout-v2-decisions`) records the pastel-split rule,
@@ -492,3 +650,9 @@ RBAC without per-app shell forks.
 - [Track A issue Interval-Col/.github#46](https://github.com/Interval-Col/.github/issues/46)
 - [BRANCHING-AND-DEPLOY.md](../.github/BRANCHING-AND-DEPLOY.md) — org CI/branching standards
 - [ops-plan-template.md](../templates/ops-plan-template.md) — this plan's template
+- [Component library tracking issue Interval-Col/.github#73](https://github.com/Interval-Col/.github/issues/73)
+- [FE-bloat gate tracking issue Interval-Col/.github#70](https://github.com/Interval-Col/.github/issues/70)
+- [admission-patient component adoption plan](../admission-patient/plans/pharos-component-adoption-plan.md) — per-app execution (tracking #80)
+- [`brands/pharos_brand/registry/scripts/check-fe-bloat.mjs`](../brands/pharos_brand/registry/scripts/check-fe-bloat.mjs) — canonical FE-bloat gate
+- [`brands/pharos_brand/registry/frontend-standards.md`](../brands/pharos_brand/registry/frontend-standards.md) — §Iconos + §Higiene de dependencias
+- [`brands/pharos_brand/BRAND.md`](../brands/pharos_brand/BRAND.md) §8 — iconography canon (Lucide + Material Symbols, size scale, a11y)
