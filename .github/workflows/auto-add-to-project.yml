@@ -1,5 +1,7 @@
 # Reusable: add the triggering issue to the org planning board (Project #2).
 # Called by each repo's .github/workflows/add-to-project.yml — RFC 0010 Track C.1.
+# Auth: pharos-planning-bot App token (org var PHAROS_BOT_APP_ID + org secret
+# PHAROS_BOT_PRIVATE_KEY); callers must use `secrets: inherit`.
 name: Auto-add to org board
 
 on:
@@ -10,17 +12,20 @@ on:
         type: string
         required: false
         default: '["self-hosted","dev"]'
-    secrets:
-      ADD_TO_PROJECT_PAT:
-        description: Fine-grained PAT with org Projects read/write
-        required: true
 
 jobs:
   add-to-project:
     runs-on: ${{ fromJSON(inputs.runner) }}
     permissions: {}
     steps:
+      - name: Mint pharos-planning-bot token
+        id: bot
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.PHAROS_BOT_APP_ID }}
+          private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
         with:
           project-url: https://github.com/orgs/Interval-Col/projects/2
-          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          github-token: ${{ steps.bot.outputs.token }}
