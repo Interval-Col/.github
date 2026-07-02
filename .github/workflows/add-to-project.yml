@@ -1,0 +1,17 @@
+# Auto-add new issues to the org planning board (Project #2) — RFC 0010 Track C.1.
+# Logic lives in Interval-Col/.github/.github/workflows/auto-add-to-project.yml.
+# This repo is public → GitHub-hosted runner (free for public repos; org
+# self-hosted runners exclude public repos).
+name: Board sync
+
+on:
+  issues:
+    types: [opened, reopened, transferred]
+
+jobs:
+  add-to-project:
+    uses: Interval-Col/.github/.github/workflows/auto-add-to-project.yml@main
+    with:
+      runner: '["ubuntu-latest"]'
+    secrets:
+      ADD_TO_PROJECT_PAT: ${{ secrets.ADD_TO_PROJECT_PAT }}
