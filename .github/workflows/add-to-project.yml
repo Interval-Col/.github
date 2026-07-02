@@ -13,5 +13,4 @@ jobs:
     uses: Interval-Col/.github/.github/workflows/auto-add-to-project.yml@main
     with:
       runner: '["ubuntu-latest"]'
-    secrets:
-      ADD_TO_PROJECT_PAT: ${{ secrets.ADD_TO_PROJECT_PAT }}
+    secrets: inherit
