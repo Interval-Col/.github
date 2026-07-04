@@ -22,8 +22,9 @@
 import type { Component } from 'vue'
 import { BarChart3, Database, FlaskConical, Settings2 } from 'lucide-vue-next'
 
-/** A navigable page. `icon` is a lucide component OR a lucide icon NAME
- *  (string) the shell resolves dynamically — pass whichever is convenient. */
+/** A navigable page. `icon` is a component OR an icon NAME (string) the shell
+ *  resolves dynamically — custom-first (`~/lib/custom-glyphs`, e.g. "Submarine"),
+ *  then lucide. Pass whichever is convenient. */
 export type NavLeaf = {
   to: string
   label: string

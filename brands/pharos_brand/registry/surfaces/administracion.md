@@ -2,9 +2,17 @@
 description: "Use when creating components or pages for the Pháros Administración surface — the cross-cutting administrative console (user/role management, system configuration, multi-app status overview). Neutral, management-oriented, full navigation. Audience: directors, coordinators, admin staff."
 surface: Administración
 family: Pháros (cross-cutting platform surface)
-accent: Default/neutral — Administración is a cross-cutting platform surface, not one of the 5 locked sub-brands (RFC 0008 — ACCEPTED 2026-06-17). It inherits the family-neutral LCH Navy #003A70 (the Archivo default, no .theme-* class); never invent a per-surface accent.
+accent: "🔄 Superseded for the standalone console by RFC 0004 rev. 2026-07-03: platform administration is now the «Pháros · Tecnología» (TI) app with its own sub-brand — <html class=\"theme-ti\">, navy #002A52 / #7FB0E6; see registry/spec/ti.md. Pre-RFC-0004 rule (kept as record): Default/neutral — Administración was a cross-cutting platform surface, not one of the 5 locked sub-brands (RFC 0008 — ACCEPTED 2026-06-17); it inherited the family-neutral LCH Navy #003A70 (the Archivo default, no .theme-* class); never invent a per-surface accent."
 ---
 # Pháros — Administración (surface guidance)
+
+> **🔄 RFC 0004 rev. 2026-07-03 (rfcs#60):** la consola de administración de plataforma
+> ahora **es una app del portafolio** — **«Pháros · Tecnología» (TI)**, con sub-marca
+> propia: **`.theme-ti`** (navy `#002A52` / `#7FB0E6`), glifo «Submarino» y spec en
+> [`../spec/ti.md`](../spec/ti.md). Para construir ESA app manda la spec de sub-marca;
+> el criterio de **acento neutro** de este doc queda **superseded** para la consola.
+> El resto de la guía (audiencia, prioridades, patrones de UI) sigue vigente como
+> referencia de la superficie.
 
 **Audiencia:** Directivos, coordinadores, personal administrativo general.
 **Surface / app:** Consola administrativa **transversal** del producto Pháros —
@@ -23,6 +31,11 @@ accesos, configuración sin fricciones.
 ---
 
 ## Accent — read this first
+
+> 🔄 **Superseded 2026-07-03 (RFC 0004 rev., rfcs#60)** — la consola es ahora
+> **«Pháros · Tecnología»** y SÍ lleva clase de tema: **`.theme-ti`** (navy
+> `#002A52` / `#7FB0E6`); ver [`../spec/ti.md`](../spec/ti.md). Lo que sigue se
+> conserva como registro del criterio pre-RFC 0004.
 
 Administración is a **cross-cutting** surface; it is **not** one of the 5 locked
 sub-brands (Números/Clínico/Deportivo/Recepción/Clientes), so it does **not**
