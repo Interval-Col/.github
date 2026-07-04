@@ -1,5 +1,4 @@
-<!-- spec-version: 85cb038e · generado 2026-06-18 desde el playground (NO editar a mano; regenerar) -->
-<!-- renombre 2026-07-03: «Deportivo» → «Movimiento» (RFC 0008 Decisions 2026-07-03) — alineado a mano; regenerar spec-version en el próximo export del playground -->
+<!-- spec-version: bc18a8da · generado 2026-07-03 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Movimiento — especificación de sub-marca
 
