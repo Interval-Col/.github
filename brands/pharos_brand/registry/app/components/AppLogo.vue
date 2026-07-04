@@ -23,7 +23,7 @@ const props = withDefaults(defineProps<{
    *  dot for the collapsed rail / favicons. `horizontal` = larger wordmark with
    *  the optional sub-brand sublabel baked into the mark. */
   variant?: 'navbar' | 'horizontal' | 'icon'
-  /** Sub-brand name, e.g. "Clínico". Shown only on `horizontal` (as the SVG
+  /** Sub-brand name, e.g. "Laboratorio". Shown only on `horizontal` (as the SVG
    *  sublabel) — the sidebar lockup composition lives in the layout. */
   subName?: string
   /** A lucide icon NAME, e.g. "Radar", resolved dynamically. Used by the layout

@@ -1,7 +1,7 @@
 # Pháros design-system registry
 
 The shared front-end foundation for the **Pháros product family** (`Pháros · Números`,
-`Pháros · Clínico`, `Pháros · Recepción`, `Pháros · Clientes`, `Pháros · Archivo`). This is the
+`Pháros · Laboratorio`, `Pháros · Pacientes`, `Pháros · Clientes`, `Pháros · Archivo`). This is the
 **single source of truth** for tokens, the frontend conventions, and per-surface
 design guidance; it is distributed to each app by **copy-in**, not as a runtime
 package (RFC 0008 Q3).
@@ -55,9 +55,9 @@ package (RFC 0008 Q3).
 | Sub-brand | App | Theme class | Accent light / dark |
 |---|---|---|---|
 | **Números** | finance-lch (ERP/finance) | `.theme-numeros` | `#7A5D00` / `#E6C34D` (ámbar — navy superseded, Q6) |
-| **Clínico** | pharos-lis (lab-qc) | `.theme-clinico` | `#1B6B5A` / `#4CD1B0` (teal profundo) |
-| **Deportivo** | biuman-lis | `.theme-deportivo` | `#004F70` / `#16749C` (azul) |
-| **Recepción** | admission-patient | `.theme-recepcion` | `#FFE0E6` (rosa, light+dark) |
+| **Laboratorio** | pharos-lis (lab-qc) | `.theme-clinico` | `#1B6B5A` / `#4CD1B0` (teal profundo) |
+| **Movimiento** | biuman-lis | `.theme-deportivo` | `#004F70` / `#16749C` (azul) |
+| **Pacientes** | admission-patient | `.theme-recepcion` | `#FFE0E6` (rosa, light+dark) |
 | **Clientes** | commercial-lch | `.theme-clientes` | `#FFB86B` (ámbar claro, light+dark) |
 
   Default/neutral (no class) = LCH Navy `#003A70` (the family-neutral / Archivo).
