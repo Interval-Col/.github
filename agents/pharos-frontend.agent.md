@@ -32,12 +32,13 @@ Una app Pháros es mecánicamente un **theme** del contrato compartido: difiere 
 | **Pháros · Números** (Timón) | ERP (Finanzas y Operaciones) | **ámbar `#7A5D00` / `#E6C34D`** — `.theme-numeros` — **LOCKED** (navy superseded) | Contador · COO · jefe de operaciones |
 | **Pháros · Laboratorio** (LIS) | LIS clínico (LCH) — las superficies de **Calidad/QC** y **Laboratorio** viven aquí | **teal `#1B6B5A` / `#4CD1B0`** — `.theme-clinico` — **LOCKED** | Técnicos y patólogos |
 | **Pháros · Movimiento** (Biuman LIS) | LIS deportivo (Biuman) | **azul `#004F70` / `#16749C`** — `.theme-deportivo` — **LOCKED** | Técnicos y patólogos |
-| **Pháros · Pacientes** (Admisiones) | Front-desk / intake / caja del cajero | **rosa `#FFE0E6`** (light+dark) — `.theme-recepcion` — **LOCKED** | Personal de admisión |
-| **Pháros · Clientes** (CRM) | Clientes, convenios, tarifas, cotizaciones | **ámbar claro `#FFB86B`** (light+dark) — `.theme-clientes` — **LOCKED** | Equipo comercial |
+| **Pháros · Pacientes** (Admisiones) | Front-desk / intake / caja del cajero | **rosa funcional `#ff3d63` / `#ff6b85`** (pastel `#FFE0E6` = solo `--brand-wash`) — `.theme-recepcion` — **LOCKED** | Personal de admisión |
+| **Pháros · Clientes** (CRM) | Clientes, convenios, tarifas, cotizaciones | **ámbar funcional `#e37600` / `#f59e3c`** (pastel `#FFB86B` = solo `--brand-wash`) — `.theme-clientes` — **LOCKED** | Equipo comercial |
+| **Pháros · Tecnología** (TI — nombre provisional, RFC 0004 rev. 2026-07-03) | Administración de plataforma (SSO, ETL, certificados, salud de apps) | **navy profundo `#002A52` / `#7FB0E6`** — `.theme-ti` — glifo custom `Submarine` | TI (German · Yanna · Samuel) |
 | **Pháros Archivo** | Utility · accent neutral de la familia, sin nombre evocativo | **LCH Navy `#003A70`** (default/neutral, sin clase) | Operación / soporte |
 | **Portal Pacientes** | Consulta pública de resultados (read-only) | hereda accent de Laboratorio (LIS) | Pacientes externos |
 
-> **Accents LOCKED (RFC 0008 — ACCEPTED 2026-06-17).** Los 5 acentos de sub-brand viven como clases `.theme-*` en `tokens.css`; una app añade su clase al `<html>`. Un theme sobreescribe **solo** los slots de accent (`--primary` / `--ring` / `--sidebar-primary` + sus foregrounds); el resto se hereda sin cambios. El **default/neutral** (sin clase) es **LCH Navy `#003A70`** (la familia-neutral / Archivo).
+> **Accents LOCKED (RFC 0008 — ACCEPTED 2026-06-17; `.theme-ti` por RFC 0004 rev. 2026-07-03).** Los acentos de sub-brand viven como clases `.theme-*` en `tokens.css`; una app añade su clase al `<html>`. Un theme sobreescribe **solo** los slots de accent (`--primary` / `--ring` / `--sidebar-primary` + sus foregrounds); el resto se hereda sin cambios. El **default/neutral** (sin clase) es **LCH Navy `#003A70`** (la familia-neutral / Archivo).
 
 ## El contrato de tokens (lo que SÍ usas)
 
@@ -124,7 +125,7 @@ Un solo esquema, sin prefijo de tenant y sin el viejo patrón `Lch{Seccion}…`:
 
 1. Identifica el **sub-brand/superficie** del mensaje del usuario (si falta, pregúntalo).
 2. Lee la guía de la superficie en `registry/surfaces/{superficie}.md` si existe; si no, trabaja desde `registry/tokens.css` + `registry/frontend-standards.md` y avísalo.
-3. Confirma el accent: los 5 sub-brands están **LOCKED** vía clase `.theme-*` (Números ámbar, Clínico teal, Deportivo azul, Recepción rosa, Clientes ámbar claro); default/neutral (Archivo) = navy `#003A70` sin clase. Usa siempre los slots de accent del contrato.
+3. Confirma el accent: los sub-brands están **LOCKED** vía clase `.theme-*` (Números ámbar, Clínico teal, Deportivo azul, Recepción rosa funcional, Clientes ámbar funcional, TI navy profundo — nombre provisional RFC 0004 rev.); default/neutral (Archivo) = navy `#003A70` sin clase. Usa siempre los slots de accent del contrato.
 4. Busca con `search` si ya existe un componente similar.
 5. Genera el SFC Nuxt 4 completo (`<script setup lang="ts">`) usando solo utilidades semánticas del contrato.
 6. Indica la ruta sugerida: `app/components/{Dominio}/{NombreComponente}.vue`.

@@ -10,7 +10,7 @@ applyTo: "**/*.vue,**/*.ts"
 > `instructions/nuxt-standards`, bound to the registry token contract.
 >
 > **Source of truth for tokens:** [`tokens.css`](./tokens.css) (shadcn-vue vars +
-> accent-independent status palette + the 4-font system + the 5 sub-brand accent
+> accent-independent status palette + the 4-font system + the sub-brand accent
 > themes (`.theme-*`) + `.dark` theme).
 > Distributed by **copy-in** via `scripts/sync-pharos-registry.sh`, **not** an npm
 > package (RFC 0008 Q3). LCH and Biuman are **tenants** of this contract, not parents.
@@ -148,16 +148,17 @@ utilidades, nunca hex sueltos:
   `.theme-*` que vive en `tokens.css`; el app añade su clase al `<html>`. El resto
   del contrato (paleta de estado, neutros, constantes de marca, radius) se hereda
   sin cambios.
-- Los **5 acentos de sub-marca están LOCKED** (RFC 0008 — ACCEPTED 2026-06-17),
-  como clases `.theme-*` (light / dark):
+- Los **acentos de sub-marca están LOCKED** (5 por RFC 0008 — ACCEPTED 2026-06-17;
+  `.theme-ti` por RFC 0004 rev. 2026-07-03), como clases `.theme-*` (light / dark):
 
   | Sub-marca | App | Clase | Acento (light / dark) |
   |---|---|---|---|
   | Números (ERP/finanzas) | Timón | `.theme-numeros` | ámbar `#7A5D00` / `#E6C34D` |
   | Laboratorio (LIS) | pharos-lis | `.theme-clinico` | teal `#1B6B5A` / `#4CD1B0` |
   | Movimiento (Biuman LIS) | biuman | `.theme-deportivo` | azul `#004F70` / `#16749C` |
-  | Pacientes (Admisiones) | admisiones | `.theme-recepcion` | rosa `#FFE0E6` (light+dark) |
-  | Clientes (CRM) | crm | `.theme-clientes` | ámbar claro `#FFB86B` (light+dark) |
+  | Pacientes (Admisiones) | admisiones | `.theme-recepcion` | rosa funcional `#ff3d63` / `#ff6b85` (pastel `#FFE0E6` = solo `--brand-wash`) |
+  | Clientes (CRM) | crm | `.theme-clientes` | ámbar funcional `#e37600` / `#f59e3c` (pastel `#FFB86B` = solo `--brand-wash`) |
+  | Tecnología (TI · plataforma — nombre provisional, RFC 0004 rev.) | pharos-ti | `.theme-ti` | navy profundo `#002A52` / `#7FB0E6` |
 
   > El **ERP (Números)** pasó de navy a **ámbar `#7A5D00`** (RFC 0008 Q6); el navy
   > queda superado como acento de ERP.
