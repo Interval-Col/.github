@@ -17,7 +17,7 @@ package (RFC 0008 Q3).
 
 | Path | What it is |
 |---|---|
-| `tokens.css` | The token contract — shadcn-vue vars + accent-independent status palette + the 4-font system + the 5 LOCKED sub-brand accent themes (`.theme-*`) + `-bg` status tints + `.dark` theme. **Authoritative.** |
+| `tokens.css` | The token contract — shadcn-vue vars + accent-independent status palette + the 4-font system + the sub-brand accent themes (`.theme-*`: 5 LOCKED RFC 0008 + `.theme-ti` RFC 0004 rev. 2026-07-03) + `-bg` status tints + `.dark` theme. **Authoritative.** |
 | `frontend-standards.md` | Nuxt 4 / Vue 3 / Tailwind v4 authoring conventions for any Pháros app (the former `instructions/nuxt-standards`, re-cut onto this contract). |
 | `surfaces/*.md` | Per-surface design guidance (Finanzas/ERP, Laboratorio, Calidad, Reportes, Administración, Portal Pacientes) — the durable intent ported from the old `ds-lch-*` instructions, re-expressed on the shadcn token contract. |
 | `scripts/check-no-scoped-pages.mjs` | CI gate: no `<style scoped>` in `app/pages/` + `app/layouts/`. No exceptions — migrate the file. |
@@ -49,16 +49,18 @@ package (RFC 0008 Q3).
 - shadcn-vue token base + **one** accent-independent status palette (`--status-{success,warning,error,info}` + `-bg`).
 - **Four fonts** (Q5 re-decided 2026-06-17): Fraunces (display/wordmark) · **DM Sans** (UI/body, replaces Inter) · IBM Plex Mono (labels/mono) · **JetBrains Mono** (data figures, `tabular-nums`).
 - `.dark` class theming; `cobol` theme dropped; light+dark only.
-- **Sub-brand names + glyphs + accents — LOCKED Q1/Q6 2026-06-17:** the 5 accents
-  live as `.theme-*` classes in `tokens.css`; an app adds its class to `<html>`.
+- **Sub-brand names + glyphs + accents — LOCKED Q1/Q6 2026-06-17** (+ `.theme-ti`,
+  RFC 0004 rev. 2026-07-03): the accents live as `.theme-*` classes in `tokens.css`;
+  an app adds its class to `<html>`.
 
 | Sub-brand | App | Theme class | Accent light / dark |
 |---|---|---|---|
 | **Números** | finance-lch (ERP/finance) | `.theme-numeros` | `#7A5D00` / `#E6C34D` (ámbar — navy superseded, Q6) |
 | **Laboratorio** | pharos-lis (lab-qc) | `.theme-clinico` | `#1B6B5A` / `#4CD1B0` (teal profundo) |
 | **Movimiento** | biuman-lis | `.theme-deportivo` | `#004F70` / `#16749C` (azul) |
-| **Pacientes** | admission-patient | `.theme-recepcion` | `#FFE0E6` (rosa, light+dark) |
-| **Clientes** | commercial-lch | `.theme-clientes` | `#FFB86B` (ámbar claro, light+dark) |
+| **Pacientes** | admission-patient | `.theme-recepcion` | `#ff3d63` / `#ff6b85` (rosa funcional — pastel `#FFE0E6` solo como `--brand-wash`) |
+| **Clientes** | commercial-lch | `.theme-clientes` | `#e37600` / `#f59e3c` (ámbar funcional — pastel `#FFB86B` solo como `--brand-wash`) |
+| **Tecnología** (provisional, RFC 0004 rev. 2026-07-03) | pharos-ti (TI · plataforma) | `.theme-ti` | `#002A52` / `#7FB0E6` (navy profundo) |
 
   Default/neutral (no class) = LCH Navy `#003A70` (the family-neutral / Archivo).
 

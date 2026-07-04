@@ -1,7 +1,7 @@
 # Pháros sub-brands — family index
 
 > **Locked 2026-06-17** (RFC 0008 co-creation, @gczuluaga + @SKuger01; seeded from the
-> `design-studio` brand-playground export). The five apps that carry a **full endorsed
+> `design-studio` brand-playground export). The apps that carry a **full endorsed
 > sub-brand** (user-facing name + nautical glyph + family accent). Naming model: **semi-
 > functional name + a nautical glyph** — the maritime identity lives in the *logo*, not the
 > word, so names stay legible to clinicians / front-desk / athletes. Separator `·`.
@@ -11,6 +11,13 @@
 > (2026-06-18) already applied here: «Recepción» → **«Pacientes»**, pastel-split accents,
 > CRM Intensidad = Neutro. Theme classes keep their original code names
 > (`.theme-clinico`, `.theme-deportivo`, `.theme-recepcion`).
+>
+> **Updated 2026-07-03 (bis)** — RFC 0004 rev. 2026-07-03 (rfcs#60) adds a sixth
+> sub-brand: **«Pháros · Tecnología» (TI)**, the platform-administration app. Its
+> user-facing name is **provisional** (courtesy-ratify @SKuger01 pending, OQ#6); the
+> theme class `.theme-ti` and the custom Submarine glyph are the stable contract.
+> Registry spec: [`../registry/spec/ti.md`](../registry/spec/ti.md); the full
+> sub-brand doc (`ti.md` here) is authored after the name ratifies.
 
 | Functional (RFC 0004) | Spec | User-facing name | Glyph (náutico → lucide) | Accent — light / dark | Spread | Descriptor |
 |---|---|---|---|---|---|---|
@@ -19,6 +26,7 @@
 | LIS deportivo (Biuman) | [`lis-deportivo.md`](lis-deportivo.md) | **Movimiento** | Vela → `Sailboat` | `#004F70` / `#16749C` (azul prof.) | Neutro | LIS · Laboratorio deportivo |
 | Admisiones | [`admisiones.md`](admisiones.md) | **Pacientes** | Muelle → `Anchor` | `#ff3d63` / `#ff6b85` (rosa funcional · wash `#FFE0E6`) | Neutro | Admisiones · Recepción |
 | CRM | [`crm.md`](crm.md) | **Clientes** | Catalejo → `Telescope` | `#e37600` / `#f59e3c` (ámbar funcional · wash `#FFB86B`) | Neutro | CRM · Relaciones comerciales |
+| TI · plataforma (RFC 0004 rev.) | [`../registry/spec/ti.md`](../registry/spec/ti.md) *(doc completo pendiente)* | **Tecnología** ⏳ provisional | Submarino → `Submarine` (**custom**, no está en lucide) | `#002A52` / `#7FB0E6` (navy prof.) | Neutro | TI · Administración de plataforma |
 
 ## Family constants (shared — never a sub-brand accent)
 
