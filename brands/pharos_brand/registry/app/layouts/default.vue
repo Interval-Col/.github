@@ -24,6 +24,7 @@ import { useRoute } from 'vue-router'
 import { ChevronDown, Moon, Sun } from 'lucide-vue-next'
 import * as lucide from 'lucide-vue-next'
 import type { Component } from 'vue'
+import { CUSTOM_GLYPHS } from '~/lib/custom-glyphs'
 
 import {
   Sidebar,
@@ -70,7 +71,8 @@ withDefaults(defineProps<{
   /** Descriptive sidebar sublabel under the wordmark (mono label), e.g.
    *  "LIS · Laboratorio clínico" (RFC 0008 Q1 — lockup = solo logo + sublabel). */
   subLabel?: string
-  /** A lucide icon name for the sub-brand glyph, e.g. "Radar". Rendered as the
+  /** Glyph NAME for the sub-brand, e.g. "Radar" — resolved custom-first
+   *  (`~/lib/custom-glyphs`, e.g. "Submarine"), then lucide. Rendered as the
    *  accent mark beside the wordmark (the "logo náutico") + echoed in the breadcrumb. */
   glyph?: string
   /** Content density — Amplia | Media | Compacta (RFC 0008). Locked default: media. */
@@ -122,10 +124,12 @@ function openSidebarIfCollapsed() {
   if (!isSidebarOpen.value) isSidebarOpen.value = true
 }
 
-// ── Icon resolution: a nav icon may be a lucide component OR a name string ────
+// ── Icon resolution: a nav icon may be a component OR a name string. Names ────
+// resolve CUSTOM-FIRST (hand-drawn glyphs lucide doesn't carry, e.g. Submarine)
+// and fall back to the lucide export of the same name.
 function resolveIcon(icon?: Component | string): Component | null {
   if (!icon) return null
-  if (typeof icon === 'string') return (lucide as Record<string, Component>)[icon] ?? null
+  if (typeof icon === 'string') return CUSTOM_GLYPHS[icon] ?? (lucide as Record<string, Component>)[icon] ?? null
   return icon
 }
 

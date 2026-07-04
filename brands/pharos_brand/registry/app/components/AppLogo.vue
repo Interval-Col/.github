@@ -17,6 +17,7 @@
 import { computed } from 'vue'
 import * as lucide from 'lucide-vue-next'
 import type { Component } from 'vue'
+import { CUSTOM_GLYPHS } from '~/lib/custom-glyphs'
 
 const props = withDefaults(defineProps<{
   /** `navbar` = compact wordmark (sidebar header / topbar). `icon` = the "P" +
@@ -26,15 +27,17 @@ const props = withDefaults(defineProps<{
   /** Sub-brand name, e.g. "Laboratorio". Shown only on `horizontal` (as the SVG
    *  sublabel) — the sidebar lockup composition lives in the layout. */
   subName?: string
-  /** A lucide icon NAME, e.g. "Radar", resolved dynamically. Used by the layout
+  /** Glyph NAME, e.g. "Radar", resolved dynamically — custom-first
+   *  (`~/lib/custom-glyphs`, e.g. "Submarine"), then lucide. Used by the layout
    *  lockup; exposed here so callers can read the resolved glyph component. */
   glyph?: string
 }>(), { variant: 'navbar', subName: '', glyph: 'Radar' })
 
-// Resolve the lucide glyph by name (no fixed/vendored glyph map). Falls back to
-// Radar — the brief's default — when the name is missing or unknown.
+// Resolve the glyph by name — custom map first (hand-drawn glyphs lucide doesn't
+// carry), then lucide. Falls back to Radar — the brief's default — when the name
+// is missing or unknown.
 const Glyph = computed<Component>(
-  () => (lucide as Record<string, Component>)[props.glyph ?? ''] ?? lucide.Radar,
+  () => CUSTOM_GLYPHS[props.glyph ?? ''] ?? (lucide as Record<string, Component>)[props.glyph ?? ''] ?? lucide.Radar,
 )
 defineExpose({ Glyph })
 </script>
