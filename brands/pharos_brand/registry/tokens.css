@@ -159,6 +159,7 @@
  *   .theme-deportivo  Movimiento (Biuman LIS)     glyph Sailboat   azul profundo
  *   .theme-recepcion  Pacientes (admission)       glyph Anchor     rosa
  *   .theme-clientes   Clientes (commercial)       glyph Telescope  ámbar claro
+ *   .theme-ti         Tecnología (pharos-ti)      glyph Submarine  navy profundo
  * ========================================================================== */
 
 /* Números · ERP — ámbar #7A5D00 / #E6C34D (navy superseded — RFC 0008 Q6) */
@@ -217,6 +218,18 @@
   --primary: #f59e3c;  --primary-foreground: #2E2606;  --ring: #f59e3c;
   --sidebar-primary: #f59e3c;  --sidebar-primary-foreground: #2E2606;  --sidebar-ring: #f59e3c;
   --brand-wash: #FFB86B;  /* decorative wash only — never a functional slot */
+}
+
+/* Tecnología · TI — navy profundo #002A52 / #7FB0E6 (RFC 0004 rev. 2026-07-03:
+ * app de administración de plataforma; nombre user-facing provisional, ratify
+ * pendiente — la clase es el contrato estable) */
+.theme-ti {
+  --primary: #002A52;  --primary-foreground: #FFFFFF;  --ring: #002A52;
+  --sidebar-primary: #002A52;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #002A52;
+}
+.dark.theme-ti {
+  --primary: #7FB0E6;  --primary-foreground: #06121F;  --ring: #7FB0E6;
+  --sidebar-primary: #7FB0E6;  --sidebar-primary-foreground: #06121F;  --sidebar-ring: #7FB0E6;
 }
 
 /* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).

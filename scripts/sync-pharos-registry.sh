@@ -182,7 +182,7 @@ echo "       Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono"
 echo "     See registry/frontend-standards.md for the @nuxt/fonts config."
 echo
 echo "  c) Add the sub-brand theme class to <html> in app.vue / nuxt.config:"
-echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepcion | .theme-clientes"
+echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepcion | .theme-clientes | .theme-ti"
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
