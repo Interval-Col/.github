@@ -1,4 +1,4 @@
-# Pháros · Recepción — Admisiones sub-brand *(glyph: «Muelle» / anchor)*
+# Pháros · Pacientes — Admisiones sub-brand *(glyph: «Muelle» / anchor)*
 
 > **✅ LOCKED 2026-06-17** (RFC 0008 co-creation; seeded from the brand-playground export).
 > Locked facts only; deeper brand narrative is **TODO — author with @SKuger01**. Parent
@@ -7,9 +7,9 @@
 ## 1. At a glance
 
 ```
-SUB-BRAND          Pháros · Recepción       (user-facing; glyph = Muelle/anchor)
+SUB-BRAND          Pháros · Pacientes       (user-facing; glyph = Muelle/anchor)
 FUNCTIONAL NAME    Pháros Admisiones        (RFC 0004 §2)
-USER-FACING NAME   Pháros · Recepción       (RFC 0008 Q1, semi-functional)
+USER-FACING NAME   Pháros · Pacientes       (corregido 2026-06-18; antes «Recepción»)
 MARITIME GLYPH     Muelle → anchor mark (lucide Anchor)
 DESCRIPTOR         Admisiones · Recepción
 PERSONA            Recepcionista · front-desk · cajero (intake, queue, lab-order, caja)
@@ -44,7 +44,7 @@ descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto
 |---|---|
 | Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
 | Sublabel descriptivo | `Admisiones · Recepción` (IBM Plex Mono, uppercase, tracked, muted) |
-| Eco en breadcrumb | Sí — «Recepción» aparece como primer nodo del breadcrumb |
+| Eco en breadcrumb | Sí — «Pacientes» aparece como primer nodo del breadcrumb |
 | Glyph de app | «Muelle» → `Anchor` (lucide), tintado rosa; identidad marítima vive en la marca, no en la palabra |
 
 > Fuente: RFC 0008 Q1 · playground 2026-06-17.

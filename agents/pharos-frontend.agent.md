@@ -30,12 +30,12 @@ Una app Pháros es mecánicamente un **theme** del contrato compartido: difiere 
 | App / sub-brand | Funcional | Accent (`--primary`, clase `.theme-*`) — light / dark | Audiencia |
 |---|---|---|---|
 | **Pháros · Números** (Timón) | ERP (Finanzas y Operaciones) | **ámbar `#7A5D00` / `#E6C34D`** — `.theme-numeros` — **LOCKED** (navy superseded) | Contador · COO · jefe de operaciones |
-| **Pháros · Clínico** (LIS) | LIS clínico (LCH) — las superficies de **Calidad/QC** y **Laboratorio** viven aquí | **teal `#1B6B5A` / `#4CD1B0`** — `.theme-clinico` — **LOCKED** | Técnicos y patólogos |
-| **Pháros · Deportivo** (Biuman LIS) | LIS deportivo (Biuman) | **azul `#004F70` / `#16749C`** — `.theme-deportivo` — **LOCKED** | Técnicos y patólogos |
-| **Pháros · Recepción** (Admisiones) | Front-desk / intake / caja del cajero | **rosa `#FFE0E6`** (light+dark) — `.theme-recepcion` — **LOCKED** | Personal de admisión |
+| **Pháros · Laboratorio** (LIS) | LIS clínico (LCH) — las superficies de **Calidad/QC** y **Laboratorio** viven aquí | **teal `#1B6B5A` / `#4CD1B0`** — `.theme-clinico` — **LOCKED** | Técnicos y patólogos |
+| **Pháros · Movimiento** (Biuman LIS) | LIS deportivo (Biuman) | **azul `#004F70` / `#16749C`** — `.theme-deportivo` — **LOCKED** | Técnicos y patólogos |
+| **Pháros · Pacientes** (Admisiones) | Front-desk / intake / caja del cajero | **rosa `#FFE0E6`** (light+dark) — `.theme-recepcion` — **LOCKED** | Personal de admisión |
 | **Pháros · Clientes** (CRM) | Clientes, convenios, tarifas, cotizaciones | **ámbar claro `#FFB86B`** (light+dark) — `.theme-clientes` — **LOCKED** | Equipo comercial |
 | **Pháros Archivo** | Utility · accent neutral de la familia, sin nombre evocativo | **LCH Navy `#003A70`** (default/neutral, sin clase) | Operación / soporte |
-| **Portal Pacientes** | Consulta pública de resultados (read-only) | hereda accent de Clínico (LIS) | Pacientes externos |
+| **Portal Pacientes** | Consulta pública de resultados (read-only) | hereda accent de Laboratorio (LIS) | Pacientes externos |
 
 > **Accents LOCKED (RFC 0008 — ACCEPTED 2026-06-17).** Los 5 acentos de sub-brand viven como clases `.theme-*` en `tokens.css`; una app añade su clase al `<html>`. Un theme sobreescribe **solo** los slots de accent (`--primary` / `--ring` / `--sidebar-primary` + sus foregrounds); el resto se hereda sin cambios. El **default/neutral** (sin clase) es **LCH Navy `#003A70`** (la familia-neutral / Archivo).
 

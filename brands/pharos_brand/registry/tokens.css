@@ -2,7 +2,7 @@
  * Pháros — shared design tokens (the registry token contract)
  * -----------------------------------------------------------------------------
  * SOURCE OF TRUTH for the Pháros product family's design tokens. Every app in
- * the family (Pháros · Clínico / Números / Recepción / Clientes / Deportivo /
+ * the family (Pháros · Laboratorio / Números / Pacientes / Clientes / Movimiento /
  * Archivo) gets this file copied in via the registry sync script — NOT an npm
  * package (RFC 0008 Q3).
  *
@@ -155,9 +155,9 @@
  * are the locked semi-functional sub-brand names (RFC 0008 Q1).
  *
  *   .theme-numeros    Números  (ERP/finance-lch)  glyph ShipWheel  ámbar
- *   .theme-clinico    Clínico  (LIS/pharos-lis)   glyph Radar      teal
- *   .theme-deportivo  Deportivo (Biuman LIS)      glyph Sailboat   azul profundo
- *   .theme-recepcion  Recepción (admission)       glyph Anchor     rosa
+ *   .theme-clinico    Laboratorio (LIS/pharos-lis) glyph Radar     teal
+ *   .theme-deportivo  Movimiento (Biuman LIS)     glyph Sailboat   azul profundo
+ *   .theme-recepcion  Pacientes (admission)       glyph Anchor     rosa
  *   .theme-clientes   Clientes (commercial)       glyph Telescope  ámbar claro
  * ========================================================================== */
 
@@ -171,7 +171,7 @@
   --sidebar-primary: #E6C34D;  --sidebar-primary-foreground: #1A1400;  --sidebar-ring: #E6C34D;
 }
 
-/* Clínico · LIS clínico — teal profundo #1B6B5A / #4CD1B0 */
+/* Laboratorio · LIS clínico — teal profundo #1B6B5A / #4CD1B0 */
 .theme-clinico {
   --primary: #1B6B5A;  --primary-foreground: #FFFFFF;  --ring: #1B6B5A;
   --sidebar-primary: #1B6B5A;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #1B6B5A;
@@ -181,7 +181,7 @@
   --sidebar-primary: #4CD1B0;  --sidebar-primary-foreground: #06121F;  --sidebar-ring: #4CD1B0;
 }
 
-/* Deportivo · LIS deportivo (Biuman) — azul profundo #004F70 / #16749C */
+/* Movimiento · LIS deportivo (Biuman) — azul profundo #004F70 / #16749C */
 .theme-deportivo {
   --primary: #004F70;  --primary-foreground: #FFFFFF;  --ring: #004F70;
   --sidebar-primary: #004F70;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #004F70;
@@ -191,7 +191,7 @@
   --sidebar-primary: #16749C;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #16749C;
 }
 
-/* Recepción · Admisiones — rosa functional #ff3d63 / #ff6b85 (pastel-split: the
+/* Pacientes · Admisiones — rosa functional #ff3d63 / #ff6b85 (pastel-split: the
  * old #FFE0E6 pastel survives ONLY as the decorative --brand-wash; functional
  * accent slots carry an AA-safe rosa, foregrounds stay dark text) */
 .theme-recepcion {

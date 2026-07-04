@@ -9,7 +9,7 @@ formación técnica.
 resultados (la cara pública del LIS clínico).
 **Prioridades:** accesibilidad, legibilidad, calidez humana, simplicidad radical.
 
-> **Accent — Clínico (teal), LOCKED.** Pháros LIS hereda el acento **Clínico**
+> **Accent — Laboratorio (teal), LOCKED.** Pháros LIS hereda el acento **Laboratorio**
 > (`.theme-clinico` en `tokens.css`: teal `#1B6B5A` light / `#4CD1B0` dark), aplicado
 > añadiendo la clase al `<html>` (RFC 0008 — ACCEPTED 2026-06-17). Todo lo que hay
 > abajo se expresa contra los slots semánticos, de modo que el portal hereda el acento
