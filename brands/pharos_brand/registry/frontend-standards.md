@@ -154,9 +154,9 @@ utilidades, nunca hex sueltos:
   | Sub-marca | App | Clase | Acento (light / dark) |
   |---|---|---|---|
   | Números (ERP/finanzas) | Timón | `.theme-numeros` | ámbar `#7A5D00` / `#E6C34D` |
-  | Clínico (LIS) | pharos-lis | `.theme-clinico` | teal `#1B6B5A` / `#4CD1B0` |
-  | Deportivo (Biuman LIS) | biuman | `.theme-deportivo` | azul `#004F70` / `#16749C` |
-  | Recepción (Admisiones) | admisiones | `.theme-recepcion` | rosa `#FFE0E6` (light+dark) |
+  | Laboratorio (LIS) | pharos-lis | `.theme-clinico` | teal `#1B6B5A` / `#4CD1B0` |
+  | Movimiento (Biuman LIS) | biuman | `.theme-deportivo` | azul `#004F70` / `#16749C` |
+  | Pacientes (Admisiones) | admisiones | `.theme-recepcion` | rosa `#FFE0E6` (light+dark) |
   | Clientes (CRM) | crm | `.theme-clientes` | ámbar claro `#FFB86B` (light+dark) |
 
   > El **ERP (Números)** pasó de navy a **ámbar `#7A5D00`** (RFC 0008 Q6); el navy

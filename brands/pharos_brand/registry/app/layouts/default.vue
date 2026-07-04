@@ -65,7 +65,7 @@ import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
 // Exposed as layout props so an app picks its sub-brand without forking the shell.
 withDefaults(defineProps<{
   /** Sub-brand name — echoed (with the glyph) at the root of the breadcrumb,
-   *  e.g. "Clínico". NOT shown as an accented sub-name beside the logo. */
+   *  e.g. "Laboratorio". NOT shown as an accented sub-name beside the logo. */
   subName?: string
   /** Descriptive sidebar sublabel under the wordmark (mono label), e.g.
    *  "LIS · Laboratorio clínico" (RFC 0008 Q1 — lockup = solo logo + sublabel). */

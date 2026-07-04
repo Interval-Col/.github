@@ -13,7 +13,7 @@
 ## Acento de sub-marca
 
 `Pháros LIS` es una sub-marca **no-ERP**. Su acento está **bloqueado** (RFC 0008 — ACCEPTED
-2026-06-17): la sub-marca de Calidad/QC es **Clínico**, con acento **teal**. Por tanto:
+2026-06-17): la sub-marca de Calidad/QC es **Laboratorio**, con acento **teal**. Por tanto:
 
 - El acento vive como la clase `.theme-clinico` en `tokens.css`; la app la añade a `<html>`.
   Valores (claro / oscuro): teal `#1B6B5A` / `#4CD1B0`.
@@ -24,7 +24,7 @@
   los neutrales, las constantes de marca y el radio — se heredan sin cambios.
 
 > El default/neutral (sin clase) es LCH Navy `#003A70` (la familia-neutral / Archivo).
-> Calidad **no es ERP**: su acento es **Clínico teal** (`.theme-clinico`), no navy.
+> Calidad **no es ERP**: su acento es **Laboratorio teal** (`.theme-clinico`), no navy.
 
 ---
 
