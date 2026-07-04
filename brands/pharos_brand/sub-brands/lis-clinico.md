@@ -1,17 +1,20 @@
-# Pháros · Clínico — LIS clínico (LCH) sub-brand *(glyph: «Sonda» / radar)*
+# Pháros · Laboratorio — LIS clínico (LCH) sub-brand *(glyph: «Sonda» / radar)*
 
 > **✅ LOCKED 2026-06-17** (RFC 0008 co-creation; seeded from the brand-playground export).
 > This stub records the **locked facts**; the deeper brand narrative (naming rationale, voice
 > nuance, taglines) is **TODO — author with @SKuger01**. Parent source:
 > [`../BRAND.md`](../BRAND.md) · [`../BACKBONE.md`](../BACKBONE.md). Only overrides/additions
 > to the shared Pháros foundation live here.
+>
+> **Renamed 2026-07-03** — display name «Clínico» → **«Laboratorio»** (RFC 0008 Decisions
+> 2026-07-03); glyph, accent, theme class and sublabel unchanged.
 
 ## 1. At a glance
 
 ```
-SUB-BRAND          Pháros · Clínico        (user-facing; glyph = Sonda/radar)
+SUB-BRAND          Pháros · Laboratorio    (user-facing; glyph = Sonda/radar)
 FUNCTIONAL NAME    Pháros LIS — clínico    (RFC 0004; tenant: LCH)
-USER-FACING NAME   Pháros · Clínico        (RFC 0008 Q1, semi-functional)
+USER-FACING NAME   Pháros · Laboratorio    (RFC 0008 Q1 + Decisions 2026-07-03)
 MARITIME GLYPH     Sonda → radar mark (lucide Radar)
 DESCRIPTOR         LIS · Laboratorio clínico
 PERSONA            Laboratorista clínico · patólogo · bacterióloga (results, validation, QC)
@@ -34,7 +37,7 @@ fuera-de-control / alerta) — a recognizable status language, **not** the app a
 - **Accent** `--primary` = teal profundo `#1B6B5A` (light) / `#4CD1B0` (dark). One colour from
   the curated family set; status colours are **accent-independent** (RFC 0008 Q4).
 - **Glyph** the «Sonda» radar mark (lucide `Radar`) as the app icon; maritime identity lives in
-  the mark, so the name stays the plain "Clínico".
+  the mark, so the name stays the plain "Laboratorio".
 - **Lockup** ver §Lockup a continuación.
 - Everything else (type, shell, spacing, flatness) **inherited unchanged** from `../BRAND.md`.
 
@@ -47,7 +50,7 @@ descriptiva en mono. El acento de sub-marca **no** aparece como sub-nombre junto
 |---|---|
 | Logo en sidebar | Solo logo Pháros (sin sub-nombre acento al lado) |
 | Sublabel descriptivo | `LIS · Laboratorio clínico` (IBM Plex Mono, uppercase, tracked, muted) |
-| Eco en breadcrumb | Sí — «Clínico» aparece como primer nodo del breadcrumb |
+| Eco en breadcrumb | Sí — «Laboratorio» aparece como primer nodo del breadcrumb |
 | Glyph de app | «Sonda» → `Radar` (lucide), tintado teal; identidad marítima vive en la marca, no en la palabra |
 
 > Fuente: RFC 0008 Q1 · playground 2026-06-17.

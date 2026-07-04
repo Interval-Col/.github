@@ -2,7 +2,7 @@
 description: "Use when creating components or pages for the Reportes surface — pathology report generation inside Pháros LIS (biuman-reports lineage). Clinical typography, structured documental sections, PDF-export ready, print-aware styles. Audience: pathologists and lab directors."
 surface: reportes
 app: Pháros LIS
-accent: Clínico — teal #1B6B5A / #4CD1B0 (.theme-clinico) (RFC 0008 — ACCEPTED 2026-06-17)
+accent: Laboratorio — teal #1B6B5A / #4CD1B0 (.theme-clinico) (RFC 0008 — ACCEPTED 2026-06-17)
 ---
 # Pháros — Surface: Reportes (generación de reportes de patología)
 
@@ -16,7 +16,7 @@ accent: Clínico — teal #1B6B5A / #4CD1B0 (.theme-clinico) (RFC 0008 — ACCEP
 
 ## Acento — Clínico (teal)
 
-La surface Reportes pertenece a **Pháros LIS**, cuyo acento ya está **cerrado** (RFC 0008 — ACCEPTED 2026-06-17): **Clínico · teal `#1B6B5A` (light) / `#4CD1B0` (dark)**, aplicado vía la clase `.theme-clinico` en `<html>`. Esa clase sobreescribe **sólo** los slots de acento (`--primary`/`--ring`/`--sidebar-primary` + sus foregrounds); el resto del contrato se hereda.
+La surface Reportes pertenece a **Pháros LIS**, cuyo acento ya está **cerrado** (RFC 0008 — ACCEPTED 2026-06-17): **Laboratorio · teal `#1B6B5A` (light) / `#4CD1B0` (dark)**, aplicado vía la clase `.theme-clinico` en `<html>`. Esa clase sobreescribe **sólo** los slots de acento (`--primary`/`--ring`/`--sidebar-primary` + sus foregrounds); el resto del contrato se hereda.
 
 - Usa `--primary` para encabezados, separadores de sección fuertes y la firma/validación profesional. No codifiques el hex teal literalmente: viene del token vía `.theme-clinico`.
 - NUNCA codifiques navy `#003A70` ni ningún hex literal aquí. El navy es el acento **default/neutral** de la familia (Archivo), no el de LIS/Reportes; LIS usa teal. La surface no requiere edición de hex: la clase `.theme-clinico` provee el acento.
@@ -284,7 +284,7 @@ pages/reportes/index.vue
 ## Ported from `ds-lch-reportes`; what changed
 
 - **Surface placement.** Mapeada a **Pháros LIS → Reportes** (RFC 0004 §2: QC y reportes se pliegan dentro de LIS). El linaje `biuman-reports` se preserva como origen, pero no es una sub-marca.
-- **Acento = Clínico (teal).** LIS tiene acento **cerrado** (RFC 0008 — ACCEPTED 2026-06-17): Clínico · teal `#1B6B5A` / `#4CD1B0`, vía `.theme-clinico` en `<html>`. Se usa `--primary`; se eliminó todo `var(--color-navy)` / `--rep-*` y todo hex literal (`text-[#111827]`, `#F8FAFC`, `#FFFFFF`). El navy `#003A70` es el acento default/neutral de la familia (Archivo), **no** el de esta surface.
+- **Acento = Laboratorio (teal).** LIS tiene acento **cerrado** (RFC 0008 — ACCEPTED 2026-06-17): Clínico · teal `#1B6B5A` / `#4CD1B0`, vía `.theme-clinico` en `<html>`. Se usa `--primary`; se eliminó todo `var(--color-navy)` / `--rep-*` y todo hex literal (`text-[#111827]`, `#F8FAFC`, `#FFFFFF`). El navy `#003A70` es el acento default/neutral de la familia (Archivo), **no** el de esta surface.
 - **Firma ya no es roja.** El archivo LCH usaba `--color-brand-red` para la firma/validación. Corregido: firma y validación usan `--primary`. El rojo (`--status-error`/`--destructive`/`--pharos-red`) queda reservado a estados de error + pilot light.
 - **Fuente de datos.** Valores de laboratorio usan `font-data` (**JetBrains Mono**) + `tabular-nums`; las etiquetas / metadata usan `font-mono` (**IBM Plex Mono**). JetBrains Mono ES la cara de datos/cifras del contrato. Apax queda fuera (asset de marca sólo-LCH, no en el contrato de producto Pháros).
 - **Status palette.** Resultados fuera de rango / crítico → `--status-error`; limítrofe → `--status-warning`; normal → `--status-success`; nota informativa / links → `--status-info` (cada uno con su tint `-bg`). Capa de estado acento-independiente (BRAND.md §3.4).

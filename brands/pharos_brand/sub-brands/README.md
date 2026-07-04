@@ -5,14 +5,20 @@
 > sub-brand** (user-facing name + nautical glyph + family accent). Naming model: **semi-
 > functional name + a nautical glyph** — the maritime identity lives in the *logo*, not the
 > word, so names stay legible to clinicians / front-desk / athletes. Separator `·`.
+>
+> **Updated 2026-07-03** — display renames ratified (RFC 0008 Decisions 2026-07-03):
+> «Clínico» → **«Laboratorio»**, «Deportivo» → **«Movimiento»**. Earlier corrections
+> (2026-06-18) already applied here: «Recepción» → **«Pacientes»**, pastel-split accents,
+> CRM Intensidad = Neutro. Theme classes keep their original code names
+> (`.theme-clinico`, `.theme-deportivo`, `.theme-recepcion`).
 
 | Functional (RFC 0004) | Spec | User-facing name | Glyph (náutico → lucide) | Accent — light / dark | Spread | Descriptor |
 |---|---|---|---|---|---|---|
 | ERP | [`erp.md`](erp.md) | **Números** | Timón → `ShipWheel` | `#7A5D00` / `#E6C34D` (ámbar) | Sutil | ERP · Finanzas y operaciones |
-| LIS clínico (LCH) | [`lis-clinico.md`](lis-clinico.md) | **Clínico** | Sonda → `Radar` | `#1B6B5A` / `#4CD1B0` (teal prof.) | Neutro | LIS · Laboratorio clínico |
-| LIS deportivo (Biuman) | [`lis-deportivo.md`](lis-deportivo.md) | **Deportivo** | Vela → `Sailboat` | `#004F70` / `#16749C` (azul prof.) | Neutro | LIS · Laboratorio deportivo |
-| Admisiones | [`admisiones.md`](admisiones.md) | **Recepción** | Muelle → `Anchor` | `#FFE0E6` (rosa) | Neutro | Admisiones · Recepción |
-| CRM | [`crm.md`](crm.md) | **Clientes** | Catalejo → `Telescope` | `#FFB86B` (ámbar claro) | Sutil | CRM · Relaciones comerciales |
+| LIS clínico (LCH) | [`lis-clinico.md`](lis-clinico.md) | **Laboratorio** | Sonda → `Radar` | `#1B6B5A` / `#4CD1B0` (teal prof.) | Neutro | LIS · Laboratorio clínico |
+| LIS deportivo (Biuman) | [`lis-deportivo.md`](lis-deportivo.md) | **Movimiento** | Vela → `Sailboat` | `#004F70` / `#16749C` (azul prof.) | Neutro | LIS · Laboratorio deportivo |
+| Admisiones | [`admisiones.md`](admisiones.md) | **Pacientes** | Muelle → `Anchor` | `#ff3d63` / `#ff6b85` (rosa funcional · wash `#FFE0E6`) | Neutro | Admisiones · Recepción |
+| CRM | [`crm.md`](crm.md) | **Clientes** | Catalejo → `Telescope` | `#e37600` / `#f59e3c` (ámbar funcional · wash `#FFB86B`) | Neutro | CRM · Relaciones comerciales |
 
 ## Family constants (shared — never a sub-brand accent)
 
