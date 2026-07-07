@@ -9,7 +9,7 @@ Capture is a step in the work, not a chore for later. The `/decision` and
 `/guide` slash-commands (see [How to add knowledge](#how-to-add-knowledge))
 scaffold the right file in the right place and wire up the index for you.
 
-> **Audience:** the Interval-Col / Intervalica engineering org. Markdown is the
+> **Audience:** the Interval-Col / Interval engineering org. Markdown is the
 > canonical store; any rich render (the visual artifact, the docs site) is a
 > generated *view* of these files — edit the Markdown, never the render.
 
