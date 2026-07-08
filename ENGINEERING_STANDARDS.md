@@ -28,6 +28,7 @@ This document defines the official engineering standards for all primary project
   ```
 - Pin Python version ≥ 3.11
 - `.env.example` with all required config variables
+- Apps on the shared `nucleus_db` cluster follow the **[DB tenant contract](db-tenant-contract.md)** (RFC 0015): migrate-as-deploy-step, no startup DDL, TLS `verify-full`, URL-encoded DSN, `/health` + `/ready` — machine-checked by the reusable `db-tenant-check` workflow.
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
 - Nuxt 4 as framework — **SSR by default**; opt individual pages out
