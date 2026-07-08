@@ -2,7 +2,7 @@
 status: in-progress
 owner: gczuluaga
 created: 2026-07-07
-updated: 2026-07-07
+updated: 2026-07-08
 issue: Interval-Col/.github#106
 start: 2026-07-07
 target: 2026-07-21
@@ -241,7 +241,7 @@ These apply to every phase.
 
 - [ ] **4.1** — commercial-lch: land #68 (URL-encode DSN + TLS) and #69 (cross-schema read doc); un-park `commercial-migrate` (remove `profiles:`, add `depends_on` chain) — T2/T4/T5 go green.
 - [ ] **4.2** — commercial-lch: add `/ready` with DB probe (canonical shape: lab-qc `features/health/router.py`) — T6 green.
-- [ ] **4.3** — cobol-migration: add `/ready` (DB `SELECT 1`) alongside the existing `/health` — T6 green.
+- [x] **4.3** — cobol-migration: add `/ready` (DB `SELECT 1`) alongside the existing `/health` — T6 green. *(Rides cobol-migration#84 together with the enforce flip; verified conformant under `--enforce`.)*
 
 ✅ **Done-when:** all six repos report **conformant** (or documented-informational) on their default branches. *(ES: los seis repos en "conformant" en su rama default.)*
 
@@ -255,15 +255,17 @@ These apply to every phase.
 > como check requerido en branch protection. Decisión humana: el momento del
 > flip lo decide gczuluaga por repo.
 
-🛑 **HUMAN DECISION — flip timing per repo.** Only gczuluaga flips a repo to
-`enforce: true` + required status check, and only after that repo's first green
-run (a context must run once before it is selectable; never enforce before the
-first green — gitleaks recipe). *(ES: el flip lo hace gczuluaga por repo, solo
-tras el primer run verde.)*
+~~🛑 HUMAN DECISION — flip timing per repo.~~ **RESOLVED 2026-07-08
+(gczuluaga): flip all six immediately** — every adopter was green on day one;
+required contexts armed everywhere; `enforce: true` rides the convergence PRs
+in the two drifting repos so nothing blocks. Standing rule: new apps comply
+from day one. *(ES: decidido — flip inmediato en los seis; apps nuevas cumplen
+desde el día uno.)*
 
-- [ ] **5.1** — Per repo: set `enforce: true` in the caller, verify green, then add `db-tenant-check` to required status checks on `main` (and `develop` where protected).
-- [ ] **5.2** — Update `BRANCHING-AND-DEPLOY.md` required-checks section to list `db-tenant-check` for tenant repos; mark the "pre-deploy migration gate" open item as landed (this gate) with `alembic check` noted as a possible future T-check.
-- [ ] **5.3** — Mark RFC 0015 Phase 1 checkboxes done; update this plan to `status: done`.
+- [x] **5.1a** — Required context `db-tenant-check / db-tenant-check` added to branch protection on `develop`+`main` in all six repos (2026-07-08).
+- [ ] **5.1b** — `enforce: true` per repo: finance-lch#109 · pharos-lis#72 · admission-patient#164 (green, await merge); biuman-lis#24 + cobol-migration#84 (riders); commercial-lch = combo PR gated on #68 merging first.
+- [x] **5.2** — Update `BRANCHING-AND-DEPLOY.md` required-checks section to list `db-tenant-check` for tenant repos (done in this PR); the "pre-deploy migration gate" open item was already updated in #107.
+- [ ] **5.3** — RFC 0015 Phase 1 checkboxes ticked (rfcs#93); update this plan to `status: done` once commercial-lch converges and all flips are merged.
 
 ✅ **Done-when:** every tenant repo blocks merges on contract drift; docs updated; RFC 0015 §Phase 1 boxes ticked. *(ES: los seis repos bloquean merges por drift; docs y RFC actualizados.)*
 
@@ -276,9 +278,11 @@ repo being blocked by the gate, then reverted. Questions:
 
 ## Decisions · Decisiones
 
-**Open:**
+**Open:** *(none)*
 
-- 🛑 **Flip timing per repo** — see Phase 5. Pending: gczuluaga, after each repo's first green run.
+**Resolved during execution:**
+
+- **Flip all six immediately (OQ4 superseded)** — every adopter green on day one; required contexts armed on develop+main across the six; enforce rides the convergence PRs (commercial, ETL) so no lane blocks; new apps comply from day one. Decision: gczuluaga. *(2026-07-08.)*
 
 **Resolved during planning:**
 
