@@ -1,0 +1,64 @@
+# Reusable: shared-DB tenant contract conformance gate — RFC 0015 Phase 1.
+#
+# Runs scripts/db-tenant-check.py (from this repo, @main) against the caller
+# repo's .db-tenant.yml manifest and asserts the mechanical subset of
+# db-tenant-contract.md: migrate one-shot chain wired, no DDL on app startup,
+# TLS + URL-encoded DSN, /health + /ready. Details in the contract doc.
+#
+# Rollout (RFC 0015 OQ4, mirrors the gitleaks recipe): callers ship with
+# enforce=false — drift annotates and lands on the dashboard, never blocks.
+# After one convergence cycle the caller flips enforce=true and the check is
+# marked required in branch protection. Never enforce before the first run
+# is green.
+#
+# Why self-hosted: the org is on the Team plan with a $0 Actions spending
+# limit — a github-hosted required check risks tipping the cap and killing
+# all runs. Tenant repos are private, so the self-hosted pool applies.
+#
+# No secrets needed: the check is pure static analysis of the caller repo.
+
+name: db-tenant-check
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check on contract drift (required-check mode)
+        type: boolean
+        required: false
+        default: false
+      manifest:
+        description: path to the .db-tenant.yml manifest, repo-root-relative
+        type: string
+        required: false
+        default: .db-tenant.yml
+
+permissions:
+  contents: read
+
+jobs:
+  db-tenant-check:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .db-tenant-org
+      - name: db-tenant-check
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          ENFORCE: ${{ inputs.enforce }}
+        run: |
+          set -euo pipefail
+          args=(--manifest "$MANIFEST")
+          if [ "$ENFORCE" = "true" ]; then args+=(--enforce); fi
+          python3 .db-tenant-org/scripts/db-tenant-check.py "${args[@]}"

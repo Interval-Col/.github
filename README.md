@@ -6,6 +6,7 @@ Org-wide community-health files + engineering standards for **Interval-Col**.
 - [Knowledge Management](KNOWLEDGE-MANAGEMENT.md) — **start here.** The org knowledge hub: the four buckets (decisions / methodologies / lessons / guides), RFC-vs-ADR threshold, how to capture (`/decision`, `/guide`), and the cross-repo decision ledger.
 - [Engineering Standards](ENGINEERING_STANDARDS.md) — stack, structure, conventions, design gates.
 - [Branching & Deploy](BRANCHING-AND-DEPLOY.md) — branching model, CI, deploy.
+- [DB Tenant Contract](db-tenant-contract.md) — what a conforming nucleus-db shared-DB app looks like (RFC 0015); enforced by the reusable `db-tenant-check` workflow.
 - [Issue Title Style](ISSUE_TITLE_STYLE.md) — `[Área]` + plain-English outcome, ≤60 chars (hard max 70), so the board reads like a plan.
 - [Agent Chat Hygiene](AGENT-CHAT-HYGIENE.md) · [español](AGENT-CHAT-HYGIENE.es.md) — *recommendation* for keeping Claude Code sessions cheap and durable (one chat per task; save knowledge to the repo/memory; when to compact / clear / delete).
 
