@@ -101,18 +101,27 @@ jobs:
   db-tenant-check:
     uses: Interval-Col/.github/.github/workflows/db-tenant-check.yml@main
     with:
-      enforce: false   # warn cycle — flip to true per RFC 0015 OQ4
+      enforce: true    # drift blocks merges — enforced org-wide since 2026-07-08
 ```
 
-### Rollout — warn one cycle, then require (RFC 0015 OQ4)
+### Rollout — enforced since 2026-07-08
 
-Mirrors the gitleaks recipe (`BRANCHING-AND-DEPLOY.md` §Hooks): **1)** adopt
-with `enforce: false`; drift annotates PRs and lands on the conformance
-dashboard (`operations/ops/db-tenant/DASHBOARD.md`). **2)** converge the known
-drift (commercial-lch#68/#69 + migrate wiring; ETL `/ready`). **3)** per repo,
-flip `enforce: true` and add `db-tenant-check` to required status checks — only
-after the check has run green at least once (a context must run before it is
-selectable). Never enforce before the first green run.
+RFC 0015 OQ4 planned a warn cycle; it was **superseded by decision 2026-07-08**
+(all six adopters green on day one): `db-tenant-check / db-tenant-check` is a
+**required status check on `develop` + `main` in every tenant repo**, and
+`enforce: true` rode the convergence PRs in the two drifting repos
+(commercial-lch, cobol-migration ETL) so no lane was ever blocked. The
+conformance dashboard lives at `operations/ops/db-tenant/DASHBOARD.md`.
+
+**Standing rule — new apps comply from day one.** Any app entering the shared
+cluster adopts the manifest + caller with `enforce: true` in its very first PR,
+and its onboarding starts with the steward-created schema shell (C-lite, RFC
+0015 Phase 2). There are no warn cycles for new tenants.
+
+**False-positive escape hatches** (why enforcing early is safe): an allowlist
+entry with a written reason in the repo's own manifest (reviewed like any code
+change), and the checker itself lives in this repo — a fix merged here `@main`
+heals every tenant at once, no re-adoption needed.
 
 ---
 
