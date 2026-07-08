@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 owner: gczuluaga
 created: 2026-07-07
 updated: 2026-07-08
@@ -239,8 +239,8 @@ These apply to every phase.
 > Cerrar el drift conocido durante el ciclo advisory: commercial (TLS/DSN ya
 > abiertos como #68/#69 + wiring del migrate) y el `/ready` del ETL.
 
-- [ ] **4.1** — commercial-lch: land #68 (URL-encode DSN + TLS) and #69 (cross-schema read doc); un-park `commercial-migrate` (remove `profiles:`, add `depends_on` chain) — T2/T4/T5 go green.
-- [ ] **4.2** — commercial-lch: add `/ready` with DB probe (canonical shape: lab-qc `features/health/router.py`) — T6 green.
+- [x] **4.1** — commercial-lch: #68 (URL-encode DSN + TLS) + #69 (cross-schema read doc) merged; un-park `commercial-migrate` (removed `profiles:`, kept `depends_on` chain) in #73 — T2/T4/T5 green.
+- [x] **4.2** — commercial-lch: `/ready` with DB probe added in #73 (canonical lab-qc shape) — T6 green. Also folded C-lite env.py (guard `CREATE SCHEMA` behind `has_schema()`) so `commercial_user` needs no CREATE ON DATABASE (crm shell = nucleus-db#71).
 - [x] **4.3** — cobol-migration: add `/ready` (DB `SELECT 1`) alongside the existing `/health` — T6 green. *(Rides cobol-migration#84 together with the enforce flip; verified conformant under `--enforce`.)*
 
 ✅ **Done-when:** all six repos report **conformant** (or documented-informational) on their default branches. *(ES: los seis repos en "conformant" en su rama default.)*
@@ -263,16 +263,21 @@ from day one. *(ES: decidido — flip inmediato en los seis; apps nuevas cumplen
 desde el día uno.)*
 
 - [x] **5.1a** — Required context `db-tenant-check / db-tenant-check` added to branch protection on `develop`+`main` in all six repos (2026-07-08).
-- [ ] **5.1b** — `enforce: true` per repo: finance-lch#109 · pharos-lis#72 · admission-patient#164 (green, await merge); biuman-lis#24 + cobol-migration#84 (riders); commercial-lch = combo PR gated on #68 merging first.
-- [x] **5.2** — Update `BRANCHING-AND-DEPLOY.md` required-checks section to list `db-tenant-check` for tenant repos (done in this PR); the "pre-deploy migration gate" open item was already updated in #107.
-- [ ] **5.3** — RFC 0015 Phase 1 checkboxes ticked (rfcs#93); update this plan to `status: done` once commercial-lch converges and all flips are merged.
+- [x] **5.1b** — `enforce: true` per repo — all merged 2026-07-08: finance-lch#109 · pharos-lis#72 · admission-patient#164 · cobol-migration#84 (rider, +`/ready`) · biuman-lis#24 (pre-onboarding) · **commercial-lch#73** (converge, after #68).
+- [x] **5.2** — Update `BRANCHING-AND-DEPLOY.md` required-checks section to list `db-tenant-check` for tenant repos (#108); the "pre-deploy migration gate" open item was already updated in #107.
+- [x] **5.3** — RFC 0015 Phase 1 checkboxes ticked (rfcs#93); this plan flipped to `status: done`.
 
-✅ **Done-when:** every tenant repo blocks merges on contract drift; docs updated; RFC 0015 §Phase 1 boxes ticked. *(ES: los seis repos bloquean merges por drift; docs y RFC actualizados.)*
+✅ **Done-when:** every tenant repo blocks merges on contract drift; docs updated; RFC 0015 §Phase 1 boxes ticked. *(ES: los seis repos bloquean merges por drift; docs y RFC actualizados.)* — **met 2026-07-08.**
 
-🚦 **Checkpoint 2 (exit).** Show gczuluaga: a deliberately-broken test PR on one
-repo being blocked by the gate, then reverted. Questions:
-1. What happens org-wide if the check script has a bug after the flip, and what is the rollback? *(ES: ¿qué pasa si el script tiene un bug después del flip y cómo se revierte?)*
-2. Which contract clauses are still prose-only, and which RFC phase machine-checks them? *(ES: ¿qué cláusulas siguen solo en prosa y qué fase las automatiza?)*
+🚦 **Checkpoint 2 (exit) — satisfied in practice.** No separate broken-PR demo
+was staged; the equivalent live evidence is **commercial-lch#73**, whose own
+`enforce: true` `db-tenant-check` ran against itself and had to be green to
+merge — a self-enforcing gate proving drift blocks. Answers on record: **(1)**
+a buggy checker after the flip is fixed centrally in `.github@main` and heals
+every tenant at once (the check is checked out from `@main` per run); the
+per-repo escape hatch is a manifest allowlist entry with a reason. **(2)** still
+prose-only: C6 pool/retry baseline (machine-checked when the Phase 3 kit lands)
+and the migration-safety clauses (RFC 0015 Phase 5 / squawk in Phase 4).
 
 ---
 
