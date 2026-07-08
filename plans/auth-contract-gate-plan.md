@@ -5,13 +5,13 @@ created: 2026-07-07
 issue: Interval-Col/.github#109
 epic: Interval-Col/finance-lch#101
 rfc: 0016
-sibling: plans/db-tenant-gate-plan.md
+sibling: plans/archive/db-tenant-gate-plan.md
 ---
 
 # auth-contract gate — build plan (RFC 0016 Phase 1)
 
 The anti-drift spine for the shared roles/capabilities module. Mirrors the
-`db-tenant-check` build (`plans/db-tenant-gate-plan.md`): a normative contract in
+`db-tenant-check` build (`plans/archive/db-tenant-gate-plan.md`): a normative contract in
 `.github`, a reusable `workflow_call` gate + stdlib-only checker, per-repo
 adoption, advisory → required. Difference from the DB gate: the three auth
 modules **start non-conformant by construction** (that is the drift RFC 0016
