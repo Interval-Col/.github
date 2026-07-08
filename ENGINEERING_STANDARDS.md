@@ -29,6 +29,7 @@ This document defines the official engineering standards for all primary project
 - Pin Python version ≥ 3.11
 - `.env.example` with all required config variables
 - Apps on the shared `nucleus_db` cluster follow the **[DB tenant contract](db-tenant-contract.md)** (RFC 0015): migrate-as-deploy-step, no startup DDL, TLS `verify-full`, URL-encoded DSN, `/health` + `/ready` — machine-checked by the reusable `db-tenant-check` workflow.
+- Apps with a self-serve roles/capabilities module follow the **[auth contract](auth-contract.md)** (RFC 0016): local authz (IAM = identity only), the `require_capability` gate, the seven `/auth/admin/*` endpoints, deploy-step seeding (never on startup), a runtime role registry, and FE↔BE capability sync — machine-checked by the reusable `auth-contract-check` workflow.
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
 - Nuxt 4 as framework — **SSR by default**; opt individual pages out
