@@ -7,6 +7,7 @@ Org-wide community-health files + engineering standards for **Interval-Col**.
 - [Engineering Standards](ENGINEERING_STANDARDS.md) — stack, structure, conventions, design gates.
 - [Branching & Deploy](BRANCHING-AND-DEPLOY.md) — branching model, CI, deploy.
 - [DB Tenant Contract](db-tenant-contract.md) — what a conforming nucleus-db shared-DB app looks like (RFC 0015); enforced by the reusable `db-tenant-check` workflow.
+- [Auth Contract](auth-contract.md) — what a conforming Pháros auth module (roles/capabilities admin) looks like (RFC 0016); enforced by the reusable `auth-contract-check` workflow.
 - [Issue Title Style](ISSUE_TITLE_STYLE.md) — `[Área]` + plain-English outcome, ≤60 chars (hard max 70), so the board reads like a plan.
 - [Agent Chat Hygiene](AGENT-CHAT-HYGIENE.md) · [español](AGENT-CHAT-HYGIENE.es.md) — *recommendation* for keeping Claude Code sessions cheap and durable (one chat per task; save knowledge to the repo/memory; when to compact / clear / delete).
 
