@@ -958,10 +958,12 @@ These are deferred decisions, tracked here so they don't get lost:
 - **Release-as-needed** flag on the auto-bump workflow — for the rare
   case where you want a `chore`-only PR to bump a minor (e.g., a
   dependency major bump that's effectively a minor for our app).
-- **Pre-deploy migration gate** — once Alembic migrations get larger,
-  add a step that runs `alembic check` against the deploy DB before
-  the container restart. Cross-link the `nucleus-db` plan when that
-  lands.
+- **Pre-deploy migration gate** — *partially landed 2026-07-07*: the
+  [`db-tenant-check`](db-tenant-contract.md) gate (RFC 0015 Phase 1)
+  now asserts the migrate-one-shot chain, startup-DDL ban, TLS and DSN
+  hygiene per PR (`plans/db-tenant-gate-plan.md`). Still open from the
+  original idea: a step that runs `alembic check` against the deploy DB
+  before the container restart — a candidate future T-check.
 - **SBOM generation (syft).** Software Bill of Materials per image,
   attached to the GitHub Release as an artifact. Cheap (~30s in CI,
   no signing infrastructure required) and gives a real
