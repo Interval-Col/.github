@@ -9,9 +9,12 @@
 # then this is a visible drift signal, not a gate. Tracked in the "promote
 # plan-lint to required" issue.
 #
-# Why self-hosted: the org is on the Team plan with a $0 Actions spending limit —
-# a github-hosted required check risks tipping the cap and killing all runs. This
-# runs on the self-hosted runner, which is unaffected.
+# Runner: THIS repo is public → hosted minutes are free AND the org's
+# self-hosted pool excludes public repos (a self-hosted job here queues
+# forever — bit us on PR #107). So here: ubuntu-latest. The copies synced
+# into the private pilot repos keep [self-hosted]: there the Team-plan $0
+# Actions spending limit applies, and a hosted required check risks tipping
+# the cap and killing all runs.
 #
 # Rollout: this file + scripts/plan_lint.py copy into the pilot repos
 # (finance-lch, cobol-migration, admission-patient) first; then org-wide.
@@ -28,7 +31,7 @@ permissions:
 
 jobs:
   plan-lint:
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
