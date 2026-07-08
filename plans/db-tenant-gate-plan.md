@@ -181,7 +181,7 @@ These apply to every phase.
 - [x] **1.2** — `scripts/db-tenant-check.py`: stdlib-only (no PyPI on the merge path — same rule as `plan_lint.py`), strict mini-YAML manifest parser + compose scanner, checks T1–T7, `--enforce` / `--json`, `$GITHUB_STEP_SUMMARY` output. Verified locally against all six tenant repos; results match the RFC's audit (commercial 4×FAIL, ETL 1×FAIL, rest conformant).
   - 💡 **Heuristic.** A conformance gate's parsers must fail loudly on input they don't understand — a misparse that silently passes is worse than no gate. *(ES: si el parser no entiende algo, debe fallar ruidosamente; un falso "pasa" es peor que no tener gate.)*
 - [x] **1.3** — Reusable workflow `db-tenant-check.yml`: `workflow_call`, `runner` JSON input (default `["self-hosted"]` — Team plan $0 hosted-minutes cap), `enforce` (default false), `manifest` path input; checks out the caller repo + this repo (for the script); no secrets.
-- [ ] **1.4** — Cross-links: README "Guides & standards" list; `ENGINEERING_STANDARDS.md` pointer; `BRANCHING-AND-DEPLOY.md` "pre-deploy migration gate" seam note.
+- [x] **1.4** — Cross-links: README "Guides & standards" list; `ENGINEERING_STANDARDS.md` pointer; `BRANCHING-AND-DEPLOY.md` "pre-deploy migration gate" seam note.
 
 ✅ **Done-when:** the `.github` PR is merged to `main`; `python3 scripts/db-tenant-check.py --manifest <m>` run from each tenant repo root reproduces the audit table; the contract doc renders with all links resolving. *(ES: PR merged; el script reproduce la tabla del audit en los seis repos.)*
 
@@ -205,8 +205,8 @@ These apply to every phase.
 > 2. **2.2** — PRs a cobol-migration y biuman-lis (manifiesto + caller; primer PR-CI del repo).
 > 3. **2.3** — Merge de `.github` primero; luego los seis (el caller referencia `@main`).
 
-- [ ] **2.1** — Caller PRs: finance-lch, pharos-lis (manifest at `lab-qc/.db-tenant.yml`, paths repo-root-relative), commercial-lch, admission-patient. Standalone workflow file (never inside the app's `ci.yml` — same isolation rationale as `pharos-lint-check.yml`), `enforce: false`.
-- [ ] **2.2** — Caller PRs: cobol-migration (`dml-only` profile, preflight allowlisted), biuman-lis (`pre-onboarding`).
+- [x] **2.1** — Caller PRs: finance-lch#106, pharos-lis#71 (manifest at `lab-qc/.db-tenant.yml`, paths repo-root-relative), commercial-lch#71, admission-patient#163. Standalone workflow file (never inside the app's `ci.yml` — same isolation rationale as `pharos-lint-check.yml`), `enforce: false`.
+- [x] **2.2** — Caller PRs: cobol-migration#84 (`dml-only` profile, preflight allowlisted), biuman-lis#24 (`pre-onboarding`). Both retargeted from `main` to `develop` — these repos deploy on push to `main` (main merge = prod release; PRs go develop-first).
 - [ ] **2.3** — Merge order: `.github` PR first (callers reference the reusable workflow `@main` — they parse-fail until it exists), then the six adopters in any order.
 
 ✅ **Done-when:** every tenant repo has a green (advisory) `db-tenant-check` run on its default branch; commercial-lch and cobol-migration show their known drift as annotations, not failures. *(ES: los seis repos corren el check en verde-advisory; commercial y ETL muestran su drift como anotaciones.)*
