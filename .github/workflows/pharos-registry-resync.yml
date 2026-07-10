@@ -1,0 +1,118 @@
+# Pháros registry re-sync bot — keeps consuming apps AT PAR with the registry.
+#
+# Two triggers, one job (RFC 0016 keep-at-par, Options 1+3):
+#   • push to main (registry/**)  → INSTANT: the registry moved, open re-sync PRs now.
+#   • weekly schedule             → SAFETY NET: catch anything a missed event left behind.
+#   • workflow_dispatch           → manual, optionally one app.
+#
+# Per app it runs the ADOPTION-AWARE sync (refresh-what-you-have, respecting
+# `pharos-registry:keep` adaptations), and if anything changed, opens/updates a
+# re-sync PR on that app's trunk. It NEVER merges — a human reviews (same as any PR).
+#
+# Auth: the `pharos-planning-bot` GitHub App (vars.PHAROS_BOT_APP_ID +
+# secrets.PHAROS_BOT_PRIVATE_KEY). REQUIRES the App to have `contents: write` +
+# `pull_requests: write` on the consumer repos (grant in the org App settings).
+name: "Pháros registry re-sync"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "brands/pharos_brand/registry/**"
+      - "scripts/sync-pharos-registry.sh"
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays 06:17 UTC — safety net
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Repo name to re-sync (e.g. finance-lch), or "all"'
+        default: "all"
+
+permissions:
+  contents: read   # the runner itself only reads; the App token does the writes
+
+concurrency:
+  group: pharos-registry-resync
+  cancel-in-progress: false
+
+jobs:
+  resync:
+    name: "re-sync ${{ matrix.name }}"
+    runs-on: ubuntu-latest
+    # Only the apps that have OPTED IN to the registry gates. Add a row per app
+    # as it adopts (must carry app/assets/pharos-registry.sha256).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: finance-lch, repo: Interval-Col/finance-lch, fe: frontend,        root: ".", base: develop }
+          - { name: lab-qc,      repo: Interval-Col/pharos-lis,   fe: lab-qc/frontend, root: ".", base: develop }
+    steps:
+      - name: Only this app on manual single-app dispatch
+        id: gate
+        run: |
+          want='${{ github.event.inputs.app }}'
+          if [ -n "$want" ] && [ "$want" != "all" ] && [ "$want" != '${{ matrix.name }}' ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout registry (.github)
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          path: registry-src
+
+      - name: Mint App token (scoped to ${{ matrix.name }})
+        if: steps.gate.outputs.skip != 'true'
+        id: apptoken
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.PHAROS_BOT_APP_ID }}
+          private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
+          owner: Interval-Col
+          repositories: ${{ matrix.name }}
+
+      - name: Checkout ${{ matrix.repo }}@${{ matrix.base }}
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ matrix.base }}
+          token: ${{ steps.apptoken.outputs.token }}
+          path: app
+
+      - name: Adoption-aware re-sync
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          bash registry-src/scripts/sync-pharos-registry.sh \
+            "app/${{ matrix.fe }}" "app/${{ matrix.root }}"
+
+      - name: Open / update re-sync PR if anything changed
+        if: steps.gate.outputs.skip != 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ steps.apptoken.outputs.token }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "✓ ${{ matrix.name }} is at par with the registry — nothing to do."
+            exit 0
+          fi
+          BRANCH="chore/pharos-registry-resync"
+          git config user.name  "pharos-planning-bot[bot]"
+          git config user.email "pharos-planning-bot[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A
+          git commit -m "chore(registry): re-sync Pháros registry
+
+          Automated by the Pháros registry re-sync bot. Refreshes the adopted
+          registry primitives to match the current registry (per-app adaptations
+          marked \`pharos-registry:keep\` are preserved). Review the diff before merging."
+          git push -f origin "$BRANCH"
+          if gh pr view "$BRANCH" --repo "${{ matrix.repo }}" >/dev/null 2>&1; then
+            echo "↻ updated existing re-sync PR for ${{ matrix.name }}."
+          else
+            gh pr create --repo "${{ matrix.repo }}" --base "${{ matrix.base }}" --head "$BRANCH" \
+              --title "chore(registry): re-sync Pháros registry" \
+              --body "Automated re-sync from Interval-Col/.github — the registry moved ahead of this app's adopted primitives. Per-app adaptations marked \`pharos-registry:keep\` are preserved. Review + merge to bring the app back to par. (Opened by the pharos-registry-resync bot.)"
+          fi
