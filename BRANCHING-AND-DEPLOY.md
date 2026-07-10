@@ -961,7 +961,7 @@ These are deferred decisions, tracked here so they don't get lost:
 - **Pre-deploy migration gate** — *partially landed 2026-07-07*: the
   [`db-tenant-check`](db-tenant-contract.md) gate (RFC 0015 Phase 1)
   now asserts the migrate-one-shot chain, startup-DDL ban, TLS and DSN
-  hygiene per PR (`plans/db-tenant-gate-plan.md`). Still open from the
+  hygiene per PR (`plans/archive/db-tenant-gate-plan.md`). Still open from the
   original idea: a step that runs `alembic check` against the deploy DB
   before the container restart — a candidate future T-check.
 - **SBOM generation (syft).** Software Bill of Materials per image,
