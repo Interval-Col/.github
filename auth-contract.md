@@ -33,6 +33,7 @@ the anti-drift baseline they converge to (RFC 0016).
 | **C6** | **Self-protection.** An admin cannot demote or delete their own role row; the admin role is reserved for the bootstrap user and rendered read-only. Recovery is re-seeding the bootstrap admin on next deploy. *Prose clause — not machine-checked.* | RFC 0016; finance-lch `admin_router.py` |
 | **C7** | **The backend is the only gate; the FE mirrors it.** Frontend capability references (`requiresCap`, `can('…')`, menu gates) are a **subset** of the backend capability catalog; FE enforcement (`NUXT_PUBLIC_ENFORCE_CAPABILITIES`) is UX only. Backend `require_capability` is the security boundary regardless of the flag. | RFC 0016 D5 |
 | **C8** | **Per-app catalog is the only variation.** The capability catalog, role vocabulary, admin-role name, and schema/table names are declared per app in the manifest; the machinery (C1–C7) does not vary. Schema: the `role` column is at least the standard width (drift: `String(20)` is one char from the wall). | RFC 0016 §2b (the seam) |
+| **C9** | **The FE admin runs on the shared registry primitives.** The `/admin/roles` + `/admin/users` surface is built from the RFC 0008 copy-in registry primitives (`RoleCapabilityMatrix`, `UsersRoleTable`, `useCan`/`usePharosAuthStore`, `createPharosAdminApi`) — parameterized per app (`adminRoleName`, `defaultRole`, `customRolesEnabled`, API base), **never hand-rolled**. Adopted apps declare `fe_registry_adopted: on`; the role-label map is already API-driven, so nothing to hard-code. | RFC 0016 Phase 4; RFC 0008 registry; .github#110 |
 
 ---
 
@@ -51,6 +52,7 @@ thin caller workflow; the check itself lives here and evolves centrally.
 | A6 | auth tables present; `role` column width ≥ the standard minimum | C8 |
 | A7 | *info/warn:* runtime role registry (create/rename/delete-role) present | C4 |
 | A8 | *info/warn:* `require_role` used as a gate is allowlisted as a documented shim | C2 |
+| A9 | *info until adopted:* with `fe_registry_adopted: on`, the FE admin pages reference the registry primitives (`RoleCapabilityMatrix`/`UsersRoleTable`) — a hand-rolled admin **FAILs** | C9 |
 
 The checks are deliberate **text-level heuristics** — cheap, deterministic,
 stdlib-only (no PyPI on the merge path, same rule as `db-tenant-check.py`). They
@@ -72,6 +74,7 @@ frontend_dir: frontend                # app-scoped in a monorepo (e.g. lab-qc/fr
 auth_tables: [<app>_user_roles, <app>_role_capabilities, <app>_roles]
 role_col_min: 32                       # required minimum width of the role column
 custom_roles: on                       # C4; a converging clone may declare `off` until it lands
+fe_registry_adopted: off               # C9; flip `on` once /admin uses the registry primitives (Phase 4)
 startup_seed_allow:                    # optional; every entry needs a reason
   - file: backend/app/main.py
     reason: "dev-only, gated behind AUTH_MODE=mock"
@@ -85,7 +88,7 @@ maps); unquoted `#` starts a comment — quote values containing `#`. The parser
 fails loudly on anything else: misparse never passes silently. (Same parser as
 `db-tenant-check.py`.)
 
-**Profiles:** `app` = has an auth module, full A1–A8 · `greenfield` = no auth
+**Profiles:** `app` = has an auth module, full A1–A9 · `greenfield` = no auth
 module on nucleus-db auth yet (A1 + an informational row; the full contract
 applies at adoption, RFC 0016 Phase 4).
 
