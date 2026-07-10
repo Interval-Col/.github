@@ -12,6 +12,7 @@ app, driven by the app's own `.auth-contract.yml` manifest:
   A6  auth tables present; role column width >= the standard minimum
   A7  runtime role registry (create/rename/delete-role) present (info/warn)
   A8  require_role used as a gate is an allowlisted documented shim (info/warn)
+  A9  FE admin surface uses the shared registry primitives (RFC 0016 Phase 4)
 
 Deliberately stdlib-only (same rule as db-tenant-check.py): a future *required*
 check must not depend on PyPI on the merge path. The manifest parser therefore
@@ -67,6 +68,13 @@ FE_REQ  = re.compile(r'requiresCap:\s*["\']([\w.]+)["\']')
 FE_CAN  = re.compile(r'\bcan\(\s*["\']([\w.]+)["\']')
 ROLE_W  = re.compile(r'\brole\b[^\n]*String\((\d+)\)')
 TABLE   = re.compile(r'__tablename__\s*=\s*["\'](\w+)["\']')
+
+# A9 — FE admin registry adoption markers (RFC 0016 Phase 4, .github#110).
+# The extracted primitives live in the registry and sync into the app verbatim;
+# an adopted admin surface references them instead of a hand-rolled matrix/gate.
+FE_PRIMITIVE = re.compile(r'\b(RoleCapabilityMatrix|UsersRoleTable)\b')
+FE_USECAN    = re.compile(r'\b(useCan|usePharosAuthStore)\b')
+FE_OLD_STORE = re.compile(r'defineStore\(\s*["\']auth["\']')   # the pre-registry local store
 
 PASS, FAIL, WARN, INFO, SKIP = "PASS", "FAIL", "WARN", "INFO", "SKIP"
 ICON = {PASS: "✅", FAIL: "❌", WARN: "⚠️", INFO: "ℹ️", SKIP: "⏭️"}
@@ -378,6 +386,46 @@ def check(manifest, results):
         if waived:
             detail += " — allowlisted shim: " + "; ".join(sorted(set(waived)))
         results.append(("A8", PASS, detail))
+
+    # A9 — FE admin surface on the shared registry primitives (RFC 0016 Phase 4).
+    # Gated by `fe_registry_adopted: on` (mirrors A7's `custom_roles`): until an
+    # app adopts, A9 is INFO. Once adopted, the /admin pages MUST reference the
+    # registry primitives (RoleCapabilityMatrix / UsersRoleTable) — a hand-rolled
+    # admin fails — so the FE admin can't silently re-fork (.github#110).
+    fe_adopted = str(manifest.get("fe_registry_adopted", "off")).lower() in ("on", "true", "yes")
+    if not fe_adopted:
+        results.append(("A9", INFO, "FE admin not on the registry primitives yet; A9 applies once "
+                        "`fe_registry_adopted: on` (RFC 0016 Phase 4 / .github#110)"))
+    elif not frontend or not os.path.isdir(frontend):
+        results.append(("A9", SKIP, f"no frontend_dir to scan ({frontend!r})"))
+    else:
+        admin_pages = [f for f in walk_fe(frontend)
+                       if f.endswith(".vue")
+                       and ("/pages/admin/" in f.replace(os.sep, "/")
+                            or f.replace(os.sep, "/").endswith("/pages/admin.vue"))]
+        # A local pre-registry auth store still defining the gate (should migrate
+        # to the synced usePharosAuthStore in composables/useCan.ts).
+        old_store = []
+        for f in walk_fe(frontend):
+            if f.replace(os.sep, "/").endswith("/composables/useCan.ts"):
+                continue
+            if FE_OLD_STORE.search(_strip_web_comments(_read(f) or "")):
+                old_store.append(os.path.relpath(f))
+        if not admin_pages:
+            results.append(("A9", WARN, "`fe_registry_adopted: on` but no pages/admin/*.vue found "
+                            f"under {frontend}"))
+        elif not any(FE_PRIMITIVE.search(_read(f) or "") for f in admin_pages):
+            results.append(("A9", FAIL, "admin pages don't reference the registry primitives "
+                            "(RoleCapabilityMatrix / UsersRoleTable) — hand-rolled admin? adopt via "
+                            "sync-pharos-registry.sh (RFC 0016 Phase 4)"))
+        elif old_store:
+            results.append(("A9", WARN, "admin uses the registry primitives, but a pre-registry auth "
+                            "store remains (migrate to the registry usePharosAuthStore): "
+                            + "; ".join(sorted(set(old_store))[:6])))
+        else:
+            uses_can = any(FE_USECAN.search(_read(f) or "") for f in walk_fe(frontend))
+            results.append(("A9", PASS, "admin pages use the registry primitives"
+                            + (" + useCan" if uses_can else "")))
 
 
 # --------------------------------------------------------------------------
