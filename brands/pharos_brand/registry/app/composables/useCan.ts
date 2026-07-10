@@ -66,7 +66,6 @@ export const usePharosAuthStore = defineStore('pharosAuth', () => {
       loaded.value = true
     } catch (e) {
       error.value = 'No se pudo cargar la sesión.'
-      // eslint-disable-next-line no-console
       console.error('[pharosAuth] session load failed', e)
     } finally {
       loading.value = false
