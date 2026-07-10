@@ -154,6 +154,27 @@ if [[ -d "$REGISTRY_DIR/app" ]]; then
   done < <(find "$REGISTRY_DIR/app" -type f)
 fi
 
+# ── 4c. Registry drift manifest (check-registry-drift / RFC 0016 Lock 3) ──────
+# sha256 of every synced registry file so an app can't silently hand-edit a
+# copied primitive. Excludes the app-owned presets (meant to diverge).
+MANIFEST_DEST="$APP_FE_DIR/app/assets/pharos-registry.sha256"
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "[dry-run] would write registry drift manifest: $MANIFEST_DEST"
+elif [[ -d "$REGISTRY_DIR/app" ]]; then
+  mkdir -p "$(dirname "$MANIFEST_DEST")"
+  : > "$MANIFEST_DEST"
+  while IFS= read -r src; do
+    rel="${src#"$REGISTRY_DIR/app/"}"
+    skip=false
+    for skip_rel in "${SYNC_SKIP_RELPATHS[@]}"; do
+      [[ "$rel" == "$skip_rel" ]] && { skip=true; break; }
+    done
+    [[ "$skip" == "true" ]] && continue
+    printf '%s  %s\n' "$(shasum -a 256 "$src" | awk '{print $1}')" "$rel" >> "$MANIFEST_DEST"
+  done < <(find "$REGISTRY_DIR/app" -type f | sort)
+  echo "wrote:  $MANIFEST_DEST ($(grep -c . "$MANIFEST_DEST") entries)"
+fi
+
 # ── 5. Pre-commit: never overwrite — print merge instructions ─────────────────
 echo
 echo "─────────────────────────────────────────────────────────────────────────"
@@ -186,7 +207,7 @@ echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepci
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
-echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs\""
+echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-registry-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs\""
 echo
 echo "  e) Install ESLint + generate Nuxt types:"
 echo "       pnpm add -D @nuxt/eslint"
