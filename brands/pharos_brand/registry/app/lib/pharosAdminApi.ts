@@ -1,7 +1,7 @@
 // pharosAdminApi — the Pháros admin (roles/users) API client, as ONE shared
 // factory (RFC 0016 Phase 4). The 10 `/auth/admin/*` calls the RoleCapabilityMatrix
 // + UsersRoleTable primitives drive, parameterized by the app's API base — the
-// "API base currently hard-coded per app" the issue (.github#110) calls out.
+// "API base currently hard-coded per app" that RFC 0016 Phase 4 addresses.
 //
 // The app injects its own auth-aware fetcher (Bearer / 401→SSO bounce) + the
 // resolved base (`${apiBase}${mountPrefix}`, e.g. finance `…/api/v1`, lab-qc
