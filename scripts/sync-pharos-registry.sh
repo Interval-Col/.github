@@ -31,10 +31,13 @@ REGISTRY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../brands/pharos_brand/regist
 # ── Argument parsing ─────────────────────────────────────────────────────────
 DRY_RUN=false
 POSITIONAL=()
-for arg in "$@"; do
-  case "$arg" in
-    --dry-run) DRY_RUN=true ;;
-    *) POSITIONAL+=("$arg") ;;
+ADD_LIST=()          # --add <relpath>: adopt a NEW registry file (else: refresh what you have)
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=true; shift ;;
+    --add)     ADD_LIST+=("$2"); shift 2 ;;
+    --add=*)   ADD_LIST+=("${1#--add=}"); shift ;;
+    *)         POSITIONAL+=("$1"); shift ;;
   esac
 done
 
@@ -124,54 +127,76 @@ else
   echo "synced: $WORKFLOW_SRC -> $WORKFLOW_DEST (working-directory=$FE_REL)"
 fi
 
-# ── 4b. Component tree — beacon (+ shell / lockup / ui primitives as they land) ─
-# Mirrors registry/app/** into the consuming app's app/** at the same paths.
-#
-# EXCEPTION — app-owned PRESETS. The EntityLookup presets (PatientLookup /
-# PhysicianLookup) are SCAFFOLDS: each consuming app wires their `searchFn` to its
-# OWN endpoints, so they MUST diverge from the registry's mock versions. The
-# registry copy is a starting point an app copies ONCE; re-syncing it would CLOBBER
-# the app's real-endpoint wiring. So the sync SKIPS them — they are app-owned after
-# first adoption. (The primitives they build on — EntityLookup, ScopedSearchInput —
-# ARE synced verbatim.) If a preset's reusable shell needs changing, make it
-# prop-driven in the registry instead.
-SYNC_SKIP_RELPATHS=(
+# ── 4b. Component tree — "refresh what you have" (adoption-aware) ──────────────
+# Mirrors registry/app/** into the app's app/**, but ONLY the files the app has
+# already ADOPTED (present in app/) — plus any `--add <relpath>` — so a selective
+# consumer isn't force-fed the whole registry. Three file categories:
+#   • verbatim  → refreshed + recorded in the drift manifest (Lock 3).
+#   • scaffold  → app-owned after first adoption (the EntityLookup presets, the
+#                 AppLogo, the shell layout, the menu example, the health-beacon
+#                 plugin). Never overwritten, never in the manifest.
+#   • adapted   → a shared primitive an app deliberately tuned, marked in-file
+#                 with `pharos-registry:keep`. Preserved (not overwritten),
+#                 excluded from the manifest — the documented escape hatch (e.g.
+#                 finance-lch's denser SearchableSelect anchor).
+SCAFFOLD_SKIP_RELPATHS=(
   "components/ui/entity-lookup/PatientLookup.vue"
   "components/ui/entity-lookup/PhysicianLookup.vue"
+  "components/AppLogo.vue"
+  "layouts/default.vue"
+  "navigation/menu.example.ts"
+  "plugins/health-beacon.client.ts"
 )
+KEEP_MARKER="pharos-registry:keep"
+
+is_scaffold() {
+  local rel="$1" s
+  for s in "${SCAFFOLD_SKIP_RELPATHS[@]}"; do [[ "$rel" == "$s" ]] && return 0; done
+  return 1
+}
+is_added() {
+  local rel="$1" a
+  [[ ${#ADD_LIST[@]} -eq 0 ]] && return 1
+  for a in "${ADD_LIST[@]}"; do [[ "$rel" == "$a" ]] && return 0; done
+  return 1
+}
+
+MANIFEST_DEST="$APP_FE_DIR/app/assets/pharos-registry.sha256"
+MANIFEST_TMP="$(mktemp)"
 if [[ -d "$REGISTRY_DIR/app" ]]; then
   while IFS= read -r src; do
     rel="${src#"$REGISTRY_DIR/app/"}"
-    skip=false
-    for skip_rel in "${SYNC_SKIP_RELPATHS[@]}"; do
-      [[ "$rel" == "$skip_rel" ]] && { skip=true; break; }
-    done
-    if [[ "$skip" == "true" ]]; then
-      echo "skip (app-owned preset): $rel"
+    dest="$APP_FE_DIR/app/$rel"
+    # scaffold → app-owned, never touched
+    if is_scaffold "$rel"; then
+      [[ -f "$dest" ]] && echo "skip (app-owned scaffold): $rel"
       continue
     fi
-    copy_file "$src" "$APP_FE_DIR/app/$rel"
-  done < <(find "$REGISTRY_DIR/app" -type f)
+    # not adopted (absent) and not explicitly --add'd → leave it out
+    if [[ ! -f "$dest" ]] && ! is_added "$rel"; then
+      continue
+    fi
+    # adopted-but-adapted → preserve the app's version, keep it out of the manifest
+    if [[ -f "$dest" ]] && grep -qF "$KEEP_MARKER" "$dest" 2>/dev/null; then
+      echo "keep (app adaptation, $KEEP_MARKER): $rel"
+      continue
+    fi
+    # verbatim → refresh + record in the drift manifest
+    copy_file "$src" "$dest"
+    printf '%s  %s\n' "$(shasum -a 256 "$src" | awk '{print $1}')" "$rel" >> "$MANIFEST_TMP"
+  done < <(find "$REGISTRY_DIR/app" -type f | sort)
 fi
 
 # ── 4c. Registry drift manifest (check-registry-drift / RFC 0016 Lock 3) ──────
-# sha256 of every synced registry file so an app can't silently hand-edit a
-# copied primitive. Excludes the app-owned presets (meant to diverge).
-MANIFEST_DEST="$APP_FE_DIR/app/assets/pharos-registry.sha256"
+# sha256 of every VERBATIM file this sync refreshed (scaffold + adapted excluded)
+# so Lock 3 flags a hand-edit WITHOUT false MISSING on un-adopted files.
 if [[ "$DRY_RUN" == "true" ]]; then
-  echo "[dry-run] would write registry drift manifest: $MANIFEST_DEST"
-elif [[ -d "$REGISTRY_DIR/app" ]]; then
+  echo "[dry-run] would write registry drift manifest: $MANIFEST_DEST ($(grep -c . "$MANIFEST_TMP" 2>/dev/null || echo 0) entries)"
+  rm -f "$MANIFEST_TMP"
+else
   mkdir -p "$(dirname "$MANIFEST_DEST")"
-  : > "$MANIFEST_DEST"
-  while IFS= read -r src; do
-    rel="${src#"$REGISTRY_DIR/app/"}"
-    skip=false
-    for skip_rel in "${SYNC_SKIP_RELPATHS[@]}"; do
-      [[ "$rel" == "$skip_rel" ]] && { skip=true; break; }
-    done
-    [[ "$skip" == "true" ]] && continue
-    printf '%s  %s\n' "$(shasum -a 256 "$src" | awk '{print $1}')" "$rel" >> "$MANIFEST_DEST"
-  done < <(find "$REGISTRY_DIR/app" -type f | sort)
+  sort "$MANIFEST_TMP" > "$MANIFEST_DEST"
+  rm -f "$MANIFEST_TMP"
   echo "wrote:  $MANIFEST_DEST ($(grep -c . "$MANIFEST_DEST") entries)"
 fi
 
