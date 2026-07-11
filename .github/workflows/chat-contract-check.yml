@@ -1,0 +1,66 @@
+# Reusable: Pháros chat contract conformance gate — RFC 0017 Phase 3.
+#
+# Runs scripts/chat-contract-check.py (from this repo, @main) against the caller
+# repo's .chat-contract.yml manifest and asserts the mechanical subset of
+# chat-contract.md: all provider calls through pharos-llm-proxy (no direct SDK),
+# the proxy-client contract, no plaintext prompt/reply persistence, a per-user
+# rate limit, graceful 503 degradation, source citation for corpus answers, and
+# the registry chat widget. Details in the contract doc.
+#
+# Rollout (RFC 0017 Phase 3): finance-lch is the reference the contract is drawn
+# from and is conformant on day one, so it adopts with enforce=true. A `planned`
+# adopter (biuman-lis, until its KB chat lands) passes trivially; when the chat
+# ships it flips `profile: chat` and adopts enforce=true in the same PR — new
+# features comply from day one (unlike the auth modules, which start non-conformant).
+#
+# Why self-hosted: the org is on the Team plan with a $0 Actions spending limit —
+# a github-hosted required check risks tipping the cap and killing all runs.
+# Tenant repos are private, so the self-hosted pool applies.
+#
+# No secrets needed: the check is pure static analysis of the caller repo.
+
+name: chat-contract-check
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check on contract drift (required-check mode)
+        type: boolean
+        required: false
+        default: false
+      manifest:
+        description: path to the .chat-contract.yml manifest, repo-root-relative
+        type: string
+        required: false
+        default: .chat-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  chat-contract-check:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .chat-contract-org
+      - name: chat-contract-check
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          ENFORCE: ${{ inputs.enforce }}
+        run: |
+          set -euo pipefail
+          args=(--manifest "$MANIFEST")
+          if [ "$ENFORCE" = "true" ]; then args+=(--enforce); fi
+          python3 .chat-contract-org/scripts/chat-contract-check.py "${args[@]}"
