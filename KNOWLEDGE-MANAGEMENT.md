@@ -2,8 +2,9 @@
 
 The single navigation hub for **where org knowledge lives, in what form, and how
 to add it**. If you learned something worth keeping — a decision, a how-to, a
-hard-won lesson, an operator guide — this page tells you which bucket it belongs
-to and how to file it so the next engineer (or the next Claude session) finds it.
+hard-won lesson, an operator guide, a piece of business knowledge — this page
+tells you which bucket it belongs to and how to file it so the next engineer
+(or the next Claude session) finds it.
 
 Capture is a step in the work, not a chore for later. The `/decision` and
 `/guide` slash-commands (see [How to add knowledge](#how-to-add-knowledge))
@@ -15,9 +16,9 @@ scaffold the right file in the right place and wire up the index for you.
 
 ---
 
-## The four buckets
+## The five buckets
 
-Every durable thing you want to keep falls into exactly one of four buckets.
+Every durable thing you want to keep falls into exactly one of five buckets.
 Pick the bucket, then file it in that bucket's **home** in the prescribed
 **format** and **language**.
 
@@ -27,6 +28,7 @@ Pick the bucket, then file it in that bucket's **home** in the prescribed
 | **Methodologies** | How we work — standards, conventions, playbooks | [`.github/`](.) (org-wide) + lab-qc **STANDARDS** (`pharos-lis/lab-qc/docs/STANDARDS.md`) | Markdown standards docs | **English** |
 | **Lessons** | What broke and what we learned — incidents + retros | [`operations/incidents/`](https://github.com/Interval-Col/operations) + `operations/lessons.md` | Incident write-up / lessons log | **English** |
 | **User guides** | Operator / team how-tos for a specific app | **Centralized** in [`operations/guides/`](https://github.com/Interval-Col/operations) (operations is **private**) | Markdown guide with **`app:` + `repo:`** frontmatter | **Spanish** (neutral Colombian) |
+| **Business knowledge** | Durable knowledge of how a brand's *business* works — services, protocols, processes, commercial rules, policies | Per-brand KB repo (**private**): [`biuman-kb`](https://github.com/Interval-Col/biuman-kb) (Biuman) | Markdown article with frontmatter (`title` / `area` / `status` / `owner` / `fuente`); Spanish issue-form intake for non-technical staff | **Spanish** (neutral Colombian) |
 
 **Notes that matter:**
 
@@ -60,6 +62,14 @@ Pick the bucket, then file it in that bucket's **home** in the prescribed
   GitHub Pages, which would also need a different GH subscription). The site is
   a *generated view* of the Markdown; scaffolded now, deploy deferred (no CI /
   Pages wired yet).
+
+- **Business knowledge is per-brand, fed by the whole team.** Each brand's KB
+  is its own private repo (first: [`biuman-kb`](https://github.com/Interval-Col/biuman-kb))
+  so non-technical staff get access to the KB without seeing code repos.
+  Zero-friction intake via Spanish issue forms (technical members convert
+  proposals into articles — the *gardener* workflow); hard **no-PHI rule** on
+  all content. Rationale + consumption pattern:
+  [`biuman-kb/docs/decisions/0001`](https://github.com/Interval-Col/biuman-kb/blob/main/docs/decisions/0001-kb-source-control-git-2026-07-10.md).
 
 ---
 
