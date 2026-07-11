@@ -2,19 +2,34 @@
 
 > Per-surface design guidance on the Pháros token contract (`../tokens.css`).
 > Patient-facing public results portal. Warm, accessible, clear, empathetic.
+>
+> **Brand wrapper — LCH clinic skin (RFC 0014 §A0, decided 2026-07-10).** This is a
+> **patient-facing** surface, so it wears the **LCH clinic brand** (the patient meets the
+> clinic, not Pháros), delivered as the `packages/brands/lch` skin over this shared
+> contract; Pháros/Intervalica appear only as the subtle "Con la tecnología de Pháros"
+> credit. The **teal *Laboratorio* accent is retained for the results-presentation
+> vocabulary** (result cards, lab-value data, status/accent language) — see the Accent note
+> below. The precise accent-boundary and token wiring are finalized in Phase 3 with Samuel
+> (design DRI).
 
 **Audiencia:** Pacientes externos (adultos, adultos mayores, padres con hijos) — sin
 formación técnica.
-**Sub-brand / superficie Pháros:** **Pháros LIS** — portal público de consulta de
-resultados (la cara pública del LIS clínico).
+**Marca / superficie:** superficie **LCH** de cara al paciente (portal público de consulta
+de resultados — la cara pública del laboratorio clínico). Viste la **piel de marca LCH**
+(`packages/brands/lch`) sobre el contrato compartido; el vocabulario visual de resultados del
+**LIS Pháros (Laboratorio / teal)** se conserva para los componentes de resultado.
+Pháros/Intervalica sólo como crédito sutil.
 **Prioridades:** accesibilidad, legibilidad, calidez humana, simplicidad radical.
 
-> **Accent — Laboratorio (teal), LOCKED.** Pháros LIS hereda el acento **Laboratorio**
-> (`.theme-clinico` en `tokens.css`: teal `#1B6B5A` light / `#4CD1B0` dark), aplicado
-> añadiendo la clase al `<html>` (RFC 0008 — ACCEPTED 2026-06-17). Todo lo que hay
-> abajo se expresa contra los slots semánticos, de modo que el portal hereda el acento
-> Clínico sin reescritura; el tema sólo sobreescribe los slots de acento
-> (`--primary/--ring/--sidebar-primary` + foregrounds), el resto se hereda.
+> **Accent — LCH clinic wrapper + retained teal *Laboratorio* for results (RFC 0014 §A0).**
+> The **wrapper/primary accent is the LCH clinic skin** (`packages/brands/lch`): hero, nav,
+> footer and the main CTAs speak LCH. The **teal *Laboratorio* accent** (`.theme-clinico` in
+> `tokens.css`: teal `#1B6B5A` light / `#4CD1B0` dark; RFC 0008 — ACCEPTED 2026-06-17) is
+> **retained for the results-presentation components** (result cards, lab-value data, the
+> status/accent language they already define). Everything below is expressed against the
+> semantic slots, so each accent is applied by theme class without rewriting markup; the
+> **exact accent-boundary** (LCH wrapper ↔ teal results subtree) is finalized in Phase 3
+> with Samuel.
 
 ---
 
@@ -25,7 +40,7 @@ Esta superficie no define paleta propia: consume el contrato compartido
 
 | Rol en el portal | Token (NO inventar valores) |
 |---|---|
-| Acción primaria / CTA / enlaces | `--primary` / `--primary-foreground` (acento Clínico / teal del sub-brand) |
+| Acción primaria / CTA / enlaces | `--primary` / `--primary-foreground` (acento de la piel **LCH** en el wrapper; teal *Laboratorio* dentro del subárbol de resultados) |
 | Superficie suave de tarjeta / sección | `--card`, `--secondary`, `--accent` (hover suave) |
 | Fondo de página | `--background` |
 | Texto principal | `--foreground` |
@@ -39,7 +54,7 @@ Esta superficie no define paleta propia: consume el contrato compartido
 **Regla cromática clave (corrige el portal LCH):** el archivo anterior usaba el
 **mismo rojo** para los CTAs primarios y para "crítico/peligro". Aquí se separan:
 
-- **Acciones primarias → `--primary`** (el acento del sub-brand, Clínico / teal).
+- **Acciones primarias → `--primary`** (acento de la piel **LCH** en el wrapper; teal *Laboratorio* en el subárbol de resultados).
 - **Crítico / peligro / destructivo → `--status-error` / `--destructive`.**
 - El **rojo** (`--pharos-red` / `--status-error`) queda reservado para **error + el
   pilot-light de marca** — **nunca** es una acción primaria.
@@ -57,8 +72,9 @@ bg-status-success-bg  text-status-success   → estado "Normal/OK"
 bg-status-warning-bg  text-status-warning   → estado "Revisar"
 bg-status-error-bg    text-status-error     → estado "Crítico"
 ```
-Sub-brand re-acentúa sólo `--primary/--accent/--ring/--sidebar-primary`; la paleta
-de estado (status-success/warning/error/info) **no** se mueve.
+Cada piel/acento re-acentúa sólo `--primary/--accent/--ring/--sidebar-primary` (LCH en el
+wrapper, teal *Laboratorio* en el subárbol de resultados); la paleta de estado
+(status-success/warning/error/info) **no** se mueve.
 
 ---
 
@@ -102,8 +118,10 @@ Padding de tarjeta: p-6 md:p-8
 
 ## Inventario de componentes
 
-Nombres re-cortados a `Pháros LIS` (un tenant nunca antepone su nombre: `Pháros · …`,
-no "LCH Pháros"). Los contratos de props/emits se conservan.
+Componentes del design system con prefijo `PharosPortal…` (son componentes del sistema
+Pháros; la app los consume vestida con la piel **LCH**). El prefijo de los componentes de
+registro se revisa con Samuel en Fase 3 si el naming de app/ruta se ajusta bajo RFC 0014 §B7
+(`apps/lch-resultados`). Los contratos de props/emits se conservan.
 
 ### `PharosPortalBusquedaResultados` — Búsqueda de resultados
 Props: `documentType: string`, `documentNumber: string`
@@ -236,9 +254,11 @@ Props: `title?: string`, `subtitle?: string`
 ---
 
 ## Ported from `ds-lch-portal-pacientes`; what changed
-- **Acento del sub-brand:** **Clínico (teal), LOCKED** (RFC 0008 — ACCEPTED
-  2026-06-17). Pháros LIS hereda `.theme-clinico` (teal `#1B6B5A` light / `#4CD1B0`
-  dark); la superficie consume `--primary` y recibe el acento por la clase de tema.
+- **Marca / acento:** la superficie viste la **piel LCH** en el wrapper (RFC 0014 §A0,
+  2026-07-10); el **acento teal *Laboratorio*** (`.theme-clinico`: teal `#1B6B5A` light /
+  `#4CD1B0` dark; RFC 0008 — ACCEPTED 2026-06-17) se **conserva para los componentes de
+  resultado**. La superficie consume `--primary` y recibe cada acento por la clase de tema;
+  la frontera exacta (wrapper LCH ↔ subárbol de resultados) se cierra en Fase 3 con Samuel.
 - **CTA ≠ peligro (corregido):** el portal LCH usaba el mismo rojo (`--pp-primary` =
   `--color-brand-red`) para CTAs y para "crítico". Ahora **primario → `--primary`** y
   **crítico/peligro → `--status-error`/`--destructive`**; el rojo queda reservado para
