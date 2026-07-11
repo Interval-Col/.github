@@ -47,6 +47,13 @@ jobs:
         include:
           - { name: finance-lch, repo: Interval-Col/finance-lch, fe: frontend,        root: ".", base: develop }
           - { name: lab-qc,      repo: Interval-Col/pharos-lis,   fe: lab-qc/frontend, root: ".", base: develop }
+          # biuman-lis (RFC 0017 Phase 4): NOT added yet. It already carries a full
+          # app-shell adoption (~90 registry component files, commit 09d5c55) WITHOUT a
+          # pharos-registry.sha256 manifest, and two of those files (CommandPalette.vue,
+          # SystemNotifications.vue) hold local fixes not marked `pharos-registry:keep`.
+          # A first bot re-sync would silently revert them (a live mobile UI regression
+          # on CommandPalette). Reconcile first — mark those files keep or upstream the
+          # fixes — then add the row (natural moment: PharosHelpChat adoption, Phase 5).
     steps:
       - name: Only this app on manual single-app dispatch
         id: gate
