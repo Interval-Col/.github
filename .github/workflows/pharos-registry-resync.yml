@@ -45,8 +45,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: finance-lch, repo: Interval-Col/finance-lch, fe: frontend,        root: ".", base: develop }
-          - { name: lab-qc,      repo: Interval-Col/pharos-lis,   fe: lab-qc/frontend, root: ".", base: develop }
+          - { name: finance-lch,       repo: Interval-Col/finance-lch,      fe: frontend,        root: ".", base: develop }
+          - { name: lab-qc,            repo: Interval-Col/pharos-lis,       fe: lab-qc/frontend, root: ".", base: develop }
+          - { name: admission-patient, repo: Interval-Col/admission-patient, fe: ".",             root: ".", base: develop }
     steps:
       - name: Only this app on manual single-app dispatch
         id: gate
