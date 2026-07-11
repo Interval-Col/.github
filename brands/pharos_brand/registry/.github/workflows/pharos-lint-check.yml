@@ -42,3 +42,28 @@ jobs:
         # monorepo apps set working-directory to their FE dir (same as above)
         working-directory: .
         run: pnpm lint-check
+
+  registry-freshness:
+    name: Registry freshness
+    runs-on: ubuntu-latest
+    # Gate 2 — is this app BEHIND the registry? (Lock 3, in lint-check above,
+    # catches the other direction: local hand-edits.) Interval-Col/.github is
+    # PUBLIC, so no token is needed to read the current registry.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Pháros registry (public — no token)
+        uses: actions/checkout@v4
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .pharos-registry
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Freshness gate — compare adopted files to the registry HEAD
+        # monorepo apps set working-directory to their FE dir (same as above)
+        working-directory: .
+        run: node scripts/check-registry-fresh.mjs "$GITHUB_WORKSPACE/.pharos-registry/brands/pharos_brand/registry/app"
