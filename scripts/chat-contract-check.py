@@ -78,10 +78,13 @@ PLAINTEXT_COL_MAPPED = re.compile(
 # H5 — a per-user rate-limit surface (module symbols) + the router gating on it.
 RATE_LIMIT_SYMBOL = re.compile(r"\b(check_user_quota|PER_USER_[A-Z_]*LIMIT|check_rate_limit)\b")
 RATE_LIMIT_IN_ROUTER = re.compile(r"\b(rate_limit|check_user_quota|check_rate_limit)\b")
-ROUTER_429 = re.compile(r"\b(429|TOO_MANY_REQUESTS)\b")
+# `\b` forms NO boundary next to `_`, so `\b429\b` would MISS FastAPI's idiomatic
+# `status.HTTP_429_TOO_MANY_REQUESTS`. Match the digits via digit-lookaround and the
+# name as a plain substring so H5/H6 detect the real 429/503 CODE, not just docstring prose.
+ROUTER_429 = re.compile(r"(?<!\d)429(?!\d)|TOO_MANY_REQUESTS")
 
 # H6 — graceful degradation: the router turns a proxy outage into a 503.
-ROUTER_503 = re.compile(r"\b(503|SERVICE_UNAVAILABLE)\b")
+ROUTER_503 = re.compile(r"(?<!\d)503(?!\d)|SERVICE_UNAVAILABLE")
 ROUTER_UNAVAILABLE = re.compile(r"\bProxy(Unavailable|Error)\b|\bUnavailable\b")
 
 # H7 — a `sources` field on the chat response (corpus citation, CH5).
