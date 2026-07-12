@@ -8,6 +8,9 @@
 // (Inter, Segoe UI, Helvetica Neue, VT323, Apax, Tahoma, …) loaded or named
 // anywhere under app/ or in nuxt.config — the drift a static rule can't see.
 //
+// Escape hatch: a line tagged `lint-allow-font` is skipped (for genuinely
+// necessary non-brand families, e.g. websafe stacks in email-HTML previews).
+//
 // Scans for: `font-family:` declarations, Tailwind `font-['X']` arbitrary values,
 // `--font-*:` token stacks, @font-face families, and @nuxt/fonts `{ name: 'X' }`.
 // Self-contained (node:fs only); REPO_ROOT = the dir containing app/ (argv[2] override).
@@ -82,6 +85,10 @@ const RULES = [
 const FONT_NAME_RE = /\bname\s*:\s*['"]([^'"]+)['"]/gi
 const FONT_CTX_RE = /\b(?:weights?|provider|subsets|styles?|fallbacks|display|src)\s*:/i
 const FONT_CTX_WINDOW = 200
+// Escape hatch: skip any line tagged `lint-allow-font`, for genuinely necessary
+// non-brand families (e.g. websafe font stacks in email-HTML previews, which the
+// brand webfonts can't render). Mirrors check-no-hex-colors.mjs's lint-allow-hex.
+const ESCAPE_HATCH = /lint-allow-font/
 
 for (const file of files) {
   const text = readFileSync(file, 'utf8')
@@ -94,6 +101,7 @@ for (const file of files) {
       const bad = familiesFrom(list)
       if (bad.length) {
         const line = text.slice(0, m.index).split('\n').length
+        if (ESCAPE_HATCH.test(lines[line - 1] ?? '')) continue // lint-allow-font escape hatch
         for (const fam of bad) {
           violations.push({ file: relative(REPO_ROOT, file), line, fam, ctx: lines[line - 1]?.trim().slice(0, 90) })
         }
@@ -109,6 +117,7 @@ for (const file of files) {
     const bad = familiesFrom(mn[1])
     if (!bad.length) continue
     const line = text.slice(0, mn.index).split('\n').length
+    if (ESCAPE_HATCH.test(lines[line - 1] ?? '')) continue // lint-allow-font escape hatch
     for (const fam of bad) {
       violations.push({ file: relative(REPO_ROOT, file), line, fam, ctx: lines[line - 1]?.trim().slice(0, 90) })
     }
@@ -122,7 +131,7 @@ if (violations.length) {
     if (v.ctx) console.error(`      ${v.ctx}`)
   }
   console.error('\nAllowed: Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono (+ generic/system fallbacks).')
-  console.error('Use a --font-* contract token (font-display/sans/mono/data). If a fallback is genuinely needed, add it to FALLBACK_OK.')
+  console.error('Use a --font-* contract token (font-display/sans/mono/data). If a fallback is genuinely needed, add it to FALLBACK_OK, or tag the line lint-allow-font for a one-off (e.g. email-HTML websafe stacks).')
   process.exit(1)
 }
 console.log(`[font-allowlist] OK — only sanctioned families referenced (scanned ${files.length} file(s)).`)
