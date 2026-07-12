@@ -45,9 +45,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: finance-lch,       repo: Interval-Col/finance-lch,      fe: frontend,        root: ".", base: develop }
-          - { name: lab-qc,            repo: Interval-Col/pharos-lis,       fe: lab-qc/frontend, root: ".", base: develop }
-          - { name: admission-patient, repo: Interval-Col/admission-patient, fe: ".",             root: ".", base: develop }
+          - { name: finance-lch,       repo: Interval-Col/finance-lch,       slug: finance-lch,       fe: frontend,        root: ".", base: develop }
+          - { name: lab-qc,            repo: Interval-Col/pharos-lis,        slug: pharos-lis,        fe: lab-qc/frontend, root: ".", base: develop }
+          - { name: admission-patient, repo: Interval-Col/admission-patient, slug: admission-patient, fe: ".",             root: ".", base: develop }
     steps:
       - name: Only this app on manual single-app dispatch
         id: gate
@@ -71,7 +71,11 @@ jobs:
           app-id: ${{ vars.PHAROS_BOT_APP_ID }}
           private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
           owner: Interval-Col
-          repositories: ${{ matrix.name }}
+          # Token must be scoped to the actual REPO, not the board/display name.
+          # lab-qc's repo is `pharos-lis` (name != repo) — using matrix.name here
+          # 404'd the App-token mint (only lab-qc; finance-lch/admission-patient
+          # happen to have name == repo). Use the explicit slug.
+          repositories: ${{ matrix.slug }}
 
       - name: Checkout ${{ matrix.repo }}@${{ matrix.base }}
         if: steps.gate.outputs.skip != 'true'
