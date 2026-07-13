@@ -66,5 +66,15 @@ the chat-contract wire format (`{ reply, sources?, blocked?, reason? }`).
    the widget in place (a hand-rolled `HelpChat.vue` fails the gate).
 
 > finance-lch's revival (RFC 0017 Phase 5, fin#140) re-mounts the widget in the
-> app-shell layout it lost in commit `9caa87b`; biuman-lis adds it as a tab in the
-> existing «Conocimiento Biuman» panel (biuman-lis#31).
+> app-shell layout it lost in commit `9caa87b`.
+>
+> **biuman-lis — el asistente NO va anidado dentro del panel «Conocimiento Biuman»** (revisa
+> biuman-lis#31, que proponía lo contrario). Son dos superficies distintas: el **conocimiento**
+> sale al sidebar como pestaña propia (consulta deliberada del corpus), y el **asistente** se abre
+> desde un **botón en el topbar** hacia un **cajón lateral** (pregunta de paso). Decidido
+> 2026-07-13.
+>
+> ⚠️ Eso fija `trigger: topbar` + `form: sheet` en `registry/spec/chat.md` — y **el componente
+> publicado no hace ninguna de las dos**: `PharosHelpChat.vue` cablea el lanzador flotante
+> abajo-derecha y el panel de esquina. La decisión queda **registrada pero no implementada** hasta
+> que se extienda el componente (#126). Ninguna app debe adoptar este layout todavía.
