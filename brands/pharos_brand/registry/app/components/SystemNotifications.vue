@@ -39,7 +39,7 @@ const badge = computed(() =>
   <Popover>
     <PopoverTrigger
       aria-label="Notificaciones"
-      class="relative inline-flex size-9 items-center justify-center rounded-full border border-border bg-muted text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+      class="relative inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Bell class="size-[18px]" aria-hidden="true" />
       <span
