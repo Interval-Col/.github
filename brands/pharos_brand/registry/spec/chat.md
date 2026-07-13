@@ -1,4 +1,4 @@
-<!-- spec-version: 95daddc9 · generado 2026-07-13 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: b80b3aec · generado 2026-07-13 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Asistente — especificación del chat (RFC 0017)
 
@@ -21,38 +21,33 @@
 
 ## Estado de implementación — qué honra HOY `PharosHelpChat.vue`
 
-De las 8 perillas, el componente publicado sólo expone **`starters`** como prop real. Las demás son
-comportamiento cableado o no existen. Esta tabla es el contrato honesto: no adopte una perilla
-marcada ❌ creyendo que ya funciona.
+Las 8 perillas son props reales del componente — **no hay brecha**: el pick de arriba se
+honra tal cual. Cada prop cae, por defecto, al comportamiento previo a 2026-07-13 (burbuja flotante ·
+panel esquina · sin persona), así que una app que re-sincronice sin tocar su montaje sigue viéndose igual.
 
 | Perilla | Decisión | Soporte | Detalle |
 |---|---|---|---|
-| Nombre | Rigel — Estrella de Orión | ❌ no existe | no existe una prop de nombre propio; `brandName` es la marca de la app, no el nombre del asistente |
-| Avatar / logo | Robot (neutro) | ❌ no existe | el lanzador dibuja un ícono fijo; no hay prop de avatar |
-| Fondo del avatar | Sobre círculo | ❌ no existe | depende de una prop de avatar que no existe |
-| Disparador | Botón en topbar | ⚠️ cableado | lanzador `position: fixed` abajo-derecha, cableado en el CSS del componente — «topbar» no es una opción |
-| Forma del panel | Cajón lateral | ⚠️ cableado | panel esquina cableado; no hay variante «cajón lateral» (sheet) |
-| Estado «En línea» | sí | ❌ no existe | el encabezado no renderiza línea de estado «En línea» |
-| Fuentes (citas) | sí | ⚠️ cableado | las fuentes se pintan SIEMPRE que la respuesta traiga `sources` (CH5); no se pueden apagar por configuración |
+| Nombre | Rigel — Estrella de Orión | ✅ prop | prop `assistantName` — `''` = sin nombre (el encabezado cae al `title` y el saludo queda genérico) |
+| Avatar / logo | Robot (neutro) | ✅ prop | prop `avatar` — un id de `PharosChatAvatar`; `''` = la burbuja de diálogo simple |
+| Fondo del avatar | Sobre círculo | ✅ prop | prop `avatarBg: 'circulo' \| 'solo'` — marca sobre chip redondo, o el glifo desnudo |
+| Disparador | Botón en topbar | ✅ prop | prop `trigger: 'floating' \| 'topbar'`. ⚠️ `topbar` exige montar el componente DENTRO del topbar de la app (la raíz pasa a `display: contents`) |
+| Forma del panel | Cajón lateral | ✅ prop | prop `form: 'corner' \| 'sheet'` — tarjeta esquina, o cajón lateral de altura completa con backdrop |
+| Estado «En línea» | sí | ✅ prop | prop `statusLine` — «En línea» bajo el nombre + punto en el botón del topbar. Es COSMÉTICO: no consulta el backend |
+| Fuentes (citas) | sí | ✅ prop | prop `citations` — pinta las fuentes en respuestas fundamentadas (CH5); `false` las apaga |
 | Sugerencias | sí | ✅ prop | prop `starters: string[]` — `[]` las apaga; la app aporta el texto de cada chip |
 
-Props reales del componente (las únicas perillas por app): `send` (requerida) · `brandName` ·
-`title` · `starters` · `storageKey` (única por app) · `placeholder`.
+Además, el transporte y el texto siguen siendo por app: `send` (requerida) · `brandName` · `title` ·
+`storageKey` (única por app) · `placeholder`.
 
-### Brecha — trabajo pendiente en el registry (`.github`#126)
+⚠️ `trigger: topbar` cambia **dónde** se monta el widget: la raíz pasa a `display: contents`, así que el
+botón se dibuja como hijo directo de lo que lo contenga. Móntelo dentro de la fila de acciones del
+topbar de la app, no en cualquier punto del shell.
 
-Para que este pick se honre de punta a punta, `PharosHelpChat.vue` necesita:
+### Brecha — ninguna
 
-- **Nombre** — no existe una prop de nombre propio; `brandName` es la marca de la app, no el nombre del asistente
-- **Avatar / logo** — el lanzador dibuja un ícono fijo; no hay prop de avatar
-- **Fondo del avatar** — depende de una prop de avatar que no existe
-- **Disparador** — lanzador `position: fixed` abajo-derecha, cableado en el CSS del componente — «topbar» no es una opción
-- **Forma del panel** — panel esquina cableado; no hay variante «cajón lateral» (sheet)
-- **Estado «En línea»** — el encabezado no renderiza línea de estado «En línea»
-- **Fuentes (citas)** — las fuentes se pintan SIEMPRE que la respuesta traiga `sources` (CH5); no se pueden apagar por configuración
-
-Mientras la brecha exista, la decisión queda **registrada pero no implementada**: las apps siguen
-montando el widget con su comportamiento cableado (burbuja flotante + panel esquina, sin persona).
+`PharosHelpChat.vue` honra las 8 perillas (`.github`#126, 2026-07-13). Antes de esa fecha
+6 de 8 no existían y esta sección listaba el trabajo pendiente; se conserva, vacía, a propósito: si el
+playground gana una perilla nueva antes de que el componente la soporte, la brecha reaparece sola.
 
 ### Consumir (junior / Sonnet)
 
