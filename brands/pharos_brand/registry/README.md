@@ -42,6 +42,42 @@ package (RFC 0008 Q3).
    `--sidebar-primary` + their foregrounds); everything else (status palette, neutrals,
    mark constants, radius) is inherited unchanged.
 4. Toggle light/dark with the shadcn **`.dark` class** on the root element.
+5. Pick the **beacon register** — see below. An app that skips this step keeps the
+   topbar dot+label; it never ends up with no beacon.
+
+## The beacon register (`data-beacon`)
+
+The system-health beacon has six presentations, and **the app picks one — the state never
+does** (spec `family.md` § *Beacon de estado · presentación*; family default = **`bar`**).
+Colour always comes from the accent-independent status palette, never the brand accent.
+
+| Register | Where it renders | Reads as |
+|---|---|---|
+| `dot` | topbar | just the light |
+| `dot-label` | topbar | light + «En orden» — **the fallback**, and what the shell shipped before |
+| `pill` | topbar | the whole chip tinted with the status token |
+| `bar` | **canvas** | a column of light standing in the bottom-right corner — no words |
+| `rail` | **canvas** | a lit hairline along the bottom edge of the content — no words |
+| `none` | — | only the logo's pilot light (the state is still announced to screen readers) |
+
+Wiring, in the consuming app:
+
+1. `nuxt.config.ts` → `runtimeConfig.public.beaconMode: 'bar'`. Declaring the key is what
+   lets `NUXT_PUBLIC_BEACON_MODE` override it **per environment, with no rebuild**.
+2. Copy in `app/plugins/beacon-mode.client.ts` — it mirrors the choice onto `<html data-beacon>`
+   so the DOM tells the truth about which register is live (QA, CSS, support).
+3. **Mount the beacon TWICE in `app/layouts/default.vue`** — `place="topbar"` in the topbar
+   cluster, and `place="canvas"` inside a `relative` wrapper around `<main>`.
+
+Every rendered beacon root carries `data-pg-beacon` (the live register) and `data-pg-place`,
+joining the shell's `data-pg-*` contract — so a contract test can assert *which* register is
+live, not merely that *some* beacon exists.
+
+⚠️ **Step 3 is the one that bites.** `layouts/default.vue` is app-owned **scaffold**: the sync
+script and the re-sync bot never touch it. So an app can be handed a canvas register (`bar`,
+`rail`) with no canvas mount to render it into — which would mean *no beacon at all*.
+`SystemBeacon` detects that and falls back to `dot-label`, so the failure is visible-but-benign
+rather than silent. Adopt the layout mount by hand; do not assume the bot did it.
 
 ## Decided vs open
 
