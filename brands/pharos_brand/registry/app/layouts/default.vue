@@ -430,7 +430,7 @@ onMounted(() => {
             <CommandPalette :nav="menu" @toggle-theme="toggleTheme" />
           </div>
           <slot name="topbar-end" />
-          <SystemBeacon />
+          <SystemBeacon place="topbar" />
           <slot name="notifications"><SystemNotifications /></slot>
           <Button
             type="button"
@@ -448,10 +448,19 @@ onMounted(() => {
       </header>
 
       <!-- Page content. NO <h1> (breadcrumb is the title). Padding follows the
-           density axis (Amplia/Media/Compacta) via pharos-components.css. -->
-      <main class="flex-1 overflow-y-auto" data-pg-content :data-density="density">
-        <slot />
-      </main>
+           density axis (Amplia/Media/Compacta) via pharos-components.css.
+           The wrapper is the positioned ancestor the canvas beacon registers need: `rail`
+           pins to the bottom edge of the CONTENT column rather than the viewport, and the
+           scroller stays inside it, so the beacon never scrolls away with the page. -->
+      <div class="relative flex-1 overflow-hidden">
+        <main class="size-full overflow-y-auto" data-pg-content :data-density="density">
+          <slot />
+        </main>
+        <!-- The canvas beacon (bar / rail). Renders nothing unless <html data-beacon> selects
+             a canvas register — but it MUST be mounted, or such a register would have nowhere
+             to land and SystemBeacon would fall back to the topbar dot+label. -->
+        <SystemBeacon place="canvas" />
+      </div>
     </SidebarInset>
   </SidebarProvider>
 </template>
