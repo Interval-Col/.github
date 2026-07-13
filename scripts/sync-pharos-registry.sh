@@ -161,6 +161,26 @@ is_added() {
   return 1
 }
 
+# ── Companion files — "importer:sibling" ───────────────────────────────────────
+# A registry component that imports a sibling must NEVER land without it: this sync is
+# adoption-aware, so an app that adopted the importer but never `--add`'d the sibling would get the
+# importer refreshed and the sibling silently skipped — a broken import, at the next routine sync,
+# with no flag flipped by anyone. So the sibling FOLLOWS the importer: if the importer is present in
+# the app (or is being --add'd this run), the sibling comes too, whether or not anyone remembered it.
+COMPANIONS=(
+  "components/PharosHelpChat.vue:components/PharosChatAvatar.vue"   # imports ./PharosChatAvatar.vue
+)
+is_companion_required() {
+  local rel="$1" pair importer companion
+  for pair in "${COMPANIONS[@]}"; do
+    importer="${pair%%:*}"; companion="${pair##*:}"
+    [[ "$rel" == "$companion" ]] || continue
+    [[ -f "$APP_FE_DIR/app/$importer" ]] && return 0   # importer already adopted
+    is_added "$importer" && return 0                   # importer being added right now
+  done
+  return 1
+}
+
 MANIFEST_DEST="$APP_FE_DIR/app/assets/pharos-registry.sha256"
 MANIFEST_TMP="$(mktemp)"
 if [[ -d "$REGISTRY_DIR/app" ]]; then
@@ -172,9 +192,13 @@ if [[ -d "$REGISTRY_DIR/app" ]]; then
       [[ -f "$dest" ]] && echo "skip (app-owned scaffold): $rel"
       continue
     fi
-    # not adopted (absent) and not explicitly --add'd → leave it out
-    if [[ ! -f "$dest" ]] && ! is_added "$rel"; then
+    # not adopted (absent), not explicitly --add'd, and not required by an adopted importer → leave out
+    if [[ ! -f "$dest" ]] && ! is_added "$rel" && ! is_companion_required "$rel"; then
       continue
+    fi
+    # pulled in only because an adopted component imports it — say so, it wasn't asked for
+    if [[ ! -f "$dest" ]] && ! is_added "$rel" && is_companion_required "$rel"; then
+      echo "companion (required by an adopted component): $rel"
     fi
     # adopted-but-adapted → preserve the app's version, keep it out of the manifest
     if [[ -f "$dest" ]] && grep -qF "$KEEP_MARKER" "$dest" 2>/dev/null; then
