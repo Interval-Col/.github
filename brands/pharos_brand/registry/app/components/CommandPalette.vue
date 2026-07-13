@@ -26,6 +26,11 @@ import type { NavGroup, NavItem, NavLeaf } from '~/navigation/menu'
 defineProps<{ nav: NavGroup[] }>()
 const emit = defineEmits<{ (e: 'toggle-theme'): void }>()
 
+// Two root nodes (the trigger button + the teleported dialog) → fallthrough
+// attrs can't auto-inherit. Forward them onto the trigger so a consumer's
+// `class` (e.g. `hidden md:block`) lands on the button instead of being dropped.
+defineOptions({ inheritAttrs: false })
+
 const router = useRouter()
 const open = ref(false)
 
@@ -58,6 +63,7 @@ function toggleTheme() {
   <!-- Trigger: a search BUTTON living in the topbar. (components/** is exempt from
        the no-raw-html gate, so a native <button>/<kbd> is fine here.) -->
   <button
+    v-bind="$attrs"
     type="button"
     class="flex h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-accent"
     @click="open = true"
