@@ -49,15 +49,27 @@ mount renders exactly what it rendered before.
 | Prop | Type | Default | Decided | Notes |
 |---|---|---|---|---|
 | `trigger` | `'floating' \| 'topbar'` | `floating` | **`topbar`** | `floating` = fixed bubble, bottom-right. `topbar` = an **in-flow** button — ⚠️ **requires mounting the component inside the app's topbar** (see below) |
-| `form` | `'corner' \| 'sheet'` | `corner` | **`sheet`** | `corner` = card, bottom-right. `sheet` = full-height right-hand drawer + backdrop |
-| `assistantName` | `string` | `''` | **`'Rigel'`** | proper name; `''` = unnamed (heading falls back to `title`, greeting stays generic) |
-| `avatar` | `string` | `''` | **`'bot'`** | a `PharosChatAvatar` id; `''` = the plain speech-bubble mark |
-| `avatarBg` | `'circulo' \| 'solo'` | `circulo` | **`circulo`** | mark on a round chip, or bare |
+| `form` | `'corner' \| 'sheet'` | `corner` | **`corner`** | `corner` = card, bottom-right. `sheet` = full-height right-hand drawer + backdrop |
+| `assistantName` | `string` | `''` | **`'Nerea'`** | proper name; `''` = unnamed (heading falls back to `title`, greeting stays generic) |
+| `avatar` | `string` | `''` | **`'nereid-holgada-orejas'`** | a `PharosChatAvatar` id; `''` = the plain speech-bubble mark |
+| `avatarBg` | `'circulo' \| 'solo'` | `circulo` | **`solo`** | mark on a round chip, or bare |
 | `statusLine` | `boolean` | `false` | **`true`** | «En línea» under the name + a dot on the topbar button. **Cosmetic — it does not probe the backend** |
 | `citations` | `boolean` | `true` | **`true`** | render corpus-source chips on grounded replies (CH5) |
 
 The `ChatMessage` / `ChatReply` shapes are exported from the component and match
 the chat-contract wire format (`{ reply, sources?, blocked?, reason? }`).
+
+### Built-in dialog behaviours (not knobs — always on, 2026-07-14)
+
+- **Topbar toggle** — the launcher stays mounted while the panel is open (`aria-expanded` +
+  active style); a second click closes. With `form: sheet` the full-height drawer physically
+  covers it — the full open/close cycle is a `corner` benefit.
+- **Width cycle** — a header button cycles 1× → 2× → 3× (`corner`: 380/760/1140px ·
+  `sheet`: 22/44/66rem), always capped by the viewport `max-width`.
+- **Copy message** — hover/keyboard-focus action on every turn; copies the raw markdown.
+- **Regenerate** — on the last assistant reply; re-sends the same question through the
+  app's `send` transport.
+- **«Al final» pill** — appears when the user scrolls >160px away from the newest message.
 
 ### ⚠️ `trigger: 'topbar'` changes WHERE you mount the widget
 
@@ -104,9 +116,10 @@ will appear wherever you happened to put the component.
            :starters="['¿Cómo proceso una factura?', '¿Qué es la causación?']"
            storage-key="finance-lch-help-chat-history"
            trigger="topbar"
-           form="sheet"
-           assistant-name="Rigel"
-           avatar="bot"
+           form="corner"
+           assistant-name="Nerea"
+           avatar="nereid-holgada-orejas"
+           avatar-bg="solo"
            status-line
          />
        </div>
