@@ -126,6 +126,19 @@ defineProps<{
     <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
   </svg>
 
+  <!-- Nerea (holgada orejitas) — la marca de la asistente (RFC 0017, pick 2026-07-14):
+       proporciones del bot lucide, cresta de ola en el borde superior, ojos verticales, sin boca. -->
+  <svg
+    v-else-if="id === 'nereid-holgada-orejas'" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="4" y="8" width="16" height="12.4" rx="2.5"/>
+    <path d="M4 8c1.35-1.5 2.65-1.5 4 0s2.65 1.5 4 0 2.65-1.5 4 0 2.65 1.5 4 0"/>
+    <path d="M2 14.5h2"/>
+    <path d="M20 14.5h2"/>
+    <path d="M9.3 12.9v2.6"/>
+    <path d="M14.7 12.9v2.6"/>
+  </svg>
+
   <!-- Robot (lucide bot) — also the fallback for any unknown id -->
   <svg
     v-else viewBox="0 0 24 24" fill="none" stroke="currentColor"

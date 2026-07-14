@@ -61,7 +61,7 @@ const props = withDefaults(defineProps<{
   trigger?: 'floating' | 'topbar'
   /** Panel shape: corner card (bottom-right) or a full-height side drawer with backdrop. */
   form?: 'corner' | 'sheet'
-  /** The assistant's proper name (e.g. "Rigel"). Empty = unnamed; the panel falls back to `title`. */
+  /** The assistant's proper name (e.g. "Nerea"). Empty = unnamed; the panel falls back to `title`. */
   assistantName?: string
   /** Avatar mark — see PharosChatAvatar. Empty = the plain speech-bubble mark. */
   avatar?: string
@@ -99,7 +99,7 @@ const isModal = computed(() => formMode.value === 'sheet')
 
 /** Panel heading: the assistant's name when it has one, else the generic title. */
 const heading = computed(() => props.assistantName || props.title)
-/** Greeting: "soy Rigel, el asistente de X" when named, else the original wording verbatim. */
+/** Greeting: "soy Nerea, el asistente de X" when named, else the original wording verbatim. */
 const greeting = computed(() => props.assistantName
   ? `Hola, soy ${props.assistantName}, el asistente de ${props.brandName}. ¿En qué puedo ayudarle?`
   : `Hola, soy el asistente de ${props.brandName}. ¿En qué puedo ayudarle?`)
@@ -214,11 +214,55 @@ function clearHistory() {
   if (!window.confirm('¿Borrar la conversación actual?')) return
   messages.value = []
   errorText.value = ''
+  showJump.value = false
 }
 
 function scrollToBottom() {
   const el = scrollEl.value
   if (el) el.scrollTop = el.scrollHeight
+  showJump.value = false
+}
+
+// ── Ancho expandible (1× → 2× → 3×, tope en viewport) ────────────────────────
+// Un solo botón cicla los tres anchos; pensado para respuestas con tablas o citas
+// largas. Las clases .size-2x/.size-3x viven en el <style> de ambos formularios.
+const sizeStep = ref(0)
+const sizeLabel = computed(() =>
+  sizeStep.value === 0 ? 'Ampliar (2×)' : sizeStep.value === 1 ? 'Ampliar (3×)' : 'Ancho normal')
+function cycleSize() { sizeStep.value = (sizeStep.value + 1) % 3 }
+
+// ── Copiar mensaje (texto plano del turno, no el HTML renderizado) ────────────
+const copiedIdx = ref(-1)
+async function copyMessage(i: number, text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedIdx.value = i
+    setTimeout(() => { if (copiedIdx.value === i) copiedIdx.value = -1 }, 1200)
+  } catch {
+    // clipboard denegado (permiso / contexto inseguro): el botón simplemente no confirma
+  }
+}
+
+// ── Regenerar la última respuesta ─────────────────────────────────────────────
+// Retira el último intercambio y re-envía la misma pregunta por submit(), que ya
+// posee el transport, el recorte de historia y el manejo de errores.
+function regenerate() {
+  if (loading.value) return
+  const msgs = messages.value
+  const last = msgs[msgs.length - 1]
+  const prevUser = msgs[msgs.length - 2]
+  if (!last || last.role !== 'assistant' || !prevUser || prevUser.role !== 'user') return
+  msgs.pop()
+  msgs.pop()
+  void submit(prevUser.content)
+}
+
+// ── Píldora «Al final» cuando el usuario scrollea lejos del último mensaje ────
+const showJump = ref(false)
+function onScroll() {
+  const el = scrollEl.value
+  if (!el) return
+  showJump.value = el.scrollHeight - el.scrollTop - el.clientHeight > 160
 }
 
 function renderMarkdown(text: string | null | undefined): string {
@@ -297,16 +341,20 @@ function onKeydown(e: KeyboardEvent) {
     </button>
 
     <!-- LAUNCHER · topbar — IN FLOW, sits among the app's topbar actions. Requires the component
-         to be mounted inside the topbar (chat-widget.md); the root is `display: contents` here. -->
+         to be mounted inside the topbar (chat-widget.md); the root is `display: contents` here.
+         Es un TOGGLE: no se desmonta al abrir — queda con estado activo y un segundo click cierra.
+         (Con `form: sheet` el drawer de altura completa lo cubre físicamente mientras está abierto;
+         el ciclo completo abrir/cerrar luce con `form: corner`, donde el botón queda siempre visible.) -->
     <button
-      v-if="!isOpen && triggerMode === 'topbar'"
+      v-if="triggerMode === 'topbar'"
       ref="launcherEl"
       type="button"
       class="pharos-chat-topbar-btn"
-      :class="`bg-${avatarBg}`"
-      aria-label="Abrir asistente de ayuda"
+      :class="[`bg-${avatarBg}`, isOpen ? 'is-open' : '']"
+      :aria-label="isOpen ? 'Cerrar asistente de ayuda' : 'Abrir asistente de ayuda'"
+      :aria-expanded="isOpen"
       :title="heading"
-      @click="open"
+      @click="isOpen ? close() : open()"
     >
       <PharosChatAvatar v-if="avatar" :id="avatar"/>
       <svg
@@ -331,7 +379,7 @@ function onKeydown(e: KeyboardEvent) {
       v-if="isOpen"
       ref="panelEl"
       class="pharos-chat-panel"
-      :class="`is-${formMode}`"
+      :class="[`is-${formMode}`, sizeStep === 1 ? 'size-2x' : sizeStep === 2 ? 'size-3x' : '']"
       role="dialog"
       :aria-modal="isModal ? 'true' : undefined"
       :aria-label="heading"
@@ -347,6 +395,29 @@ function onKeydown(e: KeyboardEvent) {
           <p v-if="statusLine" class="pharos-chat-status">En línea</p>
         </div>
         <div class="pharos-chat-header-actions">
+          <button
+            type="button"
+            class="pharos-chat-icon-btn"
+            :title="sizeLabel"
+            :aria-label="sizeLabel"
+            @click="cycleSize"
+          >
+            <!-- lucide fold-horizontal / unfold-horizontal (inlined, ISC) -->
+            <svg
+              v-if="sizeStep === 2"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 12h6"/><path d="M22 12h-6"/><path d="M12 2v2"/><path d="M12 8v2"/>
+              <path d="M12 14v2"/><path d="M12 20v2"/><path d="m19 9-3 3 3 3"/><path d="m5 15-3-3 3-3"/>
+            </svg>
+            <svg
+              v-else
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 12h6"/><path d="M8 12H2"/><path d="M12 2v2"/><path d="M12 8v2"/>
+              <path d="M12 14v2"/><path d="M12 20v2"/><path d="m19 15 3-3-3-3"/><path d="m5 9-3 3 3 3"/>
+            </svg>
+          </button>
           <button
             v-if="messages.length"
             type="button"
@@ -379,7 +450,7 @@ function onKeydown(e: KeyboardEvent) {
         </div>
       </header>
 
-      <div ref="scrollEl" class="pharos-chat-scroll">
+      <div ref="scrollEl" class="pharos-chat-scroll" @scroll.passive="onScroll">
         <!-- Empty state with starter chips -->
         <div v-if="!messages.length" class="pharos-chat-empty">
           <p class="pharos-chat-empty-hint">
@@ -414,6 +485,46 @@ function onKeydown(e: KeyboardEvent) {
               <span class="pharos-chat-sources-label">Fuentes:</span>
               <span v-for="(src, j) in m.sources" :key="j" class="pharos-chat-source">{{ src }}</span>
             </p>
+            <!-- Acciones por turno — visibles al pasar el mouse o con foco de teclado.
+                 Copiar toma el markdown crudo del turno; regenerar solo en la última respuesta. -->
+            <div class="pharos-chat-msg-actions">
+              <button
+                type="button"
+                class="pharos-chat-icon-btn"
+                :title="copiedIdx === i ? 'Copiado' : 'Copiar mensaje'"
+                :aria-label="copiedIdx === i ? 'Copiado' : 'Copiar mensaje'"
+                @click="copyMessage(i, m.content)"
+              >
+                <svg
+                  v-if="copiedIdx === i"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="is-copied">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                <svg
+                  v-else
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+              </button>
+              <button
+                v-if="m.role === 'assistant' && i === messages.length - 1 && !loading"
+                type="button"
+                class="pharos-chat-icon-btn"
+                title="Regenerar respuesta"
+                aria-label="Regenerar respuesta"
+                @click="regenerate"
+              >
+                <svg
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -427,6 +538,23 @@ function onKeydown(e: KeyboardEvent) {
 
         <p v-if="errorText" class="pharos-chat-error" role="alert">{{ errorText }}</p>
       </div>
+
+      <!-- Píldora «Al final» — aparece cuando el usuario está lejos del último mensaje. -->
+      <button
+        v-if="showJump"
+        type="button"
+        class="pharos-chat-jump"
+        aria-label="Bajar al final"
+        @click="scrollToBottom"
+      >
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5v14"/>
+          <path d="m19 12-7 7-7-7"/>
+        </svg>
+        Al final
+      </button>
 
       <footer class="pharos-chat-input-row">
         <textarea
@@ -529,6 +657,16 @@ function onKeydown(e: KeyboardEvent) {
 }
 .pharos-chat-topbar-btn.bg-solo:hover { color: var(--primary); }
 .pharos-chat-topbar-btn.bg-solo svg { width: 24px; height: 24px; }
+/* Toggle abierto: el launcher queda montado y lo dice visualmente. */
+.pharos-chat-topbar-btn.is-open {
+  color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+.pharos-chat-topbar-btn.bg-solo.is-open {
+  box-shadow: none;
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  border-radius: 8px;
+}
 
 /* "En línea" presence dot on the topbar launcher. */
 .pharos-chat-dot {
@@ -571,7 +709,11 @@ function onKeydown(e: KeyboardEvent) {
   max-height: calc(100vh - 2rem);
   border-radius: 14px;
   animation: pharos-chat-rise 160ms ease-out;
+  transition: width 300ms ease;
 }
+/* Ancho expandible (botón del header): 1× → 2× → 3×, siempre bajo el max-width del viewport. */
+.pharos-chat-panel.is-corner.size-2x { width: 760px; }
+.pharos-chat-panel.is-corner.size-3x { width: 1140px; }
 
 /* SHEET — full-height side drawer. Slides in from the right; only the left edge is drawn. */
 .pharos-chat-panel.is-sheet {
@@ -585,7 +727,10 @@ function onKeydown(e: KeyboardEvent) {
   border-right: none;
   border-bottom: none;
   animation: pharos-chat-slide 180ms ease-out;
+  transition: width 300ms ease;
 }
+.pharos-chat-panel.is-sheet.size-2x { width: 44rem; }
+.pharos-chat-panel.is-sheet.size-3x { width: 66rem; }
 
 @keyframes pharos-chat-rise {
   from { transform: translateY(8px); opacity: 0; }
@@ -768,6 +913,42 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--primary);
   text-decoration: underline;
 }
+
+/* Acciones por turno: invisibles hasta hover del turno o foco de teclado dentro de ellas. */
+.pharos-chat-msg-actions {
+  display: inline-flex;
+  gap: 0.1rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.pharos-chat-msg:hover .pharos-chat-msg-actions,
+.pharos-chat-msg-actions:focus-within { opacity: 1; }
+.pharos-chat-msg-actions .pharos-chat-icon-btn { width: 24px; height: 24px; }
+.pharos-chat-msg-actions .pharos-chat-icon-btn svg { width: 14px; height: 14px; }
+.pharos-chat-msg-actions svg.is-copied { color: var(--status-success); }
+
+/* Píldora «Al final» — flota sobre el borde inferior del hilo, encima del input. */
+.pharos-chat-jump {
+  position: absolute;
+  bottom: 4.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--popover);
+  color: var(--muted-foreground);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  transition: color 120ms ease;
+}
+.pharos-chat-jump:hover { color: var(--foreground); }
+.pharos-chat-jump svg { width: 13px; height: 13px; }
 
 .pharos-chat-sources {
   margin: 0;
