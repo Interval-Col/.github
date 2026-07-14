@@ -48,13 +48,15 @@ jobs:
           - { name: finance-lch,       repo: Interval-Col/finance-lch,       slug: finance-lch,       fe: frontend,        root: ".", base: develop }
           - { name: lab-qc,            repo: Interval-Col/pharos-lis,        slug: pharos-lis,        fe: lab-qc/frontend, root: ".", base: develop }
           - { name: admission-patient, repo: Interval-Col/admission-patient, slug: admission-patient, fe: ".",             root: ".", base: develop }
-          # biuman-lis (RFC 0017 Phase 4): NOT added yet. It already carries a full
-          # app-shell adoption (~90 registry component files, commit 09d5c55) WITHOUT a
-          # pharos-registry.sha256 manifest, and two of those files (CommandPalette.vue,
-          # SystemNotifications.vue) hold local fixes not marked `pharos-registry:keep`.
-          # A first bot re-sync would silently revert them (a live mobile UI regression
-          # on CommandPalette). Reconcile first — mark those files keep or upstream the
-          # fixes — then add the row (natural moment: PharosHelpChat adoption, Phase 5).
+          # biuman-lis: the two blockers this row waited on are BOTH resolved (2026-07-13).
+          # It held local fixes in CommandPalette.vue + SystemNotifications.vue that a first
+          # re-sync would have silently reverted, and it had no manifest. #130 UPSTREAMED
+          # those fixes (app and registry are now byte-identical, so there is nothing left to
+          # revert), and it now carries app/assets/pharos-registry.sha256. Leaving it out was
+          # the worse of the two failures: it runs the BLOCKING freshness gate with no bot to
+          # open its re-sync PR, so the next registry change would redden its CI with nothing
+          # to fix it.
+          - { name: biuman-lis,        repo: Interval-Col/biuman-lis,        slug: biuman-lis,        fe: lis/frontend,    root: ".", base: develop }
     steps:
       - name: Only this app on manual single-app dispatch
         id: gate
@@ -121,7 +123,13 @@ jobs:
           registry primitives to match the current registry (per-app adaptations
           marked \`pharos-registry:keep\` are preserved). Review the diff before merging."
           git push -f origin "$BRANCH"
-          if gh pr view "$BRANCH" --repo "${{ matrix.repo }}" >/dev/null 2>&1; then
+          # Ask for an OPEN pr whose HEAD is this branch. `gh pr view "$BRANCH"` was the old
+          # guard and it does not reliably resolve a branch to its PR from another repo's
+          # checkout — so the guard fell through to `gh pr create`, which then died with
+          # "a pull request for branch ... already exists" and reddened the job even though
+          # the force-push had already landed the work. A recurring false alarm, every time
+          # the re-sync PR was still open. (Observed on finance-lch + pharos-lis, 2026-07-13.)
+          if [ -n "$(gh pr list --repo "${{ matrix.repo }}" --head "$BRANCH" --state open --json number -q '.[0].number')" ]; then
             echo "↻ updated existing re-sync PR for ${{ matrix.name }}."
           else
             gh pr create --repo "${{ matrix.repo }}" --base "${{ matrix.base }}" --head "$BRANCH" \
