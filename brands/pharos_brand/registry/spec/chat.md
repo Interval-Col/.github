@@ -1,4 +1,4 @@
-<!-- spec-version: b80b3aec · generado 2026-07-13 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 4392c7b0 · generado 2026-07-14 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros · Asistente — especificación del chat (RFC 0017)
 
@@ -10,11 +10,11 @@
 
 ## Decisión — el pick del playground
 
-- **Nombre** — Rigel — Estrella de Orión
-- **Avatar / logo** — Robot (neutro)
-- **Fondo del avatar** — Sobre círculo
+- **Nombre** — Nerea — «Mar»
+- **Avatar / logo** — Nerea holgada orejitas
+- **Fondo del avatar** — Solito
 - **Disparador** — Botón en topbar
-- **Forma del panel** — Cajón lateral
+- **Forma del panel** — Panel esquina
 - **Estado «En línea»** — sí
 - **Fuentes (citas)** — sí
 - **Sugerencias** — sí
@@ -27,11 +27,11 @@ panel esquina · sin persona), así que una app que re-sincronice sin tocar su m
 
 | Perilla | Decisión | Soporte | Detalle |
 |---|---|---|---|
-| Nombre | Rigel — Estrella de Orión | ✅ prop | prop `assistantName` — `''` = sin nombre (el encabezado cae al `title` y el saludo queda genérico) |
-| Avatar / logo | Robot (neutro) | ✅ prop | prop `avatar` — un id de `PharosChatAvatar`; `''` = la burbuja de diálogo simple |
-| Fondo del avatar | Sobre círculo | ✅ prop | prop `avatarBg: 'circulo' \| 'solo'` — marca sobre chip redondo, o el glifo desnudo |
+| Nombre | Nerea — «Mar» | ✅ prop | prop `assistantName` — `''` = sin nombre (el encabezado cae al `title` y el saludo queda genérico) |
+| Avatar / logo | Nerea holgada orejitas | ✅ prop | prop `avatar` — un id de `PharosChatAvatar`; `''` = la burbuja de diálogo simple |
+| Fondo del avatar | Solito | ✅ prop | prop `avatarBg: 'circulo' \| 'solo'` — marca sobre chip redondo, o el glifo desnudo |
 | Disparador | Botón en topbar | ✅ prop | prop `trigger: 'floating' \| 'topbar'`. ⚠️ `topbar` exige montar el componente DENTRO del topbar de la app (la raíz pasa a `display: contents`) |
-| Forma del panel | Cajón lateral | ✅ prop | prop `form: 'corner' \| 'sheet'` — tarjeta esquina, o cajón lateral de altura completa con backdrop |
+| Forma del panel | Panel esquina | ✅ prop | prop `form: 'corner' \| 'sheet'` — tarjeta esquina, o cajón lateral de altura completa con backdrop |
 | Estado «En línea» | sí | ✅ prop | prop `statusLine` — «En línea» bajo el nombre + punto en el botón del topbar. Es COSMÉTICO: no consulta el backend |
 | Fuentes (citas) | sí | ✅ prop | prop `citations` — pinta las fuentes en respuestas fundamentadas (CH5); `false` las apaga |
 | Sugerencias | sí | ✅ prop | prop `starters: string[]` — `[]` las apaga; la app aporta el texto de cada chip |
