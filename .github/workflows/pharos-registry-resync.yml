@@ -101,6 +101,27 @@ jobs:
           bash registry-src/scripts/sync-pharos-registry.sh \
             "app/${{ matrix.fe }}" "app/${{ matrix.root }}"
 
+      # GitHub rejects any push from an App that touches .github/workflows/** unless the App
+      # holds the `workflows` permission — and when that happens the WHOLE push dies, so the
+      # app silently stops getting re-syncs (bit biuman-lis twice on 2026-07-14; see #138).
+      # Rather than carry that permission, the bot reverts workflow changes before committing
+      # and flags them in the PR body: everything else lands, the workflow is synced by hand.
+      - name: Skip workflow files (App lacks `workflows` permission — #138)
+        if: steps.gate.outputs.skip != 'true'
+        id: wfskip
+        working-directory: app
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain -- .github/workflows/)" ]; then
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ workflow file(s) changed in the registry — reverting; they must be synced by hand:"
+            git status --porcelain -- .github/workflows/
+            git checkout -- .github/workflows/
+            git clean -fd -- .github/workflows/ || true
+          else
+            echo "skipped=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Open / update re-sync PR if anything changed
         if: steps.gate.outputs.skip != 'true'
         working-directory: app
@@ -109,6 +130,11 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$(git status --porcelain)" ]; then
+            if [ "${{ steps.wfskip.outputs.skipped }}" = "true" ]; then
+              echo "⚠️ ${{ matrix.name }}: ONLY workflow file(s) changed — nothing the bot can push."
+              echo "   Sync ${{ matrix.root }}/.github/workflows/pharos-lint-check.yml by hand (run scripts/sync-pharos-registry.sh locally)."
+              exit 0
+            fi
             echo "✓ ${{ matrix.name }} is at par with the registry — nothing to do."
             exit 0
           fi
@@ -129,10 +155,16 @@ jobs:
           # "a pull request for branch ... already exists" and reddened the job even though
           # the force-push had already landed the work. A recurring false alarm, every time
           # the re-sync PR was still open. (Observed on finance-lch + pharos-lis, 2026-07-13.)
+          BODY="Automated re-sync from Interval-Col/.github — the registry moved ahead of this app's adopted primitives. Per-app adaptations marked \`pharos-registry:keep\` are preserved. Review + merge to bring the app back to par. (Opened by the pharos-registry-resync bot.)"
+          if [ "${{ steps.wfskip.outputs.skipped }}" = "true" ]; then
+            BODY="$BODY
+
+          ⚠️ **A workflow file also changed in the registry and is NOT in this PR** — the bot cannot push \`.github/workflows/**\` (App lacks the \`workflows\` permission, Interval-Col/.github#138). Sync it by hand: run \`scripts/sync-pharos-registry.sh\` locally and commit the workflow with your own credentials."
+          fi
           if [ -n "$(gh pr list --repo "${{ matrix.repo }}" --head "$BRANCH" --state open --json number -q '.[0].number')" ]; then
             echo "↻ updated existing re-sync PR for ${{ matrix.name }}."
           else
             gh pr create --repo "${{ matrix.repo }}" --base "${{ matrix.base }}" --head "$BRANCH" \
               --title "chore(registry): re-sync Pháros registry" \
-              --body "Automated re-sync from Interval-Col/.github — the registry moved ahead of this app's adopted primitives. Per-app adaptations marked \`pharos-registry:keep\` are preserved. Review + merge to bring the app back to par. (Opened by the pharos-registry-resync bot.)"
+              --body "$BODY"
           fi
