@@ -208,10 +208,30 @@ function setScrollLock(on: boolean) {
 }
 watch([isOpen, isModal], ([openNow, modalNow]) => setScrollLock(openNow && modalNow), { immediate: true })
 // A route change can unmount the widget mid-open; never leave the app unscrollable.
-onBeforeUnmount(() => setScrollLock(false))
+onBeforeUnmount(() => {
+  setScrollLock(false)
+  if (clearConfirmTimer) clearTimeout(clearConfirmTimer)
+})
+
+// Inline two-step delete confirmation — no native confirm()/modal. The
+// trash icon arms an inline "¿Borrar? ✓ ✕" in the header; it auto-disarms
+// after a few seconds if ignored, so a stray click never destroys history.
+const confirmingClear = ref(false)
+let clearConfirmTimer: ReturnType<typeof setTimeout> | null = null
+
+function requestClear() {
+  confirmingClear.value = true
+  if (clearConfirmTimer) clearTimeout(clearConfirmTimer)
+  clearConfirmTimer = setTimeout(() => { confirmingClear.value = false }, 4000)
+}
+
+function cancelClear() {
+  confirmingClear.value = false
+  if (clearConfirmTimer) { clearTimeout(clearConfirmTimer); clearConfirmTimer = null }
+}
 
 function clearHistory() {
-  if (!window.confirm('¿Borrar la conversación actual?')) return
+  cancelClear()
   messages.value = []
   errorText.value = ''
   showJump.value = false
@@ -271,6 +291,38 @@ function renderMarkdown(text: string | null | undefined): string {
   return DOMPurify.sanitize(raw)
 }
 
+// Shell-style input history: ↑/↓ recall previously-sent messages.
+// historyCursor === -1 means "editing the live draft"; navigating stashes
+// the draft so ↓ past the newest entry restores it.
+const inputHistory = ref<string[]>([])
+let historyCursor = -1
+let historyDraft = ''
+
+function restoreCaretEnd(ta: HTMLTextAreaElement) {
+  nextTick(() => { const len = ta.value.length; ta.setSelectionRange(len, len) })
+}
+
+function navigateHistory(dir: -1 | 1, ta: HTMLTextAreaElement) {
+  const n = inputHistory.value.length
+  if (!n) return
+  if (historyCursor === -1) {
+    if (dir === 1) return
+    historyDraft = input.value
+    historyCursor = n - 1
+  } else {
+    historyCursor += dir
+    if (historyCursor >= n) {
+      historyCursor = -1
+      input.value = historyDraft
+      restoreCaretEnd(ta)
+      return
+    }
+    if (historyCursor < 0) historyCursor = 0
+  }
+  input.value = inputHistory.value[historyCursor]
+  restoreCaretEnd(ta)
+}
+
 async function submit(textOverride?: string) {
   const text = (textOverride ?? input.value).trim()
   if (!text || loading.value) return
@@ -280,13 +332,25 @@ async function submit(textOverride?: string) {
   // backend's context window — see chat-contract).
   const history = messages.value.slice(-6)
   messages.value.push({ role: 'user', content: text })
+  inputHistory.value.push(text)
+  historyCursor = -1
+  historyDraft = ''
   input.value = ''
   loading.value = true
   await nextTick()
   scrollToBottom()
 
   try {
-    const resp = await props.send({ message: text, history })
+    let resp = await props.send({ message: text, history })
+    // Nerea standard: a gate block caused by CONTAMINATED HISTORY (an earlier
+    // turn, not this message) bricks the thread — every resend re-includes the
+    // poisoned turn. Retry once WITHOUT history; this message was already gated
+    // on its own, so it's safe and recovers the conversation instead of looping
+    // "no puedo procesar…". (Depends on the backend returning 200 + blocked:true
+    // on a gate block, per the Nerea client contract — not a 503.)
+    if (resp?.blocked && history.length) {
+      resp = await props.send({ message: text, history: [] })
+    }
     // Defensive: backend may legitimately return null/undefined on a gate-blocked
     // or upstream-error path. Render an inline notice instead of pushing a poison
     // message that crashes marked.
@@ -311,6 +375,15 @@ async function submit(textOverride?: string) {
 }
 
 function onKeydown(e: KeyboardEvent) {
+  const ta = e.target as HTMLTextAreaElement
+  // ↑/↓ recall input history — only when the caret is on the first/last line,
+  // so multi-line editing (Shift+Enter drafts) still moves the caret normally.
+  if (e.key === 'ArrowUp' && !e.shiftKey && !ta.value.slice(0, ta.selectionStart).includes('\n')) {
+    if (inputHistory.value.length) { e.preventDefault(); navigateHistory(-1, ta); return }
+  }
+  if (e.key === 'ArrowDown' && !e.shiftKey && !ta.value.slice(ta.selectionEnd).includes('\n')) {
+    if (historyCursor !== -1) { e.preventDefault(); navigateHistory(1, ta); return }
+  }
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
     submit()
@@ -418,22 +491,54 @@ function onKeydown(e: KeyboardEvent) {
               <path d="M12 14v2"/><path d="M12 20v2"/><path d="m19 15 3-3-3-3"/><path d="m5 9-3 3 3 3"/>
             </svg>
           </button>
-          <button
-            v-if="messages.length"
-            type="button"
-            class="pharos-chat-icon-btn"
-            title="Borrar conversación"
-            aria-label="Borrar conversación"
-            @click="clearHistory"
-          >
-            <svg
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3 6h18"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-          </button>
+          <template v-if="messages.length">
+            <button
+              v-if="!confirmingClear"
+              type="button"
+              class="pharos-chat-icon-btn"
+              title="Borrar conversación"
+              aria-label="Borrar conversación"
+              @click="requestClear"
+            >
+              <svg
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+            <template v-else>
+              <span class="pharos-chat-clear-confirm" role="status">¿Borrar?</span>
+              <button
+                type="button"
+                class="pharos-chat-icon-btn pharos-chat-icon-btn--danger"
+                title="Confirmar borrado"
+                aria-label="Confirmar borrado"
+                @click="clearHistory"
+              >
+                <svg
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="pharos-chat-icon-btn"
+                title="Cancelar"
+                aria-label="Cancelar borrado"
+                @click="cancelClear"
+              >
+                <svg
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 6 6 18"/>
+                  <path d="m6 6 12 12"/>
+                </svg>
+              </button>
+            </template>
+          </template>
           <button
             type="button"
             class="pharos-chat-icon-btn"
@@ -810,6 +915,17 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--foreground);
 }
 .pharos-chat-icon-btn svg { width: 16px; height: 16px; }
+.pharos-chat-icon-btn--danger:hover {
+  background: var(--destructive, #dc2626);
+  color: var(--destructive-foreground, #fff);
+}
+.pharos-chat-clear-confirm {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  align-self: center;
+  white-space: nowrap;
+  margin-right: 2px;
+}
 
 .pharos-chat-scroll {
   flex: 1;
