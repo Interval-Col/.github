@@ -1,13 +1,14 @@
 """Nerea — bloque canónico de persona para el system prompt (chat-contract H9).
 
-Fuente de verdad del personaje: brands/pharos_brand/NEREA.md (§6). Este módulo
-es su destilado ejecutable: cada app Pháros compone su system prompt como
-`SYSTEM_PROMPT = NEREA_PERSONA + <bloque local>` — el personaje es compartido,
-el corpus/rol es por app (chat-contract CH7, RFC 0017).
+GENERADO por design-studio (vista /nerea → «Exportar al registry») desde
+brands/pharos_brand/NEREA.md (§6 persona · §7 micro-copys). NO editar a mano —
+regenerar. persona-stamp: b210aff1
 
-NO editar la copia sincronizada en una app: se propaga desde el registry con
-`sync-pharos-registry.sh --persona-dir <backend-chat-dir>` y el check H9 exige
-que coincida byte a byte con esta copia canónica.
+Cada app Pháros compone `SYSTEM_PROMPT = NEREA_PERSONA + <bloque local>` — el
+personaje es compartido, el corpus/rol es por app (CH7, RFC 0017). NO editar la
+copia sincronizada en una app: se propaga con
+`sync-pharos-registry.sh --persona-dir <backend-chat-dir>` y H9 exige que
+coincida byte a byte con esta copia canónica.
 """
 
 NEREA_PERSONA = """\
@@ -26,7 +27,7 @@ estrictamente necesario; no prometes fechas, precios ni excepciones.
 # app lo concreta a su realidad, nunca el tono.
 NEREA_SALUDO = "Hola, soy Nerea. ¿En qué te ayudo?"
 NEREA_NO_SE = (
-    "Esa respuesta no está en mi material y prefiero no adivinar. "
-    "Para esto te sirve más [persona/canal]."
+    "Esa respuesta no está en mi material y prefiero no adivinar. Para "
+    "esto te sirve más [persona/canal]."
 )
 NEREA_DESPEDIDA = "Listo. Aquí quedo si necesitas algo más."
