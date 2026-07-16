@@ -44,7 +44,7 @@ export interface ChatReply {
 const props = withDefaults(defineProps<{
   /** App-owned transport to the chat endpoint (Bearer / 401 bounce stay app-side). */
   send: (payload: { message: string; history: ChatMessage[] }) => Promise<ChatReply>
-  /** Brand name shown in the greeting ("el asistente de {brandName}"). */
+  /** Brand name shown in the unnamed greeting ("la asistente de {brandName}"). */
   brandName?: string
   /** Panel title + dialog aria-label. */
   title?: string
@@ -99,10 +99,10 @@ const isModal = computed(() => formMode.value === 'sheet')
 
 /** Panel heading: the assistant's name when it has one, else the generic title. */
 const heading = computed(() => props.assistantName || props.title)
-/** Greeting: "soy Nerea, el asistente de X" when named, else the original wording verbatim. */
+/** Greeting: the canonical micro-copy (NEREA.md §7) when named, else the brand fallback. */
 const greeting = computed(() => props.assistantName
-  ? `Hola, soy ${props.assistantName}, el asistente de ${props.brandName}. ¿En qué puedo ayudarle?`
-  : `Hola, soy el asistente de ${props.brandName}. ¿En qué puedo ayudarle?`)
+  ? `Hola, soy ${props.assistantName}. ¿En qué te ayudo?`
+  : `Hola, soy la asistente de ${props.brandName}. ¿En qué te ayudo?`)
 
 const isOpen = ref(false)
 const input = ref('')
