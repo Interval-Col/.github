@@ -449,4 +449,4 @@ MANTRA            Vigilamos lo invisible para que la verdad pueda verse.
 
 ---
 
-*This brand book is the authoritative source for the shared Pháros visual and verbal identity in code. Per-app sub-brands live in `sub-brands/*.md` (first: `sub-brands/erp.md`, `Pháros · Timón`) and only record their accent, sub-name, and icon tint. For strategic and conceptual questions, see `BACKBONE.md`. For the maker (house) brand, see `../interval/INTERVAL-BRAND.md` (esp. §10); the family palette source is `../hematologico/LCH-BRAND.md`.*
+*This brand book is the authoritative source for the shared Pháros visual and verbal identity in code. Per-app sub-brands live in `sub-brands/*.md` (first: `sub-brands/erp.md`, `Pháros · Timón`) and only record their accent, sub-name, and icon tint. For strategic and conceptual questions, see `BACKBONE.md`. For the maker (house) brand, see `../interval/INTERVAL-BRAND.md` (esp. §10); the family palette source is `../hematologico/LCH-BRAND.md`. The family's assistant persona — **Nerea**, cross-cutting to every Pháros surface — lives in `NEREA.md` (widget spec: `registry/spec/chat.md`).*

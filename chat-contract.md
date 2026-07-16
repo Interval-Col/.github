@@ -55,6 +55,7 @@ thin caller workflow; the check itself lives here and evolves centrally.
 | H6 | *info/warn:* the router maps a proxy outage to 503 (not a 500) | CH4 |
 | H7 | with `rag: on`, the chat response exposes a `sources` field | CH5 |
 | H8 | *info until adopted:* with `fe_registry_widget: on`, the FE references the registry `PharosHelpChat` — a hand-rolled `HelpChat.vue` **FAILs** | CH7 |
+| H9 | *info until adopted:* with `persona: nerea`, a synced `nerea_persona.py` exists in a `chat_dir`, matches the registry canon byte-for-byte (when the org checkout is reachable; else warn), and `SYSTEM_PROMPT` composes from `NEREA_PERSONA` | CH7 |
 
 The checks are deliberate **text-level heuristics** — cheap, deterministic,
 stdlib-only (no PyPI on the merge path, same rule as `auth-contract-check.py` /
@@ -80,6 +81,10 @@ response_model: backend/app/features/help/router.py   # optional; where the `sou
 rag: on                               # H7: corpus-backed → a `sources` field is required
 frontend_dir: frontend                # app-scoped in a monorepo (e.g. lis/frontend)
 fe_registry_widget: off               # H8; flip `on` once the FE mounts PharosHelpChat (Phase 4/5)
+persona: off                          # H9; `nerea` = the shared Pháros persona (brands/pharos_brand/NEREA.md §6):
+                                      #   sync-pharos-registry.sh --persona-dir <backend-chat-dir> copies the
+                                      #   fragment; SYSTEM_PROMPT = NEREA_PERSONA + <local block>. Other values
+                                      #   (e.g. `rigel`) = app-owned persona, informational only.
 provider_sdk_allow:                   # optional; every entry needs a reason (H2 escape hatch)
   - file: backend/app/features/help/legacy_client.py
     reason: "transitional local proxy, removed in Phase 5 — fin#NNN"
@@ -90,7 +95,7 @@ maps); unquoted `#` starts a comment — quote values containing `#`. The parser
 fails loudly on anything else: misparse never passes silently. (Same parser as
 `auth-contract-check.py` / `db-tenant-check.py`.)
 
-**Profiles:** `chat` = has a chat feature, full H1–H8 · `planned` = an adopter
+**Profiles:** `chat` = has a chat feature, full H1–H9 · `planned` = an adopter
 whose chat feature is not built yet (H1 + an informational row; the full contract
 applies at build time, RFC 0017 Phase 5).
 
