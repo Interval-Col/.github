@@ -32,12 +32,15 @@ REGISTRY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../brands/pharos_brand/regist
 DRY_RUN=false
 POSITIONAL=()
 ADD_LIST=()          # --add <relpath>: adopt a NEW registry file (else: refresh what you have)
+PERSONA_DIR=""       # --persona-dir <backend-chat-dir>: refresh the Nerea persona fragment there
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dry-run) DRY_RUN=true; shift ;;
-    --add)     ADD_LIST+=("$2"); shift 2 ;;
-    --add=*)   ADD_LIST+=("${1#--add=}"); shift ;;
-    *)         POSITIONAL+=("$1"); shift ;;
+    --dry-run)        DRY_RUN=true; shift ;;
+    --add)            ADD_LIST+=("$2"); shift 2 ;;
+    --add=*)          ADD_LIST+=("${1#--add=}"); shift ;;
+    --persona-dir)    PERSONA_DIR="$2"; shift 2 ;;
+    --persona-dir=*)  PERSONA_DIR="${1#--persona-dir=}"; shift ;;
+    *)                POSITIONAL+=("$1"); shift ;;
   esac
 done
 
@@ -222,6 +225,19 @@ else
   sort "$MANIFEST_TMP" > "$MANIFEST_DEST"
   rm -f "$MANIFEST_TMP"
   echo "wrote:  $MANIFEST_DEST ($(grep -c . "$MANIFEST_DEST") entries)"
+fi
+
+# ── 4d. Nerea persona fragment (backend, chat-contract H9) ────────────────────
+# The BE half of the persona: registry/prompts/nerea_persona.py is copied verbatim
+# into the app's backend chat dir (--persona-dir). Enforcement is NOT Lock 3 (that
+# manifest is FE-scoped): chat-contract-check H9 compares the app copy byte-for-byte
+# against the registry canon when the manifest declares `persona: nerea`.
+if [[ -n "$PERSONA_DIR" ]]; then
+  if [[ ! -d "$PERSONA_DIR" ]]; then
+    echo "error: --persona-dir not found: $PERSONA_DIR" >&2
+    exit 1
+  fi
+  copy_file "$REGISTRY_DIR/prompts/nerea_persona.py" "$PERSONA_DIR/nerea_persona.py"
 fi
 
 # ── 5. Pre-commit: never overwrite — print merge instructions ─────────────────
