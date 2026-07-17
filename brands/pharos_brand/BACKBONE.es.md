@@ -110,6 +110,7 @@ El descriptor más simple posible. Sin metáfora, sin floritura. Pháros no nece
 - *"Vigilancia serena, resultados confiables."*
 - *"Lo invisible también se cuida."*
 - *"Donde la calidad se hace visible."*
+- *"Vigilamos lo invisible para que la verdad pueda verse."*
 
 ---
 

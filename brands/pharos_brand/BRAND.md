@@ -275,6 +275,8 @@ export default defineNuxtConfig({
 - *"Cada resultado tiene un guardián."*
 - *"Vigilancia serena, resultados confiables."*
 - *"Lo invisible también se cuida."*
+- *"Donde la calidad se hace visible."*
+- *"Vigilamos lo invisible para que la verdad pueda verse."*
 
 Use these for marketing surfaces, splash screens, empty states. Never for transactional UI copy.
 
