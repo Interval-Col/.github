@@ -110,6 +110,7 @@ The simplest possible descriptor. No metaphor, no flourish. Pháros doesn't need
 - *"Vigilancia serena, resultados confiables."* — Calm vigilance, trusted results.
 - *"Lo invisible también se cuida."* — The invisible is also cared for.
 - *"Donde la calidad se hace visible."* — Where quality becomes visible.
+- *"Vigilamos lo invisible para que la verdad pueda verse."* — We watch over the invisible so the truth can be seen.
 
 ---
 
