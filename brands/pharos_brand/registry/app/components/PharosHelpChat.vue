@@ -146,6 +146,11 @@ type ChatStatus = 'desconocido' | 'en-linea' | 'sin-permiso' | 'limitado' | 'no-
 
 const status = ref<ChatStatus>('desconocido')
 
+/** How many prior turns ride on the wire. 6 matches the backend's context window; it drops
+ *  to 0 for the rest of the session if the backend rejects the payload (422), so a history
+ *  the backend will not accept degrades the conversation's MEMORY rather than bricking it. */
+const historyLimit = ref(6)
+
 const STATUS_TEXT: Record<ChatStatus, string> = {
   'desconocido': 'sin verificar',
   'en-linea': 'en línea',
@@ -200,12 +205,20 @@ onMounted(() => {
     if (raw) {
       const parsed = JSON.parse(raw) as unknown
       if (Array.isArray(parsed)) {
-        // Drop entries with missing/invalid content — they crash marked.parse on
-        // render. Belt-and-suspenders for sessions saved before this guard.
+        // Drop entries with invalid content OR an invalid ROLE.
+        //
+        // Checking that `role` is merely defined was not enough, and the gap was not
+        // cosmetic: the backend validates `role` against ^(user|assistant)$, so ONE
+        // restored turn with any other value makes every subsequent send 422 — and
+        // because the payload is rejected before it reaches the model, the thread stays
+        // bricked for the whole session. The user's only escape is to clear the chat,
+        // which is exactly the "first message always fails until I clear it" report this
+        // filter now prevents. Sanitising at restore heals a poisoned history on the very
+        // next page load, without the user knowing there was anything to heal.
         messages.value = parsed.filter(
           (m): m is ChatMessage =>
-            m && typeof m === 'object'
-            && (m as ChatMessage).role !== undefined
+            !!m && typeof m === 'object'
+            && ((m as ChatMessage).role === 'user' || (m as ChatMessage).role === 'assistant')
             && typeof (m as ChatMessage).content === 'string',
         )
       }
@@ -416,9 +429,10 @@ async function submit(textOverride?: string) {
   if (!text || loading.value) return
 
   errorText.value = ''
-  // Trim local history to last 6 messages for the wire payload (matches the
-  // backend's context window — see chat-contract).
-  const history = messages.value.slice(-6)
+  // Trim local history for the wire payload (matches the backend's context window — see
+  // chat-contract). Drops to 0 for the session if the backend ever 422s the payload; see
+  // the retry below.
+  const history = historyLimit.value > 0 ? messages.value.slice(-historyLimit.value) : []
   messages.value.push({ role: 'user', content: text })
   inputHistory.value.push(text)
   historyCursor = -1
@@ -429,7 +443,31 @@ async function submit(textOverride?: string) {
   scrollToBottom()
 
   try {
-    let resp = await props.send({ message: text, history })
+    let resp: ChatReply
+    try {
+      resp = await props.send({ message: text, history })
+    } catch (err: unknown) {
+      // A payload the backend REFUSES (422) is almost always the history, not this
+      // message: the wire shape is validated per-turn, so one bad restored turn — or a
+      // history that has grown past the backend's ceiling — rejects every send while the
+      // user keeps retyping a perfectly good question.
+      //
+      // The `blocked` retry below could not help here: that path needs a 200, and a 422
+      // THROWS. So the thread stayed bricked until the user cleared the chat, which is
+      // exactly the reported symptom. Retry once without history, and DROP the history
+      // that caused it — otherwise the next send fails the same way and the "fix" lasts
+      // one message.
+      const code = (err as { status?: number; statusCode?: number }).status
+        ?? (err as { status?: number; statusCode?: number }).statusCode
+      if (code !== 422 || !history.length) throw err
+      // Stop SENDING history for the rest of the session — do NOT delete the messages.
+      // The conversation stays on screen; only the wire payload shrinks. Deleting the
+      // user's visible thread to fix a payload would be a worse bug than the one being
+      // fixed, and retrying-without-history on every future send instead would silently
+      // double every request for the rest of the session.
+      historyLimit.value = 0
+      resp = await props.send({ message: text, history: [] })
+    }
     // Nerea standard: a gate block caused by CONTAMINATED HISTORY (an earlier
     // turn, not this message) bricks the thread — every resend re-includes the
     // poisoned turn. Retry once WITHOUT history; this message was already gated
@@ -464,11 +502,25 @@ async function submit(textOverride?: string) {
     } else if (code === 403) {
       errorText.value = 'No tiene permiso para usar el asistente. Solicítelo a su administrador.'
       status.value = 'sin-permiso'
+    } else if (code === 422) {
+      // Survived the retry above, so it is this MESSAGE, not the history. The assistant
+      // is fine — say so, and deliberately leave `status` alone (see below).
+      errorText.value = 'No pude procesar ese mensaje. Intente reformularlo.'
+    } else if (code && code >= 500 && code !== 503) {
+      // A 500 is a bug in the app's own chat route, not a statement about whether the
+      // assistant is reachable. Reporting «no disponible» here sends the user to wait for
+      // an outage that is not happening, and — worse — overwrites a probe result that
+      // measured the real thing.
+      errorText.value = 'El asistente falló al responder. Intente más tarde.'
     } else {
+      // 503 / network / unknown: genuinely unreachable.
       errorText.value = 'Asistente no disponible. Intente más tarde.'
       status.value = 'no-disponible'
     }
-    lastProbeAt = Date.now()
+    // Only refresh the probe clock when the failure actually MEASURED availability.
+    // A 422 or a 500 says nothing about it, and stamping the clock here would suppress
+    // the next real probe for a full TTL on the strength of evidence we do not have.
+    if (!code || code === 503 || code === 429 || code === 403) lastProbeAt = Date.now()
   } finally {
     loading.value = false
     await nextTick()
