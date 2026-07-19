@@ -93,6 +93,21 @@ ROUTER_UNAVAILABLE = re.compile(r"\bProxy(Unavailable|Error)\b|\bUnavailable\b")
 # H7 — a `sources` field on the chat response (corpus citation, CH5).
 SOURCES_FIELD = re.compile(r"\bsources\b\s*:")
 
+# H10 (CH8) — the readiness route. `/health` hung off the chat router, answering the
+# three independent reasons the assistant can be unusable.
+HEALTH_ROUTE = re.compile(r"@\w+\.get\(\s*[\"'][^\"']*/health[\"']")
+HEALTH_FIELDS = ("enabled", "allowed", "upstream")
+# A capability gate on the READINESS route defeats its purpose: `allowed: false` is the
+# answer the widget needs, so a 403 here is the bug, not the check.
+CAPABILITY_GATE = re.compile(r"\brequire_capability\b")
+NEXT_DECORATOR = re.compile(r"^@\w+\.(get|post|put|patch|delete)\(", re.M)
+
+# H10 is a WARN while the routes roll out app by app (the registry widget shipped first
+# and falls back to traffic-derived status without one). FLIP THIS TO True once every
+# `profile: chat` app carries the route — that is what stops the fallback from quietly
+# becoming permanent. Central flip: one merge here enforces it everywhere at once.
+H10_ENFORCED = False
+
 # H8 — the registry chat widget vs a hand-rolled one (mirrors auth A9). Match real
 # USAGE (a <PharosHelpChat> tag, an import, or a direct .vue reference) — not a bare
 # mention in a comment/string, which a stray TODO could otherwise satisfy.
@@ -271,6 +286,23 @@ def _py_code(text):
     `# ... 503 SERVICE_UNAVAILABLE ...` is not read as a real 503 path. H5/H6/H7
     scan behaviour, not prose — same discipline H2/H4 already apply per-line."""
     return "\n".join(code for _, code in _code_lines(text or ""))
+
+
+TRIPLE_QUOTED = re.compile(r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'')
+
+
+def _py_code_no_docstrings(text):
+    """`_py_code` plus triple-quoted blocks removed.
+
+    `_py_code` only strips `#` line-comments, so a route DESCRIBED in a module docstring
+    still reads as real code — and chat routers document their own wire shape at the top
+    of the file, which is exactly where a promised-but-unbuilt route would be written down.
+    H10 scans behaviour, so it scans code only.
+
+    Scoped to H10 deliberately: H5/H6/H7 share the same blind spot (AP's router docstring
+    literally spells out `429` and `503`), but tightening those here would re-gate four
+    live apps inside a PR about the chat widget. Filed separately instead."""
+    return TRIPLE_QUOTED.sub("", _py_code(text))
 
 
 def _strip_web_comments(text):
@@ -518,6 +550,37 @@ def check(manifest, results):
                 results.append(("H9", PASS,
                                 f"SYSTEM_PROMPT composes from NEREA_PERSONA ({os.path.relpath(frag)} "
                                 f"{canon_note})"))
+
+    # H10 — the assistant reports its own readiness, per caller (CH8).
+    # Comment-stripped like H2/H4/H5: a promised route in a docstring must not satisfy a
+    # gate that CH8 requires to be real code.
+    miss_sev = FAIL if H10_ENFORCED else WARN
+    router_code = _py_code_no_docstrings(_read(router))
+    health = HEALTH_ROUTE.search(router_code)
+    if not health:
+        results.append(("H10", miss_sev,
+                        f"no `/health` route in {os.path.relpath(router)} — the widget's status "
+                        "indicator cannot tell 'off' from 'no permission' from 'proxy down' "
+                        "without one, and falls back to guessing after the first message (CH8)"))
+    else:
+        # Scope the gate scan to THIS handler: the router's other routes are capability-gated
+        # by design, so scanning the whole file would flag every conforming app.
+        rest = router_code[health.start():]
+        nxt = NEXT_DECORATOR.search(rest, 1)
+        handler = rest[:nxt.start()] if nxt else rest
+        problems = []
+        if CAPABILITY_GATE.search(handler):
+            problems.append("the `/health` route is capability-gated — it must answer `allowed: "
+                            "false` instead of 403, or the widget cannot show 'sin permiso'")
+        absent = [f for f in HEALTH_FIELDS if not re.search(rf"\b{f}\b", handler)]
+        if absent:
+            problems.append(f"the `/health` payload does not mention {', '.join(absent)} "
+                            "(expected enabled/allowed/upstream)")
+        if problems:
+            results.append(("H10", miss_sev, "; ".join(problems) + " — CH8"))
+        else:
+            results.append(("H10", PASS,
+                            "readiness route present, un-gated, and reports enabled/allowed/upstream (CH8)"))
 
 
 # --------------------------------------------------------------------------
