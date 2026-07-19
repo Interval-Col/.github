@@ -1,0 +1,44 @@
+# Keeps this repo's GitHub Actions pins current.
+#
+# Why this exists: finance-lch has Dependabot, this repo did not — so finance
+# drifted AHEAD of the registry (checkout/setup-node v4 -> v7, pnpm/action-setup
+# v4 -> v6) and the registry template stayed on v4, handing every OTHER app a
+# stale copy. Interval-Col/.github#<PR> bumped the template by hand; this keeps
+# it from happening again.
+#
+# ⚠️ SCOPE CAVEAT — the synced-out template may NOT be covered.
+# Dependabot's github-actions ecosystem scans `<directory>/.github/workflows/`.
+# The registry TEMPLATE that gets copied into apps lives at
+#   brands/pharos_brand/registry/.github/workflows/pharos-lint-check.yml
+# which is why the second entry below points at that subtree. If Dependabot
+# turns out not to honour it, that file must keep being bumped by hand — check
+# the Dependabot run log after the first scheduled run and delete the second
+# entry if it reports no manifest found.
+version: 2
+updates:
+  # 1. This repo's own CI (.github/workflows/*.yml)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: chore(deps)
+
+  # 2. The Pháros registry template that gets synced into consuming apps.
+  #    See the scope caveat above — verify this one actually resolves.
+  - package-ecosystem: github-actions
+    directory: /brands/pharos_brand/registry
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: chore(deps)

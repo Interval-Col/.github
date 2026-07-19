@@ -53,8 +53,36 @@ mount renders exactly what it rendered before.
 | `assistantName` | `string` | `''` | **`'Nerea'`** | proper name; `''` = unnamed (heading falls back to `title`, greeting stays generic) |
 | `avatar` | `string` | `''` | **`'nereid-holgada-orejas'`** | a `PharosChatAvatar` id; `''` = the plain speech-bubble mark |
 | `avatarBg` | `'circulo' \| 'solo'` | `circulo` | **`solo`** | mark on a round chip, or bare |
-| `statusLine` | `boolean` | `false` | **`true`** | «En línea» under the name + a dot on the topbar button. **Cosmetic — it does not probe the backend** |
+| `statusLine` | `boolean` | `false` | **`true`** | live status under the name + a presence dot on the topbar button. **Real, not decorative** — see below |
 | `citations` | `boolean` | `true` | **`true`** | render corpus-source chips on grounded replies (CH5) |
+| `probe` | `() => Promise<ChatHealth>` | — | — | app-owned readiness probe → `GET {base}/v1/chat/health` (chat-contract **CH8**). Same ownership split as `send` |
+
+### The status indicator (`statusLine` + `probe`)
+
+It used to render a hard-coded green «En línea» whether or not anything worked. That is
+worse than showing nothing: a user without the chat capability saw «En línea», asked a real
+question, and got a 403 — the indicator sent them to open a ticket for a permission.
+
+It now reports one of five states, from two sources, freshest-wins: the `probe` (on mount,
+and on open once the last result is older than 60 s) and what actually happened on the last
+send. A real reply is the strongest evidence there is, so traffic outranks a stale probe.
+
+| state | word | when |
+|---|---|---|
+| `en-linea` | «en línea» | probe healthy, or a reply came back |
+| `desconocido` | «sin verificar» | no probe wired and nothing sent yet |
+| `sin-permiso` | «sin permiso» | `allowed: false`, or a 403 |
+| `limitado` | «límite alcanzado» | a 429 |
+| `no-disponible` | «no disponible» | chat off, proxy down, or a 5xx |
+
+Each state carries its own **word, glyph and dot shape** — never colour alone (the dot is
+10 px, and success/warning are a known confusable pair in this palette).
+
+**`probe` is optional only during rollout.** Without it the status cannot know anything
+until the first message is sent, which is precisely too late. `chat-contract-check` **H10**
+warns while the per-app routes land and is designed to be flipped to a hard FAIL
+(`H10_ENFORCED` in `scripts/chat-contract-check.py`) once every chat app carries one — so
+the fallback cannot quietly become the permanent state.
 
 The `ChatMessage` / `ChatReply` shapes are exported from the component and match
 the chat-contract wire format (`{ reply, sources?, blocked?, reason? }`).
