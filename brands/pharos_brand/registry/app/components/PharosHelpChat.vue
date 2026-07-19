@@ -694,6 +694,23 @@ function onKeydown(e: KeyboardEvent) {
           <p class="pharos-chat-empty-hint">
             {{ greeting }}
           </p>
+          <!-- Aviso de PHI. El gate de salida del proxy impide que un dato de paciente
+               SALGA de la organización; esto ataca el paso anterior — que no se escriba.
+               No es descartable a propósito: un aviso que se puede cerrar deja de existir
+               justo para quien más lo necesita. -->
+          <p class="pharos-chat-phi-notice">
+            <svg
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 9v4"/><path d="M12 17h.01"/>
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            </svg>
+            <span>
+              <strong>Sin datos de pacientes.</strong>
+              No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la
+              aplicación.
+            </span>
+          </p>
           <div v-if="starters.length" class="pharos-chat-starters">
             <button
               v-for="(s, i) in starters"
@@ -793,6 +810,19 @@ function onKeydown(e: KeyboardEvent) {
         </svg>
         Al final
       </button>
+
+      <!-- Recordatorio persistente. El aviso del estado vacío desaparece con el primer
+           mensaje — justo cuando la persona empieza a escribir con confianza — así que la
+           regla vive también aquí, junto al cuadro de texto, durante toda la conversación.
+           Compacto a propósito: tiene que poder ignorarse sin estorbar, pero estar. -->
+      <p class="pharos-chat-phi-reminder" title="No escriba nombres, documentos ni resultados de pacientes en el chat.">
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+        </svg>
+        Sin datos de pacientes
+      </p>
 
       <footer class="pharos-chat-input-row">
         <!-- El textarea NO se deshabilita mientras carga. Deshabilitar el elemento enfocado hace
@@ -1114,6 +1144,49 @@ function onKeydown(e: KeyboardEvent) {
   margin: 0 0 0.85rem 0;
   font-size: 0.88rem;
 }
+/* Aviso de PHI del estado vacío. Usa el token de advertencia, no el de error: no ha
+   pasado nada malo — es una instrucción. Texto + icono + superficie propia, nunca solo
+   color (mismo criterio que el indicador de estado). */
+.pharos-chat-phi-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0 0 0.85rem 0;
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  border: 1px solid var(--status-warning);
+  border-radius: 8px;
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.pharos-chat-phi-notice svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.pharos-chat-phi-notice strong { font-weight: 700; }
+
+/* Recordatorio persistente sobre el cuadro de texto: presente toda la conversación,
+   deliberadamente discreto para que no compita con la respuesta. */
+.pharos-chat-phi-reminder {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.3rem 0.75rem 0;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+}
+.pharos-chat-phi-reminder svg {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
 .pharos-chat-starters {
   display: flex;
   flex-direction: column;

@@ -98,6 +98,26 @@ the chat-contract wire format (`{ reply, sources?, blocked?, reason? }`).
 - **Regenerate** — on the last assistant reply; re-sends the same question through the
   app's `send` transport.
 - **«Al final» pill** — appears when the user scrolls >160px away from the newest message.
+- **PHI notice** — a warning block in the empty state (*«Sin datos de pacientes.»*) plus a
+  compact persistent reminder above the input. **Always on, not a prop, not dismissible.**
+
+### Why the PHI notice is not configurable
+
+The proxy's outbound gate stops a patient identifier from *leaving* the organisation. This
+addresses the step before that — not typing it in the first place — which is strictly
+stronger, because it does not depend on a regex being right.
+
+Three deliberate choices:
+
+- **Not a prop.** Every Pháros app sits on a PHI-adjacent estate; making it opt-in invites
+  someone to opt out of the one control that costs nothing.
+- **Not dismissible.** A notice you can close stops existing for exactly the person who most
+  needs it.
+- **In two places.** The empty-state block disappears with the first message — precisely when
+  the user starts typing freely — so the rule also lives permanently beside the input.
+
+It uses `--status-warning` rather than `--status-error`: nothing has gone wrong, it is an
+instruction. Icon + text + surface, never colour alone.
 
 ### ⚠️ `trigger: 'topbar'` changes WHERE you mount the widget
 
