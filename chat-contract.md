@@ -37,6 +37,7 @@ contract is a **forward** baseline: new chats comply from day one.
 | **CH5** | **Cite sources for corpus answers.** A retrieval-backed (RAG / context-stuffing over a corpus) chat MUST return the source ids/labels it grounded on (`sources: [...]`) and surface them in the UI. A chat with no corpus declares `rag: off` and this clause does not apply. | RFC 0017 Phase 3; finance-lch `ChatResponse.sources` |
 | **CH6** | **UI copy in neutral-Colombian Spanish (usted).** Every user-facing chat string — launcher/aria labels, empty state, starters, thinking state, error and rate-limit notices — is in es-CO, usted register. *Prose clause — not machine-checked.* | RFC 0017 Phase 3; finance-lch `HelpChat.vue` |
 | **CH7** | **Per-app variation is only the corpus + copy.** What varies per app is the endpoint path, retrieval strategy, embeddings (in the app's **own** schema), brand name, and starter prompts — declared in the manifest. The machinery (CH1–CH4) does not vary, and the FE widget is the registry **`PharosHelpChat`** (RFC 0017 Phase 4), parameterized per app — never re-forked. | RFC 0017 §Tenant frame (cross-tenant proxy is stateless re content) / Phase 4 (registry widget) |
+| **CH8** | **The assistant reports its own readiness — truthfully, per caller.** A chat feature exposes `GET {base}/v1/chat/health`, authenticated but **NOT** capability-gated, returning `200 {"enabled": bool, "allowed": bool, "upstream": bool}` — respectively: chat is on in this deployment, **this caller** holds the chat capability, and the proxy answered `/readyz`. It MUST NOT call the model (a readiness check that spends tokens is a bill, not a check), MUST cache the upstream leg server-side on a short TTL (every panel open hits it), and carries no request body — so it is PHI-free by construction. `allowed` is why the route is not capability-gated: a 403 is the answer, not an error. | RFC 0017 Phase 4; registry `PharosHelpChat` (`probe` prop) |
 
 ---
 
@@ -56,6 +57,7 @@ thin caller workflow; the check itself lives here and evolves centrally.
 | H7 | with `rag: on`, the chat response exposes a `sources` field | CH5 |
 | H8 | *info until adopted:* with `fe_registry_widget: on`, the FE references the registry `PharosHelpChat` — a hand-rolled `HelpChat.vue` **FAILs** | CH7 |
 | H9 | *info until adopted:* with `persona: nerea`, a synced `nerea_persona.py` exists in a `chat_dir`, matches the registry canon byte-for-byte (when the org checkout is reachable; else warn), and `SYSTEM_PROMPT` composes from `NEREA_PERSONA` | CH7 |
+| H10 | *warn until every chat app ships it, then FAIL:* the router exposes a `/health` route that is **not** capability-gated and answers with `enabled`/`allowed`/`upstream` | CH8 |
 
 The checks are deliberate **text-level heuristics** — cheap, deterministic,
 stdlib-only (no PyPI on the merge path, same rule as `auth-contract-check.py` /

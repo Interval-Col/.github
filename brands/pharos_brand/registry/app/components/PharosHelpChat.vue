@@ -41,6 +41,18 @@ export interface ChatReply {
   reason?: string
 }
 
+/** The health endpoint's reply shape (chat-contract CH8 — `GET {base}/v1/chat/health`).
+ *  Three independent reasons the assistant may be unusable, kept separate so the widget
+ *  can name the RIGHT one instead of collapsing them into "no disponible". */
+export interface ChatHealth {
+  /** Chat is switched on in this deployment (CHAT_ENABLED / kill switch). */
+  enabled: boolean
+  /** THIS caller holds the capability the chat route requires (e.g. `chat.access`). */
+  allowed: boolean
+  /** The shared proxy answered `/readyz`. */
+  upstream: boolean
+}
+
 const props = withDefaults(defineProps<{
   /** App-owned transport to the chat endpoint (Bearer / 401 bounce stay app-side). */
   send: (payload: { message: string; history: ChatMessage[] }) => Promise<ChatReply>
@@ -67,8 +79,20 @@ const props = withDefaults(defineProps<{
   avatar?: string
   /** Avatar treatment: on a round chip, or the bare glyph. */
   avatarBg?: 'circulo' | 'solo'
-  /** Show an "En línea" line under the name. Purely cosmetic — it does not probe the backend. */
+  /** Show the presence dot + status line under the name.
+   *
+   *  The state is REAL, never a decorative "always green" (it used to be exactly that, and it
+   *  lied: a user without the chat capability saw «En línea», asked a question, and ate a 403).
+   *  It comes from two sources, freshest-wins: the `probe` below, and what actually happened on
+   *  the wire on the last send. */
   statusLine?: boolean
+  /** App-owned health probe (chat-contract CH8), same shape of ownership as `send`: the app owns
+   *  Bearer / 401 bounce, the widget owns what the answer MEANS.
+   *
+   *  Optional only so the registry widget can land ahead of the per-app routes — with no probe the
+   *  status falls back to traffic-derived, which cannot know anything until the first message is
+   *  sent. That fallback is a migration window, not a resting place: ship the route. */
+  probe?: () => Promise<ChatHealth>
   /** Render corpus citations on grounded replies (chat-contract CH5). */
   citations?: boolean
 }>(), {
@@ -83,6 +107,7 @@ const props = withDefaults(defineProps<{
   avatar: '',
   avatarBg: 'circulo',
   statusLine: false,
+  probe: undefined,
   citations: true,
 })
 
@@ -112,6 +137,63 @@ const errorText = ref('')
 const scrollEl = ref<HTMLElement | null>(null)
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 
+// ── Estado de conexión REAL ───────────────────────────────────────────────────
+// Cuatro maneras distintas de no servir, y cada una merece su propia palabra: el
+// despliegue la tiene apagada, este usuario no tiene la capacidad, el proxy no
+// responde, o el usuario agotó su cuota. Decir «no disponible» a las cuatro manda
+// a recepción a abrir un ticket cuando lo que faltaba era un permiso.
+type ChatStatus = 'desconocido' | 'en-linea' | 'sin-permiso' | 'limitado' | 'no-disponible'
+
+const status = ref<ChatStatus>('desconocido')
+
+const STATUS_TEXT: Record<ChatStatus, string> = {
+  'desconocido': 'sin verificar',
+  'en-linea': 'en línea',
+  'sin-permiso': 'sin permiso',
+  'limitado': 'límite alcanzado',
+  'no-disponible': 'no disponible',
+}
+const statusText = computed(() => STATUS_TEXT[status.value])
+
+// El estado NUNCA se comunica solo por color (dos de estos rojos/ámbar se confunden
+// entre sí y con el verde para un ojo daltónico, y el punto mide 10px): cada estado
+// lleva palabra propia + glifo propio + relleno propio del punto.
+const statusGlyph = computed(() => {
+  switch (status.value) {
+    case 'en-linea': return 'check'
+    case 'sin-permiso': return 'lock'
+    case 'limitado': return 'hourglass'
+    case 'no-disponible': return 'cross'
+    default: return 'question'
+  }
+})
+
+// Una sonda recién corrida no se repite en cada apertura del panel; el tráfico real
+// la refresca de todos modos.
+const PROBE_TTL_MS = 60_000
+let lastProbeAt = 0
+
+async function runProbe(force = false) {
+  if (!props.probe || !props.statusLine) return
+  const now = Date.now()
+  if (!force && lastProbeAt && now - lastProbeAt < PROBE_TTL_MS) return
+  try {
+    const h = await props.probe()
+    lastProbeAt = Date.now()
+    // Orden deliberado: lo que el usuario puede ARREGLAR va primero. Si le falta el
+    // permiso, eso es lo accionable aunque además el proxy esté caído.
+    status.value = h?.allowed === false ? 'sin-permiso'
+      : (h?.enabled === false || h?.upstream === false) ? 'no-disponible'
+      : 'en-linea'
+  } catch {
+    // Una sonda que falla es señal en sí misma, pero no debe TAPAR un estado más
+    // específico que ya aprendimos del tráfico real (un 403 dice más que «no llegué»).
+    if (status.value === 'desconocido' || status.value === 'en-linea') {
+      status.value = 'no-disponible'
+    }
+  }
+}
+
 onMounted(() => {
   try {
     const raw = sessionStorage.getItem(props.storageKey)
@@ -131,6 +213,9 @@ onMounted(() => {
   } catch {
     // sessionStorage may be unavailable (private mode); not fatal
   }
+  // El punto de presencia se ve ANTES de abrir el panel (variante `topbar`), así que
+  // la sonda corre al montar o el punto mentiría hasta el primer clic.
+  void runProbe()
 })
 
 watch(messages, val => {
@@ -143,6 +228,9 @@ watch(messages, val => {
 
 function open() {
   isOpen.value = true
+  // Re-sondea al abrir si el último resultado ya está viejo: el panel se abre justo
+  // cuando la respuesta importa.
+  void runProbe()
   nextTick(() => {
     inputEl.value?.focus()
     scrollToBottom()
@@ -359,18 +447,36 @@ async function submit(textOverride?: string) {
       : '_(respuesta vacía del asistente)_'
     const sources = Array.isArray(resp?.sources) ? resp.sources.filter(Boolean) : []
     messages.value.push({ role: 'assistant', content: reply, sources })
+    // Una respuesta real es la mejor prueba de vida que existe — mejor que cualquier
+    // sonda. (Un `blocked` también llegó por el cable: el gate opinó, la conexión sirve.)
+    status.value = 'en-linea'
+    lastProbeAt = Date.now()
   } catch (err: unknown) {
-    const status = (err as { status?: number; statusCode?: number }).status
+    const code = (err as { status?: number; statusCode?: number }).status
       ?? (err as { status?: number; statusCode?: number }).statusCode
-    if (status === 429) {
+    if (code === 429) {
       errorText.value = 'Ha alcanzado el límite de consultas. Intente más tarde.'
+      status.value = 'limitado'
+    } else if (code === 401) {
+      // La app dueña del transporte rebota a SSO; aquí solo se dice la verdad mientras tanto.
+      errorText.value = 'Su sesión expiró. Vuelva a iniciar sesión.'
+      status.value = 'desconocido'
+    } else if (code === 403) {
+      errorText.value = 'No tiene permiso para usar el asistente. Solicítelo a su administrador.'
+      status.value = 'sin-permiso'
     } else {
       errorText.value = 'Asistente no disponible. Intente más tarde.'
+      status.value = 'no-disponible'
     }
+    lastProbeAt = Date.now()
   } finally {
     loading.value = false
     await nextTick()
     scrollToBottom()
+    // Devolver el cursor al cuadro de texto. Sin esto, el foco se queda en el botón
+    // «Enviar» (si se envió con clic) y hay que volver al campo con el mouse en cada
+    // turno — el hilo de la conversación se rompe en la mano del usuario.
+    if (isOpen.value) inputEl.value?.focus()
   }
 }
 
@@ -436,7 +542,13 @@ function onKeydown(e: KeyboardEvent) {
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
-      <span v-if="statusLine" class="pharos-chat-dot" aria-hidden="true"/>
+      <span
+        v-if="statusLine"
+        class="pharos-chat-dot"
+        :class="`is-${status}`"
+        role="img"
+        :aria-label="`Asistente: ${statusText}`"
+      />
     </button>
 
     <!-- Backdrop — only the side sheet dims the app behind it. -->
@@ -465,7 +577,28 @@ function onKeydown(e: KeyboardEvent) {
         </span>
         <div class="pharos-chat-identity">
           <h3>{{ heading }}</h3>
-          <p v-if="statusLine" class="pharos-chat-status">En línea</p>
+          <p v-if="statusLine" class="pharos-chat-status" :class="`is-${status}`" role="status">
+            <svg
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path v-if="statusGlyph === 'check'" d="M20 6 9 17l-5-5"/>
+              <template v-else-if="statusGlyph === 'lock'">
+                <rect width="16" height="10" x="4" y="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+              </template>
+              <template v-else-if="statusGlyph === 'hourglass'">
+                <path d="M5 22h14"/><path d="M5 2h14"/>
+                <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
+                <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+              </template>
+              <template v-else-if="statusGlyph === 'cross'">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </template>
+              <template v-else>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+              </template>
+            </svg>
+            {{ statusText }}
+          </p>
         </div>
         <div class="pharos-chat-header-actions">
           <button
@@ -662,12 +795,16 @@ function onKeydown(e: KeyboardEvent) {
       </button>
 
       <footer class="pharos-chat-input-row">
+        <!-- El textarea NO se deshabilita mientras carga. Deshabilitar el elemento enfocado hace
+             que el navegador suelte el foco al <body>, y nada lo devolvía: se escribía, se enviaba
+             con Enter, y el cursor desaparecía del cuadro. Nada se ganaba a cambio — submit() ya
+             corta la reentrada con `if (!text || loading.value) return`. De paso, ahora se puede ir
+             redactando la siguiente pregunta mientras Nerea piensa. -->
         <textarea
           ref="inputEl"
           v-model="input"
           rows="2"
           :placeholder="placeholder"
-          :disabled="loading"
           class="pharos-chat-input"
           @keydown="onKeydown"
         />
@@ -773,7 +910,10 @@ function onKeydown(e: KeyboardEvent) {
   border-radius: 8px;
 }
 
-/* "En línea" presence dot on the topbar launcher. */
+/* Presence dot on the topbar launcher — 10px, so colour alone is NOT a legible signal
+   (and «warning» vs «success» is a known confusable pair in this palette). Each state
+   therefore differs in FILL and SHAPE as well as hue, and carries an aria-label with the
+   word; the panel header spells the state out in full. */
 .pharos-chat-dot {
   position: absolute;
   top: -1px;
@@ -781,8 +921,29 @@ function onKeydown(e: KeyboardEvent) {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--status-success);
   border: 2px solid var(--card);
+  background: var(--muted-foreground);
+}
+/* En línea — círculo lleno. El único estado «todo bien», y el único relleno sólido verde. */
+.pharos-chat-dot.is-en-linea { background: var(--status-success); }
+/* Sin verificar — anillo hueco: hay algo que todavía no sabemos. */
+.pharos-chat-dot.is-desconocido {
+  background: var(--card);
+  box-shadow: inset 0 0 0 2px var(--muted-foreground);
+}
+/* Sin permiso / límite — cuadrado ámbar: distinto de todo círculo, accionable por el usuario. */
+.pharos-chat-dot.is-sin-permiso,
+.pharos-chat-dot.is-limitado {
+  background: var(--status-warning);
+  border-radius: 2px;
+}
+/* El límite además se distingue del permiso por tamaño (mismo color, otra silueta). */
+.pharos-chat-dot.is-limitado { width: 8px; height: 8px; }
+/* No disponible — rombo rojo: la silueta más distinta del conjunto. */
+.pharos-chat-dot.is-no-disponible {
+  background: var(--status-error);
+  border-radius: 1px;
+  transform: rotate(45deg);
 }
 
 .pharos-chat-backdrop {
@@ -871,10 +1032,18 @@ function onKeydown(e: KeyboardEvent) {
 }
 .pharos-chat-status {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
   font-size: 0.68rem;
   line-height: 1.2;
-  color: var(--status-success);
+  color: var(--muted-foreground);
 }
+.pharos-chat-status svg { width: 10px; height: 10px; flex-shrink: 0; }
+.pharos-chat-status.is-en-linea { color: var(--status-success); }
+.pharos-chat-status.is-sin-permiso,
+.pharos-chat-status.is-limitado { color: var(--status-warning); }
+.pharos-chat-status.is-no-disponible { color: var(--status-error); }
 .pharos-chat-avatar {
   flex-shrink: 0;
   display: inline-flex;
