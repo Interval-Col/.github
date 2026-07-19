@@ -68,14 +68,14 @@ jobs:
 
       - name: Checkout registry (.github)
         if: steps.gate.outputs.skip != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: registry-src
 
       - name: Mint App token (scoped to ${{ matrix.name }})
         if: steps.gate.outputs.skip != 'true'
         id: apptoken
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.PHAROS_BOT_APP_ID }}
           private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
@@ -88,7 +88,7 @@ jobs:
 
       - name: Checkout ${{ matrix.repo }}@${{ matrix.base }}
         if: steps.gate.outputs.skip != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ matrix.repo }}
           ref: ${{ matrix.base }}
