@@ -102,11 +102,13 @@ HEALTH_FIELDS = ("enabled", "allowed", "upstream")
 CAPABILITY_GATE = re.compile(r"\brequire_capability\b")
 NEXT_DECORATOR = re.compile(r"^@\w+\.(get|post|put|patch|delete)\(", re.M)
 
-# H10 is a WARN while the routes roll out app by app (the registry widget shipped first
-# and falls back to traffic-derived status without one). FLIP THIS TO True once every
-# `profile: chat` app carries the route — that is what stops the fallback from quietly
-# becoming permanent. Central flip: one merge here enforces it everywhere at once.
-H10_ENFORCED = False
+# ENFORCED since 2026-07-20: all four `profile: chat` apps carry the readiness route
+# (finance-lch, biuman-lis, admission-patient, pharos-lis/lab-qc), so the migration
+# window this flag existed to bound is closed. A new chat app now gets a hard failure
+# instead of a warning it can ship past — which is the point: without the route, the
+# widget's indicator falls back to guessing and can claim «en línea» having verified
+# nothing, the exact defect CH8 was written to remove.
+H10_ENFORCED = True
 
 # H8 — the registry chat widget vs a hand-rolled one (mirrors auth A9). Match real
 # USAGE (a <PharosHelpChat> tag, an import, or a direct .vue reference) — not a bare
