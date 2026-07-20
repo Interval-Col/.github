@@ -63,7 +63,12 @@
 
 > **Logo-specific colors** (use only for logo rendering):
 > - Logo red: `#E40046` (PANTONE 192 CP)
-> - Logo burgundy: `#782F40` (PANTONE 195 C)
+> - Logo burgundy: `#782F40` (PANTONE 195 C) — ⚠️ **does not match the artwork.**
+>   The Illustrator master's Pantone sheet (`MUESTRAS_PANTONE.ai`) defines this
+>   swatch as **`#8E1537`**, and sampling the rendered logo gives `#8E1538`.
+>   `#782F40` is ~Δ35 away, a visible difference rather than rounding. Every other
+>   swatch in the master matches this document within Δ≤7. Treat `#8E1537` as the
+>   real value pending a ruling; recorded 2026-07-19.
 
 ### 2.2 Secondary Palette — System Complement
 
@@ -347,10 +352,16 @@ The logo has three elements:
 | `logo-alt-1.png` | Full color (early export) | — | Legacy export; do not use for new UI. |
 | `logo-koc.png` | Single-color / print variant | — | Legacy print variant; verify with brand mgmt. |
 
-> **SVG status (stopgap).** The four canonical `.svg` files exist but currently
-> **embed the raster PNG as a base64 data URI** — they render anywhere (`<img src>`,
-> CSS background) but are **not true vectors**. **TODO:** replace with hand-authored
-> vector exports of the canonical four + a true single-color red/black mono lockup.
+> **SVG status — horizontal lockup RESOLVED 2026-07-19; the rest still stopgap.**
+> `logo-horizontal-color.svg` and the new `logo-horizontal-mono.svg` are now **true
+> vectors**, extracted from the Illustrator masters in
+> `local-resources/BRANDS GRUPO LOS CERROS/HEMATOLOGICO/` (`logo1.ai` and
+> `logohorizontal.ai`). Those `.ai` files are PDF-compatible, so the paths are the
+> designer's own — not a trace, not a reinterpretation. 5 paths / 0 embedded
+> images for the colour lockup; 79 / 0 for the mono. Smaller *and* crisp at any
+> size: 48.4 KB vs the 73.6 KB raster-in-a-wrapper it replaces.
+> **Still TODO:** the vertical lockup and the icon remain base64-wrapped rasters;
+> the same extraction works on `Logos.ai` when someone needs them.
 > (The gitleaks allowlist exempts `brands/**/logos/*.svg` so the embedded blob doesn't
 > trip the entropy rule — see `.gitleaks.toml`.)
 
