@@ -299,9 +299,10 @@ def _py_code_no_docstrings(text):
     of the file, which is exactly where a promised-but-unbuilt route would be written down.
     H10 scans behaviour, so it scans code only.
 
-    Scoped to H10 deliberately: H5/H6/H7 share the same blind spot (AP's router docstring
-    literally spells out `429` and `503`), but tightening those here would re-gate four
-    live apps inside a PR about the chat widget. Filed separately instead."""
+    Used by H5/H6/H7/H10. It was H10-only when introduced — tightening the others meant
+    re-gating four live apps, so it was filed separately (operations#238) and verified
+    first: with docstrings stripped, all four manifests still pass, so no app was leaning
+    on prose. That check is the reason this is safe."""
     return TRIPLE_QUOTED.sub("", _py_code(text))
 
 
@@ -432,8 +433,8 @@ def check(manifest, results):
     # H5 — per-user rate limit, gated in the router before the upstream call.
     # Comment-stripped (like H2/H4): a `# check_user_quota / 429 ...` comment must
     # not satisfy a gate that CH3/CH4/CH5 require to be real code.
-    rl = _py_code(_read(rate_limit)) if rate_limit else None
-    router_text = _py_code(_read(router))
+    rl = _py_code_no_docstrings(_read(rate_limit)) if rate_limit else None
+    router_text = _py_code_no_docstrings(_read(router))
     has_limit_module = bool(rl and RATE_LIMIT_SYMBOL.search(rl))
     router_gates = bool(RATE_LIMIT_IN_ROUTER.search(router_text) and ROUTER_429.search(router_text))
     if router_gates and has_limit_module:
@@ -468,7 +469,7 @@ def check(manifest, results):
         results.append(("H7", INFO, "manifest declares `rag: off` (context-stuffing / no corpus) — "
                         "sources not required (CH5 applies to corpus answers)"))
     else:
-        resp = _py_code(_read(response_src))
+        resp = _py_code_no_docstrings(_read(response_src))
         if SOURCES_FIELD.search(resp):
             results.append(("H7", PASS, f"corpus chat exposes a `sources` field in {os.path.relpath(response_src)} (CH5)"))
         else:
