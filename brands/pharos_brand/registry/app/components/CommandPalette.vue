@@ -61,16 +61,25 @@ function toggleTheme() {
 
 <template>
   <!-- Trigger: a search BUTTON living in the topbar. (components/** is exempt from
-       the no-raw-html gate, so a native <button>/<kbd> is fine here.) -->
+       the no-raw-html gate, so a native <button>/<kbd> is fine here.)
+       The row layout lives on an INNER <span> (always `flex`), NOT on the button, so
+       it survives whatever `display` utility a consumer forwards onto the button via
+       $attrs. A topbar that hides the box with `hidden md:block` would otherwise turn
+       the button into `display:block` at ≥md (the responsive variant beats the base
+       `flex` in the cascade) and drop the flex row into inline flow — the icon/label/⌘K
+       wrap to two lines. `whitespace-nowrap` also keeps the label on one line when the
+       topbar is cramped. -->
   <button
     v-bind="$attrs"
     type="button"
-    class="flex h-9 w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-accent"
+    class="flex h-9 w-full max-w-sm rounded-lg border border-border bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-accent"
     @click="open = true"
   >
-    <Search class="size-4 shrink-0" aria-hidden="true" />
-    <span>Buscar o navegar…</span>
-    <kbd class="ml-auto rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
+    <span class="flex h-full w-full items-center gap-2 whitespace-nowrap">
+      <Search class="size-4 shrink-0" aria-hidden="true" />
+      <span>Buscar o navegar…</span>
+      <kbd class="ml-auto rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
+    </span>
   </button>
 
   <!-- The dialog is teleported by the primitive; CommandDialog supplies the
