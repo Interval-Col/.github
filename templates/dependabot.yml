@@ -1,0 +1,108 @@
+# =============================================================================
+# Dependabot — Interval-Col standard template
+# =============================================================================
+# Copy to `.github/dependabot.yml` in the consuming repo and keep only the
+# ecosystems that repo actually has. The rationale, the traps, and the volume
+# math live in Interval-Col/.github → DEPENDENCY-UPDATES.md — read that before
+# changing any of the four volume levers below.
+#
+# The four levers (they multiply):
+#   schedule.interval: monthly   →  1 run/month instead of 4
+#   groups                       →  1 PR per ecosystem per run, not 1 per package
+#   open-pull-requests-limit     →  hard ceiling on outstanding PRs per entry
+#   cooldown                     →  skip packages that just released (churn filter)
+#
+# ⚠️ TWO TRAPS, both bit us before:
+#   1. Dependabot reads this file from the repo's DEFAULT branch (`main`) only —
+#      never from `develop`. A config merged to `develop` alone does nothing.
+#   2. `target-branch` makes the entry version-updates-only. Anything scoped to
+#      security updates (`applies-to: security-updates`) is silently ignored on
+#      an entry that sets it. Don't write security groups next to target-branch.
+#
+# Reviewers: Dependabot cannot assign a GitHub team, and the `reviewers:` key is
+# gone from the current options reference. Routing is CODEOWNERS — see the block
+# DEPENDENCY-UPDATES.md tells you to append to `.github/CODEOWNERS`.
+# =============================================================================
+version: 2
+updates:
+  # ── Frontend (Nuxt / pnpm) ────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    # `directories` (plural) takes a list and supports globs; one entry covers
+    # every frontend in a monorepo. Dependabot files one grouped PR per
+    # directory, so list only the surfaces that are actually maintained —
+    # frozen apps do not belong here.
+    directories:
+      - "/frontend"
+    # Trunk. Drop this line in repos whose trunk IS the default branch.
+    target-branch: "develop"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      # Routine hygiene — one PR, merge it after CI.
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      # Breaking surface — its own PR so it can be reviewed (or closed) as a
+      # unit without holding up the hygiene batch.
+      npm-major:
+        applies-to: version-updates
+        update-types:
+          - "major"
+
+  # ── Backend (FastAPI / pip / pyproject.toml) ──────────────────────────────
+  - package-ecosystem: "pip"
+    directories:
+      - "/backend"
+    target-branch: "develop"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      pip-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      pip-major:
+        applies-to: version-updates
+        update-types:
+          - "major"
+
+  # ── GitHub Actions (workflow pins) ────────────────────────────────────────
+  # Stays owned by the repo's infra owner in CODEOWNERS, not the deps team.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
