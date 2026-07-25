@@ -42,6 +42,26 @@ entry. List only maintained surfaces — **frozen apps stay out** (e.g.
 Docker base images are deliberately **not** enabled: high churn, low signal, and
 our images are rebuilt from pinned bases on every deploy anyway.
 
+## Volume across the estate
+
+Per repo the standard is calm; multiplied by ~22 repos it is not. Expect
+**~25–45 dependency PRs/month org-wide** once every repo is on it — more total
+churn than the ~17/month the org saw when only `biuman-lis` and `finance-lch`
+had configs, in exchange for the other 20 repos no longer drifting silently.
+
+**Decided 2026-07-25: monthly everywhere, per-ecosystem grouping everywhere** —
+freshest dependency surface and the tightest failure isolation (a pip bump that
+reddens CI never blocks the npm batch). If the volume turns out to grate, the
+lever is tiering, not un-grouping:
+
+- keep the flagship apps (`finance-lch`, `pharos-lis`, `biuman-lis`,
+  `admission-patient`, `public-web`) on monthly + per-ecosystem groups;
+- move the quiet repos to `interval: quarterly`, a single cross-ecosystem PR
+  (`multi-ecosystem-groups`), majors ignored, and no separate actions entry.
+
+That lands the estate near ~15 PRs/month and is a per-repo config edit — no
+migration, no new tooling.
+
 ## Two traps
 
 **1. The config is read from the DEFAULT branch (`main`), never from `develop`.**
