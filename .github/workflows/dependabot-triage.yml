@@ -121,8 +121,24 @@ jobs:
                 }
 
               # Best-effort: fails harmlessly when the person was never requested.
+              #
+              # ⚠️ A request cannot always be dropped. Where branch protection sets
+              # require_code_owner_reviews AND CODEOWNERS names the person, the
+              # API accepts the DELETE and GitHub re-adds it immediately — their
+              # approval is REQUIRED to merge, so it is not removable by design.
+              # Measured 2026-07-26 on biuman-kb and infrastructure (both
+              # `* @gczuluaga` + code-owner review required). That is reported
+              # once, not retried: the fix is CODEOWNERS or the protection rule,
+              # neither of which belongs in a triage job.
               for who in $DROP_REVIEWERS; do
                 gh pr edit "$pr" --repo "${ORG}/${repo}" --remove-reviewer "$who" >/dev/null 2>&1 || true
+                still=$(gh api "/repos/${ORG}/${repo}/pulls/${pr}/requested_reviewers" \
+                          --jq "[.users[].login] | index(\"${who}\")" 2>/dev/null || echo "null")
+                if [ "$still" != "null" ]; then
+                  echo "  ⚠️ ${repo}#${pr}: ${who} is a REQUIRED code owner here — request cannot be dropped."
+                  echo "     Their approval gates the merge. To move it, change CODEOWNERS in ${repo}"
+                  echo "     or drop require_code_owner_reviews. Assignment still applied."
+                fi
               done
 
               echo "  ${repo}#${pr} → ${ASSIGNEE}"
