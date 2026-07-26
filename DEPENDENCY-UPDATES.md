@@ -134,6 +134,24 @@ Membership matters too: the review request goes to the **team**, so anyone in
 `@Interval-Col/dependabot` still receives every manifest PR. The team is
 deliberately **one person**.
 
+### The one case nothing can move: required code owners
+
+Where a repo has branch protection with `require_code_owner_reviews` **and**
+`CODEOWNERS` names a person, that person's review request is **not removable**.
+The API accepts the DELETE and GitHub re-adds it, because their approval is what
+gates the merge. Measured 2026-07-26 on `biuman-kb` and `infrastructure` — both
+`* @gczuluaga` with code-owner review required.
+
+So in those repos every dependency PR needs @gczuluaga's approval by design, and
+the triage job says so in its log rather than fighting it. Three ways out, all
+deliberate choices rather than fixes:
+
+| Option | Cost |
+|---|---|
+| Give the dependency paths a different owner in that repo's `CODEOWNERS` | one PR per repo; that owner's approval then gates those paths for humans too |
+| Drop the `github-actions` entry in repos with no application dependencies | one PR per repo; workflow pins go stale unless the registry bumps them |
+| Leave it | ~1 PR/repo/month needing his approval — which is what "required" means |
+
 `.github/workflows/` is **not** routed to the deps team — CI ownership stays
 with the repo's infra owner, so the grouped actions PR still pings them.
 
