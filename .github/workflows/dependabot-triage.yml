@@ -1,0 +1,138 @@
+# Dependabot PR triage — put every dependency PR in one person's lane.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THIS EXISTS AS A CENTRAL JOB AND NOT AS PER-REPO CONFIG
+#
+# Two GitHub facts box us in:
+#
+#   1. Dependabot cannot assign a TEAM. `assignees:` in dependabot.yml takes
+#      usernames only, and the `reviewers:` key no longer exists in the options
+#      reference. Team routing has to go through CODEOWNERS.
+#
+#   2. CODEOWNERS cannot distinguish Dependabot's PRs from a human's. Routing
+#      `.github/workflows/` to the deps team to catch the grouped actions PR
+#      would also hand that team every CI change a human makes.
+#
+# So the grouped ACTIONS PRs, and every PR in the repos whose only ecosystem is
+# github-actions (nucleus-db, infrastructure, operations, rfcs, lch-kb,
+# biuman-kb), keep landing on the repo's catch-all owner — @gczuluaga —
+# no matter what dependabot.yml says. Measured 2026-07-26: 8 of 23 open
+# Dependabot PRs were sitting in his review queue for exactly this reason.
+#
+# Fixing that in CODEOWNERS costs one PR per repo and shifts CI ownership.
+# This job costs one PR, total, and handles every repo including ones that do
+# not exist yet.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# What it does, every 6 hours: find open Dependabot PRs across the org, assign
+# them to ASSIGNEE, request that person's review, and drop the review request
+# from anyone in DROP_REVIEWERS. It never merges, closes, or pushes.
+#
+# Auth: the `pharos-planning-bot` App (org var PHAROS_BOT_APP_ID + org secret
+# PHAROS_BOT_PRIVATE_KEY), installed on all repos with pull_requests: write.
+
+name: "Dependabot PR triage"
+
+on:
+  schedule:
+    # Every 6 hours at :07. A dependency PR is never urgent, and the org runs
+    # against a 3000-minute Actions cap — this job takes ~20s, so 4 runs a day
+    # is about 2 minutes a day. Do not make it every 30 minutes to shave the
+    # latency; the queue it drains fills once a month.
+    - cron: "7 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      assignee:
+        description: "GitHub username to own dependency PRs"
+        default: "SKuger01"
+      dry-run:
+        description: "List what would change without changing it"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read # the runner only reads; the App token does the writes
+
+concurrency:
+  group: dependabot-triage
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    name: Assign open Dependabot PRs
+    runs-on: ubuntu-latest
+    steps:
+      # `owner:` (no `repositories:`) mints a token for every repo the App is
+      # installed on, which is what makes one job able to sweep the whole org.
+      - name: Mint App token (org-wide)
+        id: apptoken
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.PHAROS_BOT_APP_ID }}
+          private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Sweep
+        env:
+          GH_TOKEN: ${{ steps.apptoken.outputs.token }}
+          ORG: ${{ github.repository_owner }}
+          ASSIGNEE: ${{ inputs.assignee || 'SKuger01' }}
+          DRY_RUN: ${{ inputs.dry-run || 'false' }}
+          # Whoever should stop receiving these. Their CODEOWNERS entry stays
+          # intact for human PRs — only the Dependabot request is dropped.
+          DROP_REVIEWERS: "gczuluaga"
+        run: |
+          set -euo pipefail
+
+          # Repo-by-repo rather than `gh search prs`: the search index lags
+          # behind by minutes and silently under-reports on private repos, and
+          # this job's whole value is that a PR is triaged before a human sees
+          # it in their queue.
+          mapfile -t repos < <(gh api "/orgs/${ORG}/repos?per_page=100" --paginate \
+            --jq '.[] | select(.archived == false) | .name')
+
+          echo "Scanning ${#repos[@]} repositories for open Dependabot PRs…"
+          touched=0
+
+          for repo in "${repos[@]}"; do
+            prs=$(gh pr list --repo "${ORG}/${repo}" --author "app/dependabot" \
+                    --state open --json number --jq '.[].number' 2>/dev/null || true)
+            [ -z "$prs" ] && continue
+
+            while IFS= read -r pr; do
+              [ -z "$pr" ] && continue
+
+              current=$(gh pr view "$pr" --repo "${ORG}/${repo}" \
+                          --json assignees --jq '[.assignees[].login] | join(",")')
+              if [ "$current" = "$ASSIGNEE" ]; then
+                continue   # already triaged; don't spam the timeline
+              fi
+
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "  would assign ${repo}#${pr} to ${ASSIGNEE} (currently: ${current:-none})"
+                touched=$((touched + 1))
+                continue
+              fi
+
+              gh pr edit "$pr" --repo "${ORG}/${repo}" \
+                --add-assignee "$ASSIGNEE" --add-reviewer "$ASSIGNEE" >/dev/null 2>&1 || {
+                  echo "::warning::could not assign ${repo}#${pr} — is ${ASSIGNEE} a collaborator there?"
+                  continue
+                }
+
+              # Best-effort: fails harmlessly when the person was never requested.
+              for who in $DROP_REVIEWERS; do
+                gh pr edit "$pr" --repo "${ORG}/${repo}" --remove-reviewer "$who" >/dev/null 2>&1 || true
+              done
+
+              echo "  ${repo}#${pr} → ${ASSIGNEE}"
+              touched=$((touched + 1))
+            done <<< "$prs"
+          done
+
+          echo ""
+          if [ "$touched" -eq 0 ]; then
+            echo "Nothing to triage — every open Dependabot PR is already assigned."
+          else
+            echo "Triaged ${touched} pull request(s)."
+          fi

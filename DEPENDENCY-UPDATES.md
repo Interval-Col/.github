@@ -112,6 +112,28 @@ Cargo.toml              @Interval-Col/dependabot
 Cargo.lock              @Interval-Col/dependabot
 ```
 
+### The gap CODEOWNERS cannot close, and the job that closes it
+
+CODEOWNERS cannot tell Dependabot's PR from a human's. So the grouped
+**actions** PR — and every PR in the repos whose only ecosystem is
+`github-actions` (`nucleus-db`, `infrastructure`, `operations`, `rfcs`,
+`lch-kb`, `biuman-kb`) — keeps landing on the repo's catch-all owner no matter
+what `dependabot.yml` says. Measured 2026-07-26: 8 of 23 open Dependabot PRs
+were sitting in @gczuluaga's review queue for exactly this reason.
+
+Routing `.github/workflows/` to the deps team would fix it and also hand that
+team every CI change a human makes. So instead,
+[`.github/workflows/dependabot-triage.yml`](.github/workflows/dependabot-triage.yml)
+sweeps the org every 6 hours, assigns each open Dependabot PR to the person who
+drains the queue, requests their review, and drops the catch-all owner's
+request. One job, every repo, including repos that do not exist yet. It never
+merges, closes, or pushes. Change the owner with a `workflow_dispatch` run
+(`assignee` input) — or `dry-run: true` to see what it would do.
+
+Membership matters too: the review request goes to the **team**, so anyone in
+`@Interval-Col/dependabot` still receives every manifest PR. The team is
+deliberately **one person**.
+
 `.github/workflows/` is **not** routed to the deps team — CI ownership stays
 with the repo's infra owner, so the grouped actions PR still pings them.
 
