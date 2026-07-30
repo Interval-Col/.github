@@ -32,12 +32,12 @@ contract is a **forward** baseline: new chats comply from day one.
 |---|---|---|
 | **CH1** | **All provider calls go through `pharos-llm-proxy`.** A chat feature MUST NOT import a provider SDK (`google-genai`, `openai`, `anthropic`, `vertexai`, …) or call a model endpoint directly. The only outbound path is the shared proxy (`POST /v1/chat`, `/v1/embed`), authenticated with the app's own per-caller secret (`X-LLM-Proxy-Secret`) and identified by its `caller` id. The proxy is the single enforcement point for keys, PHI guards, quotas, kill switch, and hash-only audit. | RFC 0017 Phase 2/3; reference impl: finance-lch `backend/app/features/help/proxy_client.py` |
 | **CH2** | **No plaintext prompt/reply persistence.** The chat feature's own tables store **usage/metadata only** — username, token counts, timestamps — never the message or reply body. Content is audited hash-only, and only in the proxy (`llm_proxy_audit`). This is the tenant-data boundary: conversation bodies never land in an app table. | RFC 0017 (hash-only audit); finance-lch `help_chat_usage` |
-| **CH3** | **Per-user rate limit, before the upstream call.** Every request is gated by a per-end-user quota (daily + burst) resolved from the app's own store, **before** the proxy call — independent of, and in addition to, the proxy's per-caller/day and org/month token quotas. A failed upstream call does not burn the user's budget. | RFC 0017; finance-lch `rate_limit.check_user_quota` |
+| **CH3** | **Per-user rate limit, before the upstream call.** Every request is gated by a per-end-user quota (daily + burst) resolved from the app's own store, **before** the proxy call — independent of, and in addition to, the proxy's per-caller/day and org/month token quotas. A failed upstream call does not burn the user's budget. On a `surface: public` app there is no authenticated end user — see **Public surfaces** below. | RFC 0017; finance-lch `rate_limit.check_user_quota` |
 | **CH4** | **Graceful degradation.** When the proxy is unreachable or 5xx, the endpoint returns **503** with a neutral Spanish message — never a 500 / stack trace — and the widget renders a "no disponible" state. Chats are **assistive, never load-bearing**; an outage or the kill switch degrades the feature, it never breaks the page. A proxy-side quota (429) surfaces as 429; a blocked-outbound (PHI gate) surfaces as a 200 safe-reply. | RFC 0017 Drawbacks; finance-lch `router.py` (`ProxyUnavailable → 503`) |
 | **CH5** | **Cite sources for corpus answers.** A retrieval-backed (RAG / context-stuffing over a corpus) chat MUST return the source ids/labels it grounded on (`sources: [...]`) and surface them in the UI. A chat with no corpus declares `rag: off` and this clause does not apply. | RFC 0017 Phase 3; finance-lch `ChatResponse.sources` |
 | **CH6** | **UI copy in neutral-Colombian Spanish (usted).** Every user-facing chat string — launcher/aria labels, empty state, starters, thinking state, error and rate-limit notices — is in es-CO, usted register. *Prose clause — not machine-checked.* | RFC 0017 Phase 3; finance-lch `HelpChat.vue` |
 | **CH7** | **Per-app variation is only the corpus + copy.** What varies per app is the endpoint path, retrieval strategy, embeddings (in the app's **own** schema), brand name, and starter prompts — declared in the manifest. The machinery (CH1–CH4) does not vary, and the FE widget is the registry **`PharosHelpChat`** (RFC 0017 Phase 4), parameterized per app — never re-forked. | RFC 0017 §Tenant frame (cross-tenant proxy is stateless re content) / Phase 4 (registry widget) |
-| **CH8** | **The assistant reports its own readiness — truthfully, per caller.** A chat feature exposes `GET {base}/v1/chat/health`, authenticated but **NOT** capability-gated, returning `200 {"enabled": bool, "allowed": bool, "upstream": bool}` — respectively: chat is on in this deployment, **this caller** holds the chat capability, and the proxy answered `/readyz`. It MUST NOT call the model (a readiness check that spends tokens is a bill, not a check), MUST cache the upstream leg server-side on a short TTL (every panel open hits it), and carries no request body — so it is PHI-free by construction. `allowed` is why the route is not capability-gated: a 403 is the answer, not an error. | RFC 0017 Phase 4; registry `PharosHelpChat` (`probe` prop) |
+| **CH8** | **The assistant reports its own readiness — truthfully, per caller.** A chat feature exposes `GET {base}/v1/chat/health`, authenticated but **NOT** capability-gated, returning `200 {"enabled": bool, "allowed": bool, "upstream": bool}` — respectively: chat is on in this deployment, **this caller** holds the chat capability, and the proxy answered `/readyz`. It MUST NOT call the model (a readiness check that spends tokens is a bill, not a check), MUST cache the upstream leg server-side on a short TTL (every panel open hits it), and carries no request body — so it is PHI-free by construction. `allowed` is why the route is not capability-gated: a 403 is the answer, not an error. On a `surface: public` app there is no caller to authenticate — see **Public surfaces** below. | RFC 0017 Phase 4; registry `PharosHelpChat` (`probe` prop) |
 
 ---
 
@@ -71,6 +71,8 @@ cover judgment. CH6 (Spanish register) is prose — reviewed, not machine-checke
 app: <name>
 profile: chat | planned               # planned = adopter, no chat feature yet (H1 + info only)
 caller_id: <name>-backend             # the per-caller identity to pharos-llm-proxy
+surface: internal | public            # internal (default) = authenticated end user;
+                                      #   public = anonymous, internet-facing — see "Public surfaces"
 
 chat_dirs:                            # feature dir(s); the SDK + persistence scan is scoped here
   - backend/app/features/help
@@ -106,6 +108,30 @@ backend, on purpose: the gateway is being *centralized* (`pharos-llm-proxy`), so
 a transitional local proxy service or an unrelated SDK use (e.g. an ETL's Gemini
 extractor) is out of scope by construction. If a provider SDK genuinely must live
 inside a chat dir during a migration, allowlist the file with a reason.
+
+**Public surfaces (CH3 · CH8).** `surface: public` declares an anonymous,
+internet-facing chat — no SSO session, no capability, no end user. Two clauses
+read differently there, and only there:
+
+- **CH3.** A per-end-user quota is not resolvable, so the clause is satisfied by
+  an equivalent **session + IP** limit, resolved from the app's own store, before
+  the proxy call. Three differences are mandatory: the daily ceiling is
+  aggressive and written into the app's plan; `max_output_tokens` is set low,
+  because it is the only cost brake the app controls; and **a request blocked by
+  the PHI gate also burns quota** — the inverse of the authenticated case, where
+  a failed call is free — because otherwise the gate can be probed at no cost
+  from the internet.
+- **CH8.** There is no caller to authenticate, so the route is exposed
+  unauthenticated, `allowed` answers `true` constantly (there is no capability to
+  withhold), and the three keys keep their meaning. H10 asserts shape, not
+  authentication, so the checker does not change.
+
+Everything else in CH1–CH8 applies unchanged. In particular, `public` does **not**
+relax the PHI gate: per `operations/policies/phi-protection.md`, *"the gate is a
+mitigation, not a permission slip"* — and a surface open to the internet is the
+last place to design around it. An app that needs to route user-supplied personal
+data through a model states that as a named, dated risk acceptance in its own
+plan; it does not read this section as permission.
 
 ### Adoption (caller)
 
