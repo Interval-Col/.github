@@ -17,7 +17,7 @@ accent: "🔄 Superseded for the standalone console by RFC 0004 rev. 2026-07-03:
 **Audiencia:** Directivos, coordinadores, personal administrativo general.
 **Surface / app:** Consola administrativa **transversal** del producto Pháros —
 gestión de usuarios y roles, configuración, métricas globales y estado de las
-distintas apps/superficies de la familia (LIS, Calidad, ERP · Timón, Reportes,
+distintas apps/superficies de la familia (LIS, Calidad, ERP · Números, Reportes,
 Portal Pacientes). Es una superficie de **plataforma/shell**, no una app de
 dominio.
 **Prioridades:** visión global del sistema, navegación multi-sección, gestión de
@@ -263,7 +263,7 @@ Modals use `rounded-xl` (the larger radius); the rest of the surface uses
 `rounded-lg` (the `--radius` default).
 
 ### `AdminResumenSistema` — multi-app status dashboard
-Shows the health of every Pháros surface (LIS / Calidad / ERP · Timón / Reportes /
+Shows the health of every Pháros surface (LIS / Calidad / ERP · Números / Reportes /
 Portal Pacientes). Each section tile is colored by its **status**, not its
 sub-brand: `operativo` → `--status-success`, `degradado` → `--status-warning`,
 `caído` → `--status-error`, `mantenimiento/info` → `--status-info`.
