@@ -110,6 +110,6 @@ rather than silent. Adopt the layout mount by hand; do not assume the bot did it
 ## Tenancy
 
 LCH and Biuman are **tenants**, not parents. A tenant never prefixes an app name
-(`Pháros · Timón`, never "LCH Pháros"). The maker is **Interval · The Human Tech Co.**,
+(`Pháros · Números`, never "LCH Pháros"). The maker is **Interval · The Human Tech Co.**,
 credited only in the footer/app-shell chrome (BRAND.md §10). The palette this
 contract draws from is the LCH colour set (`../../hematologico/LCH-BRAND.md`).

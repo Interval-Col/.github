@@ -1,7 +1,7 @@
-# Surface — Finanzas (Pháros · Timón)
+# Surface — Finanzas (Pháros · Números)
 
 **Audience:** administrative & financial team
-**App / surface:** `Pháros · Timón` (the ERP / finance suite — tenant: LCH `finance-lch`)
+**App / surface:** `Pháros · Números` (the ERP / finance suite — tenant: LCH `finance-lch`)
 **Priorities:** numeric precision, data density, tables, KPIs, export.
 
 > Built on the registry token contract — [`../tokens.css`](../tokens.css). This file
@@ -220,7 +220,7 @@ pages/finanzas/reportes.vue
   surfaces (`bg-white`, `bg-[#F4F7FA]`, `text-white`).
 - **Naming / tenancy.** Dropped the `LchFinanzas*` component prefix → `KpiCard`,
   `DataTable`, `EstadoBadge`, `CurrencyInput`, `ExportBtn`; the surface is named for
-  the app (`Pháros · Timón`), not the tenant.
+  the app (`Pháros · Números`), not the tenant.
 - **Preserved unchanged:** audience (admin/finance team), surface purpose (finance
   ERP), the component inventory, the COP/`Intl.NumberFormat` + `DD/MM/YYYY`
   formatting logic, and the currency/KPI/table UX patterns.
