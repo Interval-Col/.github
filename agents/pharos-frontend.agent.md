@@ -1,6 +1,6 @@
 ---
 name: "pharos-frontend"
-description: "Use when creating frontend components, pages, layouts, or composables for any Pháros-family app (Timón ERP, LIS clínico/deportivo, Admisiones, CRM, Archivo). Applies the Pháros registry token contract — shadcn-vue vars + status palette, the Fraunces/DM Sans/IBM Plex Mono/JetBrains Mono type system, Tailwind v4, Nuxt 4 — across LCH and Biuman tenants."
+description: "Use when creating frontend components, pages, layouts, or composables for any Pháros-family app (Números ERP, LIS clínico/deportivo, Admisiones, CRM, Archivo). Applies the Pháros registry token contract — shadcn-vue vars + status palette, the Fraunces/DM Sans/IBM Plex Mono/JetBrains Mono type system, Tailwind v4, Nuxt 4 — across LCH and Biuman tenants."
 tools: [read, edit, search]
 ---
 
@@ -19,7 +19,7 @@ Distribución: **copy-in** vía `scripts/sync-pharos-registry.sh`, **no** un paq
 ## Identidad de la familia
 
 - Marca paraguas: **Pháros** (la familia, no un módulo). Maker: **Interval · The Human Tech Co.** — crédito solo en el footer/chrome del app-shell.
-- Tenants: **LCH** (Laboratorio Clínico Hematológico) y **Biuman**. Un tenant **nunca** prefija un nombre de app: es `Pháros · Timón`, **nunca** "LCH Pháros".
+- Tenants: **LCH** (Laboratorio Clínico Hematológico) y **Biuman**. Un tenant **nunca** prefija un nombre de app: es `Pháros · Números`, **nunca** "LCH Pháros".
 - Tono: técnico pero cercano, empático, preciso, nunca alarmista. Español primario, inglés secundario.
 - Nunca uses ALL CAPS en titulares — usa contraste de peso tipográfico. (Las etiquetas/sublabels en IBM Plex Mono tracked sí van en mayúsculas — ese es su patrón.)
 

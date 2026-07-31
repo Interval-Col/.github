@@ -98,7 +98,7 @@ segmented glyphs.
    tenants that never prefix an app name; the product brand wins on its own screens.
 6. **A naming *system*, not a per-name debate.** A maritime lexicon pre-decides the
    still-open sub-brand names so each new one feels inevitable; record every
-   evocative↔functional mapping in RFC 0004 (only `Pháros · Timón` locked so far).
+   evocative↔functional mapping in RFC 0004 (only `Pháros · Números` locked so far).
 
 ### Keep strictly separate (do NOT let any of this leak into Pháros)
 - **Express calm in the *opposite* idiom.** Interval = black-first; Pháros =

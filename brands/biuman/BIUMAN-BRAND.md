@@ -13,7 +13,7 @@
 > Biuman is a clinic / sports-lab **tenant** of the Pháros product family — the **same structural
 > role as Hematológico (LCH)**, *not* a Pháros sub-brand and *not* the maker (Interval). Per Pháros
 > `BRAND.md` §10: *"LCH and Biuman are tenants, not parents — a tenant **never prefixes an app name**
-> (it is `Pháros · Timón`, never \"LCH Pháros\"). Where a tenant must appear (e.g. a login footer),
+> (it is `Pháros · Números`, never \"LCH Pháros\"). Where a tenant must appear (e.g. a login footer),
 > use a small `para [tenant]` / \"by [tenant]\" credit; the Pháros brand wins on its own screens."*
 > Biuman maps onto the **Pháros LIS deportivo** surface (`Pháros LIS clínico (LCH) · deportivo (Biuman)`).
 > The **product/app design system** is therefore the Pháros registry at `brands/pharos_brand/registry/`

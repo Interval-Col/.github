@@ -5,7 +5,7 @@ applyTo: "**/*.vue,**/*.ts"
 # Pháros frontend standards (registry)
 
 > The Nuxt 4 / Vue 3 / Tailwind v4 authoring conventions for any app in the
-> **Pháros product family** (`Pháros · Timón` ERP, `Pháros LIS`, `Pháros Admisiones`,
+> **Pháros product family** (`Pháros · Números` ERP, `Pháros LIS`, `Pháros Admisiones`,
 > `Pháros CRM`, `Pháros Archivo`). This is the re-cut of the former
 > `instructions/nuxt-standards`, bound to the registry token contract.
 >
@@ -153,7 +153,7 @@ utilidades, nunca hex sueltos:
 
   | Sub-marca | App | Clase | Acento (light / dark) |
   |---|---|---|---|
-  | Números (ERP/finanzas) | Timón | `.theme-numeros` | ámbar `#7A5D00` / `#E6C34D` |
+  | Números (ERP/finanzas) | Números | `.theme-numeros` | ámbar `#7A5D00` / `#E6C34D` |
   | Laboratorio (LIS) | pharos-lis | `.theme-clinico` | teal `#1B6B5A` / `#4CD1B0` |
   | Movimiento (Biuman LIS) | biuman | `.theme-deportivo` | azul `#004F70` / `#16749C` |
   | Pacientes (Admisiones) | admisiones | `.theme-recepcion` | rosa funcional `#ff3d63` / `#ff6b85` (pastel `#FFE0E6` = solo `--brand-wash`) |

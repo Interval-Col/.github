@@ -101,7 +101,7 @@ with the lighthouse. Accepted as a known cost.
 
 ## 3. Positioning & scope
 
-Pháros · Timón is the **operational backbone of the holding** — one
+Pháros · Números is the **operational backbone of the holding** — one
 multi-tenant instance serving LCH, Biuman, and future members (RFC 0004 §3).
 It owns finance + accounting + the operational surfaces that hang off them.
 
@@ -109,7 +109,7 @@ It is **not** an accounting-only tool. The accounting domain (AR, caja,
 pagadores, tarifas, órdenes, facturas, notas crédito, Siigo/DIAN) is the
 core, but the brand promise is *running the operation*, not *keeping the
 books*. The cashier (caja) surface for clerks lives in **Pháros Admisiones**
-per the RFC 0004 §2 revision; Timón keeps the **supervisor** surface
+per the RFC 0004 §2 revision; Números keeps the **supervisor** surface
 (conciliar / reabrir / ver todas las cajas) and the entity, rules, and
 cuadre.
 
@@ -231,7 +231,7 @@ only its degree of family-rhyme changes.
 > Note: [`../BRAND.md`](../BRAND.md) / [`../BACKBONE.md`](../BACKBONE.md) were
 > reconciled to the umbrella model (Pháros = family; QC = surfaces inside LIS;
 > Archivo = utility; tenants = LCH · Biuman) in issue #24 (RFC 0008 Q10). This
-> doc and the shared brand source now agree — Pháros = family; Timón = the ERP
+> doc and the shared brand source now agree — Pháros = family; Números = the ERP
 > sub-brand.
 
 ## References

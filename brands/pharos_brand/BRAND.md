@@ -20,7 +20,7 @@ LANGUAGE          Spanish primary · English secondary
 TONE              Technically precise · humanly warm · never alarmist
 ```
 
-> **Pháros is a family, not a module.** It is the umbrella over the apps Interval builds for the holding's labs — ERP (`Pháros · Timón`), LIS (clínico + deportivo), Admisiones, CRM, and the Archivo utility surface. It is **not** "the QC module of LCH": QC is now a set of surfaces *inside* Pháros LIS. See §10 for the full architecture and the shared-vs-differentiated split.
+> **Pháros is a family, not a module.** It is the umbrella over the apps Interval builds for the holding's labs — ERP (`Pháros · Números`), LIS (clínico + deportivo), Admisiones, CRM, and the Archivo utility surface. It is **not** "the QC module of LCH": QC is now a set of surfaces *inside* Pháros LIS. See §10 for the full architecture and the shared-vs-differentiated split.
 
 ---
 
@@ -31,8 +31,8 @@ The Pháros mark is a **typography-led wordmark** with one symbolic element:
 
 - **Wordmark**: "Pháros" set in Fraunces (variable serif, optical size 144), regular weight, in burgundy `#782F40`. The wordmark is the shared family constant — **never re-tinted to a sub-brand's accent**.
 - **Pilot light**: a small red dot floating above the P, in red `#E4002B`. It functions as an indicator light — quietly referencing the lighthouse without depicting one. Also shared across the family, never re-tinted.
-- **Separator + sub-name** (sub-brand lockup): `· <Sub-name>` after the wordmark — e.g. `Pháros · Timón`.
-- **Sublabel** (when used): the sub-brand's functional descriptor in IBM Plex Mono, ~9px, wide-tracked at 0.18em letter-spacing, muted gray `#888B8D` — e.g. `ERP · FINANZAS Y OPERACIONES` (Timón). The shared horizontal mark carries **no** sublabel; descriptors live only in per-sub-brand lockups.
+- **Separator + sub-name** (sub-brand lockup): `· <Sub-name>` after the wordmark — e.g. `Pháros · Números`.
+- **Sublabel** (when used): the sub-brand's functional descriptor in IBM Plex Mono, ~9px, wide-tracked at 0.18em letter-spacing, muted gray `#888B8D` — e.g. `ERP · FINANZAS Y OPERACIONES` (Números). The shared horizontal mark carries **no** sublabel; descriptors live only in per-sub-brand lockups.
 
 ### 2.2 Versions
 
@@ -87,7 +87,7 @@ The curated family palette is the **LCH colour set** (see `../hematologico/LCH-B
 
 | Token | Hex | When to use |
 |---|---|---|
-| `--lch-navy` | `#003A70` | **ERP (Timón) accent.** Data charts, dark UI surfaces, secondary headings |
+| `--lch-navy` | `#003A70` | **ERP (Números) accent.** Data charts, dark UI surfaces, secondary headings |
 | `--lch-teal` | `#A0D1CA` | Success states, "in control" indicators; ERP "en cuadre / conciliado" |
 | `--lch-yellow` | `#FBD872` | Warning states, drift indicators |
 | `--lch-blush` | `#F4CDD4` | Soft surface backgrounds (rarely) |
@@ -226,7 +226,7 @@ export default defineNuxtConfig({
 - Body text: always left-aligned. Never justified.
 - Line height: 1.6× for body, 1.2× for headlines.
 - Brand name in running text: always title case "Pháros", never ALL CAPS.
-- Sub-brand in running text: `Pháros · Timón` (with the `·` separator).
+- Sub-brand in running text: `Pháros · Números` (with the `·` separator).
 - Tenant brand name in running text: full form, "Laboratorio Clínico Hematológico", title case.
 - Data and numerical values (figures/cifras): always JetBrains Mono with `tabular-nums` — columns must align in tables. Labels + table headers use IBM Plex Mono.
 - Headlines: never ALL CAPS — use weight contrast instead.
@@ -399,7 +399,7 @@ Laboratorio Clínico Hematológico (LCH) — the lab business
             │ builds
             ▼
          Pháros — the product family (umbrella)
-            ├── Pháros · Timón      ERP          accent: LCH Navy #003A70
+            ├── Pháros · Números    ERP          accent: LCH Navy #003A70
             ├── Pháros LIS          clínico (LCH) · deportivo (Biuman)   ← QC surfaces fold in here
             ├── Pháros Admisiones    ← Caja surfaces fold in here
             ├── Pháros CRM
@@ -412,11 +412,11 @@ nucleus-db — shared infrastructure, never branded
 - **QC and Caja are not siblings** — they are persona-scoped surfaces *inside* Pháros LIS and Pháros Admisiones (RFC 0004 §2), not nodes in the tree.
 - **Pháros Archivo** is a utility tier (shared shell + a neutral family accent, no evocative sub-name).
 - **`nucleus-db`** is infrastructure users never see — never branded.
-- Only **ERP = `Pháros · Timón`** is name-locked; the other evocative sub-names are open (RFC 0008 Q1). Functional names (ERP / LIS / Admisiones / CRM) stay in RFC 0004 as the architecture vocabulary.
+- Only **ERP = `Pháros · Números`** is name-locked; the other evocative sub-names are open (RFC 0008 Q1). Functional names (ERP / LIS / Admisiones / CRM) stay in RFC 0004 as the architecture vocabulary.
 
 **Shared vs differentiated.** Every sub-brand inherits the shared Pháros foundation unchanged — the type system, the app-shell/layout, spacing/radius/flatness, the mark + wordmark construction, the voice, the semantic-token contract *names*, and the design gates. A sub-brand differentiates on only three things: its **accent value**, its **sub-name + sublabel**, and its **app-icon tint**. Mechanically, a sub-brand is a *theme* of the shared contract.
 
-**Tenant co-branding.** LCH and Biuman are tenants, not parents — a tenant **never prefixes an app name** (it is `Pháros · Timón`, never "LCH Pháros"). Where a tenant must appear (e.g. a login footer), use a small `para [tenant]` / "by [tenant]" credit; the Pháros brand wins on its own screens. (The exact co-brand lockup — peer sizing, placement — is a small open spec.)
+**Tenant co-branding.** LCH and Biuman are tenants, not parents — a tenant **never prefixes an app name** (it is `Pháros · Números`, never "LCH Pháros"). Where a tenant must appear (e.g. a login footer), use a small `para [tenant]` / "by [tenant]" credit; the Pháros brand wins on its own screens. (The exact co-brand lockup — peer sizing, placement — is a small open spec.)
 
 **Maker credit (every app).** Every Pháros app shows a small maker credit in the footer / app-shell chrome: the Interval `[ ]` bracket mark + **"Hecho por Interval · Tecnología Humana"**. Render it **monochrome and muted** — `text-neutral-gray-dark` on light, the muted foreground on dark — **never** with Interval's orange/indigo, always small and subordinate so the Pháros brand owns the screen. (This is the sanctioned "made by the studio" context; Interval branding belongs only here, not in the app's primary chrome — see `../interval/INTERVAL-BRAND.md` §10.) Use a clean single-colour export of the Interval icon (`../interval/logos/interval-icon`); it inherits the current text colour (no fixed fill), so it flips correctly in dark mode.
 
@@ -451,4 +451,4 @@ MANTRA            Vigilamos lo invisible para que la verdad pueda verse.
 
 ---
 
-*This brand book is the authoritative source for the shared Pháros visual and verbal identity in code. Per-app sub-brands live in `sub-brands/*.md` (first: `sub-brands/erp.md`, `Pháros · Timón`) and only record their accent, sub-name, and icon tint. For strategic and conceptual questions, see `BACKBONE.md`. For the maker (house) brand, see `../interval/INTERVAL-BRAND.md` (esp. §10); the family palette source is `../hematologico/LCH-BRAND.md`. The family's assistant persona — **Nerea**, cross-cutting to every Pháros surface — lives in `NEREA.md` (widget spec: `registry/spec/chat.md`).*
+*This brand book is the authoritative source for the shared Pháros visual and verbal identity in code. Per-app sub-brands live in `sub-brands/*.md` (first: `sub-brands/erp.md`, `Pháros · Números`) and only record their accent, sub-name, and icon tint. For strategic and conceptual questions, see `BACKBONE.md`. For the maker (house) brand, see `../interval/INTERVAL-BRAND.md` (esp. §10); the family palette source is `../hematologico/LCH-BRAND.md`. The family's assistant persona — **Nerea**, cross-cutting to every Pháros surface — lives in `NEREA.md` (widget spec: `registry/spec/chat.md`).*
