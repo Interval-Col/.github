@@ -11,7 +11,18 @@ on:
         description: JSON array of runner labels
         type: string
         required: false
-        default: '["self-hosted","dev"]'
+        # No `dev` label: the F4 migration (operations#165, 2026-07-30) retired the
+        # two-pool topology this default assumed. `runner-dev-01/02` (.243) and
+        # `runner-prod-01` (.231) were decommissioned; `runner01-lch` is now the
+        # ONLY pool and exposes `self-hosted,Linux,X64,dedicated` — no `dev`. So
+        # `["self-hosted","dev"]` matched nothing, and every caller's Board sync
+        # sat unschedulable until GitHub cancelled it at the 24h queue timeout:
+        # issues silently stopped reaching Project #2 org-wide, with no error
+        # anywhere. Segmenting by `dev` is meaningless with one pool — this is a
+        # correction, not a workaround. Callers that need hosted runners still
+        # override (this repo's own caller passes `["ubuntu-latest"]`, since it is
+        # the org's only public repo). See Interval-Col/infrastructure#85.
+        default: '["self-hosted"]'
 
 jobs:
   add-to-project:
