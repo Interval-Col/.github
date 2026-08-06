@@ -23,6 +23,13 @@ STATUS_ENUM = {"proposed", "active", "in-progress", "blocked", "done",
 RETIRED_KEYS = {"completed", "tracking-issue", "tracking-issues"}
 PROMOTE_GATE = "Interval-Col/operations#38"
 
+# A plan may declare a deliberate divergence from the standard with
+# `standard-exception: <one-line reason>`. Its findings then annotate as
+# notices and never fail `--strict`. The reason is MANDATORY: a bare key is
+# itself a violation, so an exception can never be a silent opt-out — it is
+# always readable in the frontmatter and always echoed in the check log.
+EXCEPTION_KEY = "standard-exception"
+
 
 def parse_frontmatter(text):
     lines = text.split("\n")
@@ -69,30 +76,44 @@ def annotate(level, path, msg):
 
 
 def lint_file(path):
-    """Return the number of violations (advisory annotations emitted)."""
+    """Lint one plan.
+
+    Returns (violations, exception_reason). A file with a declared
+    `standard-exception` still reports everything it gets wrong — the findings
+    just drop to notice level and are excluded from the strict-mode tally.
+    """
     try:
         text = open(path, encoding="utf-8").read()
     except OSError as e:
         annotate("warning", path, f"could not read: {e}")
-        return 1
+        return 1, None
     fm = parse_frontmatter(text)
     n = 0
     if fm is None:
         annotate("warning", path, "plan has no frontmatter block — add the schema v2.1 header (see plan-template.md)")
-        return 1
+        return 1, None
+
+    # An exception is only honoured when it carries a reason.
+    exception = fm.get(EXCEPTION_KEY) or None
+    if EXCEPTION_KEY in fm and not exception:
+        annotate("warning", path, f"`{EXCEPTION_KEY}:` declared with no reason — state why this plan "
+                 f"diverges, in one line, or remove the key. An exception is never silent.")
+        n += 1
+    level = "notice" if exception else "warning"
+
     missing = [k for k in REQUIRED_V21 if not fm.get(k)]
     if missing:
-        annotate("warning", path, f"missing required v2.1 frontmatter keys: {', '.join(missing)} "
+        annotate(level, path, f"missing required v2.1 frontmatter keys: {', '.join(missing)} "
                  f"(use `issue: none — <reason>` to opt out)")
         n += 1
     st = norm_status(fm.get("status", ""))
     if st and st not in STATUS_ENUM:
-        annotate("warning", path, f"status '{fm.get('status')}' is not in the controlled enum "
+        annotate(level, path, f"status '{fm.get('status')}' is not in the controlled enum "
                  f"({' | '.join(sorted(STATUS_ENUM))})")
         n += 1
     retired = [k for k in fm if k in RETIRED_KEYS]
     if retired:
-        annotate("warning", path, f"retired frontmatter key(s) {retired} — use `status: done`+`updated:` "
+        annotate(level, path, f"retired frontmatter key(s) {retired} — use `status: done`+`updated:` "
                  f"and `issue:` instead")
         n += 1
     if not re.search(r"^#\s+.+·.+", text, re.M):
@@ -101,7 +122,7 @@ def lint_file(path):
     if not re.search(r">\s*\*\*Resumen", text):
         annotate("notice", path, "no top-level `> **Resumen (ES).**` blockquote found")
         n += 1
-    return n
+    return n, exception
 
 
 def main():
@@ -112,10 +133,24 @@ def main():
     if not files:
         print("plan-lint: no lintable plan files in the change set — OK")
         return 0
-    total = 0
+    total = 0        # findings that count against strict mode
+    exempt_total = 0  # findings on plans with a declared exception
+    exceptions = []
     for f in files:
-        total += lint_file(f)
+        n, exception = lint_file(f)
+        if exception:
+            exempt_total += n
+            exceptions.append((f, exception))
+        else:
+            total += n
     print(f"\nplan-lint: {len(files)} plan file(s) checked, {total} finding(s).")
+    if exceptions:
+        print(f"\n{len(exceptions)} plan(s) carry a declared `{EXCEPTION_KEY}` "
+              f"({exempt_total} finding(s) exempted, reported as notices):")
+        for f, reason in exceptions:
+            print(f"  · {f} — {reason}")
+        print("  Exceptions are deliberate and reviewable, not silence. Re-read them "
+              "when the plan's phase ends.")
     if strict:
         print("mode: STRICT — findings fail the check.")
         return 1 if total else 0
