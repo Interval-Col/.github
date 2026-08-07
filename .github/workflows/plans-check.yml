@@ -93,13 +93,25 @@ jobs:
           echo "Scope: $scope"
           echo "Plan files:"; echo "$files"
 
+      # The file list crosses into the shell through the ENVIRONMENT, never through
+      # `${{ }}` interpolation. Interpolating it inline splices the value into the
+      # script as raw text: a multi-line list becomes multiple SHELL LINES, so the
+      # linter received only the first path and bash tried to EXECUTE the rest as
+      # commands (exit 126, "1 plan file(s) checked" on a 15-file PR — pharos-lis#242
+      # and public-web#141, 2026-08-07). It is also an injection hole: a crafted
+      # branch or file name would run arbitrary shell on the runner.
       - name: plan-lint
         if: steps.changed.outputs.files != ''
         env:
           ENFORCE: ${{ inputs.enforce }}
+          FILES: ${{ steps.changed.outputs.files }}
         run: |
           set -euo pipefail
           args=()
           if [ "$ENFORCE" = "true" ]; then args+=(--strict); fi
-          # shellcheck disable=SC2086
-          python3 .plans-org/scripts/plan_lint.py "${args[@]}" ${{ steps.changed.outputs.files }}
+          # `while read` rather than `mapfile`: same result, and it runs on any bash,
+          # so it can be exercised outside the runner before shipping.
+          paths=()
+          while IFS= read -r p; do [ -n "$p" ] && paths+=("$p"); done <<< "$FILES"
+          echo "Linting ${#paths[@]} plan file(s)."
+          python3 .plans-org/scripts/plan_lint.py "${args[@]}" "${paths[@]}"
