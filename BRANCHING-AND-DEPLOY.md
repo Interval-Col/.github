@@ -181,6 +181,39 @@ Repo setting: **Automatically delete head branches** = on. Merged
 feature branches are removed; they remain reachable via the closed PR
 if anyone needs to dig.
 
+### Merging several related PRs — `merge-path`
+
+When a piece of work leaves PRs open across repos, do **not** chain
+`gh pr merge … && gh pr merge …`. That works only when nothing goes
+wrong, and four things routinely do:
+
+- **The branch goes stale.** Merging one PR leaves the others in that
+  repo `BEHIND`, and with *require branches to be up to date* the next
+  merge is rejected outright.
+- **The state has not settled.** After a merge GitHub takes seconds to
+  recompute the other PRs in that repo; reading it immediately returns
+  the **stale** value, so the stale branch above goes unnoticed.
+- **The runner queue.** The self-hosted pool is **3 runners for the
+  whole estate**. Merging N PRs at once fires N post-merge pipelines
+  that starve each other.
+- **A failure mid-chain.** `&&` aborts everything after it, including
+  PRs that had no relationship to the one that failed.
+
+Use **`operations/scripts/merge-path.sh`** instead. It orders the merges
+by declared dependencies, updates stale branches and waits for the *new*
+CI, respects the runner queue, and on a failure skips only that PR's
+dependents. Parallelism is capped by the repo's real CI weight —
+FE + BE apps run 2 at a time, docs repos 4.
+
+```bash
+merge-path biuman-lis#134 finance-lch#232 finance-lch#233^#232 public-web#141
+```
+
+PRs in the same repo serialise automatically, in the order given; `^`
+declares a dependency **across** repos. Start with `--dry-run`: it
+prints the batches and the classification without touching anything.
+Install and full reference: `operations/scripts/README.md`.
+
 ---
 
 ## Branch protection
