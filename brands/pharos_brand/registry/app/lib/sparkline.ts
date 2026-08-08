@@ -24,11 +24,30 @@
 // the boundary is drawn before it: the app parses, in its own locale, against
 // its own wire contract, and hands over numbers.
 
-/** One measurement event. `at` orders the series; `value` is already numeric. */
+/** One point in the series. `at` orders it; `value` is already numeric. */
 export interface SparkPoint {
   /** Any Date-parseable stamp, or a raw epoch. Used ONLY for ordering. */
   at: string | number
-  value: number
+  /**
+   * The measured value — or `null` for a GAP: a period that was never read.
+   *
+   * `null` is not "zero" and not "missing from the array". It is a positive
+   * assertion that this position in the series exists and has no reading, and
+   * it BREAKS THE LINE: no mark is drawn, and the segments on either side are
+   * not joined.
+   *
+   * This exists because the alternative shipped to production. A positivity
+   * chart drew a flat line pinned to 0% across nine months that had never been
+   * read, while the table two centimetres below it printed "—" for those same
+   * periods. "Not read yet" rendered as "did not grow", on the screen that
+   * exists to catch exactly that. Dropping the point instead of representing it
+   * is the same lie by a different route: the line simply joins across the void.
+   *
+   * A non-finite NUMBER (`NaN`, `Infinity`) is a different thing — an
+   * unparseable or invalid reading, not a declared gap — and is dropped by
+   * `orderPoints`. Only an explicit `null` means "no reading here".
+   */
+  value: number | null
   /**
    * Set when the instrument reported a LIMIT rather than a measurement
    * (`<0.5`, `>100`). `value` is then the limit itself and the true value lies
@@ -37,13 +56,29 @@ export interface SparkPoint {
   censoring?: 'below' | 'above' | null
 }
 
+/** A point that carries a reading — the narrowed form the geometry works in. */
+type ValuedPoint = SparkPoint & { value: number }
+
+const hasValue = (p: SparkPoint): p is ValuedPoint =>
+  p.value !== null && Number.isFinite(p.value)
+
 /** The analyte's reference range. Drawn as a band; anchors or widens the scale. */
 export interface SparkBounds { low: number, high: number }
 
 export interface SparkGeometry {
   domain: [number, number]
+  /** Only the points that carry a reading. Gaps produce no mark. */
   points: Array<{ x: number, y: number, value: number, censoring: 'below' | 'above' | null, isLast: boolean }>
-  linePath: string
+  /**
+   * ONE PATH PER CONTIGUOUS RUN of value-bearing points — never one path for
+   * the whole series.
+   *
+   * The shape of the data is the guard, not a rendering flag. A gap simply ends
+   * a segment, so there is nothing to interpolate across and no library
+   * behaviour to argue with. A run of a single point yields no path at all: one
+   * reading has nothing to connect, and its mark alone is the honest render.
+   */
+  segments: string[]
   /** Band rect in chart space, or null when there is no drawable range. */
   band: { y: number, height: number } | null
 }
@@ -65,23 +100,52 @@ const ARROW_HEADROOM = 0.12
 export function orderPoints(points: readonly SparkPoint[]): SparkPoint[] {
   return points
     .map(p => ({ p, t: typeof p.at === 'number' ? p.at : Date.parse(String(p.at)) }))
-    .filter(({ p, t }) => Number.isFinite(t) && Number.isFinite(p.value))
+    // An unparseable stamp has no honest position, and a non-finite NUMBER is an
+    // invalid reading — both go. An explicit `null` STAYS: it is a declared gap
+    // and dropping it would let the line join across it.
+    .filter(({ p, t }) => Number.isFinite(t) && (p.value === null || Number.isFinite(p.value)))
     .sort((a, b) => a.t - b.t)
     .map(({ p }) => p)
 }
 
 /**
- * Evenly-spaced index downsample that ALWAYS keeps the first and last point.
- * A no-op below the cap. Never mutates the input.
+ * Evenly-spaced index downsample that always keeps the first and last
+ * value-bearing point. A no-op below the cap. Never mutates the input.
+ *
+ * ⚠️ GAPS ARE NEVER DROPPED, and the cap yields to that. Sampling that removed
+ * a gap would rejoin the line across it — reintroducing, at the last step of
+ * the pipeline, exactly the defect gap representation exists to prevent. So the
+ * sampling budget is spent on value-bearing points and every gap survives; a
+ * gap-heavy series can therefore come back slightly longer than `cap`.
+ *
+ * A caller that aggregates rather than samples (pooling buckets, recomputing a
+ * rate per group) must do that BEFORE calling in, and hand over an array
+ * already at or under `cap` so this is a guaranteed passthrough — index
+ * sampling would otherwise discard real observations and could erase a genuine
+ * spike.
  */
-export function downsample<T>(points: readonly T[], cap: number): T[] {
+export function downsample(points: readonly SparkPoint[], cap: number): SparkPoint[] {
   if (cap <= 0) return []
   if (points.length <= cap) return [...points]
-  if (cap === 1) return [points[points.length - 1]!]
-  const step = (points.length - 1) / (cap - 1)
-  const out: T[] = []
-  for (let i = 0; i < cap; i++) out.push(points[Math.round(i * step)]!)
-  return out
+
+  const valuedIdx: number[] = []
+  const gapIdx: number[] = []
+  points.forEach((p, i) => (hasValue(p) ? valuedIdx : gapIdx).push(i))
+
+  if (valuedIdx.length === 0) return [...points]
+
+  const budget = Math.max(1, cap - gapIdx.length)
+  const keep = new Set<number>(gapIdx)
+
+  if (budget === 1 || valuedIdx.length <= budget) {
+    if (valuedIdx.length <= budget) valuedIdx.forEach(i => keep.add(i))
+    else keep.add(valuedIdx[valuedIdx.length - 1]!)
+  } else {
+    const step = (valuedIdx.length - 1) / (budget - 1)
+    for (let k = 0; k < budget; k++) keep.add(valuedIdx[Math.round(k * step)]!)
+  }
+
+  return points.filter((_, i) => keep.has(i))
 }
 
 /**
@@ -115,7 +179,9 @@ export function computeDomain(
   points: readonly SparkPoint[],
   bounds: SparkBounds | null,
 ): [number, number] {
-  const values = points.map(p => p.value)
+  // Gaps carry no value and must not pull the domain — a `null` treated as 0
+  // would drag the floor down and flatten every real reading against it.
+  const values = points.filter(hasValue).map(p => p.value)
   let lo = values.length ? Math.min(...values) : 0
   let hi = values.length ? Math.max(...values) : 1
 
@@ -131,8 +197,8 @@ export function computeDomain(
 
   // Headroom only where a censored arrow actually needs to point.
   const span = hi - lo
-  const needsLow = points.some(p => p.censoring === 'below')
-  const needsHigh = points.some(p => p.censoring === 'above')
+  const needsLow = points.some(p => hasValue(p) && p.censoring === 'below')
+  const needsHigh = points.some(p => hasValue(p) && p.censoring === 'above')
   const pad = span * 0.1
   return [
     lo - pad - (needsLow ? span * ARROW_HEADROOM : 0),
@@ -172,17 +238,43 @@ export function computeGeometry(
   const x = (i: number) => (n <= 0 ? width / 2 : pad + (i / n) * (width - pad * 2))
   const y = (v: number) => pad + (1 - (v - lo) / span) * (height - pad * 2)
 
-  const marks = points.map((p, i) => ({
-    x: x(i),
-    y: y(p.value),
-    value: p.value,
-    censoring: p.censoring ?? null,
-    isLast: i === points.length - 1,
-  }))
+  // A gap OCCUPIES ITS SLOT on the x axis — it is skipped as a mark, never as a
+  // position. Compacting the array first would slide the later readings
+  // leftward and silently shorten the period the chart claims to cover.
+  //
+  // `isLast` is the last point WITH A VALUE, not the last array entry. With
+  // gaps representable, a series can end in one — and the emphasised mark is
+  // the "latest reading", so anchoring it to the array's end would put the
+  // large dot in the void.
+  const lastValuedIndex = (() => {
+    for (let i = points.length - 1; i >= 0; i--) if (hasValue(points[i]!)) return i
+    return -1
+  })()
 
-  const linePath = marks.length > 1
-    ? marks.map((m, i) => `${i === 0 ? 'M' : 'L'} ${m.x.toFixed(2)} ${m.y.toFixed(2)}`).join(' ')
-    : ''
+  const marks: SparkGeometry['points'] = []
+  const segments: string[] = []
+  let run: string[] = []
+
+  points.forEach((p, i) => {
+    if (!hasValue(p)) {
+      // The gap ends the current run. Two or more points make a drawable
+      // segment; a lone reading is carried by its mark alone.
+      if (run.length > 1) segments.push(run.join(' '))
+      run = []
+      return
+    }
+    const px = x(i)
+    const py = y(p.value)
+    marks.push({
+      x: px,
+      y: py,
+      value: p.value,
+      censoring: p.censoring ?? null,
+      isLast: i === lastValuedIndex,
+    })
+    run.push(`${run.length === 0 ? 'M' : 'L'} ${px.toFixed(2)} ${py.toFixed(2)}`)
+  })
+  if (run.length > 1) segments.push(run.join(' '))
 
   // `high > low` guard AND min/abs on the rect: an inverted or degenerate range
   // must produce no band, never a negative-height rect. One of the four
@@ -195,7 +287,7 @@ export function computeGeometry(
     band = { y: Math.min(top, bottom), height: Math.abs(bottom - top) }
   }
 
-  return { domain, points: marks, linePath, band }
+  return { domain, points: marks, segments, band }
 }
 
 /**
@@ -243,8 +335,15 @@ export function trendSummary(input: {
    */
   formatValue?: (value: number) => string
 }): string {
-  const { label, points, bounds, unit } = input
+  const { label, bounds, unit } = input
   const fmt = input.formatValue ?? String
+
+  // Counts and the "latest value" are over READINGS ONLY. A gap is a period
+  // with no reading; counting it would announce measurements that never
+  // happened, and reading "the last value" off it would announce nothing at
+  // all. The gaps are named separately, at the end, as their own fact.
+  const points = input.points.filter(hasValue)
+  const gaps = input.points.length - points.length
   if (!points.length) return `${label}: sin mediciones previas`
 
   const u = unit ? ` ${unit}` : ''
@@ -281,7 +380,14 @@ export function trendSummary(input: {
     ? `. ${censored === 1 ? '1 lectura está' : `${censored} lecturas están`} fuera del límite de medición`
     : ''
 
-  return `${label}: ${count}${spanText}, ${latest}${movement}${range}${censoredNote}`
+  // Said out loud, because it is the fact the broken line encodes visually — and
+  // a reader who cannot see the break would otherwise be told a continuous
+  // trend that does not exist.
+  const gapNote = gaps
+    ? `. ${gaps === 1 ? '1 periodo sin lectura' : `${gaps} periodos sin lectura`}, la línea se parte ahí`
+    : ''
+
+  return `${label}: ${count}${spanText}, ${latest}${movement}${range}${censoredNote}${gapNote}`
 }
 
 /**
