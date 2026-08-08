@@ -61,7 +61,22 @@ function ratio(h1, h2) {
 }
 
 // ── Parse `selector { --token: #hex; }` blocks (hex values only) ─────────────
-const css = readFileSync(tokensPath, 'utf8')
+// ⚠️ COMMENTS ARE STRIPPED FIRST, and this line is load-bearing.
+//
+// The block regex below matches a body as `[^}]*` — everything up to the first
+// closing brace. A `}` inside a CSS COMMENT therefore ends the block early, and
+// every token declared after it becomes invisible to this gate. That is not
+// hypothetical: `--radius`'s own comment reads
+// `rounded-{sm,md,lg,xl} derived in @theme inline`, and its `}` truncated
+// `:root` roughly a third of the way in. Everything below — the ENTIRE
+// `--status-*` palette, all five `--chart-*`, the sidebar surfaces — was
+// silently skipped in the light theme.
+//
+// And it failed OPEN. The checks below `continue` on a missing token, so the
+// gate printed "OK — all text pairs meet WCAG AA" while never having read the
+// pairs it exists to verify. A green gate that checked nothing is worse than no
+// gate: it is the reason nobody looked.
+const css = readFileSync(tokensPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
 const blocks = {} // selector -> { token: '#hex' }
 const blockRe = /([.:][a-zA-Z0-9_.\- ]+?)\s*\{([^}]*)\}/g
 const HEX = /(#[0-9a-fA-F]{3}\b|#[0-9a-fA-F]{6}\b)/
@@ -113,6 +128,29 @@ const TEXT_PAIRS = [
 const UI_PAIRS = [
   ['--ring', '--background'],
   ['--primary', '--background'],
+
+  // Trend tokens — a sparkline stroke IS a non-text graphical object, so 3:1 is
+  // the bar it has to clear in BOTH themes.
+  ['--trend-up', '--background'],
+  ['--trend-down', '--background'],
+  ['--trend-flat', '--background'],
+
+  // Chart tokens. Registered here deliberately, KNOWING several will warn: they
+  // are declared once and never redefined in .dark, so measured against each
+  // theme's own background only --chart-2 clears 3:1 in both (--chart-1 is
+  // 1.68:1 on dark, --chart-4 is 1.38:1 on light). That is why every chart in
+  // the estate hard-codes --chart-2 and never touches the other four — it reads
+  // as taste until something measures it, and until now nothing did: this file
+  // named no --chart-* pair at all.
+  //
+  // A warning, not a failure, on purpose. The fix is a palette decision (RFC
+  // 0008 Q4 says the chart ramp is brand-fixed), not something a component
+  // author can make. Surfacing it is the point.
+  ['--chart-1', '--background'],
+  ['--chart-2', '--background'],
+  ['--chart-3', '--background'],
+  ['--chart-4', '--background'],
+  ['--chart-5', '--background'],
 ]
 
 let failures = 0
