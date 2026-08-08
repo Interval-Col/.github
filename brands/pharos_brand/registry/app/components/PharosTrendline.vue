@@ -187,8 +187,8 @@ const spokenLabel = computed(() =>
 <template>
   <component
     :is="activatable ? 'button' : 'div'"
-    :type="activatable ? 'button' : undefined"
     ref="host"
+    :type="activatable ? 'button' : undefined"
     class="pharos-trendline"
     :class="[toneClass, activatable ? 'is-activatable' : undefined]"
     :style="{ height: `${height}px` }"
