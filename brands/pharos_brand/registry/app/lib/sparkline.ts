@@ -381,6 +381,10 @@ export function trendSummary(input: {
   label: string
   points: readonly SparkPoint[]
   bounds: SparkBounds | null
+  /** The declared scale, when there is one. Named in the sentence because it is
+   *  part of what the picture encodes: "flat at 20%" and "flat at 0%" look
+   *  identical without knowing the scale is pinned to 0–100. */
+  domain?: SparkDomain | null
   unit?: string | null
   /**
    * How a value becomes text IN THE SPOKEN SENTENCE. Defaults to `String`,
@@ -447,9 +451,18 @@ export function trendSummary(input: {
     else movement = ', sin cambio'
   }
 
+  // A reference RANGE and a declared SCALE are different facts, and the sentence
+  // says whichever it actually has. A fixed scale is not a range to be judged
+  // against — but staying silent about it loses what a sighted reader gets for
+  // free from the box: "plana en 20%" and "plana en 0%" are the same picture
+  // until you know the scale is pinned.
+  const d = input.domain
+  const scaleFixed = d && d[0] != null && d[1] != null && d[1] > d[0]
   const range = bounds && bounds.high > bounds.low
     ? `, rango de referencia ${fmt(bounds.low)}–${fmt(bounds.high)}${u}`
-    : ', sin rango de referencia'
+    : scaleFixed
+      ? `, escala fija ${fmt(d![0]!)} a ${fmt(d![1]!)}${u}`
+      : ', sin rango de referencia'
 
   const censored = points.filter(p => p.censoring).length
   const censoredNote = censored
