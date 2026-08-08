@@ -70,11 +70,16 @@ This document defines the official engineering standards for all primary project
 > That doc is the source of truth for the per-setting choices; this
 > table is the elevator pitch.
 
-> **Solo-maintainer note.** While `@gczuluaga` is the sole Code Owner, GitHub
-> won't let an author approve their own PR, so the "1 reviewer" gate is satisfied
-> via **admin override** (`gh pr merge <n> --admin`) for the gatekeeper's *own*
-> PRs; it still binds a PR authored by a future second contributor. Detail:
+> **Solo-maintainer note.** The org standard for a single Code Owner is: required
+> approvals **0** — green CI, not a human approval, is what gates a merge — with
+> `enforce_admins` **on** so the rules bind admins too. Approvals go to 1 when a
+> second reviewer joins. Detail:
 > [`BRANCHING-AND-DEPLOY.md`](BRANCHING-AND-DEPLOY.md) → `main` branch protection.
+>
+> ⚠️ **That is the standard, not a guarantee about a given repo.** Settings drift,
+> and several repos do not match it today. Before assuming how a merge is gated,
+> read the repo:
+> `gh api repos/Interval-Col/<repo>/branches/<branch>/protection`.
 
 ---
 

@@ -12,10 +12,9 @@ PostgreSQL cluster `nucleus_db` and owning (or writing into) one or more of its
 schemas. It is unrelated to *brand tenancy* (LCH/Biuman as Pháros brand tenants —
 `brands/pharos_brand/BRAND.md`); the two vocabularies must not be mixed.
 
-Current tenants: finance-lch · pharos-lis (lab-qc) · commercial-lch ·
-admission-patient · cobol-migration (ETL). biuman-lis joins when `sports_lab`
-onboards (RFC 0015 Phase 2). Out of scope: telemetry (MySQL), frozen pathology
-(own Postgres).
+Current tenants: finance-lch · pharos-lis (lab-qc) · admission-patient ·
+cobol-migration (ETL). biuman-lis joins when `sports_lab` onboards (RFC 0015
+Phase 2). Out of scope: telemetry (MySQL), frozen pathology (own Postgres).
 
 ---
 
@@ -34,8 +33,9 @@ onboards (RFC 0015 Phase 2). Out of scope: telemetry (MySQL), frozen pathology
 **Schema shells:** today apps' `env.py` still runs `CREATE SCHEMA IF NOT EXISTS`
 (reported informationally by the gate). Under **C-lite** (RFC 0015 Phase 2) the
 nucleus-db steward pre-creates each shell + database-level grants and apps drop
-that statement. New onboardings (commercial `crm`, biuman `sports_lab`) start
-steward-owned; landed schemas retrofit later.
+that statement. New onboardings (biuman `sports_lab`) start steward-owned;
+landed schemas retrofit later. `crm` is no longer a new onboarding — it landed
+with the Comercial fold and is owned by `admission_user`.
 
 ---
 
