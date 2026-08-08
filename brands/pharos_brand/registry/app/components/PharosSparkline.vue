@@ -63,14 +63,21 @@
 // fixed in `tokens.css`, a second series colour has nowhere honest to come
 // from, so this component draws one series and says so.
 import { computed } from 'vue'
-import type { SparkBounds, SparkPoint } from '~/lib/sparkline'
+import type { SparkBounds, SparkDomain, SparkPoint } from '~/lib/sparkline'
 import { arrowPath, computeGeometry, downsample, orderPoints, trendSummary } from '~/lib/sparkline'
 
 const props = withDefaults(defineProps<{
   /** Measurement events. Order does not matter — sorted by `at`. */
   points?: SparkPoint[]
-  /** Reference range. Drawn as a band and anchors the scale. Omit when the analyte has none. */
+  /** Reference range. Drawn as a BAND and anchors the scale. Omit when there is none. */
   bounds?: SparkBounds | null
+  /** Explicit vertical scale, `null` per slot for automatic. Draws nothing —
+   *  see `SparkDomain` for why the scale and the reference range are separate
+   *  facts, and what conflating them rendered. */
+  domain?: SparkDomain | null
+  /** A single value to compare against — a target, a goal, the series' own
+   *  long-run rate — drawn as a recessive hairline. A LINE, not a band. */
+  referenceLine?: number | null
   /** Names what is plotted, for the accessible summary. Required — a sparkline
    *  with no text alternative is decoration. */
   label: string
@@ -97,9 +104,14 @@ const props = withDefaults(defineProps<{
    *  "13.9". The component never formats on its own; this only routes the app's
    *  own formatter into the one place prose is unavoidable. */
   formatValue?: (value: number) => string
+  /** App-owned facts appended to the spoken label — what the standard cannot
+   *  know it drew. See `trendSummary`. */
+  labelSuffix?: string
 }>(), {
   points: () => [],
   bounds: null,
+  domain: null,
+  referenceLine: null,
   unit: null,
   width: 96,
   height: 28,
@@ -108,6 +120,7 @@ const props = withDefaults(defineProps<{
   singlePoint: 'show',
   interactive: false,
   formatValue: undefined,
+  labelSuffix: '',
 })
 
 const emit = defineEmits<{ select: [] }>()
@@ -125,7 +138,10 @@ const hasData = computed(() =>
 )
 
 const geo = computed(() =>
-  computeGeometry(ordered.value, props.bounds, props.width, props.height, PAD),
+  computeGeometry(ordered.value, props.bounds, props.width, props.height, PAD, {
+    domain: props.domain,
+    referenceLine: props.referenceLine,
+  }),
 )
 
 const summary = computed(() =>
@@ -135,6 +151,7 @@ const summary = computed(() =>
     bounds: props.bounds,
     unit: props.unit,
     formatValue: props.formatValue,
+    labelSuffix: props.labelSuffix,
   }),
 )
 
@@ -199,6 +216,18 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
            ends a segment, so nothing is drawn across it: the break IS the
            statement. A single continuous path here is how a positivity chart
            once drew a flat line pinned to 0% across nine unread months. -->
+      <!-- The single-value reference. Recessive, and a HAIRLINE rather than a
+           band: it marks one value to compare against, not a region that is
+           expected. Behind the data, and it never enters the plotted set. -->
+      <line
+        v-if="geo.referenceLineY != null"
+        x1="0"
+        :x2="width"
+        :y1="geo.referenceLineY"
+        :y2="geo.referenceLineY"
+        class="reference-line"
+      />
+
       <path
         v-for="(d, i) in geo.segments"
         :key="i"
@@ -284,6 +313,12 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
 
 .line {
   stroke: var(--chart-2);
+}
+
+.reference-line {
+  stroke: var(--muted-foreground);
+  stroke-width: 1;
+  opacity: 0.4;
 }
 
 /* Drawn beneath each mark in the surface colour, so a mark stays legible where
