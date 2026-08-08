@@ -40,12 +40,6 @@ export interface SparkPoint {
 /** The analyte's reference range. Drawn as a band; anchors or widens the scale. */
 export interface SparkBounds { low: number, high: number }
 
-export type SparkScale
-  /** Domain anchored to `bounds`, widened only to contain excursions. */
-  = 'bounds'
-  /** Domain spans the data, widened to keep `bounds` on canvas. */
-  | 'data'
-
 export interface SparkGeometry {
   domain: [number, number]
   points: Array<{ x: number, y: number, value: number, censoring: 'below' | 'above' | null, isLast: boolean }>
@@ -91,23 +85,27 @@ export function downsample<T>(points: readonly T[], cap: number): T[] {
 }
 
 /**
- * The vertical domain — the one clinically load-bearing choice in a sparkline.
+ * The vertical domain — the one clinically load-bearing choice in a sparkline,
+ * and DELIBERATELY NOT CONFIGURABLE.
  *
- * `'bounds'` anchors the scale to the reference range and widens it only for
- * real excursions. Autoscaling to the series' own spread makes any wobble fill
- * the box: VCM 88→91→90, entirely inside an 80–100 range, renders as a dramatic
- * climb. On a screen where someone decides whether a result is safe to
- * authorise, that chart lies. Anchored, the same drift is a flat line inside the
- * band and a genuine excursion visibly breaks out of it — the eye reads
- * inside/outside first and trend second.
+ * The rule: a valid reference range ANCHORS the scale, widened only to contain
+ * real excursions. With no range, the domain falls back to the data's own
+ * spread, because relative shape is then all the data can honestly support.
  *
- * `'data'` spans the readings and widens to keep the band on canvas. Correct
- * when the shape itself is the message and every reading may sit far outside the
- * range — scaling to the data alone would push the band off-canvas exactly when
- * it matters most.
+ * There is no autoscale knob, and its absence is the point. Autoscaling to the
+ * series' own spread makes any wobble fill the box: VCM 88→91→90, entirely
+ * inside an 80–100 range, renders as a dramatic climb. On a screen where
+ * someone decides whether a result is safe to authorise, that chart lies.
+ * Anchored, the same drift is a flat line inside the band and a genuine
+ * excursion visibly breaks out of it — the eye reads inside/outside first and
+ * trend second.
  *
- * With no bounds, both degrade to the data's own range: relative shape is all
- * the data can honestly support.
+ * Both consuming apps independently arrived at anchoring and each wrote down
+ * the same reasoning (`AnalyteSparkline.vue`, `microPositividad.ts` — the
+ * latter for positivity, where "20→23→21% autoescalada se lee como un
+ * acantilado epidemiológico"). No real surface wants "I have a range and I
+ * choose to ignore it", so offering that as a prop only left the misleading
+ * chart one keystroke away.
  *
  * A FLAT series is a real and common result. It gets a symmetric window rather
  * than a zero-height domain, so it renders as the flat line it is instead of
@@ -116,21 +114,14 @@ export function downsample<T>(points: readonly T[], cap: number): T[] {
 export function computeDomain(
   points: readonly SparkPoint[],
   bounds: SparkBounds | null,
-  scale: SparkScale,
 ): [number, number] {
   const values = points.map(p => p.value)
   let lo = values.length ? Math.min(...values) : 0
   let hi = values.length ? Math.max(...values) : 1
 
   if (bounds && bounds.high > bounds.low) {
-    if (scale === 'bounds') {
-      lo = Math.min(lo, bounds.low)
-      hi = Math.max(hi, bounds.high)
-    }
-    else {
-      lo = Math.min(lo, bounds.low)
-      hi = Math.max(hi, bounds.high)
-    }
+    lo = Math.min(lo, bounds.low)
+    hi = Math.max(hi, bounds.high)
   }
 
   if (hi === lo) {
@@ -156,15 +147,27 @@ export function computeDomain(
 export function computeGeometry(
   points: readonly SparkPoint[],
   bounds: SparkBounds | null,
-  scale: SparkScale,
   width: number,
   height: number,
   pad: number,
 ): SparkGeometry {
-  const domain = computeDomain(points, bounds, scale)
+  const domain = computeDomain(points, bounds)
   const [lo, hi] = domain
   const span = hi - lo
 
+  // ORDINAL x spacing — every reading gets equal width, regardless of the gap
+  // between draws. A deliberate limit, not an oversight.
+  //
+  // Time-proportional spacing would make the slope encode rate of change, which
+  // is more information — but in a 96px inline mark it degenerates: three
+  // readings from this week plus one from five years ago collapse the recent
+  // three into two pixels, and the mark stops answering anything at all.
+  //
+  // So the division of labour is: THIS answers "is it moving, and where does it
+  // sit against the range" — sequence and level. The drill-down chart, which has
+  // room for a real time axis, answers "how fast". The elapsed span is stated in
+  // `trendSummary()` so the time context is said out loud rather than implied by
+  // a slope that does not carry it.
   const n = points.length - 1
   const x = (i: number) => (n <= 0 ? width / 2 : pad + (i / n) * (width - pad * 2))
   const y = (v: number) => pad + (1 - (v - lo) / span) * (height - pad * 2)
@@ -246,9 +249,17 @@ export function trendSummary(input: {
 
   const u = unit ? ` ${unit}` : ''
   const n = points.length
-  const count = n === 1 ? '1 medición' : `${n} mediciones`
   const last = points[n - 1]!
   const first = points[0]!
+
+  // The elapsed span, said out loud. The mark itself spaces readings ORDINALLY
+  // (see computeGeometry), so its slope carries direction but not rate — and a
+  // reader who cannot see the mark at all would otherwise get even less. Six
+  // readings over six months and six over six years are different clinical
+  // pictures; naming the span is what keeps the sentence from implying the
+  // wrong one.
+  const count = n === 1 ? '1 medición' : `${n} mediciones`
+  const spanText = n > 1 ? ` a lo largo de ${elapsedText(first.at, last.at)}` : ''
 
   const latest = last.censoring
     ? `último valor ${last.censoring === 'below' ? 'menor que' : 'mayor que'} ${fmt(last.value)}${u}`
@@ -270,5 +281,27 @@ export function trendSummary(input: {
     ? `. ${censored === 1 ? '1 lectura está' : `${censored} lecturas están`} fuera del límite de medición`
     : ''
 
-  return `${label}: ${count}, ${latest}${movement}${range}${censoredNote}`
+  return `${label}: ${count}${spanText}, ${latest}${movement}${range}${censoredNote}`
+}
+
+/**
+ * Elapsed time between two stamps, in the coarsest unit that still says
+ * something useful. Prose, not a date — no locale, no separator, nothing that
+ * can drift from what the screen shows.
+ */
+function elapsedText(from: string | number, to: string | number): string {
+  const a = typeof from === 'number' ? from : Date.parse(String(from))
+  const b = typeof to === 'number' ? to : Date.parse(String(to))
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 'un periodo desconocido'
+
+  const days = Math.round(Math.abs(b - a) / 86_400_000)
+  if (days < 1) return 'el mismo día'
+  if (days === 1) return '1 día'
+  if (days < 45) return `${days} días`
+
+  const months = Math.round(days / 30.44)
+  if (months < 24) return months === 1 ? '1 mes' : `${months} meses`
+
+  const years = Math.round(days / 365.25)
+  return years === 1 ? '1 año' : `${years} años`
 }

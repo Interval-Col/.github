@@ -1,22 +1,35 @@
 <script setup lang="ts">
-// The Pháros sparkline — one inline trend mark, used identically on every
-// surface that shows a measured series over time: analyte history on the
-// release screen, the same analyte on the patient's results portal, positivity
-// on an epidemiology report, a KPI on a finance card.
+// The Pháros sparkline — one inline trend mark for the INTERNAL Pháros apps:
+// analyte history on the release screen, positivity on an epidemiology report,
+// a KPI on a finance card, the staff historical-consult view.
+//
+// ── Scope: internal only (German, 2026-08-07) ───────────────────────────────
+// External, patient-facing surfaces — the results portal in `public-web`, the
+// legacy `web-results` — are OUT, and keep their own trend components.
+//
+// This is a safety boundary, not a packaging convenience. Today a staff view and
+// a patient view are visually unmistakable from each other, and that difference
+// is the only human tripwire left if a staff surface is ever served on the
+// patient host — a routing shape that already exists in this estate. Sharing one
+// mark across both would quietly remove the tripwire. So the divergence is kept
+// on purpose, and it is structural rather than accidental.
 //
 // It is CONTEXT for a value, never the value itself. The datum is the number
 // beside it; this answers "is it moving, and against what?".
 //
 // ── Hand-drawn SVG, deliberately, and it is not a style preference ──────────
-// The two implementations this replaces used @unovis. It is a good library and
-// it stays the standard for real charts (RFC 0008 Q11) — but for a sparkline it
-// buys nothing and costs two things. It cannot ship to `public-web` without
-// putting a charting bundle on a patient-facing page whose entire design goal
-// is calm and fast. And its geometry is UNASSERTABLE in this estate's tests:
-// happy-dom has no layout engine, so the scales resolve to 0/NaN and every
-// geometric assertion passes vacuously. A shared component whose drawing no
-// consumer can verify is worse than four unshared ones. Here the drawing is
-// `~/lib/sparkline.ts` — plain functions, pinned by real tests.
+// The implementations this replaces used @unovis. It stays the estate standard
+// for REAL charts (RFC 0008 Q11) — including this mark's own drill-down dialog,
+// which has axes, a time scale and a tooltip and should keep them.
+//
+// But a sparkline is defined by what it OMITS. The @unovis sparklines here
+// import VisXYContainer/VisLine/VisScatter and never VisAxis, VisCrosshair or
+// VisTooltip — precisely the parts that are the library's value. And its
+// geometry is UNASSERTABLE in this estate's tests: happy-dom has no layout
+// engine, so the scales resolve to 0/NaN and every geometric assertion passes
+// vacuously. A shared component whose drawing no consumer can verify is worse
+// than several unshared ones. Here the drawing is `~/lib/sparkline.ts` — plain
+// functions, pinned by real tests.
 //
 // ── What this component does NOT own, on purpose ────────────────────────────
 // • Parsing. `points[].value` is a `number`. See the module header: owning the
@@ -33,11 +46,10 @@
 //   numbers before they reach this boundary.
 //
 // ── Colour is never the only channel ────────────────────────────────────────
-// `status` is OPT-IN and defaults OFF, because the two audiences disagree and
-// both are right: the release screen tints the current mark to reinforce a
-// judgement the technologist is making, and the patient portal refuses to,
-// because a coloured mark on a patient's own result reads as a verdict the
-// chart has no standing to deliver. When it IS on, it tints the LAST mark only
+// `status` is OPT-IN and defaults OFF. The release screen tints the current mark
+// to reinforce a judgement the technologist is already making; an epidemiology
+// or finance trend has no such judgement to reinforce, and colouring it would
+// assert one. When it IS on, it tints the LAST mark only
 // — never the line, never the band — and size + surface ring carry the same
 // distinction so it survives without colour. Measured 2026-07-18:
 // `--status-warning` and `--status-success` sit ΔE 12.8 apart for normal
@@ -51,7 +63,7 @@
 // fixed in `tokens.css`, a second series colour has nowhere honest to come
 // from, so this component draws one series and says so.
 import { computed } from 'vue'
-import type { SparkBounds, SparkPoint, SparkScale } from '~/lib/sparkline'
+import type { SparkBounds, SparkPoint } from '~/lib/sparkline'
 import { arrowPath, computeGeometry, downsample, orderPoints, trendSummary } from '~/lib/sparkline'
 
 const props = withDefaults(defineProps<{
@@ -59,9 +71,6 @@ const props = withDefaults(defineProps<{
   points?: SparkPoint[]
   /** Reference range. Drawn as a band and anchors the scale. Omit when the analyte has none. */
   bounds?: SparkBounds | null
-  /** `'bounds'` anchors the domain to the range (default, and the safer read on
-   *  a clinical screen); `'data'` spans the readings. See `computeDomain`. */
-  scale?: SparkScale
   /** Names what is plotted, for the accessible summary. Required — a sparkline
    *  with no text alternative is decoration. */
   label: string
@@ -71,7 +80,8 @@ const props = withDefaults(defineProps<{
   /** Rendered-mark cap; a longer series is downsampled keeping first and last. */
   maxMarks?: number
   /** Opt-in status tint on the LAST mark only. `null` (default) draws it in the
-   *  series colour — the correct choice on any patient-facing surface. */
+   *  series colour — correct wherever the chart has no clinical judgement to
+   *  reinforce, which is every surface except result release. */
   status?: 'critical' | 'abnormal' | 'normal' | null
   /** A lone measurement: `'show'` draws the single dot ("measured once" and
    *  "never measured" are different facts and the row should say which);
@@ -90,7 +100,6 @@ const props = withDefaults(defineProps<{
 }>(), {
   points: () => [],
   bounds: null,
-  scale: 'bounds',
   unit: null,
   width: 96,
   height: 28,
@@ -112,7 +121,7 @@ const hasData = computed(() =>
 )
 
 const geo = computed(() =>
-  computeGeometry(ordered.value, props.bounds, props.scale, props.width, props.height, PAD),
+  computeGeometry(ordered.value, props.bounds, props.width, props.height, PAD),
 )
 
 const summary = computed(() =>
