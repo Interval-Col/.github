@@ -226,8 +226,22 @@ export function trendSummary(input: {
   points: readonly SparkPoint[]
   bounds: SparkBounds | null
   unit?: string | null
+  /**
+   * How a value becomes text IN THE SPOKEN SENTENCE. Defaults to `String`,
+   * which prints a POINT decimal separator.
+   *
+   * That default is wrong for every Colombian clinical surface in this estate
+   * and the prop exists because the demo caught it: the screen showed
+   * "13,9 g/dL" while the screen reader announced "13.9 g/dL" — the same
+   * mismatched separator that already corrupted a reported result here once.
+   * The component refuses to own formatting (see the module header), so the
+   * app passes the SAME formatter it uses for the value printed beside the
+   * chart, and the two can never drift apart.
+   */
+  formatValue?: (value: number) => string
 }): string {
   const { label, points, bounds, unit } = input
+  const fmt = input.formatValue ?? String
   if (!points.length) return `${label}: sin mediciones previas`
 
   const u = unit ? ` ${unit}` : ''
@@ -237,8 +251,8 @@ export function trendSummary(input: {
   const first = points[0]!
 
   const latest = last.censoring
-    ? `último valor ${last.censoring === 'below' ? 'menor que' : 'mayor que'} ${last.value}${u}`
-    : `último valor ${last.value}${u}`
+    ? `último valor ${last.censoring === 'below' ? 'menor que' : 'mayor que'} ${fmt(last.value)}${u}`
+    : `último valor ${fmt(last.value)}${u}`
 
   let movement = ''
   if (n > 1 && !last.censoring && !first.censoring) {
@@ -248,7 +262,7 @@ export function trendSummary(input: {
   }
 
   const range = bounds && bounds.high > bounds.low
-    ? `, rango de referencia ${bounds.low}–${bounds.high}${u}`
+    ? `, rango de referencia ${fmt(bounds.low)}–${fmt(bounds.high)}${u}`
     : ', sin rango de referencia'
 
   const censored = points.filter(p => p.censoring).length
