@@ -32,10 +32,24 @@ This document defines the official engineering standards for all primary project
 - Apps with a self-serve roles/capabilities module follow the **[auth contract](auth-contract.md)** (RFC 0016): local authz (IAM = identity only), the `require_capability` gate, the seven `/auth/admin/*` endpoints, deploy-step seeding (never on startup), a runtime role registry, and FE↔BE capability sync — machine-checked by the reusable `auth-contract-check` workflow.
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
-- Nuxt 4 as framework — **SSR by default**; opt individual pages out
-  with `definePageMeta({ ssr: false })` only when they are auth-gated
-  and load all data client-side (SSR would render an empty skeleton).
-  Never set a global `ssr: false`.
+- Nuxt 4 as framework — **SSR by default**. Opt a route out with
+  **`routeRules`**, not `definePageMeta`:
+
+  ```ts
+  routeRules: { '/etiquetas': { ssr: false } }
+  ```
+
+  ⚠️ **`definePageMeta({ ssr: false })` does nothing in Nuxt 4** — `ssr` is not
+  a `definePageMeta` key. A page "opted out" that way still renders on the
+  server. `routeRules` is the Nuxt-native per-route mechanism and the one both
+  live apps use.
+
+  Opt out when the route is auth-gated **and** loads its data client-side, so
+  SSR would only render an empty skeleton and add hydration risk. A whole app
+  may render client-side when it is internal-only with no SEO surface —
+  finance-lch does exactly that (`'/**': { ssr: false }`), deliberately.
+  Reference implementations: `finance-lch/frontend/nuxt.config.ts` (whole app)
+  and `pharos-lis/lab-qc/frontend/nuxt.config.ts` (single route).
 - Vue 3, Vite, Pinia, Tailwind v4, TypeScript
 - Pin Node version in `package.json` and/or `.nvmrc`
 - `.env.example` in `frontend/`
