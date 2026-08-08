@@ -131,25 +131,16 @@ admission-patient's `docs/decisions/`; guides follow
 
 ### RFCs (org-wide)
 
-The authoritative index is [`rfcs/README.md`](https://github.com/Interval-Col/rfcs/blob/main/README.md);
-this mirror is for quick orientation from the hub.
+The index lives in
+[`rfcs/README.md`](https://github.com/Interval-Col/rfcs/blob/main/README.md),
+with the number, title, status and target repos of every RFC. Some numbers also
+carry companion working files — trackers and surveys, not separate RFCs; the
+index marks them.
 
-| # | Title | Status |
-|---|---|---|
-| [0001](https://github.com/Interval-Col/rfcs/blob/main/0001-org-wide-harmonization.md) | Org-wide engineering standards harmonization | `proposed` |
-| [0002](https://github.com/Interval-Col/rfcs/blob/main/0002-browser-auth-httponly-cookie-csrf.md) | Move browser auth to httponly cookie + CSRF token | `draft` |
-| [0003](https://github.com/Interval-Col/rfcs/blob/main/0003-object-storage-strategy.md) | Object storage strategy — harden MinIO, replicate off-site, plan for AI workloads | `draft` |
-| [0004](https://github.com/Interval-Col/rfcs/blob/main/0004-pharos-product-portfolio.md) | Pháros product portfolio — umbrella brand, persona-scoped apps, holding multi-tenancy | `draft` |
-| [0005](https://github.com/Interval-Col/rfcs/blob/main/0005-nucleus-data-platform.md) | nucleus-db — shared database platform, schema stewardship, historical archive | `active` |
-| [0006](https://github.com/Interval-Col/rfcs/blob/main/0006-cobol-decommissioning.md) | COBOL decommissioning — strangler-fig migration to the Pháros stack | `draft` |
-| [0007](https://github.com/Interval-Col/rfcs/blob/main/0007-onprem-ha-dr-topology.md) | On-prem production infrastructure — virtualization platform, HA, and DR | `draft` |
-| [0008](https://github.com/Interval-Col/rfcs/blob/main/0008-pharos-design-system.md) | Pháros design system — shared FE foundation + endorsed sub-brands | `accepted` |
-| [0009](https://github.com/Interval-Col/rfcs/blob/main/0009-bitbucket-to-github-forge-migration.md) | Bitbucket → GitHub forge migration (decommission the intervalica workspace) | `draft` |
-| [0010](https://github.com/Interval-Col/rfcs/blob/main/0010-planning-as-code-and-self-hosted-reporting.md) | Planning-as-code and self-hosted team-sync reporting | `draft` |
-
-> RFC 0009 and 0010 each carry companion working files in the rfcs repo
-> (`0009-disposition-tracker.md`, `0009-docker-images-note.md`,
-> `0010-grounding-survey.md`) — trackers/surveys, not separate RFCs.
+This page carried a hand-copied mirror of that table until 2026-08-07. By then it
+was wrong about three RFCs' status and missing sixteen of the twenty-six, while
+sitting one line below the pointer above. A mirror of an index has no way to stay
+true, and a reader cannot tell a stale mirror from a current one.
 
 ### Notable ADRs (per repo)
 
