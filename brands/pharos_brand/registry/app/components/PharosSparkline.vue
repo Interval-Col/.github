@@ -116,8 +116,12 @@ const PAD = 5 // room for the surface ring on the end marker and the arrowhead
 
 const ordered = computed(() => downsample(orderPoints(props.points), props.maxMarks))
 
+// Counted over READINGS, not array entries: a series that is all gaps has
+// nothing to show, however many positions it carries.
+const valued = computed(() => ordered.value.filter(p => p.value !== null).length)
+
 const hasData = computed(() =>
-  props.singlePoint === 'hide' ? ordered.value.length >= 2 : ordered.value.length >= 1,
+  props.singlePoint === 'hide' ? valued.value >= 2 : valued.value >= 1,
 )
 
 const geo = computed(() =>
@@ -132,6 +136,14 @@ const summary = computed(() =>
     unit: props.unit,
     formatValue: props.formatValue,
   }),
+)
+
+/** The affordance belongs in the spoken label too — a screen-reader user has no
+ *  other way to learn the mark opens anything. Appended here rather than left to
+ *  the caller, because the label is generated internally and an `aria-label`
+ *  passed from outside would not reliably win over that binding. */
+const spokenLabel = computed(() =>
+  activatable.value ? `${summary.value}. Abrir gráfico detallado.` : summary.value,
 )
 
 const lastMarkClass = computed(() => {
@@ -158,7 +170,7 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
     :class="activatable ? 'is-activatable' : undefined"
     :style="{ width: `${width}px`, height: `${height}px` }"
     :role="activatable ? undefined : 'img'"
-    :aria-label="activatable ? undefined : summary"
+    :aria-label="activatable ? undefined : spokenLabel"
     @click="activatable && emit('select')"
   >
     <svg
@@ -167,7 +179,7 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
       :height="height"
       :viewBox="`0 0 ${width} ${height}`"
       :role="activatable ? 'img' : undefined"
-      :aria-label="activatable ? summary : undefined"
+      :aria-label="activatable ? spokenLabel : undefined"
       focusable="false"
     >
       <!-- The reference band. Recessive and NEUTRAL on purpose: it is context,
@@ -183,9 +195,14 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
         class="band"
       />
 
+      <!-- ONE PATH PER CONTIGUOUS RUN of readings. A period with no reading
+           ends a segment, so nothing is drawn across it: the break IS the
+           statement. A single continuous path here is how a positivity chart
+           once drew a flat line pinned to 0% across nine unread months. -->
       <path
-        v-if="geo.linePath"
-        :d="geo.linePath"
+        v-for="(d, i) in geo.segments"
+        :key="i"
+        :d="d"
         class="line"
         fill="none"
         stroke-width="1.75"
