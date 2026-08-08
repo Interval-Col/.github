@@ -65,6 +65,28 @@ const hasValue = (p: SparkPoint): p is ValuedPoint =>
 /** The analyte's reference range. Drawn as a band; anchors or widens the scale. */
 export interface SparkBounds { low: number, high: number }
 
+/**
+ * An EXPLICIT vertical scale, overriding the computed one. `null` in a slot
+ * leaves that end automatic.
+ *
+ * This exists because "the scale" and "the reference range" are two different
+ * facts, and `bounds` conflates them. A positivity series is a percentage: 0 and
+ * 100 are the natural limits of the quantity, not a range against which a
+ * reading is judged. Passing them as `bounds` produced three wrong things at
+ * once — the domain came back padded to −10…110 (meaningless for a percentage),
+ * a `--muted` band covered 54% of the box, and the spoken sentence announced a
+ * "rango de referencia 0–100 %" that nobody would ever be measured against.
+ *
+ * So: `domain` sets the scale and draws nothing; `bounds` draws a band and
+ * anchors the scale. A surface can use either, both, or neither.
+ *
+ * An explicit end is used VERBATIM — never padded. A declared scale is a
+ * statement about the quantity, and widening it would silently contradict that.
+ * `[0, null]` is the common half-open case: floor at zero, let the top follow
+ * the data.
+ */
+export type SparkDomain = [number | null, number | null]
+
 export interface SparkGeometry {
   domain: [number, number]
   /** Only the points that carry a reading. Gaps produce no mark. */
@@ -81,6 +103,16 @@ export interface SparkGeometry {
   segments: string[]
   /** Band rect in chart space, or null when there is no drawable range. */
   band: { y: number, height: number } | null
+  /**
+   * y of the single-value reference line, or null when none was asked for or it
+   * falls outside the scale.
+   *
+   * A LINE, not a band, and the distinction is the point: a band says "anywhere
+   * in here is the expected region", a line says "this one value is the thing to
+   * compare against" — a target, a goal, the series' own long-run rate. Drawing
+   * one as the other asserts something the data does not support.
+   */
+  referenceLineY: number | null
 }
 
 /** Fraction of the domain reserved so a censored arrowhead is never clipped. */
@@ -178,6 +210,7 @@ export function downsample(points: readonly SparkPoint[], cap: number): SparkPoi
 export function computeDomain(
   points: readonly SparkPoint[],
   bounds: SparkBounds | null,
+  domain?: SparkDomain | null,
 ): [number, number] {
   // Gaps carry no value and must not pull the domain — a `null` treated as 0
   // would drag the floor down and flatten every real reading against it.
@@ -200,10 +233,29 @@ export function computeDomain(
   const needsLow = points.some(p => hasValue(p) && p.censoring === 'below')
   const needsHigh = points.some(p => hasValue(p) && p.censoring === 'above')
   const pad = span * 0.1
-  return [
-    lo - pad - (needsLow ? span * ARROW_HEADROOM : 0),
-    hi + pad + (needsHigh ? span * ARROW_HEADROOM : 0),
-  ]
+  return applyExplicitDomain(
+    [
+      lo - pad - (needsLow ? span * ARROW_HEADROOM : 0),
+      hi + pad + (needsHigh ? span * ARROW_HEADROOM : 0),
+    ],
+    domain,
+  )
+}
+
+/**
+ * An explicitly declared end replaces the computed one, VERBATIM — no padding,
+ * no headroom. Declaring a scale is a statement about the quantity; widening it
+ * would silently contradict the statement.
+ *
+ * A declaration that inverts or flattens the scale is ignored rather than
+ * obeyed: a zero-or-negative span divides by zero downstream and would erase the
+ * series, which is worse than quietly falling back to the computed scale.
+ */
+function applyExplicitDomain(auto: [number, number], domain?: SparkDomain | null): [number, number] {
+  if (!domain) return auto
+  const lo = domain[0] != null && Number.isFinite(domain[0]) ? domain[0] : auto[0]
+  const hi = domain[1] != null && Number.isFinite(domain[1]) ? domain[1] : auto[1]
+  return hi > lo ? [lo, hi] : auto
 }
 
 /**
@@ -216,8 +268,9 @@ export function computeGeometry(
   width: number,
   height: number,
   pad: number,
+  opts?: { domain?: SparkDomain | null, referenceLine?: number | null },
 ): SparkGeometry {
-  const domain = computeDomain(points, bounds)
+  const domain = computeDomain(points, bounds, opts?.domain)
   const [lo, hi] = domain
   const span = hi - lo
 
@@ -287,7 +340,15 @@ export function computeGeometry(
     band = { y: Math.min(top, bottom), height: Math.abs(bottom - top) }
   }
 
-  return { domain, points: marks, segments, band }
+  // Clamped OUT rather than clamped IN: a reference that falls off the declared
+  // scale is not drawn at all. Pinning it to the edge would put a line where no
+  // line belongs and invite reading it as "just at the limit".
+  const ref = opts?.referenceLine
+  const referenceLineY = ref != null && Number.isFinite(ref) && ref >= lo && ref <= hi
+    ? y(ref)
+    : null
+
+  return { domain, points: marks, segments, band, referenceLineY }
 }
 
 /**
@@ -320,6 +381,10 @@ export function trendSummary(input: {
   label: string
   points: readonly SparkPoint[]
   bounds: SparkBounds | null
+  /** The declared scale, when there is one. Named in the sentence because it is
+   *  part of what the picture encodes: "flat at 20%" and "flat at 0%" look
+   *  identical without knowing the scale is pinned to 0–100. */
+  domain?: SparkDomain | null
   unit?: string | null
   /**
    * How a value becomes text IN THE SPOKEN SENTENCE. Defaults to `String`,
@@ -334,6 +399,18 @@ export function trendSummary(input: {
    * chart, and the two can never drift apart.
    */
   formatValue?: (value: number) => string
+  /**
+   * App-owned facts appended to the sentence.
+   *
+   * The standard can describe the SHAPE it drew — how many readings, over what
+   * span, where they sit against a range. It cannot know what the surface means:
+   * that this hairline is the exam's own long-run positivity, that the series is
+   * suppressed because the volume floor was not met, what the number represents.
+   * Those are the app's, and without a way to say them the spoken label is
+   * strictly poorer than the picture. Kept as a plain string because the standard
+   * has no business parsing domain prose.
+   */
+  labelSuffix?: string
 }): string {
   const { label, bounds, unit } = input
   const fmt = input.formatValue ?? String
@@ -344,7 +421,10 @@ export function trendSummary(input: {
   // all. The gaps are named separately, at the end, as their own fact.
   const points = input.points.filter(hasValue)
   const gaps = input.points.length - points.length
-  if (!points.length) return `${label}: sin mediciones previas`
+  if (!points.length) {
+    const extra = input.labelSuffix?.trim() ? `. ${input.labelSuffix.trim().replace(/\.$/, '')}` : ''
+    return `${label}: sin mediciones previas${extra}`
+  }
 
   const u = unit ? ` ${unit}` : ''
   const n = points.length
@@ -371,9 +451,18 @@ export function trendSummary(input: {
     else movement = ', sin cambio'
   }
 
+  // A reference RANGE and a declared SCALE are different facts, and the sentence
+  // says whichever it actually has. A fixed scale is not a range to be judged
+  // against — but staying silent about it loses what a sighted reader gets for
+  // free from the box: "plana en 20%" and "plana en 0%" are the same picture
+  // until you know the scale is pinned.
+  const d = input.domain
+  const scaleFixed = d && d[0] != null && d[1] != null && d[1] > d[0]
   const range = bounds && bounds.high > bounds.low
     ? `, rango de referencia ${fmt(bounds.low)}–${fmt(bounds.high)}${u}`
-    : ', sin rango de referencia'
+    : scaleFixed
+      ? `, escala fija ${fmt(d![0]!)} a ${fmt(d![1]!)}${u}`
+      : ', sin rango de referencia'
 
   const censored = points.filter(p => p.censoring).length
   const censoredNote = censored
@@ -387,7 +476,8 @@ export function trendSummary(input: {
     ? `. ${gaps === 1 ? '1 periodo sin lectura' : `${gaps} periodos sin lectura`}, la línea se parte ahí`
     : ''
 
-  return `${label}: ${count}${spanText}, ${latest}${movement}${range}${censoredNote}${gapNote}`
+  const extra = input.labelSuffix?.trim() ? `. ${input.labelSuffix.trim().replace(/\.$/, '')}` : ''
+  return `${label}: ${count}${spanText}, ${latest}${movement}${range}${censoredNote}${gapNote}${extra}`
 }
 
 /**
