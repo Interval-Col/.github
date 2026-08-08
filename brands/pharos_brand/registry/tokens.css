@@ -82,6 +82,20 @@
   --status-error:   #8B1A2B;  --status-error-bg:   #FCEAEE;
   --status-info:    #003A70;  --status-info-bg:    #E4EDF7;
 
+  /* --- Trend tokens (dirección de una serie, NO estado clínico) --------------
+   * Valores PROPIOS, deliberadamente no alias de --status-*. Un tablero
+   * financiero que colorea por dirección y una pantalla clínica que tiñe por
+   * juicio son dos semánticas distintas que se leen parecido; atarlas al mismo
+   * token significa que reacentuar la paleta clínica movería el sentido de
+   * «subió» en Ingresos. Separadas, cada una evoluciona sola.
+   *
+   * Redefinidos en .dark — a diferencia de --chart-*, que se declaran una sola
+   * vez y por eso solo uno de los cinco es legible en ambos temas. Medidos
+   * contra su propio fondo: 5,29:1 · 7,40:1 · 5,48:1 en claro. */
+  --trend-up:   #0F7A5F;
+  --trend-down: #A32235;
+  --trend-flat: #5B6B7A;
+
   /* --- Sidebar (shadcn `Sidebar` is the app-shell reference) -----------------
    * Neutral surfaces; only --sidebar-primary / --sidebar-ring carry the accent. */
   --sidebar:                        #F5F5F4;
@@ -134,6 +148,11 @@
   --status-warning: #E6C34D;  --status-warning-bg: #2E2606;
   --status-error:   #F4A0B0;  --status-error-bg:   #2A0A10;
   --status-info:    #7FB0E6;  --status-info-bg:    #0A1F38;
+
+  /* Medidos contra #0B0F14: 10,34:1 · 8,57:1 · 7,39:1. */
+  --trend-up:   #3FD69B;
+  --trend-down: #FF8A9B;
+  --trend-flat: #8FA3B5;
 
   --sidebar:                        #0B0F14;
   --sidebar-foreground:             #F5F5F4;
@@ -266,6 +285,10 @@
   --color-status-warning-bg:     var(--status-warning-bg);
   --color-status-error:          var(--status-error);
   --color-status-error-bg:       var(--status-error-bg);
+
+  --color-trend-up:              var(--trend-up);
+  --color-trend-down:            var(--trend-down);
+  --color-trend-flat:            var(--trend-flat);
   --color-status-info:           var(--status-info);
   --color-status-info-bg:        var(--status-info-bg);
 
