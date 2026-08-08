@@ -127,6 +127,48 @@ admission-patient's `docs/decisions/`; guides follow
 
 ---
 
+## Where each fact lives
+
+One class of fact, one owning document. Everything else **points** at it.
+
+This table exists because copying is how the estate drifts. A 2026-08 sweep found
+the same three mechanisms behind nearly every stale claim: indexes copied by hand
+(the RFC index existed in three copies, and all three were wrong), documents
+forked and both sides calling themselves authoritative, and investigative prose
+poured into tables meant for scanning.
+
+**How to use it.** Before writing a fact down, find its row. If you are not
+writing in the owner, write a pointer instead. If the owner is wrong, fix the
+owner — do not correct it locally and leave the owner lying.
+
+| Fact class | Owner | Read it there because |
+|---|---|---|
+| Repo inventory & navigation | `operations/WORKSPACE-MAP.md` | Symlinked as `~/dev/CLAUDE.md`; loaded into every session |
+| Repo disposition (archived / folded / deleted) | `rfcs/0009-disposition-tracker.md` | The per-repo ruling, with dates |
+| Runtime topology (what runs where, behind which route) | `proxy/templates.d/*.conf.template` | Config, not prose — it cannot drift from itself |
+| Host roster (hostname, IP, environment, role) | `infrastructure/inventory/` | The inventory is what Ansible actually reads |
+| Schema ownership & GRANTs | `nucleus-db/operations/grants/grant-matrix.md` | It is what `apply-grants.sql` implements |
+| Branching / CI / deploy policy | `.github/BRANCHING-AND-DEPLOY.md` | ⚠️ States the standard; per-repo settings drift — verify with `gh api …/branches/<b>/protection` |
+| Org-level engineering standards (stack choices) | `.github/ENGINEERING_STANDARDS.md` | What a new repo adopts |
+| Implementation standards (tool configs, CI-enforced) | `pharos-lis/lab-qc/docs/STANDARDS.md` | Shared by lab-qc and finance-lch |
+| Machine-checked contracts | `.github/db-tenant-contract.md`, `auth-contract.md` | A CI check reads these |
+| Brand & design system | `.github/brands/pharos_brand/` | ⚠️ `pharos-brand/` at the workspace root is assets only |
+| Plan methodology & templates | `.github/templates/plan-template.md` | `plan_lint.py` enforces this schema |
+| RFC index & lifecycle | `rfcs/README.md` | Do not mirror it — mirrors cannot stay true |
+| Incident history | `operations/incidents/` + `operations/lessons.md` | Postmortem, then the durable rule |
+| Technical debt | `operations/tech-debt.md` | The capture inbox |
+| Runbooks (operator procedures) | `operations/runbooks/` | One home, including runbooks about infrastructure |
+| Schema / data-platform decisions | `nucleus-db/docs/decisions/` (single-repo) → `rfcs/` (cross-repo) | See *RFC vs. ADR* above |
+| PHI & security policy | `operations/policies/` | |
+| Team roster & operating model | `operations/ops/shared/` | Private by design |
+| Knowledge-management conventions | this file | |
+
+💡 **The test for a duplicate.** If two documents state the same fact and one goes
+stale, would a reader be able to tell which? If not, one of them must become a
+pointer. A wrong copy is worse than no copy, because it looks like an answer.
+
+---
+
 ## Cross-repo decision ledger
 
 ### RFCs (org-wide)
