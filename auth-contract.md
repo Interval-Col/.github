@@ -15,9 +15,9 @@ enforcement, resolved **locally** from the app's own tables. It is unrelated to
 `is_authorized` is deliberately not called for in-app capability checks — RFC 0012).
 
 Current auth apps: finance-lch (source, live prod) · pharos-lis (lab-qc) ·
-admission-patient. Greenfield adopters (no role layer yet): commercial-lch ·
-biuman-lis. The three existing modules drifted independently — this contract is
-the anti-drift baseline they converge to (RFC 0016).
+admission-patient. Greenfield adopter (no role layer yet): biuman-lis. The three
+existing modules drifted independently — this contract is the anti-drift baseline
+they converge to (RFC 0016).
 
 ---
 
@@ -117,7 +117,7 @@ blocking, each app converges under its own issue (finance-lch#101 epic), and
 flips `enforce: true` + marks the check required once its first run is green.
 
 **Standing rule — new apps comply from day one.** A greenfield adopter
-(commercial-lch, biuman-lis) builds against the contract and adopts with
+(biuman-lis, and any new Pháros app) builds against the contract and adopts with
 `enforce: true` in the PR that lands its auth module — no warn cycle.
 
 **False-positive escape hatches** (why enforcing is safe once green): an
