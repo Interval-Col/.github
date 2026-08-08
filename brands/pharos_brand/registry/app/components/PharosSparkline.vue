@@ -81,6 +81,12 @@ const props = withDefaults(defineProps<{
    *  somewhere to go — offering a click that opens nothing is a worse
    *  affordance than offering none. */
   interactive?: boolean
+  /** How values are spoken in the accessible sentence. Pass the SAME formatter
+   *  used for the value printed beside the chart — the default `String` prints
+   *  a POINT, so a Colombian surface that shows "13,9" would otherwise announce
+   *  "13.9". The component never formats on its own; this only routes the app's
+   *  own formatter into the one place prose is unavoidable. */
+  formatValue?: (value: number) => string
 }>(), {
   points: () => [],
   bounds: null,
@@ -92,6 +98,7 @@ const props = withDefaults(defineProps<{
   status: null,
   singlePoint: 'show',
   interactive: false,
+  formatValue: undefined,
 })
 
 const emit = defineEmits<{ select: [] }>()
@@ -109,7 +116,13 @@ const geo = computed(() =>
 )
 
 const summary = computed(() =>
-  trendSummary({ label: props.label, points: ordered.value, bounds: props.bounds, unit: props.unit }),
+  trendSummary({
+    label: props.label,
+    points: ordered.value,
+    bounds: props.bounds,
+    unit: props.unit,
+    formatValue: props.formatValue,
+  }),
 )
 
 const lastMarkClass = computed(() => {
