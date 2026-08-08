@@ -149,6 +149,7 @@ const summary = computed(() =>
     label: props.label,
     points: ordered.value,
     bounds: props.bounds,
+    domain: props.domain,
     unit: props.unit,
     formatValue: props.formatValue,
     labelSuffix: props.labelSuffix,
