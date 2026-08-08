@@ -591,21 +591,15 @@ handles this naturally:
 - Multiple tags pointing at the same digest is exactly what container
   registries are designed for.
 
-### Migration plan
+### Adoption
 
-Current `ci-cd.yml` in finance-lch and lab-qc rebuilds per environment
-(non-conforming). Each repo gets its own small migration PR — ~half a
-day per repo:
+finance-lch and pharos-lis both run this model today — their `ci-cd.yml`
+headers state it directly: *"Push to `main` → NO REBUILD. Pull `${REPO}:dev`,
+retag."* Read either one for a working reference.
 
-- Split the `build` job from the `deploy` job in `ci-cd.yml`.
-- `build` runs on push-to-`develop` (and on push-to-feature-branches
-  if you want pre-merge build verification).
-- Dev `deploy` pulls `<commit-sha>` and brings up the stack.
-- Prod `deploy` does NOT build — it pulls `<commit-sha>`, retags
-  `v1.2.3`, pushes, deploys.
-
-Track in `plans/build-once-promote-migration.md` (each affected repo
-gets a checkbox).
+A repo adopting the model splits `build` from `deploy`: `build` runs on
+push-to-`develop`, dev `deploy` pulls `<commit-sha>`, and prod `deploy` never
+builds — it pulls `<commit-sha>`, retags, pushes, deploys.
 
 ---
 
@@ -972,11 +966,6 @@ automatically; until then, the checklist is the source of truth.
 
 These are deferred decisions, tracked here so they don't get lost:
 
-- **Build-once-promote migration.** Every active repo's `ci-cd.yml`
-  today rebuilds the image per environment (non-conforming with
-  §"Build-once-promote"). Per-repo migration PRs land as small,
-  focused changes (~half a day each). Tracker:
-  `plans/build-once-promote-migration.md`.
 - **Pin deploys by image digest, not tag.** Once the build-once
   pipeline is in place, the next refinement is to have
   `docker-compose.deploy.yml` reference images by `sha256` digest
