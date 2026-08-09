@@ -95,6 +95,35 @@ This document defines the official engineering standards for all primary project
 > read the repo:
 > `gh api repos/Interval-Col/<repo>/branches/<branch>/protection`.
 
+### 🧬 No orphan code — anything that runs is in a repo
+
+| Rule | Standard |
+|---|---|
+| **A branch is a backup, not a commitment** | Pushing a branch **never** requires an open decision to be resolved first. A pending decision gates **merging**, **deploying**, and **creating a new repo** — it never gates **versioning**. If you are waiting on a decision, push a `wip/<slug>` branch and keep working. |
+| **Arrival = repo + runtime** | The mirror of RFC 0009's *"Retirement = repo + runtime"*. Nothing runs in the estate whose source is not in a repo: a service arriving needs **both** surfaces, exactly as a service retiring needs both removed. |
+| **No authoring on a host** | A server is where code **runs**, never where it is **written**. The moment a task turns from *configuring a tool* into *authoring a file*, the file needs a repo — even if it is "temporary", even if it is one file. |
+| **Interim home** | No repo decided yet? The code goes to a `wip/` branch of the **repo that will consume it**, or of the closest owning repo. A folder can be extracted into its own repo later **with history** (`git subtree split`) — the org has done it (`pharos-llm-proxy` ← `finance-lch`). Starting versioned is never the expensive choice. |
+| **Provenance is the test** | A running container whose image was built **on the host** rather than pulled from the org registry is orphan code by definition. Image provenance, not good intentions, is what makes this auditable. |
+
+> **Why this is a standard and not advice.** The failure mode is silent and it
+> compounds. A gated decision stalls the repo; the work continues because the
+> work is urgent; the artefact grows one reasonable file at a time; and **no CI
+> check can ever see it**, because every gate in this org — secret scan, lint,
+> tenant check, code owners — runs on pull requests. Code that never reached a PR
+> is invisible **by construction**, so the only copy of a load-bearing service can
+> sit on one unbacked disk with nothing anywhere reporting a problem. The stalled
+> tasks *are* the alarm, and a stalled task looks exactly like orderly progress.
+
+> **Tenant identity travels with the repo.** One repo = one nucleus-db tenant:
+> the manifest in [`db-tenant-contract.md`](db-tenant-contract.md) takes a single
+> `app:` and a single set of owned `schemas:`, applied by that app's one migrate
+> one-shot under that app's role. So **"does this need its own repo?" and "does
+> this own its own schema and role?" are the same question asked twice.** A
+> component that must own a schema separately — its own owner role, its own
+> privilege split — is its own tenant, and therefore its own repo. Deciding the
+> schema first and the repo later, or the reverse, is how the two answers end up
+> contradicting each other.
+
 ---
 
 ## 🤖 Tooling, Lint, Format
