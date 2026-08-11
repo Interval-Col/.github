@@ -13,8 +13,17 @@
 //                          lab-qc `administrator`). Locked to all-granted, read-only.
 //   • customRolesEnabled — finance ON (create/rename/delete roles); closed-set
 //                          apps (lab-qc/admission) OFF → only the matrix is editable.
+//   • lockedRoles        — extra roles hard-locked read-only beyond adminRoleName
+//                          (default []; adminRoleName-only apps never pass it, so
+//                          they're unaffected). Some roles' definition is fixed by
+//                          an RFC, not by this interface — e.g. `pharos-ti`'s
+//                          `audit` role (RFC 0021: read-only, must never grow a
+//                          second capability). Leaving such a role editable here
+//                          would hand the UI a button to break a governance
+//                          constraint it doesn't own.
 //
 //   <RoleCapabilityMatrix :api="admin" :custom-roles-enabled="true" />
+//   <RoleCapabilityMatrix :api="admin" :locked-roles="['audit', 'platform_owner']" />
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ChevronRightIcon } from 'lucide-vue-next'
 import { Badge } from '~/components/ui/badge'
@@ -28,9 +37,11 @@ const props = withDefaults(defineProps<{
   api: PharosAdminApi
   adminRoleName?: string
   customRolesEnabled?: boolean
+  lockedRoles?: string[]
 }>(), {
   adminRoleName: 'admin',
   customRolesEnabled: false,
+  lockedRoles: () => [],
 })
 
 const capabilities = ref<PharosCapability[]>([])
@@ -59,11 +70,17 @@ const roleOpen = reactive<Record<string, boolean>>({})
 const groupOpen = reactive<Record<string, boolean>>({})
 const groupKey = (role: string, area: string) => `${role}::${area}`
 
-function groupGranted(role: string, caps: PharosCapability[]): number {
-  return isReadonly(role) ? caps.length : caps.filter(c => isChecked(role, c.id)).length
+// `is_admin` (not `isReadonly`) drives the "show full" shortcut: it's the
+// backend truth that a role holds literally every capability, so the count
+// can skip the per-capability filter. A locked-via-`lockedRoles` role (e.g.
+// `audit`, capped at one capability by RFC 0021) is readonly but NOT
+// all-granted — using `isReadonly` here would show "N/N" while the checkboxes
+// underneath render only the real (partial) grant, an incoherent readout.
+function groupGranted(role: PharosRoleCapabilities, caps: PharosCapability[]): number {
+  return role.is_admin ? caps.length : caps.filter(c => isChecked(role.role, c.id)).length
 }
 function roleGranted(role: PharosRoleCapabilities): number {
-  return isReadonly(role.role) ? capabilities.value.length : (drafts.value[role.role]?.size ?? 0)
+  return role.is_admin ? capabilities.value.length : (drafts.value[role.role]?.size ?? 0)
 }
 
 async function load() {
@@ -91,9 +108,11 @@ function isChecked(role: string, capId: string): boolean {
 }
 
 // The admin role is locked at the API level — its checkboxes always reflect
-// "everything granted" and can't be toggled.
+// "everything granted" and can't be toggled. `lockedRoles` extends the same
+// lock (toggle, save, rename, delete) to roles whose definition is fixed
+// outside this UI, without assuming they're all-granted like admin.
 function isReadonly(role: string): boolean {
-  return role === props.adminRoleName
+  return role === props.adminRoleName || props.lockedRoles.includes(role)
 }
 
 function toggle(role: string, capId: string) {
@@ -174,6 +193,7 @@ const editDesc = ref('')
 const savingEdit = ref(false)
 
 function startEdit(role: PharosRoleCapabilities) {
+  if (isReadonly(role.role)) return
   editing.value = role.role
   editLabel.value = role.label
   editDesc.value = role.description
@@ -185,6 +205,7 @@ function cancelEdit() {
 }
 
 async function saveEdit(roleName: string) {
+  if (isReadonly(roleName)) return
   const label = editLabel.value.trim()
   if (!label) return
   savingEdit.value = true
@@ -208,6 +229,7 @@ async function saveEdit(roleName: string) {
 
 // ── Eliminar rol personalizado (solo si customRolesEnabled) ───────────────────
 async function removeRole(role: PharosRoleCapabilities) {
+  if (isReadonly(role.role)) return
   if (!window.confirm(`¿Eliminar el rol «${role.label}»? Esta acción no se puede deshacer.`)) return
   error.value = null
   successMsg.value = null
@@ -227,9 +249,9 @@ onMounted(load)
 <template>
   <div>
     <p class="text-muted-foreground mb-6 text-sm">
-      Marca o desmarca permisos para cada rol. El rol de administrador siempre
-      tiene todos los permisos y no se puede editar. Los cambios de permisos se
-      aplican al guardar.
+      Marca o desmarca permisos para cada rol. El rol de administrador y los
+      roles bloqueados por política no se pueden editar. Los cambios de
+      permisos se aplican al guardar.
     </p>
 
     <!-- Crear rol personalizado -->
@@ -272,7 +294,7 @@ onMounted(load)
       :key="role.role"
       v-model:open="roleOpen[role.role]"
       class="mb-4 rounded-lg border border-border bg-card shadow-sm"
-      :class="{ 'opacity-85': role.is_admin }"
+      :class="{ 'opacity-85': isReadonly(role.role) }"
     >
       <div class="flex items-start justify-between gap-4 px-6 py-4">
         <CollapsibleTrigger class="group flex flex-1 items-start gap-2.5 text-left min-w-0">
@@ -287,15 +309,15 @@ onMounted(load)
           </div>
         </CollapsibleTrigger>
         <div class="flex shrink-0 items-center gap-2">
-          <Button v-if="customRolesEnabled" variant="ghost" size="sm" @click="startEdit(role)">Editar</Button>
+          <Button v-if="customRolesEnabled && !isReadonly(role.role)" variant="ghost" size="sm" @click="startEdit(role)">Editar</Button>
           <Button
-            v-if="customRolesEnabled && !role.is_system"
+            v-if="customRolesEnabled && !role.is_system && !isReadonly(role.role)"
             variant="ghost"
             size="sm"
             class="text-muted-foreground hover:text-destructive"
             @click="removeRole(role)"
           >Eliminar</Button>
-          <Badge v-if="role.is_admin" variant="secondary" class="border-transparent bg-muted text-muted-foreground uppercase tracking-wide">Sólo lectura</Badge>
+          <Badge v-if="isReadonly(role.role)" variant="secondary" class="border-transparent bg-muted text-muted-foreground uppercase tracking-wide">Sólo lectura</Badge>
           <template v-else>
             <Button
               variant="outline"
@@ -348,7 +370,7 @@ onMounted(load)
                 <ChevronRightIcon class="size-3 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                 {{ g.area }}
               </span>
-              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ groupGranted(role.role, g.caps) }}/{{ g.caps.length }}</span>
+              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ groupGranted(role, g.caps) }}/{{ g.caps.length }}</span>
             </CollapsibleTrigger>
             <CollapsibleContent class="px-2.5 pb-2">
               <!-- .prevent is load-bearing: the row is a label wrapping a reka-ui

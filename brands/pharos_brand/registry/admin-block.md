@@ -14,7 +14,7 @@ a hand-rolled admin fails the gate.
 
 | Entry | Path | What it is |
 |---|---|---|
-| `RoleCapabilityMatrix` | `components/ui/role-capability-matrix/` | role×area×capability grid + draft/dirty/save buffer + admin-role lock; create/rename/delete roles when `customRolesEnabled` |
+| `RoleCapabilityMatrix` | `components/ui/role-capability-matrix/` | role×area×capability grid + draft/dirty/save buffer + admin-role lock (extendable to extra roles via `lockedRoles`); create/rename/delete roles when `customRolesEnabled` |
 | `UsersRoleTable` | `components/ui/users-role-table/` | assign / change / remove a user's role + self-protection |
 | `useCan` / `usePharosAuthStore` | `composables/useCan.ts` | session store + `can(cap)` (fail-closed); FE gate is UX only (C7) |
 | `createPharosAdminApi` | `lib/pharosAdminApi.ts` | the 10 `/auth/admin/*` calls, parameterized by API base |
@@ -26,10 +26,23 @@ a hand-rolled admin fails the gate.
 | `adminRoleName` | `admin` | `administrator` | `admin` |
 | `defaultRole` | `viewer` | `viewer` | `viewer` |
 | `customRolesEnabled` | `true` | `false` | `false` |
+| `lockedRoles` | — | — | — |
 | API base (`createPharosAdminApi` 2nd arg) | `…/api/v1` | `…` (no prefix) | `…/queue/api/v1` |
 
 The **role-label map is NOT a knob** — labels come from the API
 (`PharosRoleCapabilities.label`); never hard-code them.
+
+`lockedRoles` (default `[]`) hard-locks extra roles read-only — no toggling
+their capabilities, and no rename/delete when `customRolesEnabled` — beyond
+`adminRoleName`. It's for roles whose definition an RFC fixes, not this UI;
+leaving them editable here would hand out a button to break that governance
+constraint. None of finance/lab-qc/admission pass it (they're unaffected —
+default `[]`). First consumer, **`pharos-ti`**: it locks both its superuser
+and the RFC 0021 `audit` role (read-only, must never grow a second
+capability):
+```vue
+<RoleCapabilityMatrix :api="admin" :locked-roles="['audit', 'platform_owner']" />
+```
 
 ## Adoption
 
