@@ -63,7 +63,14 @@ const IGNORE_PATH_FRAGMENTS = [
 
 const SCAN_EXTS = new Set(['.vue', '.ts'])
 
-const PROPS = 'text|bg|border|ring|outline|fill|stroke|from|to|via|placeholder|caret|accent|decoration|divide|shadow'
+// ⚠️ Sin `shadow` ni `placeholder`, y por razones distintas:
+//   • `shadow-*` resuelve contra `--shadow-*`, no `--color-*`. Incluirlo hacía
+//     que un `shadow-soft` perfectamente definido se reportara como token
+//     inexistente — un gate que grita por algo correcto se desactiva solo.
+//   • `placeholder-<color>` es Tailwind v3; en v4 se escribe `placeholder:text-*`.
+//     Dejarlo se comía cualquier clase propia que empezara por `placeholder-`
+//     (`placeholder-table-wrapper`, medido en finance-lch).
+const PROPS = 'text|bg|border|ring|outline|fill|stroke|from|to|via|caret|accent|decoration|divide'
 // Optional variant prefixes (`dark:`, `hover:`, `group-hover:`, `md:`) and an
 // optional `!` important marker; optional `/50` opacity modifier on the tail.
 const USAGE_RE = new RegExp(
@@ -71,6 +78,7 @@ const USAGE_RE = new RegExp(
   'g',
 )
 const ESCAPE_HATCH = /lint-allow-token/
+const PALETTE_RE = /^(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}$/
 const TOKEN_DEF_RE = /--color-([a-z0-9-]+)\s*:/g
 
 function* walk(root) {
@@ -87,6 +95,10 @@ function* walk(root) {
       if (SCAN_EXTS.has(ext)) yield full
     }
   }
+}
+
+function stripStyleBlocks(src) {
+  return src.replace(/<style\b[\s\S]*?<\/style>/gi, (block) => block.replace(/[^\n]/g, ' '))
 }
 
 function shouldIgnore(rel) {
@@ -131,6 +143,70 @@ if (defined.size === 0) {
 
 const ownedSegments = new Set([...defined].map((t) => t.split('-')[0]))
 
+// ── 1b. The blind spot the ownership rule alone leaves ────────────────────
+// The rule above only inspects a utility whose FIRST SEGMENT belongs to some
+// defined token. That is what keeps `bg-red-500` and `text-center` out of the
+// report, and it catches every typo INSIDE a family we own — `status-danger`
+// (we own `status`), `chart-9`, `bg-brand` where only `brand-wash` exists.
+//
+// It cannot see a family where NOTHING is defined. Measured case, lab-qc:
+// `bg-error-fill` / `text-error-ink`. A token cleanup renamed that whole
+// family away; no `--color-error-*` survives, so `error` is not an owned
+// segment, so the rule skipped both — and the error banner they style has
+// been rendering with no background and no colour ever since.
+//
+// That is the worst possible shape for this gate: it would have certified the
+// file as clean. So the second rule inverts the question — instead of "is
+// this ours?", it asks "is this a name Tailwind actually recognises?" and
+// flags whatever is neither a defined token nor real Tailwind vocabulary.
+//
+// The cost is the one thing the first rule avoids: this list needs a line
+// added when someone reaches for a utility value nobody here has used yet.
+// That trade is deliberate. The failure mode is loud and the fix is one line,
+// versus a silent pass on a rename that already happened once.
+const TW_KEYWORDS = new Set([
+  // CSS-wide colour keywords. Tailwind ships these for every colour utility
+  // and they resolve to real CSS — they are not tokens and never will be.
+  'white', 'black', 'transparent', 'current', 'inherit', 'auto',
+  // `border-none`, `outline-none`, `shadow-none`, `bg-none`, `fill-none`…
+  'none',
+  // sizes / scales — text-*, shadow-*
+  'xs', 'sm', 'base', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl',
+  '7xl', '8xl', '9xl', 'inner',
+  // alignment + wrapping — text-*
+  'left', 'center', 'right', 'justify', 'start', 'end',
+  'wrap', 'nowrap', 'balance', 'pretty', 'ellipsis', 'clip',
+  // line/border styles — border-*, divide-*, outline-*, decoration-*
+  'solid', 'dashed', 'dotted', 'double', 'wavy', 'hidden', 'collapse',
+  'separate', 'independent',
+  // background behaviour — bg-*
+  'fixed', 'local', 'scroll', 'cover', 'contain', 'repeat', 'no-repeat',
+  'top', 'bottom', 'origin', 'clip',
+  // misc keywords valid after several prefixes
+  'inset', 'from-font', 'normal',
+])
+// Numeric scales (`border-2`, `ring-4`, `stroke-2`), side-prefixed values
+// (`border-b-2`, `border-t`), fractions and percentages.
+const NUMERIC_RE = /^\d+(\.\d+)?(\/\d+)?$/
+const SIDE_RE = /^(x|y|s|e|t|r|b|l|offset)(-(.+))?$/
+// SVG presentation attributes (`stroke-width="2"`) look like utilities to the
+// scanner. They are attributes, not classes; skipping them is correct, not a
+// concession.
+const SVG_ATTRS = new Set(['width', 'linecap', 'linejoin', 'dasharray', 'dashoffset', 'opacity', 'rule', 'miterlimit'])
+
+function isRecognized(name) {
+  if (defined.has(name)) return true
+  if (TW_KEYWORDS.has(name) || SVG_ATTRS.has(name)) return true
+  if (NUMERIC_RE.test(name)) return true
+  if (PALETTE_RE.test(name)) return true
+  // `border-b-primary` → side `b`, colour `primary`. Recurse on the remainder
+  // so a side-prefixed colour is judged by the colour, which is the part that
+  // can be wrong.
+  const side = SIDE_RE.exec(name)
+  if (side) return side[3] === undefined || isRecognized(side[3])
+  return false
+}
+
 // ── 2. Did-you-mean, so the failure is actionable ─────────────────────────
 function distance(a, b) {
   const prev = Array.from({ length: b.length + 1 }, (_, i) => i)
@@ -165,15 +241,27 @@ const offenders = []
 for (const file of walk(SCAN_ROOT)) {
   const rel = relative(REPO_ROOT, file)
   if (shouldIgnore(rel)) continue
-  const lines = readFileSync(file, 'utf8').split('\n')
+  // Un `<style>` es CSS, no clases. `transition: color .15s, border-color .15s`
+  // hacía saltar 'color' nueve veces en finance-lch. Se blanquea en vez de
+  // borrarse para que los números de línea sigan siendo ciertos.
+  const lines = stripStyleBlocks(readFileSync(file, 'utf8')).split('\n')
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     if (ESCAPE_HATCH.test(line)) continue
     for (const m of line.matchAll(USAGE_RE)) {
       const name = m[1]
-      if (!ownedSegments.has(name.split('-')[0])) continue
       if (defined.has(name)) continue
-      offenders.push({ rel, lineNumber: i + 1, name, content: line.trim() })
+      // Rule 1 — a typo INSIDE a family we own. High confidence, and we can
+      // usually say what was meant.
+      if (ownedSegments.has(name.split('-')[0])) {
+        offenders.push({ rel, lineNumber: i + 1, name, content: line.trim(), rule: 'own' })
+        continue
+      }
+      // Rule 2 — a name that is neither ours nor Tailwind's. Catches a family
+      // renamed out of existence, which rule 1 structurally cannot see.
+      if (!isRecognized(name)) {
+        offenders.push({ rel, lineNumber: i + 1, name, content: line.trim(), rule: 'unknown' })
+      }
     }
   }
 }
@@ -182,9 +270,14 @@ if (offenders.length) {
   console.error()
   console.error(`[token-usage] ${offenders.length} utility(ies) name a token that does not exist:`)
   for (const o of offenders) {
-    const near = suggest(o.name)
     console.error(`  - ${o.rel}:${o.lineNumber}  '${o.name}' is not a defined --color-* token`)
-    if (near.length) console.error(`      did you mean: ${near.join(', ')}?`)
+    if (o.rule === 'own') {
+      const near = suggest(o.name)
+      if (near.length) console.error(`      did you mean: ${near.join(', ')}?`)
+    } else {
+      console.error(`      nothing in this family is defined — a renamed-away token, or a typo.`)
+      console.error(`      If it IS valid Tailwind, add it to TW_KEYWORDS at the top of this script.`)
+    }
     console.error(`      ${o.content.slice(0, 90)}${o.content.length > 90 ? '…' : ''}`)
   }
   console.error()
