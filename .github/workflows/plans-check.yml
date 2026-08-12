@@ -73,15 +73,32 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
+          # TWO pathspecs, and both are load-bearing. In git, `**/plans/**.md`
+          # requires AT LEAST ONE directory before `plans/`, so it matches the
+          # monorepo shape (`lab-qc/plans/x.md`, `apps/lch-results/plans/x.md`)
+          # and MISSES a repo whose plans live at the root (`plans/x.md`) — which
+          # is 8 of the 10 callers, ~81 plan files, including this gate's own
+          # home for `operations`. The check went green on them by finding
+          # nothing to look at: `plan-lint` step `skipped`, job `success`
+          # (operations#338 and #335, both of which DID edit a plan).
+          #
+          # It shipped that way because it was exercised in the two repos where
+          # the glob works — pharos-lis#242 and public-web#141, the runs cited
+          # above — and the majority shape was never run.
+          PLAN_GLOBS=('plans/**.md' '**/plans/**.md')
           if [ -n "$BASE_REF" ]; then
             git fetch origin "$BASE_REF" --quiet || true
             files=$(git diff --name-only --diff-filter=ACMR \
-                      "origin/$BASE_REF"...HEAD -- '**/plans/**.md' || true)
+                      "origin/$BASE_REF"...HEAD -- "${PLAN_GLOBS[@]}" || true)
             scope="changed in this PR vs origin/$BASE_REF"
           else
-            files=$(git ls-files -- '**/plans/**.md' || true)
+            files=$(git ls-files -- "${PLAN_GLOBS[@]}" || true)
             scope="every tracked plan (no base ref on this event)"
           fi
+          # A repo with plans in BOTH shapes would match a file under each glob;
+          # git already de-duplicates across pathspecs, but sort -u makes that a
+          # property of this script rather than of git's current behaviour.
+          files=$(printf '%s\n' "$files" | sort -u | grep -v '^$' || true)
           # plan_lint.py's is_lintable() also filters these; doing it here keeps
           # the log honest about what was actually considered.
           files=$(printf '%s\n' "$files" | grep -v '/archive/' | grep -v 'template' || true)
@@ -92,6 +109,27 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Scope: $scope"
           echo "Plan files:"; echo "$files"
+
+          # Red de seguridad contra ESTE mismo bug. Un gate que no encuentra
+          # nada es indistinguible de un gate que no tenía nada que mirar: en
+          # ambos casos el paso se salta y el job sale verde. Así vivió el glob
+          # roto sin que nadie lo notara. Esto compara lo que los globs
+          # capturaron contra lo que el PR tocó de verdad bajo cualquier
+          # `plans/`, y si sobra algo lo dice en voz alta. Es un aviso, no un
+          # fallo: la lista de abajo puede ser legítimamente más corta (archive,
+          # templates), pero un hueco por pathspec queda visible en el log.
+          if [ -n "$BASE_REF" ]; then
+            touched=$(git diff --name-only --diff-filter=ACMR \
+                        "origin/$BASE_REF"...HEAD \
+                      | grep -E '(^|/)plans/.*\.md$' \
+                      | grep -v '/archive/' | grep -v 'template' || true)
+            missed=$(comm -23 <(printf '%s\n' "$touched" | sort -u | grep -v '^$') \
+                              <(printf '%s\n' "$files"   | sort -u | grep -v '^$') || true)
+            if [ -n "$missed" ]; then
+              echo "::warning::plan(es) bajo plans/ que el pathspec NO capturó — el gate estaría mirando de menos:"
+              printf '%s\n' "$missed" | sed 's/^/::warning::  · /'
+            fi
+          fi
 
       # The file list crosses into the shell through the ENVIRONMENT, never through
       # `${{ }}` interpolation. Interpolating it inline splices the value into the
