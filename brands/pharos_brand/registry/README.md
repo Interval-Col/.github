@@ -25,6 +25,7 @@ package (RFC 0008 Q3).
 | `scripts/check-no-hex-colors.mjs` | CI gate: no hardcoded hex literals outside `app/assets/css/`. Escape hatch: `lint-allow-hex` comment or per-file ALLOWLIST. |
 | `scripts/check-no-palette-colors.mjs` | CI gate: no raw Tailwind palette utilities (`text-green-600`, `bg-amber-100`, etc.) outside `app/components/ui/`. Escape hatch: `lint-allow-palette`. |
 | `scripts/check-token-drift.mjs` | CI gate (Layer-D): synced `pharos-tokens.css` matches the registry SHA256 — catches stale copy-ins. |
+| `scripts/check-token-usage.mjs` | CI gate: every color utility resolves to a **defined** `--color-*` token. Catches `bg-status-danger` when the token is `status-error` — an undefined token emits no CSS, so the element renders with no color and nothing fails. Only checks namespaces the registry owns, so `bg-red-500` / `text-center` are ignored. Escape hatch: `lint-allow-token`. |
 | `scripts/check-contrast.mjs` | CI gate (Layer-D): WCAG AA on token pairs; warns on the locked light pastels (Recepción/Clientes). |
 | `scripts/check-font-allowlist.mjs` | CI gate (Layer-D): only the 4 sanctioned font families (Fraunces, DM Sans, IBM Plex Mono, JetBrains Mono) are referenced. |
 | `eslint.config.mjs` | ESLint template (`withNuxt(...)` wrapper + Pháros overrides). Requires `@nuxt/eslint` + `nuxt prepare`. Copied verbatim by the sync; **overwritten on each sync run**. |
