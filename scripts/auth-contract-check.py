@@ -63,7 +63,42 @@ STARTUP_SEED = [
     r"\.create_all\s*\(",
 ]
 
-CAP_KEY = re.compile(r'["\']([A-Za-z][\w]*(?:\.[\w]+)+)["\']\s*:')   # dotted dict key
+# ⚠️ Antes exigía un id CON PUNTO (`platform.sso.manage`). Esa era una
+# heurística para distinguir una capacidad de cualquier otra clave de
+# diccionario del archivo — y funcionaba en las apps que ya existían, todas
+# con ids punteados.
+#
+# Rompía con un id legítimo SIN punto. Medido en pharos-ti: la capacidad se
+# llama `audit` a secas, a propósito y documentado — German especificó
+# `require_capability("audit")` literal, dos veces, y se dejó como lo escribió
+# en vez de «corregirlo» a la convención. El checker no la veía en el catálogo
+# y reportaba A5 en FAIL: «el FE referencia una capacidad que el backend no
+# declara», cuando la declaraba perfectamente.
+#
+# Un gate que grita por algo correcto se desactiva solo, así que ahora el
+# catálogo se LEE en vez de adivinarse por su forma: se acota al literal del
+# diccionario CAPABILITIES y se aceptan sus claves, punteadas o no.
+CAP_KEY = re.compile(r'["\']([A-Za-z][\w]*(?:\.[\w]+)*)["\']\s*:')   # dict key, dotted or bare
+
+
+def _capability_catalog(text):
+    """Claves del literal `CAPABILITIES = { ... }`, acotado por llaves balanceadas.
+
+    Acotarlo importa: aplicar el regex al archivo entero recogería claves de
+    cualquier otro diccionario, y con `audit` ya no hay punto que las separe.
+    """
+    m = re.search(r'^CAPABILITIES\b[^=]*=\s*\{', text, re.M)
+    if not m:
+        return set()
+    i, depth = m.end() - 1, 0
+    for j in range(i, len(text)):
+        if text[j] == '{':
+            depth += 1
+        elif text[j] == '}':
+            depth -= 1
+            if depth == 0:
+                return set(CAP_KEY.findall(text[i:j + 1]))
+    return set()
 FE_REQ  = re.compile(r'requiresCap:\s*["\']([\w.]+)["\']')
 FE_CAN  = re.compile(r'\bcan\(\s*["\']([\w.]+)["\']')
 ROLE_W  = re.compile(r'\brole\b[^\n]*String\((\d+)\)')
@@ -312,7 +347,7 @@ def check(manifest, results):
 
     # A5 — FE capability refs subset of the backend catalog
     caps_text = _read(caps) or ""
-    catalog = set(CAP_KEY.findall(caps_text))
+    catalog = _capability_catalog(caps_text)
     if not catalog:
         results.append(("A5", WARN, f"could not extract a capability catalog from {caps}"))
     elif not frontend or not os.path.isdir(frontend):
