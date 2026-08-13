@@ -24,14 +24,22 @@
 // El expediente concreto de una entrega (`FOR-SW-001`) es un REGISTRO y vive fuera
 // de git — acá solo se referencia por código, nunca se transcribe.
 //
-// ── DÓNDE VIVE QUÉ ──
-// Este archivo es del REGISTRY: vocabulario, tipos y reglas, iguales en todas las
-// apps. El MANIFIESTO —qué vista está en qué estado y quién responde— es de la APP:
-// `app/verification.manifest.ts`, que el sync copia una vez y nunca vuelve a tocar.
-// Esa frontera es deliberada: el manifiesto nombra personas y entregas concretas, y
-// se revisa en el PR de esa app. Un archivo del sistema de diseño que lo cargara
-// estaría diciendo que el registry decide quién responde por una vista clínica.
-import { VERIFICATION_MANIFEST } from '~/verification.manifest'
+// ── DÓNDE VIVE QUÉ, Y POR QUÉ ESTÁ PARTIDO EN TRES ──
+//
+//   1. ESTE archivo (registry)   — vocabulario, tipos y reglas. Iguales en todas las apps.
+//   2. `app/verification.manifest.ts` (APP) — qué vista, en qué estado, quién responde.
+//   3. `app/composables/useViewVerification.ts` (registry) — el puente: lee (2) con (1).
+//
+// La frontera 1↔2 es de gobernanza: el manifiesto nombra personas y entregas concretas y
+// se revisa en el PR de esa app; un archivo del sistema de diseño que lo cargara estaría
+// diciendo que el registry decide quién responde por una vista clínica.
+//
+// ⚠️ La frontera 1↔3 es TÉCNICA y cuesta acordarse: este archivo NO puede importar nada
+// con el alias `~` de Nuxt. `design-studio/app/lib/spec/build-spec.ts` importa los
+// catálogos de acá y corre HEADLESS bajo jiti (`pnpm regen-spec`), donde `~` no resuelve.
+// Un import de `~/verification.manifest` acá rompe el CLI — y no lo atrapa ningún CI,
+// porque regen-spec necesita el checkout hermano y por eso solo corre en local. Por eso
+// `verificationFor()` vive en el composable, que nada headless importa.
 
 export type VerificationState =
   | 'en-verificacion'      // desplegada, en uso en paralelo, NO liberada
@@ -138,14 +146,4 @@ export type VerificationDensity = typeof VERIFICATION_DENSITIES[number]['id']
  */
 export function toneFor(estado: VerificationState, tone: VerificationTone): VerificationTone {
   return estado === 'no-conforme' ? 'error' : tone
-}
-
-/**
- * Estado de verificación de una ruta, leído del manifiesto de la app.
- * `undefined` = liberada / no aplica ⇒ la vista se renderiza sin marca.
- */
-export function verificationFor(path: string): ViewVerification | undefined {
-  const v = VERIFICATION_MANIFEST[path]
-  if (!v || !VERIFICATION_STATES[v.estado].renders) return undefined
-  return v
 }
