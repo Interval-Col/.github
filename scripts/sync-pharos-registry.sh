@@ -3,7 +3,7 @@
 # sync-pharos-registry.sh — copy the shared Pháros design-system foundation
 # into a consuming app (RFC 0008 Q3: copy-in registry, NOT a runtime package).
 #
-# Syncs: tokens.css (+ .sha256 drift sidecar) · the 8 gate scripts (check-*.mjs)
+# Syncs: tokens.css (+ .sha256 drift sidecar) · the 9 gate scripts (check-*.mjs)
 #        · eslint.config.mjs template · pharos-lint-check.yml (its working-directory
 #        + pnpm cache path auto-set to the app's FE subdir) · registry/app/**.
 #
@@ -172,6 +172,15 @@ is_added() {
 # the app (or is being --add'd this run), the sibling comes too, whether or not anyone remembered it.
 COMPANIONS=(
   "components/PharosHelpChat.vue:components/PharosChatAvatar.vue"   # imports ./PharosChatAvatar.vue
+  # La marca de verificación (PROT-SW-001) viaja en tres piezas y ninguna sirve sola:
+  # el componente importa el vocabulario, y el vocabulario importa el manifiesto de la app.
+  # `verification.manifest.ts` lleva `pharos-registry:keep` EN EL ARCHIVO, así que aterriza
+  # una sola vez (con su plantilla comentada) y a partir de ahí es de la app — un re-sync
+  # ya nunca se lleva por delante las vistas que Calidad declaró ahí.
+  "components/ViewVerification.vue:lib/verification.ts"
+  "components/ViewVerification.vue:verification.manifest.ts"
+  "components/ViewVerificationMark.vue:lib/verification.ts"
+  "components/ViewVerificationMark.vue:verification.manifest.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion
@@ -272,7 +281,7 @@ echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepci
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
-echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-registry-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs\""
+echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-registry-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs && node scripts/check-view-verification.mjs\""
 echo
 echo "  e) Install ESLint + generate Nuxt types:"
 echo "       pnpm add -D @nuxt/eslint"
