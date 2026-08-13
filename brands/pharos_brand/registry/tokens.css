@@ -96,6 +96,25 @@
   --trend-down: #A32235;
   --trend-flat: #5B6B7A;
 
+  /* --- Vista en verificación (PROT-SW-001) ----------------------------------
+   * Marca de una vista DESPLEGADA pero todavía NO LIBERADA. Es estado del
+   * SOFTWARE, no del dato, y por eso vive fuera de --status-*: una vista de
+   * laboratorio ya está llena de ámbar y teal clínicos, así que reusar la
+   * paleta de estado haría que la misma tinta dijera dos cosas en el mismo
+   * viewport — y --status-warning ↔ --status-success ya están medidos a
+   * ΔE 12,8, bajo el piso de 15. Violeta porque no aparece ni en la paleta
+   * clínica ni en el navy de marca.
+   *
+   * El color NUNCA es el único canal: la banda lleva además franja diagonal
+   * (.pharos-verify-hatch), icono y palabra.
+   *
+   * Medidos: --verify-on-ink sobre --verify-ink 9,4:1 · --verify-ink sobre
+   * --verify-bg 8,1:1 en claro. */
+  --verify-ink:    #5B21A6;
+  --verify-on-ink: #FFFFFF;
+  --verify-bg:     #F2EAFD;
+  --verify-wash:   color-mix(in oklab, var(--verify-ink) 4%, var(--background));
+
   /* --- Sidebar (shadcn `Sidebar` is the app-shell reference) -----------------
    * Neutral surfaces; only --sidebar-primary / --sidebar-ring carry the accent. */
   --sidebar:                        #F5F5F4;
@@ -153,6 +172,14 @@
   --trend-up:   #3FD69B;
   --trend-down: #FF8A9B;
   --trend-flat: #8FA3B5;
+
+  /* Verificación en oscuro: el violeta se aclara y el campo invierte. Medidos
+   * contra #0B0F14: --verify-ink 9,65:1; texto oscuro sobre el campo 9,3:1. El
+   * lavado sube a 9% porque en oscuro un 4% no se percibe. */
+  --verify-ink:    #C9A9F7;
+  --verify-on-ink: #1A0B2E;
+  --verify-bg:     #251340;
+  --verify-wash:   color-mix(in oklab, var(--verify-ink) 9%, var(--background));
 
   --sidebar:                        #0B0F14;
   --sidebar-foreground:             #F5F5F4;
@@ -290,6 +317,11 @@
   --color-trend-up:              var(--trend-up);
   --color-trend-down:            var(--trend-down);
   --color-trend-flat:            var(--trend-flat);
+
+  --color-verify-ink:            var(--verify-ink);
+  --color-verify-on-ink:         var(--verify-on-ink);
+  --color-verify-bg:             var(--verify-bg);
+  --color-verify-wash:           var(--verify-wash);
   --color-status-info:           var(--status-info);
   --color-status-info-bg:        var(--status-info-bg);
 
