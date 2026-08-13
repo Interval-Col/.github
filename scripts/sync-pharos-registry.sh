@@ -214,6 +214,22 @@ if [[ -d "$REGISTRY_DIR/app" ]]; then
     if [[ ! -f "$dest" ]] && ! is_added "$rel" && is_companion_required "$rel"; then
       echo "companion (required by an adopted component): $rel"
     fi
+    # SEED → el registry marca el ARCHIVO FUENTE con $KEEP_MARKER: no es un contrato, es
+    # una plantilla que la app llena y hace suya (p. ej. verification.manifest.ts, donde
+    # Calidad declara qué vista está en verificación y quién responde). Se copia una vez y
+    # nunca se registra en el manifiesto de drift — registrarla haría que Lock 3 prohibiera
+    # justo la edición para la que existe. Sin esta rama, el `keep` del destino llegaba
+    # tarde: en la PRIMERA copia el destino no existe, así que se copiaba Y se registraba,
+    # y el primer PR de la app que la editara salía DRIFTED. (Medido en pharos-lis#323.)
+    if grep -qF "$KEEP_MARKER" "$src" 2>/dev/null; then
+      if [[ -f "$dest" ]]; then
+        echo "seed (app-owned, ya presente): $rel"
+      else
+        copy_file "$src" "$dest"
+        echo "seed (plantilla, la app la hace suya): $rel"
+      fi
+      continue
+    fi
     # adopted-but-adapted → preserve the app's version, keep it out of the manifest
     if [[ -f "$dest" ]] && grep -qF "$KEEP_MARKER" "$dest" 2>/dev/null; then
       echo "keep (app adaptation, $KEEP_MARKER): $rel"

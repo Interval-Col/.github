@@ -196,7 +196,17 @@ for (const f of mounted) {
 // ni a la persona del mesón que necesita saber a quién preguntarle.
 const HANDLE_RE = /^@|^[a-z0-9][a-z0-9._-]*$/
 for (const e of entries) {
-  if (!e.nombre || !e.cargo) {
+  // Distinguir «no está» de «no puedo leerlo» — factorizar el responsable a una constante
+  // compartida (`responsable: CALIDAD`) es lo primero que uno intenta al declarar la
+  // tercera vista, y el mensaje genérico mandaba a buscar un campo que SÍ estaba escrito.
+  // La regla se sostiene: cada entrada tiene que leerse sola, porque quien audita abre el
+  // archivo y quiere ver vista y responsable en la misma línea, sin resolver referencias.
+  if (!e.nombre && !e.cargo && /responsable\s*:\s*[A-Za-z_$]/.test(e.raw)) {
+    errors.push(
+      `${e.path}: \`responsable\` apunta a una constante, no a un objeto en línea.\n` +
+      `      Escríbelo completo en la entrada: cada una tiene que leerse sola.`,
+    )
+  } else if (!e.nombre || !e.cargo) {
     errors.push(`${e.path}: falta responsable con \`nombre\` y \`cargo\` (SOP-000 §4).`)
   } else if (HANDLE_RE.test(e.nombre.trim())) {
     errors.push(
