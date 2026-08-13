@@ -1,4 +1,4 @@
-<!-- spec-version: d0ab37de · generado 2026-07-14 desde el playground (NO editar a mano; regenerar) -->
+<!-- spec-version: 6829b245 · generado 2026-08-13 desde el playground (NO editar a mano; regenerar) -->
 
 # Pháros — especificación de familia (shell + tokens)
 
@@ -22,6 +22,17 @@
 - **Notificaciones** campana en el topbar (arriba-derecha); conteo en badge `--status-error` (independiente del acento) + popover de items con punto de estado; props-in / eventos-out (vacío → "Sin notificaciones"). → `registry/app/components/SystemNotifications.vue (via the layout #notifications slot)`.
 - **Textura "Instrumento"** regla de marcas (tick-ruler, `repeating-linear-gradient`, opacidad .35) en el borde inferior del topbar + filete de marcas bajo cabeceras de tarjeta; decorativa (`pointer-events:none`), no altera la tipografía Sobrio. → `registry/app/assets/css/pharos-components.css ([data-pg-topbar]::after + [data-slot=card-header]::after)`.
 - **Pestaña de navegador** favicon = marca Pháros (`/favicon.svg`, SVG); título `titleTemplate` = "Pháros — «nombre de sub-marca»" (p. ej. "Pháros — Laboratorio"). → `app nuxt.config (app.head: title/titleTemplate + link rel=icon) + public/favicon.svg`.
+
+## Vista en verificación (PROT-SW-001)
+Cara de pantalla del estado que `PROT-SW-001` §6 describe: una vista puede estar **desplegada y en uso en paralelo** sin estar liberada, y mientras tanto **no se retira su predecesora**. El vocabulario sale del protocolo, no del diseño.
+- **Registro de color** Token propio — tokens `--verify-*` propios, deliberadamente FUERA de `--status-*`. La app escoge el registro; el estado no. → `registry/app/components/ViewVerification.vue (envoltorio: banda + lavado) + ViewVerificationMark.vue (punto de nav / píldora de breadcrumb) + tokens.css (--verify-*); el manifiesto por app vive FUERA del set sincronizado, en app/verification.manifest.ts`.
+- **Segundo canal obligatorio** franja diagonal sí. El color nunca es el único canal (misma regla que el beacon).
+- **`no-conforme` rompe el registro** y va SIEMPRE en `--status-error`, con cualquier registro escogido: «no la use como fuente para decisiones clínicas» es alarma clínica, no nota meta. Los otros dos estados que dibujan (`en-verificacion`, `no-conforme-acotado`) sí siguen el registro.
+- **`liberada` no dibuja nada.** La ausencia de la marca ES el estado liberado; un sello verde de «verificado» es una atestación que envejece. Solo se dibuja lo que restringe a quien usa la vista.
+- **Banda** densidad Completa, fija arriba del lienzo, **plegable pero nunca descartable** — plegada conserva titular + responsable. **Lavado del lienzo** sí — el componente lo iza a `[data-pg-content]` él mismo, así que ninguna app edita su `layouts/default.vue`.
+- **Responsable nominal** nombre + cargo, **nunca un identificador técnico** (`SOP-000` §4). `no-conforme-acotado` exige además el texto de la restricción operativa (`PROT-SW-001` §6.1).
+- **Montaje** un solo envoltorio por vista; el chip de nav/breadcrumb sí requiere montarse en `layouts/default.vue` (scaffold propio de la app, que el sync nunca toca). **Cero datos de paciente** en el manifiesto (`PROT-SW-001` §8).
+- **Superficies de paciente NO llevan la marca** (decidido 2026-08-13): una vista que no está lista para el paciente no se despliega al portal. Aplica también a la salida impresa/PDF.
 
 ## Paleta de estado (independiente del acento, RFC 0008 Q4)
 - `--status-{success,warning,error,info}` + `-bg`; nunca el acento de sub-marca. → `registry/tokens.css (--status-* + -bg)`.
