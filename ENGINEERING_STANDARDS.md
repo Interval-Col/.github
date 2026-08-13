@@ -320,6 +320,75 @@ See `operations/incidents/2026-06-sso-lockout-user-not-found.md`.
 
 ---
 
+## 🔬 Marking a view as «en verificación» (Pháros apps)
+
+A Pháros view that is **deployed but not yet released** under `PROT-SW-001` looks
+exactly like a released one unless it is marked. `PROT-SW-001` §6 is explicit that such
+a functionality «puede estar **desplegada y en uso en paralelo**, pero **no** se retira
+su predecesora» — the mark is that state, on screen: a banner, a subtle canvas wash, and
+a dot/chip in the nav and breadcrumb so it is visible *before* entering the view.
+
+**This applies to every Pháros app**, not just the one it shipped in.
+
+### To mark a new view
+
+Hand this to whoever (or whatever) does the work — it is complete as written:
+
+```
+Marca la vista <RUTA> como «en verificación» (PROT-SW-001).
+Responsable: <NOMBRE COMPLETO> · <CARGO>. Revisar antes de: <YYYY-MM-DD>.
+
+Dos pasos:
+1. Agrega la entrada en app/verification.manifest.ts — el responsable va EN LÍNEA,
+   nunca factorizado a una constante compartida.
+2. Envuelve la vista en su página, SIN re-indentar el cuerpo:
+   <ViewVerification :v="verificationFor($route.path)">…</ViewVerification>
+
+Verifica con: pnpm lint-check
+```
+
+Removing the mark is the same two files in reverse: delete the manifest entry **and**
+the wrapper. The gate requires both, so a `grep` always tells the truth about which
+views are marked.
+
+### The three inputs an agent must never invent
+
+| Input | Why it is a human's to give |
+|---|---|
+| **Which view** | A domain call — Quality and Medical Direction, not engineering. |
+| **`responsable`** | Full name + role, **never a `@handle`** (`SOP-000` §4). It is who the person at the bench would actually ask. |
+| **`revisarAntes`** | Quality's date. Past due **fails the build**, on purpose. |
+
+The `check-view-verification.mjs` gate catches all three if they are wrong — but the
+point is not to get there. And note the asymmetry: **`liberada` renders nothing at all.**
+The absence of the mark *is* the released state; a green "verificado" seal would be an
+attestation nobody removes once it stops being true.
+
+### First time in an app
+
+One-off, then never again:
+
+```bash
+scripts/sync-pharos-registry.sh --add components/ViewVerification.vue \
+  --add components/ViewVerificationMark.vue <app-fe-dir> [repo-root]
+```
+
+The vocabulary, the manifest bridge and the manifest **seed** follow automatically as
+declared companions. Two things the sync deliberately cannot do for you:
+
+- **Mount `<ViewVerificationMark>` in `app/layouts/default.vue`** — app-owned scaffold
+  the sync never touches. Without it there is a banner *inside* the view but no warning
+  *before* entering. Check 8 of the gate fails until you do.
+- **Add `node scripts/check-view-verification.mjs`** to the `lint-check` script.
+
+⚠️ `app/verification.manifest.ts` is a **seed, not a contract**: it carries
+`pharos-registry:keep`, so it lands once and is yours from then on — a re-sync never
+overwrites what Quality declared, and Lock 3 never flags your edits as drift.
+
+Detail — the states, the colour registers, the eight checks:
+[`brands/pharos_brand/registry/README.md`](brands/pharos_brand/registry/README.md)
+§ *Vista en verificación*.
+
 ## 📄 Project Documentation
 
 - Root `README.md` must document:
