@@ -172,14 +172,16 @@ is_added() {
 # the app (or is being --add'd this run), the sibling comes too, whether or not anyone remembered it.
 COMPANIONS=(
   "components/PharosHelpChat.vue:components/PharosChatAvatar.vue"   # imports ./PharosChatAvatar.vue
-  # La marca de verificación (PROT-SW-001) viaja en tres piezas y ninguna sirve sola:
-  # el componente importa el vocabulario, y el vocabulario importa el manifiesto de la app.
+  # La marca de verificación (PROT-SW-001) viaja en cuatro piezas y ninguna sirve sola:
+  # el componente importa el vocabulario, y el composable puente lee el manifiesto de la app.
   # `verification.manifest.ts` lleva `pharos-registry:keep` EN EL ARCHIVO, así que aterriza
   # una sola vez (con su plantilla comentada) y a partir de ahí es de la app — un re-sync
   # ya nunca se lleva por delante las vistas que Calidad declaró ahí.
   "components/ViewVerification.vue:lib/verification.ts"
+  "components/ViewVerification.vue:composables/useViewVerification.ts"
   "components/ViewVerification.vue:verification.manifest.ts"
   "components/ViewVerificationMark.vue:lib/verification.ts"
+  "components/ViewVerificationMark.vue:composables/useViewVerification.ts"
   "components/ViewVerificationMark.vue:verification.manifest.ts"
 )
 is_companion_required() {
