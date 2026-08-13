@@ -45,11 +45,14 @@
 import type { ViewVerification } from '~/lib/verification'
 
 export const VERIFICATION_MANIFEST: Record<string, ViewVerification> = {
-  // Ejemplo — bórralo y pon las vistas reales de esta app:
+  // Ejemplo — bórralo y pon las vistas reales de esta app. El responsable va con
+  // marcador de posición a propósito: esta plantilla vive en el registry, que es un
+  // repo PÚBLICO, y un nombre real de ejemplo terminaría indexado ahí. En la app
+  // (repo privado) sí va el nombre completo y el cargo, que es lo que exige SOP-000 §4.
   //
   // '/resultados/liberacion': {
   //   estado: 'en-verificacion',
-  //   responsable: { nombre: 'Sara Morales', cargo: 'Coordinación de Calidad' },
+  //   responsable: { nombre: '<Nombre Apellido>', cargo: '<Cargo>' },
   //   protocolo: 'PROT-SW-001',
   //   expediente: 'FOR-SW-001 · entrega 2026-08',
   //   desde: '2026-08-04',
