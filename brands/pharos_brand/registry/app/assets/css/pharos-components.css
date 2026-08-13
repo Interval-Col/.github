@@ -159,3 +159,51 @@
   opacity: 0.6;
   pointer-events: none;
 }
+
+/* ── Vista en verificación (PROT-SW-001) ──────────────────────────────────────
+   Acompaña a ViewVerification.vue + ViewVerificationMark.vue. Los tokens
+   --verify-* viven en tokens.css; acá va lo que no se puede expresar con una
+   utilidad de Tailwind.
+
+   REGISTROS DE COLOR — pura indirección de tokens: el componente pone
+   [data-verify-tone] y esta hoja reapunta --verify-*. Así el .vue nunca decide
+   un color (los gates no-hex / no-palette quedan limpios) y comparar registros
+   es cambiar un atributo, no ramificar el marcado. El default («verify», el
+   token propio) no necesita regla: son los valores base. */
+[data-verify-tone="warning"] {
+  --verify-ink: var(--status-warning);
+  --verify-on-ink: var(--background);
+  --verify-bg: var(--status-warning-bg);
+  --verify-wash: color-mix(in oklab, var(--status-warning) 5%, var(--background));
+}
+[data-verify-tone="error"] {
+  --verify-ink: var(--status-error);
+  --verify-on-ink: var(--background);
+  --verify-bg: var(--status-error-bg);
+  --verify-wash: color-mix(in oklab, var(--status-error) 5%, var(--background));
+}
+[data-verify-tone="neutral"] {
+  --verify-ink: var(--foreground);
+  --verify-on-ink: var(--background);
+  --verify-bg: var(--muted);
+  --verify-wash: color-mix(in oklab, var(--foreground) 4%, var(--background));
+}
+
+/* SEGUNDO CANAL. La marca no puede descansar en el hue: sobrevive daltonismo,
+   fotocopia y B/N porque la franja es GEOMETRÍA, no color. Va sobre el campo
+   (--verify-on-ink translúcido), así que se hereda sola en los 4 registros. */
+.pharos-verify-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--verify-on-ink) 26%, transparent) 0 5px,
+    transparent 5px 11px
+  );
+}
+
+/* EL LAVADO DEL LIENZO. ViewVerification le pone [data-view-verification] al
+   lienzo al montarse (y se lo quita al desmontarse), así el tinte cubre TAMBIÉN
+   el padding del scroller sin que la app tenga que tocar su layouts/default.vue.
+   Sutil a propósito: tiñe el fondo sin mover ninguna superficie que cargue
+   contenido — las tarjetas siguen en --card y las marcas clínicas de una tabla
+   no se enturbian. Es fondo, no capa encima. */
+[data-pg-content][data-view-verification] { background-color: var(--verify-wash); }

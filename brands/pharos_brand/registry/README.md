@@ -24,6 +24,9 @@ package (RFC 0008 Q3).
 | `scripts/check-no-raw-html.mjs` | CI gate: no raw HTML form primitives (`<button>`, `<input>`, `<select>`, `<table>`, `<textarea>`) in `app/pages/` + `app/layouts/`. Exceptions: `type="file"` inputs + reka-ui combobox. |
 | `scripts/check-no-hex-colors.mjs` | CI gate: no hardcoded hex literals outside `app/assets/css/`. Escape hatch: `lint-allow-hex` comment or per-file ALLOWLIST. |
 | `scripts/check-no-palette-colors.mjs` | CI gate: no raw Tailwind palette utilities (`text-green-600`, `bg-amber-100`, etc.) outside `app/components/ui/`. Escape hatch: `lint-allow-palette`. |
+| `app/components/ViewVerification.vue` + `ViewVerificationMark.vue` + `app/lib/verification.ts` | La marca de **«vista en verificación»** (`PROT-SW-001`). Ver la sección propia abajo. |
+| `app/verification.manifest.ts` | **Semilla del manifiesto por app** — lleva `pharos-registry:keep`, así que aterriza una vez y después es de la app. |
+| `scripts/check-view-verification.mjs` | CI gate: manifiesto y pantalla no pueden separarse. 8 chequeos; el 6 (caducidad) rompe el build. |
 | `scripts/check-token-drift.mjs` | CI gate (Layer-D): synced `pharos-tokens.css` matches the registry SHA256 — catches stale copy-ins. |
 | `scripts/check-token-usage.mjs` | CI gate: every color utility resolves to a **defined** `--color-*` token. An undefined token emits no CSS, so the element renders with no color and nothing fails. **Two rules:** (1) a typo inside a family we own — `bg-status-danger` when the token is `status-error`; (2) a name that is neither ours nor Tailwind's — catches a family renamed out of existence, which rule 1 structurally cannot see (`bg-error-fill`, measured in lab-qc). Rule 2 keeps a small `TW_KEYWORDS` allowlist; an unfamiliar-but-valid utility value fails loudly and costs one line. Escape hatch: `lint-allow-token`. |
 | `scripts/check-contrast.mjs` | CI gate (Layer-D): WCAG AA on token pairs; warns on the locked light pastels (Recepción/Clientes). |
@@ -79,6 +82,58 @@ script and the re-sync bot never touch it. So an app can be handed a canvas regi
 `rail`) with no canvas mount to render it into — which would mean *no beacon at all*.
 `SystemBeacon` detects that and falls back to `dot-label`, so the failure is visible-but-benign
 rather than silent. Adopt the layout mount by hand; do not assume the bot did it.
+
+## Vista en verificación (`PROT-SW-001`)
+
+Cara de pantalla de un estado que el sistema documental del laboratorio **ya define**:
+`PROT-SW-001` §6 dice que una funcionalidad no liberada «puede estar **desplegada y en uso
+en paralelo**, pero **no** se retira su predecesora». Sin la marca, esa vista se ve idéntica
+a una liberada.
+
+**Reparto de responsabilidades — la frontera es deliberada:**
+
+| Qué | Dónde vive | Quién lo decide |
+|---|---|---|
+| Vocabulario, estados, reglas, cómo se ve | Registry (`app/lib/verification.ts` + tokens) | Sistema de diseño (spec `family.md`) |
+| Qué vista, en qué estado, quién responde | App (`app/verification.manifest.ts`) | **Calidad + Dirección Médica** |
+
+Un archivo del registry que cargara el manifiesto estaría diciendo que el sistema de diseño
+decide quién responde por una vista clínica. Por eso el manifiesto lleva `pharos-registry:keep`:
+el sync lo copia una vez, con su plantilla comentada, y **nunca lo vuelve a tocar**.
+
+Wiring, en la app que consume:
+
+1. `scripts/sync-pharos-registry.sh --add app/components/ViewVerification.vue …` — el
+   vocabulario y la semilla del manifiesto **vienen solos** (son companions declarados).
+2. Declara las vistas en `app/verification.manifest.ts`.
+3. Envuelve cada vista declarada, en su página:
+   ```vue
+   <ViewVerification :v="verificationFor(route.path)">…</ViewVerification>
+   ```
+4. **Monta `ViewVerificationMark` en `app/layouts/default.vue`** (nav + breadcrumb).
+5. Agrega `node scripts/check-view-verification.mjs` al `lint-check` del `package.json`.
+
+⚠️ **El paso 4 es el que muerde**, por la misma razón que el paso 3 del beacon: el layout es
+scaffold propio de la app y el sync nunca lo toca. La diferencia es que acá **el gate lo
+atrapa** (chequeo 8): con vistas marcadas y sin el chip montado, habría banda dentro de la
+vista pero ningún aviso *antes* de entrar, y CI falla. El envoltorio se libra solo porque
+busca su lienzo (`[data-pg-content]`) y se pinta él mismo.
+
+Tres propiedades que no son negociables, y por qué:
+
+- **El color es un token propio (`--verify-*`), no `--status-*`.** Una vista de laboratorio ya
+  está llena de ámbar y teal clínicos; reusar la paleta de estado haría que la misma tinta
+  dijera dos cosas en un solo viewport — y `--status-warning` ↔ `--status-success` están
+  medidos a ΔE 12,8, bajo el piso de 15. Es estado del *software*, no del *dato*. Excepción
+  única: **`no-conforme` va siempre en `--status-error`**, porque ahí el mensaje es «pare».
+- **`liberada` no dibuja nada.** La ausencia de la marca ES el estado liberado. Un sello verde
+  de «verificado» es una atestación que envejece: nadie la quita cuando deja de ser cierta.
+- **`revisarAntes` es obligatoria y vencida rompe el build.** Una marca sin caducidad se vuelve
+  mobiliario, y entonces la gente deja de leerla — peor que no tenerla.
+
+Las superficies de cara al paciente **nunca** llevan la marca (decidido 2026-08-13): una vista
+que no está lista para el paciente sencillamente no se despliega al portal. Aplica también a la
+salida impresa/PDF.
 
 ## Decided vs open
 

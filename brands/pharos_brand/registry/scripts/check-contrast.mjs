@@ -163,6 +163,13 @@ const TEXT_PAIRS = [
   // clinical signal carrying text, so it owes the same AA 4.5:1 as the four
   // `--status-*` roles — and until now no pair in this file measured it.
   ['--destructive-foreground', '--destructive'],
+
+  // Marca de «vista en verificación» (PROT-SW-001). La banda AFIRMA que una vista
+  // no está liberada, así que su texto es una advertencia de seguridad clínica y
+  // debe la misma AA 4,5:1 que los --status-*: el campo sólido (banda) y el chip
+  // teñido (nav / breadcrumb).
+  ['--verify-on-ink', '--verify-ink'],
+  ['--verify-ink', '--verify-bg'],
 ]
 const UI_PAIRS = [
   ['--ring', '--background'],
