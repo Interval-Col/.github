@@ -144,6 +144,14 @@ const geo = computed(() =>
   }),
 )
 
+/** Los dos límites como posiciones y — el borde inferior y el superior de la
+ *  banda, dibujados como marcas propias. Se derivan del mismo rect y no de los
+ *  `bounds` crudos: así un rango degenerado o invertido, que `computeGeometry`
+ *  ya descarta, tampoco produce bordes huérfanos. */
+const bandEdges = computed(() =>
+  geo.value.band ? [geo.value.band.y, geo.value.band.y + geo.value.band.height] : [],
+)
+
 const summary = computed(() =>
   trendSummary({
     label: props.label,
@@ -211,6 +219,27 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
         :width="width"
         :height="geo.band.height"
         class="band"
+      />
+
+      <!-- 🔴 LOS BORDES SON LA BANDA. El dominio se ensancha para incluir el
+           rango de referencia (`computeDomain`), así que cuando todo el
+           histórico cae dentro de referencia — el caso corriente, y el bueno —
+           el relleno ocupa casi toda la caja y deja de leerse como banda: se
+           lee como fondo. Lo que queda legible ahí es DÓNDE están los límites,
+           no el área entre ellos, y por eso se dibujan como marcas propias.
+
+           Discontinuos a propósito, y contra la `reference-line` sólida de
+           abajo: una línea sólida marca UN valor medido contra el cual comparar;
+           una discontinua marca un umbral DECLARADO por el laboratorio. Son
+           cosas distintas y no deben confundirse a simple vista. -->
+      <line
+        v-for="edgeY in bandEdges"
+        :key="edgeY"
+        x1="0"
+        :x2="width"
+        :y1="edgeY"
+        :y2="edgeY"
+        class="band-edge"
       />
 
       <!-- ONE PATH PER CONTIGUOUS RUN of readings. A period with no reading
@@ -310,6 +339,13 @@ function arrowPathFor(m: { x: number, y: number, censoring: 'below' | 'above' | 
 
 .band {
   fill: var(--muted);
+}
+
+.band-edge {
+  stroke: var(--muted-foreground);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.45;
 }
 
 .line {
