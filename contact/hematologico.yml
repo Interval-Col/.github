@@ -2,9 +2,16 @@
 #
 # CANONICAL source of truth for LCH clinic contact facts (phones, sedes,
 # addresses, service hours). These are PUBLIC facts, the same ones published on
-# lch.co — NOT PHI. This file lives beside the brand spec (LCH-BRAND.md) because
-# it is part of the clinic's public identity, and .github is the org's single
-# public repo, so any surface (portal, marketing site, apps) points here.
+# lch.co — NOT PHI. It stays in .github, the org's single PUBLIC repo, because
+# that is what it is for: any surface (portal, marketing site, apps) points here.
+#
+# It used to live at brands/hematologico/, beside the brand spec. It was moved
+# here on 2026-08-15 when the clinic brand books, logos and licensed fonts left
+# for the PRIVATE repo Interval-Col/brand-assets — the fonts could not stay in a
+# public repo, and this file could not follow them into a private one without
+# inverting its whole reason for existing. Two different homes, two different
+# reasons. The brand spec is now at `Interval-Col/brand-assets` →
+# `hematologico/LCH-BRAND.md`.
 #
 # Consumers mirror these values rather than importing this file directly:
 #   - public-web (results portal): apps/lch-results/app/utils/lab-contact.ts
