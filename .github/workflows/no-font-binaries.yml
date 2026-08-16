@@ -1,0 +1,87 @@
+# Guard — no font binaries, and no heavy binaries, in the org's PUBLIC repo.
+#
+# WHY THIS EXISTS. On 2026-08-15 we found 29 licensed commercial font files
+# sitting in this repo: 24 Apax (Optimo) added 2026-06-15, and 5 Pragmática Ext
+# (ParaType) added 2026-07-11. This is the org's ONLY public repo, so they were
+# downloadable by anyone, without credentials, for 60 and 34 days respectively.
+# Both foundries' EULAs forbid redistribution in plain terms.
+#
+# Nobody did anything reckless — the files arrived alongside brand documentation,
+# which belongs here, and the binaries rode along unnoticed. That is exactly the
+# failure a human review does not catch and a check does. The assets now live in
+# the PRIVATE repo Interval-Col/brand-assets; this gate keeps them from coming
+# back.
+#
+# WHAT IT BLOCKS: font binaries anywhere in the repo, and any new file over 2 MB.
+# This repo holds standards, templates, agent instructions and the Pháros design
+# system — text, plus small SVG/PNG marks. Nothing here needs to be large, and
+# nothing here needs to be a font.
+#
+# RUNNER: `ubuntu-latest`, and it is load-bearing. The org is on the Team plan
+# with a $0 Actions spending limit, so private repos use the self-hosted pool —
+# but that pool EXCLUDES public repos, and a self-hosted job here would queue
+# forever rather than fail. This repo is PUBLIC. Do not "harmonize" this line
+# with the private repos' workflows.
+
+name: no-font-binaries
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  no-font-binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Block font binaries and oversized files
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$BASE_REF" --quiet
+
+          # Only files this PR ADDS or MODIFIES. A rename that merely moves an
+          # already-present file is not a new exposure, but --diff-filter=ACMR
+          # catches the renamed destination too, which is what we want: a font
+          # moved INTO this repo is still a font landing in a public repo.
+          added=$(git diff --name-only --diff-filter=ACMR \
+                    "origin/$BASE_REF"...HEAD || true)
+
+          fail=0
+
+          fonts=$(printf '%s\n' "$added" \
+                    | grep -iE '\.(otf|ttf|woff2?|eot|fon|pfb)$' || true)
+          if [ -n "$fonts" ]; then
+            fail=1
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              echo "::error file=$f::Font binary in the org's PUBLIC repo. Licensed faces (Apax · Pragmática Ext) may not be redistributed — both EULAs forbid it. Fonts live in the PRIVATE repo Interval-Col/brand-assets."
+            done <<< "$fonts"
+          fi
+
+          # Size guard. Catches the next category we have not thought of —
+          # a brandbook PDF, an .ai master, a design export.
+          LIMIT=$((2 * 1024 * 1024))
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || continue          # deleted paths still appear in ACMR
+            size=$(wc -c < "$f" | tr -d ' ')
+            if [ "$size" -gt "$LIMIT" ]; then
+              fail=1
+              echo "::error file=$f::$((size / 1024)) KB exceeds the 2 MB ceiling for this repo. Large binaries (brandbooks, .ai masters, design exports) belong in Interval-Col/brand-assets, which carries them in Git LFS."
+            fi
+          done <<< "$added"
+
+          if [ "$fail" -eq 1 ]; then
+            echo
+            echo "This repo is PUBLIC. If the file genuinely belongs in the open,"
+            echo "say so on the PR and a human can waive this — but the default is no."
+            exit 1
+          fi
+          echo "no-font-binaries: clean — nothing added that should not be public."
