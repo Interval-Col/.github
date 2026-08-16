@@ -127,29 +127,63 @@ admission-patient's `docs/decisions/`; guides follow
 
 ---
 
+## Where each fact lives
+
+One class of fact, one owning document. Everything else **points** at it.
+
+This table exists because copying is how the estate drifts. A 2026-08 sweep found
+the same three mechanisms behind nearly every stale claim: indexes copied by hand
+(the RFC index existed in three copies, and all three were wrong), documents
+forked and both sides calling themselves authoritative, and investigative prose
+poured into tables meant for scanning.
+
+**How to use it.** Before writing a fact down, find its row. If you are not
+writing in the owner, write a pointer instead. If the owner is wrong, fix the
+owner — do not correct it locally and leave the owner lying.
+
+| Fact class | Owner | Read it there because |
+|---|---|---|
+| Repo inventory & navigation | `operations/WORKSPACE-MAP.md` | Symlinked as `~/dev/CLAUDE.md`; loaded into every session |
+| Repo disposition (archived / folded / deleted) | `rfcs/0009-disposition-tracker.md` | The per-repo ruling, with dates |
+| Runtime topology (what runs where, behind which route) | `proxy/templates.d/*.conf.template` | Config, not prose — it cannot drift from itself |
+| Host roster (hostname, IP, environment, role) | `infrastructure/inventory/` | The inventory is what Ansible actually reads |
+| Schema ownership & GRANTs | `nucleus-db/operations/grants/grant-matrix.md` | It is what `apply-grants.sql` implements |
+| Branching / CI / deploy policy | `.github/BRANCHING-AND-DEPLOY.md` | ⚠️ States the standard; per-repo settings drift — verify with `gh api …/branches/<b>/protection` |
+| Org-level engineering standards (stack choices) | `.github/ENGINEERING_STANDARDS.md` | What a new repo adopts |
+| Implementation standards (tool configs, CI-enforced) | `pharos-lis/lab-qc/docs/STANDARDS.md` | Shared by lab-qc and finance-lch |
+| Machine-checked contracts | `.github/db-tenant-contract.md`, `auth-contract.md` | A CI check reads these |
+| Pháros design system | `.github/brands/pharos_brand/registry/` | Synced into apps by `sync-pharos-registry.sh`; ⚠️ `pharos-brand/` at the workspace root is assets only |
+| Tenant brand books & assets (LCH · Biuman · Interval) | `Interval-Col/brand-assets` | PRIVADO — holds licensed commercial fonts; masters in Git LFS |
+| Plan methodology & templates | `.github/templates/plan-template.md` | `plan_lint.py` enforces this schema |
+| RFC index & lifecycle | `rfcs/README.md` | Do not mirror it — mirrors cannot stay true |
+| Incident history | `operations/incidents/` + `operations/lessons.md` | Postmortem, then the durable rule |
+| Technical debt | `operations/tech-debt.md` | The capture inbox |
+| Runbooks (operator procedures) | `operations/runbooks/` | One home, including runbooks about infrastructure |
+| Schema / data-platform decisions | `nucleus-db/docs/decisions/` (single-repo) → `rfcs/` (cross-repo) | See *RFC vs. ADR* above |
+| PHI & security policy | `operations/policies/` | |
+| Team roster & operating model | `operations/ops/shared/` | Private by design |
+| Knowledge-management conventions | this file | |
+
+💡 **The test for a duplicate.** If two documents state the same fact and one goes
+stale, would a reader be able to tell which? If not, one of them must become a
+pointer. A wrong copy is worse than no copy, because it looks like an answer.
+
+---
+
 ## Cross-repo decision ledger
 
 ### RFCs (org-wide)
 
-The authoritative index is [`rfcs/README.md`](https://github.com/Interval-Col/rfcs/blob/main/README.md);
-this mirror is for quick orientation from the hub.
+The index lives in
+[`rfcs/README.md`](https://github.com/Interval-Col/rfcs/blob/main/README.md),
+with the number, title, status and target repos of every RFC. Some numbers also
+carry companion working files — trackers and surveys, not separate RFCs; the
+index marks them.
 
-| # | Title | Status |
-|---|---|---|
-| [0001](https://github.com/Interval-Col/rfcs/blob/main/0001-org-wide-harmonization.md) | Org-wide engineering standards harmonization | `proposed` |
-| [0002](https://github.com/Interval-Col/rfcs/blob/main/0002-browser-auth-httponly-cookie-csrf.md) | Move browser auth to httponly cookie + CSRF token | `draft` |
-| [0003](https://github.com/Interval-Col/rfcs/blob/main/0003-object-storage-strategy.md) | Object storage strategy — harden MinIO, replicate off-site, plan for AI workloads | `draft` |
-| [0004](https://github.com/Interval-Col/rfcs/blob/main/0004-pharos-product-portfolio.md) | Pháros product portfolio — umbrella brand, persona-scoped apps, holding multi-tenancy | `draft` |
-| [0005](https://github.com/Interval-Col/rfcs/blob/main/0005-nucleus-data-platform.md) | nucleus-db — shared database platform, schema stewardship, historical archive | `active` |
-| [0006](https://github.com/Interval-Col/rfcs/blob/main/0006-cobol-decommissioning.md) | COBOL decommissioning — strangler-fig migration to the Pháros stack | `draft` |
-| [0007](https://github.com/Interval-Col/rfcs/blob/main/0007-onprem-ha-dr-topology.md) | On-prem production infrastructure — virtualization platform, HA, and DR | `draft` |
-| [0008](https://github.com/Interval-Col/rfcs/blob/main/0008-pharos-design-system.md) | Pháros design system — shared FE foundation + endorsed sub-brands | `accepted` |
-| [0009](https://github.com/Interval-Col/rfcs/blob/main/0009-bitbucket-to-github-forge-migration.md) | Bitbucket → GitHub forge migration (decommission the intervalica workspace) | `draft` |
-| [0010](https://github.com/Interval-Col/rfcs/blob/main/0010-planning-as-code-and-self-hosted-reporting.md) | Planning-as-code and self-hosted team-sync reporting | `draft` |
-
-> RFC 0009 and 0010 each carry companion working files in the rfcs repo
-> (`0009-disposition-tracker.md`, `0009-docker-images-note.md`,
-> `0010-grounding-survey.md`) — trackers/surveys, not separate RFCs.
+This page carried a hand-copied mirror of that table until 2026-08-07. By then it
+was wrong about three RFCs' status and missing sixteen of the twenty-six, while
+sitting one line below the pointer above. A mirror of an index has no way to stay
+true, and a reader cannot tell a stale mirror from a current one.
 
 ### Notable ADRs (per repo)
 

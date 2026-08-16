@@ -32,10 +32,24 @@ This document defines the official engineering standards for all primary project
 - Apps with a self-serve roles/capabilities module follow the **[auth contract](auth-contract.md)** (RFC 0016): local authz (IAM = identity only), the `require_capability` gate, the seven `/auth/admin/*` endpoints, deploy-step seeding (never on startup), a runtime role registry, and FE↔BE capability sync — machine-checked by the reusable `auth-contract-check` workflow.
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
-- Nuxt 4 as framework — **SSR by default**; opt individual pages out
-  with `definePageMeta({ ssr: false })` only when they are auth-gated
-  and load all data client-side (SSR would render an empty skeleton).
-  Never set a global `ssr: false`.
+- Nuxt 4 as framework — **SSR by default**. Opt a route out with
+  **`routeRules`**, not `definePageMeta`:
+
+  ```ts
+  routeRules: { '/etiquetas': { ssr: false } }
+  ```
+
+  ⚠️ **`definePageMeta({ ssr: false })` does nothing in Nuxt 4** — `ssr` is not
+  a `definePageMeta` key. A page "opted out" that way still renders on the
+  server. `routeRules` is the Nuxt-native per-route mechanism and the one both
+  live apps use.
+
+  Opt out when the route is auth-gated **and** loads its data client-side, so
+  SSR would only render an empty skeleton and add hydration risk. A whole app
+  may render client-side when it is internal-only with no SEO surface —
+  finance-lch does exactly that (`'/**': { ssr: false }`), deliberately.
+  Reference implementations: `finance-lch/frontend/nuxt.config.ts` (whole app)
+  and `pharos-lis/lab-qc/frontend/nuxt.config.ts` (single route).
 - Vue 3, Vite, Pinia, Tailwind v4, TypeScript
 - Pin Node version in `package.json` and/or `.nvmrc`
 - `.env.example` in `frontend/`
@@ -70,11 +84,45 @@ This document defines the official engineering standards for all primary project
 > That doc is the source of truth for the per-setting choices; this
 > table is the elevator pitch.
 
-> **Solo-maintainer note.** While `@gczuluaga` is the sole Code Owner, GitHub
-> won't let an author approve their own PR, so the "1 reviewer" gate is satisfied
-> via **admin override** (`gh pr merge <n> --admin`) for the gatekeeper's *own*
-> PRs; it still binds a PR authored by a future second contributor. Detail:
+> **Solo-maintainer note.** The org standard for a single Code Owner is: required
+> approvals **0** — green CI, not a human approval, is what gates a merge — with
+> `enforce_admins` **on** so the rules bind admins too. Approvals go to 1 when a
+> second reviewer joins. Detail:
 > [`BRANCHING-AND-DEPLOY.md`](BRANCHING-AND-DEPLOY.md) → `main` branch protection.
+>
+> ⚠️ **That is the standard, not a guarantee about a given repo.** Settings drift,
+> and several repos do not match it today. Before assuming how a merge is gated,
+> read the repo:
+> `gh api repos/Interval-Col/<repo>/branches/<branch>/protection`.
+
+### 🧬 No orphan code — anything that runs is in a repo
+
+| Rule | Standard |
+|---|---|
+| **A branch is a backup, not a commitment** | Pushing a branch **never** requires an open decision to be resolved first. A pending decision gates **merging**, **deploying**, and **creating a new repo** — it never gates **versioning**. If you are waiting on a decision, push a `wip/<slug>` branch and keep working. |
+| **Arrival = repo + runtime** | The mirror of RFC 0009's *"Retirement = repo + runtime"*. Nothing runs in the estate whose source is not in a repo: a service arriving needs **both** surfaces, exactly as a service retiring needs both removed. |
+| **No authoring on a host** | A server is where code **runs**, never where it is **written**. The moment a task turns from *configuring a tool* into *authoring a file*, the file needs a repo — even if it is "temporary", even if it is one file. |
+| **Interim home** | No repo decided yet? The code goes to a `wip/` branch of the **repo that will consume it**, or of the closest owning repo. A folder can be extracted into its own repo later **with history** (`git subtree split`) — the org has done it (`pharos-llm-proxy` ← `finance-lch`). Starting versioned is never the expensive choice. |
+| **Provenance is the test** | A running container whose image was built **on the host** rather than pulled from the org registry is orphan code by definition. Image provenance, not good intentions, is what makes this auditable. |
+
+> **Why this is a standard and not advice.** The failure mode is silent and it
+> compounds. A gated decision stalls the repo; the work continues because the
+> work is urgent; the artefact grows one reasonable file at a time; and **no CI
+> check can ever see it**, because every gate in this org — secret scan, lint,
+> tenant check, code owners — runs on pull requests. Code that never reached a PR
+> is invisible **by construction**, so the only copy of a load-bearing service can
+> sit on one unbacked disk with nothing anywhere reporting a problem. The stalled
+> tasks *are* the alarm, and a stalled task looks exactly like orderly progress.
+
+> **Tenant identity travels with the repo.** One repo = one nucleus-db tenant:
+> the manifest in [`db-tenant-contract.md`](db-tenant-contract.md) takes a single
+> `app:` and a single set of owned `schemas:`, applied by that app's one migrate
+> one-shot under that app's role. So **"does this need its own repo?" and "does
+> this own its own schema and role?" are the same question asked twice.** A
+> component that must own a schema separately — its own owner role, its own
+> privilege split — is its own tenant, and therefore its own repo. Deciding the
+> schema first and the repo later, or the reverse, is how the two answers end up
+> contradicting each other.
 
 ---
 
@@ -271,6 +319,75 @@ The SSO (`sso-backend`, `POST /auth/v1/session/login`) returns a misleading `"Us
 See `operations/incidents/2026-06-sso-lockout-user-not-found.md`.
 
 ---
+
+## 🔬 Marking a view as «en verificación» (Pháros apps)
+
+A Pháros view that is **deployed but not yet released** under `PROT-SW-001` looks
+exactly like a released one unless it is marked. `PROT-SW-001` §6 is explicit that such
+a functionality «puede estar **desplegada y en uso en paralelo**, pero **no** se retira
+su predecesora» — the mark is that state, on screen: a banner, a subtle canvas wash, and
+a dot/chip in the nav and breadcrumb so it is visible *before* entering the view.
+
+**This applies to every Pháros app**, not just the one it shipped in.
+
+### To mark a new view
+
+Hand this to whoever (or whatever) does the work — it is complete as written:
+
+```
+Marca la vista <RUTA> como «en verificación» (PROT-SW-001).
+Responsable: <NOMBRE COMPLETO> · <CARGO>. Revisar antes de: <YYYY-MM-DD>.
+
+Dos pasos:
+1. Agrega la entrada en app/verification.manifest.ts — el responsable va EN LÍNEA,
+   nunca factorizado a una constante compartida.
+2. Envuelve la vista en su página, SIN re-indentar el cuerpo:
+   <ViewVerification :v="verificationFor($route.path)">…</ViewVerification>
+
+Verifica con: pnpm lint-check
+```
+
+Removing the mark is the same two files in reverse: delete the manifest entry **and**
+the wrapper. The gate requires both, so a `grep` always tells the truth about which
+views are marked.
+
+### The three inputs an agent must never invent
+
+| Input | Why it is a human's to give |
+|---|---|
+| **Which view** | A domain call — Quality and Medical Direction, not engineering. |
+| **`responsable`** | Full name + role, **never a `@handle`** (`SOP-000` §4). It is who the person at the bench would actually ask. |
+| **`revisarAntes`** | Quality's date. Past due **fails the build**, on purpose. |
+
+The `check-view-verification.mjs` gate catches all three if they are wrong — but the
+point is not to get there. And note the asymmetry: **`liberada` renders nothing at all.**
+The absence of the mark *is* the released state; a green "verificado" seal would be an
+attestation nobody removes once it stops being true.
+
+### First time in an app
+
+One-off, then never again:
+
+```bash
+scripts/sync-pharos-registry.sh --add components/ViewVerification.vue \
+  --add components/ViewVerificationMark.vue <app-fe-dir> [repo-root]
+```
+
+The vocabulary, the manifest bridge and the manifest **seed** follow automatically as
+declared companions. Two things the sync deliberately cannot do for you:
+
+- **Mount `<ViewVerificationMark>` in `app/layouts/default.vue`** — app-owned scaffold
+  the sync never touches. Without it there is a banner *inside* the view but no warning
+  *before* entering. Check 8 of the gate fails until you do.
+- **Add `node scripts/check-view-verification.mjs`** to the `lint-check` script.
+
+⚠️ `app/verification.manifest.ts` is a **seed, not a contract**: it carries
+`pharos-registry:keep`, so it lands once and is yours from then on — a re-sync never
+overwrites what Quality declared, and Lock 3 never flags your edits as drift.
+
+Detail — the states, the colour registers, the eight checks:
+[`brands/pharos_brand/registry/README.md`](brands/pharos_brand/registry/README.md)
+§ *Vista en verificación*.
 
 ## 📄 Project Documentation
 

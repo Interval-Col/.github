@@ -3,7 +3,7 @@
 # sync-pharos-registry.sh — copy the shared Pháros design-system foundation
 # into a consuming app (RFC 0008 Q3: copy-in registry, NOT a runtime package).
 #
-# Syncs: tokens.css (+ .sha256 drift sidecar) · the 8 gate scripts (check-*.mjs)
+# Syncs: tokens.css (+ .sha256 drift sidecar) · the 9 gate scripts (check-*.mjs)
 #        · eslint.config.mjs template · pharos-lint-check.yml (its working-directory
 #        + pnpm cache path auto-set to the app's FE subdir) · registry/app/**.
 #
@@ -172,6 +172,17 @@ is_added() {
 # the app (or is being --add'd this run), the sibling comes too, whether or not anyone remembered it.
 COMPANIONS=(
   "components/PharosHelpChat.vue:components/PharosChatAvatar.vue"   # imports ./PharosChatAvatar.vue
+  # La marca de verificación (PROT-SW-001) viaja en cuatro piezas y ninguna sirve sola:
+  # el componente importa el vocabulario, y el composable puente lee el manifiesto de la app.
+  # `verification.manifest.ts` lleva `pharos-registry:keep` EN EL ARCHIVO, así que aterriza
+  # una sola vez (con su plantilla comentada) y a partir de ahí es de la app — un re-sync
+  # ya nunca se lleva por delante las vistas que Calidad declaró ahí.
+  "components/ViewVerification.vue:lib/verification.ts"
+  "components/ViewVerification.vue:composables/useViewVerification.ts"
+  "components/ViewVerification.vue:verification.manifest.ts"
+  "components/ViewVerificationMark.vue:lib/verification.ts"
+  "components/ViewVerificationMark.vue:composables/useViewVerification.ts"
+  "components/ViewVerificationMark.vue:verification.manifest.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion
@@ -202,6 +213,22 @@ if [[ -d "$REGISTRY_DIR/app" ]]; then
     # pulled in only because an adopted component imports it — say so, it wasn't asked for
     if [[ ! -f "$dest" ]] && ! is_added "$rel" && is_companion_required "$rel"; then
       echo "companion (required by an adopted component): $rel"
+    fi
+    # SEED → el registry marca el ARCHIVO FUENTE con $KEEP_MARKER: no es un contrato, es
+    # una plantilla que la app llena y hace suya (p. ej. verification.manifest.ts, donde
+    # Calidad declara qué vista está en verificación y quién responde). Se copia una vez y
+    # nunca se registra en el manifiesto de drift — registrarla haría que Lock 3 prohibiera
+    # justo la edición para la que existe. Sin esta rama, el `keep` del destino llegaba
+    # tarde: en la PRIMERA copia el destino no existe, así que se copiaba Y se registraba,
+    # y el primer PR de la app que la editara salía DRIFTED. (Medido en pharos-lis#323.)
+    if grep -qF "$KEEP_MARKER" "$src" 2>/dev/null; then
+      if [[ -f "$dest" ]]; then
+        echo "seed (app-owned, ya presente): $rel"
+      else
+        copy_file "$src" "$dest"
+        echo "seed (plantilla, la app la hace suya): $rel"
+      fi
+      continue
     fi
     # adopted-but-adapted → preserve the app's version, keep it out of the manifest
     if [[ -f "$dest" ]] && grep -qF "$KEEP_MARKER" "$dest" 2>/dev/null; then
@@ -272,7 +299,7 @@ echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepci
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
-echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-registry-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs\""
+echo "       \"lint-check\": \"eslint . --max-warnings 0 && node scripts/check-no-scoped-pages.mjs && node scripts/check-no-raw-html.mjs && node scripts/check-no-hex-colors.mjs && node scripts/check-no-palette-colors.mjs && node scripts/check-token-drift.mjs && node scripts/check-registry-drift.mjs && node scripts/check-contrast.mjs && node scripts/check-font-allowlist.mjs && node scripts/check-fe-bloat.mjs && node scripts/check-view-verification.mjs\""
 echo
 echo "  e) Install ESLint + generate Nuxt types:"
 echo "       pnpm add -D @nuxt/eslint"

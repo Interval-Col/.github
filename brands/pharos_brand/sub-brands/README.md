@@ -13,11 +13,14 @@
 > (`.theme-clinico`, `.theme-deportivo`, `.theme-recepcion`).
 >
 > **Updated 2026-07-03 (bis)** — RFC 0004 rev. 2026-07-03 (rfcs#60) adds a sixth
-> sub-brand: **«Pháros · Tecnología» (TI)**, the platform-administration app. Its
-> user-facing name is **provisional** (courtesy-ratify @SKuger01 pending, OQ#6); the
+> sub-brand: **«Pháros · Tecnología» (TI)**, the platform-administration app. The
 > theme class `.theme-ti` and the custom Submarine glyph are the stable contract.
-> Registry spec: [`../registry/spec/ti.md`](../registry/spec/ti.md); the full
-> sub-brand doc (`ti.md` here) is authored after the name ratifies.
+> Registry spec: [`../registry/spec/ti.md`](../registry/spec/ti.md).
+>
+> **Updated 2026-08-10** — the user-facing name is **ratified** (@gczuluaga; closes
+> [rfcs#63](https://github.com/Interval-Col/rfcs/issues/63)) as «Pháros · Tecnología»,
+> unchanged from the provisional pick — no rename sweep needed. Full sub-brand doc:
+> [`ti.md`](ti.md).
 
 | Functional (RFC 0004) | Spec | User-facing name | Glyph (náutico → lucide) | Accent — light / dark | Spread | Descriptor |
 |---|---|---|---|---|---|---|
@@ -26,7 +29,7 @@
 | LIS deportivo (Biuman) | [`lis-deportivo.md`](lis-deportivo.md) | **Movimiento** | Vela → `Sailboat` | `#004F70` / `#16749C` (azul prof.) | Neutro | LIS · Laboratorio deportivo |
 | Admisiones | [`admisiones.md`](admisiones.md) | **Pacientes** | Muelle → `Anchor` | `#ff3d63` / `#ff6b85` (rosa funcional · wash `#FFE0E6`) | Neutro | Admisiones · Recepción |
 | CRM | [`crm.md`](crm.md) | **Clientes** | Catalejo → `Telescope` | `#e37600` / `#f59e3c` (ámbar funcional · wash `#FFB86B`) | Neutro | CRM · Relaciones comerciales |
-| TI · plataforma (RFC 0004 rev.) | [`../registry/spec/ti.md`](../registry/spec/ti.md) *(doc completo pendiente)* | **Tecnología** ⏳ provisional | Submarino → `Submarine` (**custom**, no está en lucide) | `#002A52` / `#7FB0E6` (navy prof.) | Neutro | TI · Administración de plataforma |
+| TI · plataforma (RFC 0004 rev.) | [`ti.md`](ti.md) | **Tecnología** | Submarino → `Submarine` (**custom**, no está en lucide) | `#002A52` / `#7FB0E6` (navy prof.) | Neutro | TI · Administración de plataforma |
 
 ## Family constants (shared — never a sub-brand accent)
 

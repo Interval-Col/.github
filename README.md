@@ -27,5 +27,5 @@ Org-wide community-health files + engineering standards for **Interval-Col**.
 - [`instructions/`](instructions/) — Nuxt + per-area authoring instructions.
 
 ## Brands & design system
-- [`brands/`](brands/) — brand books: [LCH](brands/hematologico/LCH-BRAND.md), [Interval](brands/interval/INTERVAL-BRAND.md), [Pháros](brands/pharos_brand/BRAND.md).
+- [`brands/pharos_brand/`](brands/pharos_brand/) — the Pháros brand book: [BRAND.md](brands/pharos_brand/BRAND.md). Los manuales de marca clínica (LCH · Biuman · Interval) y sus binarios viven en el repo privado `Interval-Col/brand-assets`.
 - [`brands/pharos_brand/registry/`](brands/pharos_brand/registry/) — the product design system (tokens, components). Ported here from the old `instructions/` design files.

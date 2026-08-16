@@ -143,9 +143,23 @@ onMounted(load)
 
 <template>
   <div class="flex h-full flex-col">
+    <!-- ⚠️ El texto DEPENDE de si la app tiene rol por defecto. Antes afirmaba
+         siempre «caen automáticamente en el rol por defecto», que es falso en
+         una app con `defaultRole` vacío: ahí un usuario sin fila NO recibe
+         nada. Decirle a quien administra que alguien sin fila «sí entra con
+         algo» es el peor tipo de dato equivocado — el que suena tranquilizador.
+         Pháros TI es justo ese caso (RFC 0016: sin rol por defecto, por
+         decisión). -->
     <p class="text-muted-foreground mb-6 text-sm shrink-0">
-      Asigna roles a usuarios del SSO. Los usuarios sin fila asignada caen
-      automáticamente en el rol por defecto.
+      Asigna roles a usuarios del SSO.
+      <template v-if="defaultRole">
+        Los usuarios sin fila asignada caen automáticamente en el rol por
+        defecto.
+      </template>
+      <template v-else>
+        Un usuario sin fila asignada no recibe ningún rol: no verá nada hasta
+        que se le asigne uno aquí.
+      </template>
     </p>
 
     <section class="bg-card rounded-md p-6 shadow-[var(--shadow-soft)] mb-6 shrink-0">

@@ -1,8 +1,8 @@
 # CODEOWNERS for Interval-Col/.github
 #
 # This is the org's meta-repo: the branching/deploy policy, engineering
-# standards, agent instructions, shared templates, brand assets, and the
-# rollout tracker live here. Changes to these set the rules the rest of
+# standards, agent instructions, shared templates, the Pháros design system,
+# and the rollout tracker live here. Changes to these set the rules the rest of
 # the org follows.
 #
 # Gatekeeper model: @gczuluaga is the SOLE code owner for this repo.

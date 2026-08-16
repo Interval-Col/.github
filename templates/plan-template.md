@@ -27,9 +27,15 @@ not as exact-density references):
   - commercial-lch/plans/mvp-quote-generation-plan.md
 
 FRONTMATTER SCHEMA v2.1 (v2 ratified 2026-06-20; `effort` added 2026-06-28).
-Eight keys are REQUIRED + CI-checked (they populate the GitHub project board);
-`effort` is the v2.1 addition — required on new plans (CI enforcement + a
-backfill of existing plans are a tracked follow-up).
+Eight keys are REQUIRED + CI-checked; `effort` is the v2.1 addition — required on
+new plans (CI enforcement + a backfill of existing plans are a tracked follow-up).
+
+⚠️ These keys do NOT write to the GitHub project board, despite what this file
+claimed until 2026-08-06. The board's Start/Target fields are set by
+`operations/ops/eod/set_dates.py`, which reads the ISSUE (createdAt, and a
+`target <YYYY-MM-DD>` in its title/body) — never the plan's frontmatter. What the
+plan frontmatter actually feeds is the `plan-sweep` dashboard. Worth knowing before
+you contort a plan's dates to fix something on the board: the plan is not the input.
   status  — controlled enum (= board columns):
             proposed → active → in-progress → blocked → done
             terminal: superseded | abandoned
@@ -39,9 +45,16 @@ backfill of existing plans are a tracked follow-up).
   issue   — the linked GH issue: `Interval-Col/<repo>#NN`. This is the board
             item AND the team-facing entry point (see plan-craft "Plan ≠ Issue").
             Every plan gets one UNLESS it opts out with `issue: none — <reason>`.
-  start   — scheduled start date → board "Start" field (YYYY-MM-DD).
-  target  — due / target date    → board "Target" field (YYYY-MM-DD).
-  implementation — who executes (github handle or "TBD").
+  start   — scheduled start date (YYYY-MM-DD). A plan started when it was written,
+            so `created` is a defensible value when nothing else is scheduled.
+  target  — due / target date (YYYY-MM-DD), OR the sanctioned `target: none — <reason>`
+            for a plan whose exit is gated on an EVENT rather than a calendar
+            (e.g. `none — gated on the 20-report validation`). Ratified 2026-08-06,
+            when a backfill found 50 plans with no stated deadline and 19 more
+            sitting on `TBD`. `TBD` is NOT accepted here and the linter rejects it:
+            it looks filled-in while carrying no information. Inventing a date to
+            satisfy the field is worse than declaring the gate honestly.
+  implementation — who executes (github handle or "TBD"; this key DOES accept TBD).
   effort  — relative size estimate: XS · S · M · L · XL. Set at authoring,
             refine as scope firms; populates board sizing. Scope it per track on
             a multi-track plan (e.g. "Track A = L; Track B = XL").
