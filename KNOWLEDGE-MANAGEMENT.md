@@ -152,7 +152,8 @@ owner — do not correct it locally and leave the owner lying.
 | Org-level engineering standards (stack choices) | `.github/ENGINEERING_STANDARDS.md` | What a new repo adopts |
 | Implementation standards (tool configs, CI-enforced) | `pharos-lis/lab-qc/docs/STANDARDS.md` | Shared by lab-qc and finance-lch |
 | Machine-checked contracts | `.github/db-tenant-contract.md`, `auth-contract.md` | A CI check reads these |
-| Brand & design system | `.github/brands/pharos_brand/` | ⚠️ `pharos-brand/` at the workspace root is assets only |
+| Pháros design system | `.github/brands/pharos_brand/registry/` | Synced into apps by `sync-pharos-registry.sh`; ⚠️ `pharos-brand/` at the workspace root is assets only |
+| Tenant brand books & assets (LCH · Biuman · Interval) | `Interval-Col/brand-assets` | PRIVADO — holds licensed commercial fonts; masters in Git LFS |
 | Plan methodology & templates | `.github/templates/plan-template.md` | `plan_lint.py` enforces this schema |
 | RFC index & lifecycle | `rfcs/README.md` | Do not mirror it — mirrors cannot stay true |
 | Incident history | `operations/incidents/` + `operations/lessons.md` | Postmortem, then the durable rule |

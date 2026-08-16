@@ -7,7 +7,7 @@ design guidance; it is distributed to each app by **copy-in**, not as a runtime
 package (RFC 0008 Q3).
 
 > Strategy & meaning: [`../BACKBONE.md`](../BACKBONE.md). How Pháros looks/sounds/
-> behaves: [`../BRAND.md`](../BRAND.md). Palette origin (tenant): [`../../hematologico/LCH-BRAND.md`](../../hematologico/LCH-BRAND.md).
+> behaves: [`../BRAND.md`](../BRAND.md). Palette origin (tenant): `Interval-Col/brand-assets` → `hematologico/LCH-BRAND.md` (privado).
 > The decision record this registry implements: `rfcs/0008-pharos-design-system.md`
 > (the decision-walk + playground export are now its Appendix A / B).
 
@@ -168,4 +168,4 @@ salida impresa/PDF.
 LCH and Biuman are **tenants**, not parents. A tenant never prefixes an app name
 (`Pháros · Números`, never "LCH Pháros"). The maker is **Interval · The Human Tech Co.**,
 credited only in the footer/app-shell chrome (BRAND.md §10). The palette this
-contract draws from is the LCH colour set (`../../hematologico/LCH-BRAND.md`).
+contract draws from is the LCH colour set (`Interval-Col/brand-assets` → `hematologico/LCH-BRAND.md` (privado)).
