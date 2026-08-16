@@ -1,0 +1,54 @@
+# Laboratorio Clínico Hematológico — public contact & locations.
+#
+# CANONICAL source of truth for LCH clinic contact facts (phones, sedes,
+# addresses, service hours). These are PUBLIC facts, the same ones published on
+# lch.co — NOT PHI. It stays in .github, the org's single PUBLIC repo, because
+# that is what it is for: any surface (portal, marketing site, apps) points here.
+#
+# It used to live at brands/hematologico/, beside the brand spec. It was moved
+# here on 2026-08-15 when the clinic brand books, logos and licensed fonts left
+# for the PRIVATE repo Interval-Col/brand-assets — the fonts could not stay in a
+# public repo, and this file could not follow them into a private one without
+# inverting its whole reason for existing. Two different homes, two different
+# reasons. The brand spec is now at `Interval-Col/brand-assets` →
+# `hematologico/LCH-BRAND.md`.
+#
+# Consumers mirror these values rather than importing this file directly:
+#   - public-web (results portal): apps/lch-results/app/utils/lab-contact.ts
+# When you change a value here, update the mirrors too.
+#
+# The shared national line is 444 4200: the landline reaches it through the
+# Medellín area code (604), the mobile through 320.
+
+brand: hematologico
+
+phones:
+  landline: "+57 604 444 42 00"
+  mobile: "+57 320 444 42 00"
+
+locations:
+  - name: "Sede Principal Oviedo"
+    unit: "Local 196"
+    address: "Calle 6 Sur # 43A-227"
+    city: "Medellín"
+    hours:
+      # Toma de muestras
+      sample_collection:
+        weekdays: "6:00 a.m. – 4:00 p.m."   # lunes a viernes
+        saturday: "6:00 a.m. – 10:00 a.m."
+      # Entrega de resultados
+      results_delivery:
+        weekdays: "6:00 a.m. – 5:00 p.m."
+        saturday: "6:00 a.m. – 1:00 p.m."
+
+  - name: "Sede C.C. Viva Palmas"
+    unit: "Local 109-110"
+    address: null   # street address pending — not published yet
+    city: "Medellín"
+    hours:
+      sample_collection:
+        weekdays: "6:00 a.m. – 1:00 p.m."
+        saturday: "6:00 a.m. – 10:00 a.m."
+      results_delivery:
+        weekdays: "6:00 a.m. – 1:00 p.m."
+        saturday: "6:00 a.m. – 12:00 m."   # mediodía
