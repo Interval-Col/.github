@@ -57,6 +57,13 @@ jobs:
           # open its re-sync PR, so the next registry change would redden its CI with nothing
           # to fix it.
           - { name: biuman-lis,        repo: Interval-Col/biuman-lis,        slug: biuman-lis,        fe: lis/frontend,    root: ".", base: develop }
+          # pharos-ti: greenfield (repo creado 2026-08-10, RFC 0004 §2). Nace adoptando
+          # el registry, así que entra a la matriz en el mismo empujón que su primer
+          # manifiesto — no después. El motivo es la lección de biuman-lis de arriba al
+          # revés: una app que corre el gate BLOQUEANTE de frescura sin fila aquí no
+          # tiene bot que le abra el PR de re-sync, y el siguiente cambio del registry
+          # le pone el CI en rojo sin nada que lo arregle.
+          - { name: pharos-ti,         repo: Interval-Col/pharos-ti,         slug: pharos-ti,         fe: shell,           root: ".", base: develop }
     steps:
       - name: Only this app on manual single-app dispatch
         id: gate

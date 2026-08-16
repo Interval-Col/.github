@@ -42,10 +42,19 @@ export type NavSubGroup = {
 /** A top-level group item: either a direct leaf or a sub-group of leaves. */
 export type NavItem = NavLeaf | NavSubGroup
 
-/** A top-level sidebar group: a labelled, icon-headed, expandable section. */
+/** A top-level sidebar group: a labelled, icon-headed, expandable section.
+ *
+ *  `section` is an OPTIONAL band label. Consecutive groups that share a
+ *  `section` render beneath one quiet heading, letting a long rail say WHY its
+ *  order is what it is (e.g. `Proceso` vs `Soporte`) without a second nesting
+ *  level. The shell attaches the heading to the first VISIBLE group of each
+ *  band — computed after whatever projection the app applied — so a hidden
+ *  group can never strand a heading above nothing. Omit `section` everywhere
+ *  and the rail renders exactly as it did before this field existed. */
 export type NavGroup = {
   label: string
   icon?: Component | string
+  section?: string
   items: NavItem[]
 }
 

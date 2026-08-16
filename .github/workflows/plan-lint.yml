@@ -1,57 +1,34 @@
-# Plan-standards linter — ADVISORY (annotates, never fails the check).
-#
-# Runs the deterministic `scripts/plan_lint.py` over the plan `.md` files changed
-# in a PR, and surfaces schema-v2.1 / status-enum / retired-key violations as
-# inline annotations. It does NOT block merges.
-#
-# Why advisory: promoting this to a *required* (--strict) check is gated on
-# ratifying the status-enum ↔ board-column reconciliation (operations#38). Until
-# then this is a visible drift signal, not a gate. Tracked in the "promote
-# plan-lint to required" issue.
+# This repo's own caller for the reusable `plans-check` gate — and the
+# reference stub every other repo copies.
 #
 # Runner: THIS repo is public → hosted minutes are free AND the org's
 # self-hosted pool excludes public repos (a self-hosted job here queues
-# forever — bit us on PR #107). So here: ubuntu-latest. The copies synced
-# into the private pilot repos keep [self-hosted]: there the Team-plan $0
-# Actions spending limit applies, and a hosted required check risks tipping
-# the cap and killing all runs.
+# forever — bit us on PR #107). So this caller passes ubuntu-latest.
+# PRIVATE callers omit `runner` and take the '["self-hosted"]' default: the
+# org is on the Team plan with a $0 Actions spending limit, so a hosted
+# required check there risks tipping the cap and killing all runs.
 #
-# Rollout: this file + scripts/plan_lint.py copy into the pilot repos
-# (finance-lch, cobol-migration, admission-patient) first; then org-wide.
+# `enforce: false` — findings annotate inline and never block. A repo flips it
+# to true after backfilling its existing plans and seeing one green run, then
+# marks the check required in branch protection. Org-wide `--strict` also
+# waits on Interval-Col/operations#38 (the status-enum ↔ board-column vocab).
+#
+# Deliberately NO `paths:` filter. A paths-filtered workflow never reports its
+# context on PRs that miss the filter, so the moment it became a required
+# check it would hang every unrelated PR on "Expected — waiting for status".
+# The gate is cheap and exits OK when the change set touches no plans.
 
 name: Plan standards (advisory)
 
 on:
   pull_request:
-    paths:
-      - "**/plans/**.md"
 
 permissions:
   contents: read
 
 jobs:
   plan-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Collect changed plan files
-        id: changed
-        run: |
-          set -euo pipefail
-          base="origin/${{ github.base_ref }}"
-          git fetch origin "${{ github.base_ref }}" --quiet || true
-          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '**/plans/**.md' \
-                    | grep -v '/archive/' | grep -v 'template' || true)
-          {
-            echo "files<<EOF"
-            echo "$files"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-          echo "Changed plan files:"; echo "$files"
-      - name: Plan lint (advisory)
-        if: steps.changed.outputs.files != ''
-        run: |
-          # shellcheck disable=SC2086
-          python3 scripts/plan_lint.py ${{ steps.changed.outputs.files }}
+    uses: ./.github/workflows/plans-check.yml
+    with:
+      runner: '["ubuntu-latest"]'
+      enforce: false
