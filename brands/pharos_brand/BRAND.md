@@ -83,7 +83,7 @@ These two are the visual signature shared across **every** sub-brand. A sub-bran
 
 ### 3.2 Family palette — each sub-brand draws ONE accent
 
-The curated family palette is the **LCH colour set** (see `../hematologico/LCH-BRAND.md`); each sub-brand picks exactly one accent from it, so siblings stay siblings by construction.
+The curated family palette is the **LCH colour set** (see `Interval-Col/brand-assets` → `hematologico/LCH-BRAND.md` (repo privado)); each sub-brand picks exactly one accent from it, so siblings stay siblings by construction.
 
 | Token | Hex | When to use |
 |---|---|---|
@@ -418,7 +418,7 @@ nucleus-db — shared infrastructure, never branded
 
 **Tenant co-branding.** LCH and Biuman are tenants, not parents — a tenant **never prefixes an app name** (it is `Pháros · Números`, never "LCH Pháros"). Where a tenant must appear (e.g. a login footer), use a small `para [tenant]` / "by [tenant]" credit; the Pháros brand wins on its own screens. (The exact co-brand lockup — peer sizing, placement — is a small open spec.)
 
-**Maker credit (every app).** Every Pháros app shows a small maker credit in the footer / app-shell chrome: the Interval `[ ]` bracket mark + **"Hecho por Interval · Tecnología Humana"**. Render it **monochrome and muted** — `text-neutral-gray-dark` on light, the muted foreground on dark — **never** with Interval's orange/indigo, always small and subordinate so the Pháros brand owns the screen. (This is the sanctioned "made by the studio" context; Interval branding belongs only here, not in the app's primary chrome — see `../interval/INTERVAL-BRAND.md` §10.) Use a clean single-colour export of the Interval icon (`../interval/logos/interval-icon`); it inherits the current text colour (no fixed fill), so it flips correctly in dark mode.
+**Maker credit (every app).** Every Pháros app shows a small maker credit in the footer / app-shell chrome: the Interval `[ ]` bracket mark + **"Hecho por Interval · Tecnología Humana"**. Render it **monochrome and muted** — `text-neutral-gray-dark` on light, the muted foreground on dark — **never** with Interval's orange/indigo, always small and subordinate so the Pháros brand owns the screen. (This is the sanctioned "made by the studio" context; Interval branding belongs only here, not in the app's primary chrome — see `Interval-Col/brand-assets` → `interval/INTERVAL-BRAND.md` §10.) Use a clean single-colour export of the Interval icon (`logos/interval-icon.svg`, a local copy kept here for build access); it inherits the current text colour (no fixed fill), so it flips correctly in dark mode.
 
 ---
 
@@ -451,4 +451,4 @@ MANTRA            Vigilamos lo invisible para que la verdad pueda verse.
 
 ---
 
-*This brand book is the authoritative source for the shared Pháros visual and verbal identity in code. Per-app sub-brands live in `sub-brands/*.md` (first: `sub-brands/erp.md`, `Pháros · Números`) and only record their accent, sub-name, and icon tint. For strategic and conceptual questions, see `BACKBONE.md`. For the maker (house) brand, see `../interval/INTERVAL-BRAND.md` (esp. §10); the family palette source is `../hematologico/LCH-BRAND.md`. The family's assistant persona — **Nerea**, cross-cutting to every Pháros surface — lives in `NEREA.md` (widget spec: `registry/spec/chat.md`).*
+*This brand book is the authoritative source for the shared Pháros visual and verbal identity in code. Per-app sub-brands live in `sub-brands/*.md` (first: `sub-brands/erp.md`, `Pháros · Números`) and only record their accent, sub-name, and icon tint. For strategic and conceptual questions, see `BACKBONE.md`. For the maker (house) brand, see `Interval-Col/brand-assets` → `interval/INTERVAL-BRAND.md` (esp. §10); the family palette source is `Interval-Col/brand-assets` → `hematologico/LCH-BRAND.md`. The family's assistant persona — **Nerea**, cross-cutting to every Pháros surface — lives in `NEREA.md` (widget spec: `registry/spec/chat.md`).*

@@ -6,9 +6,11 @@ description: Build a house deck (didactic or executive-brand) following the guid
 
 You are building a presentation following the house deck methodology.
 **Read `operations/guides/decks.md` (the type index) first**, then the
-guide for the chosen type. Never invent brand values — everything visual
-comes from `.github/brands/` (manuals, `tokens.css` LOCKED accents,
-registry glyphs/components).
+guide for the chosen type. Never invent brand values — visual values for
+the Pháros design system come from `.github/brands/pharos_brand/`
+(`tokens.css` LOCKED accents, registry glyphs/components); the clinic
+brand books and logos (LCH · Biuman · Interval) come from the private
+`Interval-Col/brand-assets` repo, local path `~/dev/brand-assets/<marca>/`.
 
 Optional argument: `$ARGUMENTS` is a topic hint (e.g. `pitch sistema
 documental a liderazgo del lab`). If empty, derive from the session.
@@ -32,6 +34,9 @@ Follow the chosen guide. Non-negotiables from both:
 - Self-contained single HTML (fonts as data-URI — brand font embedded,
   raw OTF base64 works without fonttools), light+dark, `@media print`,
   `prefers-reduced-motion` → full static (default state = final state).
+  Precondition: the clinic OTFs now live in `brand-assets`
+  (`hematologico/fonts/OTF/`) as Git LFS objects — `git lfs install` +
+  a clone of that repo is required before they can be embedded.
 - Publish as a private **Artifact and iterate on the SAME URL** with
   version labels; the owner reviews live.
 - **Layout/typography changes go through ASCII wireframes via
