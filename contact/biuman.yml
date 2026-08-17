@@ -50,35 +50,54 @@ social:
   linkedin: null
 
 legal:
-  # ⚠️ HOLE — the legal name appears in the policy PDF filename as
-  # "Biuman S.A.S."; confirm the exact registered form and the NIT.
-  registered_name: null
-  nit: null
-  # The data-treatment policy the signed consents point at. 🛑 The document
-  # itself does not exist in `biuman-kb` — see task 5.3 of the rebuild plan.
+  # Both taken from Biuman's OWN legal documents (the privacy notice and the
+  # data-processing policy), which state: «La sociedad Biuman S.A.S. identificada
+  # con el N.I.T. 901.726.973-6». Not from a registry lookup — from the PDFs the
+  # signed consents point at.
+  registered_name: "Biuman S.A.S."
+  nit: "901.726.973-6"
+  # ⚠️ This still points at the LIVE WordPress. The three PDFs were re-hosted in
+  # the new site (public-web#381) but that is not deployed yet; the day it is,
+  # this becomes `https://biuman.team/politicas` served by the new app and the
+  # PDFs by `/legal/`. The URL does not change — the server behind it does.
+  #
+  # 🛑 The documents are dated 2023. Whether they are still the current versions
+  # is a confirmation the clinic owes; nobody has checked.
   privacy_policy_url: "https://biuman.team/politicas/"
 
 locations:
   - name: "Sede Biuman"
     # Same building as LCH Sede Principal Oviedo — see the note at the top.
-    unit: null # ⚠️ HOLE — LCH's is "Local 196"; Biuman's own unit is unknown.
+    # `biuman-kb` §7.3 resolved it on 2026-07-15: «C.C. Oviedo, Local 196 —
+    # Calle 6Sur # 43A-227, en las instalaciones del LCH», confirmed by the
+    # Biuman team. Same local as LCH's, because they share the space.
+    unit: "Local 196"
     address: "Calle 6 Sur # 43A-227"
     neighbourhood: "El Poblado"
     city: "Medellín"
     map: "https://www.google.com/maps/place/Cl.+6+Sur+%23+43A+-+227,+El+Poblado,+Medell%C3%ADn,+Antioquia/@6.2002084,-75.5784374,17z/"
     hours:
-      # ⚠️ HOLE — the live site publishes NO opening hours anywhere. Every value
-      # here has to come from the clinic.
+      # ⚠️ STILL A HOLE, and one that looks answered but is not.
+      #
+      # `biuman-kb` does list hours for this address — but they are LCH's LAB
+      # hours (sample collection 6:00–16:00, results 6:00–17:00), byte-identical
+      # to the ones in `hematologico.yml`. Biuman does sports-medicine
+      # appointments booked over WhatsApp, not walk-in sample collection.
+      # Publishing the lab's hours as Biuman's would be the kind of
+      # plausible-but-wrong value nobody rechecks.
+      # ⇒ These come from the clinic or they stay null.
       weekdays: null # lunes a viernes
       saturday: null
       sunday: null
 
-  # ⚠️ OPEN QUESTION — one sede or two? The rebuild plan raised it and it is
-  # still unanswered. If there is a second one, it goes here.
+  # ✅ ANSWERED — ONE sede. `biuman-kb` §7.3 (2026-07-15, confirmed by the Biuman
+  # team) states it plainly, and adds the counter-fact: the old address
+  # «Cra 43C # 5-33, El Poblado (Sede Patio Bonito)» is NOT Biuman's — it
+  # survives in old fiches, on the website and on the maps.
 
 # ── Known-wrong data OUT IN THE WORLD (not fixable from this file) ───────────
 #
-# 🔴 Google Maps and Waze still list `Cra 43C # 5-33` for Biuman. The KB says
-# that is NOT the sede. Until someone claims the listing and corrects it, the
+# 🔴 Google Maps and Waze still list `Cra 43C # 5-33` for Biuman. `biuman-kb`
+# §7.3 says plainly that it is NOT the sede. Until someone claims the listing and corrects it, the
 # most common way a patient looks up the address sends them to the wrong place —
 # and no amount of correctness in this repo fixes that.
