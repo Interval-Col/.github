@@ -1,0 +1,84 @@
+# Biuman — public contact & locations.
+#
+# CANONICAL source of truth for Biuman's public contact facts. Same nature and
+# same home as `hematologico.yml`: these are PUBLIC facts, the ones printed on
+# the website and the door — NOT PHI. It lives in .github, the org's single
+# PUBLIC repo, because that is what this repo is for: any surface (the marketing
+# site, an app, a report footer) points here instead of copying.
+#
+# Biuman is the sports-laboratory sibling inside the holding and operates INSIDE
+# LCH's facilities, so its address is the same as LCH's Sede Principal Oviedo in
+# `hematologico.yml` — Calle 6 Sur # 43A-227. That is not a copy-paste slip:
+# check it against that file before "fixing" either one.
+#
+# Consumers mirror these values rather than importing this file directly:
+#   - public-web (marketing site): apps/biuman-web/app/utils/entidad-clinica.ts
+# When you change a value here, update the mirror too.
+#
+# ── Why this file exists ────────────────────────────────────────────────────
+# The rebuild plan (RFC 0014 Fase 5) found that LCH had a canonical contact
+# source and Biuman had NOTHING, while a marketing site is largely this content.
+# The live WordPress site proves the cost: its footer and its event pages
+# disagree with each other, and one page links `wa.me/3117497048` — WITHOUT the
+# +57 country code, so it is a dead link in production today.
+#
+# ⚠️ VALUES MARKED `null` ARE HOLES, NOT DEFAULTS. Each one is a fact only the
+# clinic can supply. They are written out rather than guessed, because a
+# plausible invented opening time is the kind of error nobody catches twice.
+
+brand: biuman
+
+website: "https://biuman.team"
+
+phones:
+  # Verified from the live site's own `tel:` and `wa.me` links (2026-08-15
+  # capture). The site has NO landline anywhere.
+  mobile: "+57 312 538 2342"
+  landline: null # ⚠️ HOLE — does Biuman have one, or does it share LCH's 604 444 4200?
+
+whatsapp: "https://wa.me/573125382342"
+
+# Decoded from the footer's Cloudflare email obfuscation — the markup carries no
+# plain-text address on any of the 35 captured pages.
+email: "movement@biuman.team"
+
+social:
+  instagram: "https://www.instagram.com/biuman.team/"
+  # ⚠️ HOLE — the live site's footer shows icons for these; confirm the handles
+  # before publishing them anywhere.
+  facebook: null
+  linkedin: null
+
+legal:
+  # ⚠️ HOLE — the legal name appears in the policy PDF filename as
+  # "Biuman S.A.S."; confirm the exact registered form and the NIT.
+  registered_name: null
+  nit: null
+  # The data-treatment policy the signed consents point at. 🛑 The document
+  # itself does not exist in `biuman-kb` — see task 5.3 of the rebuild plan.
+  privacy_policy_url: "https://biuman.team/politicas/"
+
+locations:
+  - name: "Sede Biuman"
+    # Same building as LCH Sede Principal Oviedo — see the note at the top.
+    unit: null # ⚠️ HOLE — LCH's is "Local 196"; Biuman's own unit is unknown.
+    address: "Calle 6 Sur # 43A-227"
+    neighbourhood: "El Poblado"
+    city: "Medellín"
+    map: "https://www.google.com/maps/place/Cl.+6+Sur+%23+43A+-+227,+El+Poblado,+Medell%C3%ADn,+Antioquia/@6.2002084,-75.5784374,17z/"
+    hours:
+      # ⚠️ HOLE — the live site publishes NO opening hours anywhere. Every value
+      # here has to come from the clinic.
+      weekdays: null # lunes a viernes
+      saturday: null
+      sunday: null
+
+  # ⚠️ OPEN QUESTION — one sede or two? The rebuild plan raised it and it is
+  # still unanswered. If there is a second one, it goes here.
+
+# ── Known-wrong data OUT IN THE WORLD (not fixable from this file) ───────────
+#
+# 🔴 Google Maps and Waze still list `Cra 43C # 5-33` for Biuman. The KB says
+# that is NOT the sede. Until someone claims the listing and corrects it, the
+# most common way a patient looks up the address sends them to the wrong place —
+# and no amount of correctness in this repo fixes that.
