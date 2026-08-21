@@ -257,7 +257,7 @@ onMounted(load)
     <!-- Crear rol personalizado -->
     <section
       v-if="customRolesEnabled"
-      class="bg-card rounded-md p-6 shadow-[var(--shadow-soft)] mb-6 border border-border"
+      class="bg-card rounded-md p-6 shadow-sm mb-6 border border-border"
     >
       <h2 class="text-lg font-semibold text-foreground mb-1">Crear rol</h2>
       <p class="text-muted-foreground mb-4 text-sm">
