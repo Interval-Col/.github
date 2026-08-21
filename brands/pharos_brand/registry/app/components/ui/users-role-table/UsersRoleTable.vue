@@ -162,7 +162,7 @@ onMounted(load)
       </template>
     </p>
 
-    <section class="bg-card rounded-md p-6 shadow-[var(--shadow-soft)] mb-6 shrink-0">
+    <section class="bg-card rounded-md p-6 shadow-sm mb-6 shrink-0">
       <h2 class="text-lg font-semibold text-foreground mb-4">Agregar usuario</h2>
       <div class="flex items-end flex-wrap gap-4">
         <div class="flex flex-col gap-1.5">

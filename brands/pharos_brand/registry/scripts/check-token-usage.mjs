@@ -65,8 +65,20 @@ const SCAN_EXTS = new Set(['.vue', '.ts'])
 
 // ⚠️ Sin `shadow` ni `placeholder`, y por razones distintas:
 //   • `shadow-*` resuelve contra `--shadow-*`, no `--color-*`. Incluirlo hacía
-//     que un `shadow-soft` perfectamente definido se reportara como token
+//     que un `shadow-soft` definido EN LA APP se reportara como token
 //     inexistente — un gate que grita por algo correcto se desactiva solo.
+//     🪤 Ojo con la palabra «definido»: `--shadow-soft` estaba definido en el
+//     `main.css` de finance-lch, NUNCA en el `tokens.css` de este registry, que
+//     no publica ni un `--shadow-*`. La exclusión era correcta corriendo dentro
+//     de una app y ciega corriendo sobre el registry, y esa ceguera dejó pasar
+//     dos componentes que usaban `shadow-[var(--shadow-soft)]` sin que el token
+//     existiera: en lab-qc y pharos-ti el panel se quedó sin sombra, en silencio
+//     y en verde, desde el día en que se extrajeron de finance-lch (medido
+//     2026-08-21). Se arreglaron pasándolos a `shadow-sm`.
+//     ⇒ Este gate NO es el lugar para atrapar eso: `shadow-*` no es familia de
+//     color y volver a meterlo reproduce el falso positivo de arriba. Lo que
+//     falta es un gate aparte que valide toda `var(--x)` ARBITRARIA contra lo
+//     que el CSS del registry declara.
 //   • `placeholder-<color>` es Tailwind v3; en v4 se escribe `placeholder:text-*`.
 //     Dejarlo se comía cualquier clase propia que empezara por `placeholder-`
 //     (`placeholder-table-wrapper`, medido en finance-lch).

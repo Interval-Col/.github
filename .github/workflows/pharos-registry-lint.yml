@@ -1,0 +1,105 @@
+# Los gates del registry Pháros, corridos SOBRE EL REGISTRY — del lado del publicador.
+#
+# WHY THIS EXISTS. Los doce `check-*.mjs` del registry existían desde antes, pero
+# **sólo corrían dentro de las apps**, después de que el sync les copiara los
+# componentes. Es decir: el registry podía publicar algo roto y quedarse verde, y
+# el error aparecía —si aparecía— en el `lint-check` de otro repo, días después y
+# a nombre de otra persona.
+#
+# Lo que se coló por ese hueco, medido el 2026-08-21: `RoleCapabilityMatrix.vue`
+# y `UsersRoleTable.vue` llegaron desde finance-lch usando
+# `shadow-[var(--shadow-soft)]`, y el token se quedó atrás — `tokens.css` no
+# publica ni un `--shadow-*`. Tailwind emitió `box-shadow: var(--shadow-soft)`, la
+# regla no resolvió, y en lab-qc y pharos-ti el panel «Agregar usuario» quedó sin
+# sombra Y SIN BORDE durante meses. Sin error, sin warning, con el build en verde.
+# Ninguna CI podía verlo porque ninguna CI mira el registry.
+#
+# ⇒ Un registry «copy-in» necesita CI propia. Si sus gates sólo corren aguas
+# abajo, el contrato se publica sin revisar y el costo lo paga el consumidor.
+#
+# RUNNER: `ubuntu-latest`, y es load-bearing. Este repo es PÚBLICO; el pool
+# self-hosted de la org excluye repos públicos y un job self-hosted acá
+# encolaría para siempre en vez de fallar. No "armonizar" esta línea con los
+# workflows de los repos privados. (Mismo motivo que `no-font-binaries.yml`.)
+#
+# LOS DOS GATES EXCLUIDOS, y por qué no es pereza:
+#   • check-contrast.mjs        — revienta sobre el registry: busca
+#     `app/assets/css/pharos-tokens.css`, que en el registry es `tokens.css` en la
+#     raíz. Es una limitación del script, no una violación del registry. Corre
+#     bien dentro de las apps, que es donde hoy lo corre `lint-check`.
+#   • check-view-verification.mjs — falla por diseño: compara la marca de
+#     PROT-SW-001 contra el manifiesto de UNA APP, y el registry no tiene
+#     manifiesto (tiene la plantilla). Su lugar es la app.
+# Arreglar el primero para que también corra acá vale un PR propio; dejarlo
+# anotado es mejor que meterlo y silenciar el rojo con un `|| true`.
+
+name: pharos-registry-lint
+
+on:
+  pull_request:
+    paths:
+      - "brands/pharos_brand/registry/**"
+      - ".github/workflows/pharos-registry-lint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "brands/pharos_brand/registry/**"
+
+permissions:
+  contents: read
+
+jobs:
+  registry-lint:
+    name: "gates del registry"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Los gates son self-contained (sólo node:fs / node:crypto), así que NO hay
+      # `pnpm install`: el registry no tiene package.json ni node_modules a
+      # propósito — es una plantilla, no un proyecto.
+      #
+      # ⚠️ Consecuencia medida: sin node_modules, `check-orphan-vars.mjs` no puede
+      # leer el `theme.css` de Tailwind y compara sólo contra los singletons. Lo
+      # dice en su propia línea de salida. Hoy el registry no referencia ninguna
+      # variable de tema de Tailwind, así que no cambia el veredicto; si algún día
+      # lo hace, el gate lo va a reportar como huérfano y la salida explica por qué.
+      - name: Correr los gates sobre el registry
+        working-directory: brands/pharos_brand/registry
+        run: |
+          set -uo pipefail
+          fail=0
+          for g in \
+            check-orphan-vars.mjs \
+            check-token-usage.mjs \
+            check-no-hex-colors.mjs \
+            check-no-palette-colors.mjs \
+            check-no-raw-html.mjs \
+            check-no-scoped-pages.mjs \
+            check-font-allowlist.mjs \
+            check-fe-bloat.mjs \
+            check-token-drift.mjs \
+            check-registry-drift.mjs \
+            check-registry-fresh.mjs
+          do
+            echo "::group::$g"
+            if node "scripts/$g" . ; then
+              echo "  → OK"
+            else
+              echo "::error file=brands/pharos_brand/registry/scripts/$g::$g falló sobre el registry"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo
+            echo "🔴 Al menos un gate del registry falló. Esto NO es un problema de una app:"
+            echo "   lo que está mal está en el contrato, y el sync lo repartiría a las cinco."
+            exit 1
+          fi
+          echo
+          echo "✅ 11 gates verdes sobre el registry."
