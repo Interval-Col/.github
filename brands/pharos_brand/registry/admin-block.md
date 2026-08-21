@@ -47,9 +47,23 @@ capability):
 ## Adoption
 
 1. `scripts/sync-pharos-registry.sh <app-fe-dir> [repo-root]` — copies the
-   primitives into the app's `app/**`. Ensure the app has the shadcn base
-   wrappers the primitives import (`badge checkbox input select table` — all
-   Pháros apps do; add with `pnpm dlx shadcn-vue@latest add …` if missing).
+   primitives into the app's `app/**`.
+
+   ⚠️ **«All Pháros apps have the shadcn base wrappers» was NOT true** — measured
+   2026-08-20: `biuman-lis` had no `components/ui/badge`, so a `--add` of
+   `RoleCapabilityMatrix` landed the component with a broken import, silently, and would
+   have done so again on every routine re-sync. Two fixes, both live now:
+
+   - **`badge` and `checkbox` ship FROM the registry** and travel as **companions** of
+     `RoleCapabilityMatrix` — they were byte-identical across finance-lch, lab-qc and
+     (checkbox) biuman-lis, so they were a shared primitive duplicated by hand. So are
+     `lib/pharosAdminApi.ts` and the component's own `index.ts`: the sync now refuses to
+     land the importer without them.
+   - 🪤 **`components/ui/input` is a PREREQUISITE, not a companion.** It is the one
+     primitive that **differs** in all three apps (each tuned it), so it stays app-owned
+     and the registry cannot ship it. If the app lacks it the component will not compile:
+     `pnpm dlx shadcn-vue@latest add input`. Same for `select` and `table` if a page needs
+     them. `button` and `collapsible` already come from the registry.
 2. Load the session once (app plugin/layout), passing the app's auth-aware fetcher:
    ```ts
    const cfg = useRuntimeConfig()

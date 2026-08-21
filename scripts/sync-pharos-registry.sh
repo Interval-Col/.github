@@ -183,6 +183,24 @@ COMPANIONS=(
   "components/ViewVerificationMark.vue:lib/verification.ts"
   "components/ViewVerificationMark.vue:composables/useViewVerification.ts"
   "components/ViewVerificationMark.vue:verification.manifest.ts"
+  # `RoleCapabilityMatrix` es el panel de «Permisos por rol» de RFC 0016 C9, y no sirve
+  # solo: importa el CLIENTE de la API de admin y tres primitivas. Sin estas entradas, un
+  # `--add` del componente lo entregaba SIN sus hermanos — import roto, en silencio, y de
+  # nuevo en cada re-sync rutinario. Medido el 2026-08-20 al adoptarlo en biuman-lis: de
+  # los seis imports del componente, `lib/pharosAdminApi.ts` y `components/ui/badge` no
+  # llegaban.
+  #
+  # ⚠️ `components/ui/input` NO va acá a propósito: es la única de las cinco primitivas que
+  # DIFIERE entre finance-lch, lab-qc y biuman-lis (cada app la tuneó), así que es de la
+  # app y es un PRERREQUISITO, no un compañero. Si falta, el componente no compila y hay
+  # que generarla con shadcn en la app. `button` y `collapsible` ya viajan porque el
+  # registry las trae y las apps las adoptaron.
+  "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/role-capability-matrix/index.ts"
+  "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:lib/pharosAdminApi.ts"
+  "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/badge/Badge.vue"
+  "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/badge/index.ts"
+  "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/checkbox/Checkbox.vue"
+  "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/checkbox/index.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion
