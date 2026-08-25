@@ -389,6 +389,38 @@ Detail — the states, the colour registers, the eight checks:
 [`brands/pharos_brand/registry/README.md`](brands/pharos_brand/registry/README.md)
 § *Vista en verificación*.
 
+## 🧪 Two threads: engineering vs. laboratory Quality verification
+
+A clinical functionality under `PROT-SW-001` is tracked in **two issues, never one**
+(German, 2026-08-23 — after the sample-collection port mixed both in `pharos-lis#357`
+and the expediente became unreadable for Quality):
+
+| Thread | Who reads it | What goes in | Example |
+|---|---|---|---|
+| **Engineering** | the dev team | plan, PRs, deploys, defects, diagnostics, «registro de ingeniería» notes | `pharos-lis#357`, `#91` |
+| **Verification** («hilo único de verificación») | Coordinación de Calidad + Dirección Médica | the `FOR-SW-001` expediente, the soak proposal (C.1/C.2), Quality's verdicts per dimension, signatures | `pharos-lis#397`, `#302` |
+
+Rules:
+
+- **Open the verification thread only when engineering is *observable*** — the screens
+  reachable in prod, the version anchored, the expediente pre-filled by Development.
+  Before that, nothing engineering writes is evidence; say so in each entry
+  («registro de ingeniería, no evidencia de PROT-SW-001»).
+- **The verification thread is written for Quality, not for engineers**: plain Spanish,
+  evidence by permanent links into the engineering thread and CI, zero jargon a bench
+  technologist would not use. Its opening comment tells Quality exactly what it must do
+  and nothing else (read, approve coverage, verdicts, authorise the real-data case).
+- **Findings cross in one direction.** A finding raised in verification that needs code
+  opens (or links) an item in the engineering thread; the verification thread records
+  only the finding and its disposition. The engineering thread never hosts verdicts.
+- **Title convention:** `<Funcionalidad> — hilo único de verificación (Calidad + Dirección)`,
+  label `documentation`, same repo as the engineering thread.
+- **Zero patient data in either thread.** The verification thread additionally carries no
+  case identifiers (bitácoras by category / internal consecutive; the mapping stays in
+  Quality's custody — `ANEXO-PROT-SW-001-01` R1/R8).
+- What `lch-kb` holds stays unchanged: protocol and blank templates only. A filled
+  expediente is a *record* and never lands there.
+
 ## 📄 Project Documentation
 
 - Root `README.md` must document:
