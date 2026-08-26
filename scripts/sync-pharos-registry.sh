@@ -201,6 +201,17 @@ COMPANIONS=(
   "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/badge/index.ts"
   "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/checkbox/Checkbox.vue"
   "components/ui/role-capability-matrix/RoleCapabilityMatrix.vue:components/ui/checkbox/index.ts"
+  # ConsentSignature (RFC 0030): the signing surface pulls its registry
+  # primitives + the shared cn() helper. input/label/select are shadcn-nuxt
+  # generated per app (not in the registry) — the adopter runs `shadcn add`.
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/consent-signature/SignaturePad.vue"
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/consent-signature/types.ts"
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/consent-signature/index.ts"
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/button/Button.vue"
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/button/index.ts"
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/checkbox/Checkbox.vue"
+  "components/ui/consent-signature/ConsentSignature.vue:components/ui/checkbox/index.ts"
+  "components/ui/consent-signature/ConsentSignature.vue:lib/utils.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion
