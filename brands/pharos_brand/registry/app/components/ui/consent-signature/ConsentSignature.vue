@@ -193,9 +193,9 @@ function submit() {
       <div class="flex items-center gap-2">
         <Checkbox
           id="consent-representative"
-          :checked="representativeSigns"
+          v-model="representativeSigns"
           :disabled="submitting"
-          @update:checked="(v: boolean) => (representativeSigns = v)"
+          
         />
         <Label for="consent-representative">Firma un representante legal</Label>
       </div>
@@ -239,18 +239,18 @@ function submit() {
       <div v-if="form.hasSampleConservationChoice" class="flex items-center gap-2">
         <Checkbox
           id="consent-conserve"
-          :checked="conserveSamples"
+          v-model="conserveSamples"
           :disabled="submitting"
-          @update:checked="(v: boolean) => (conserveSamples = v)"
+          
         />
         <Label for="consent-conserve">Autorizo la conservación de mis muestras biológicas</Label>
       </div>
       <div v-if="form.hasMicroscopicImagesChoice" class="flex items-center gap-2">
         <Checkbox
           id="consent-images"
-          :checked="microscopicImages"
+          v-model="microscopicImages"
           :disabled="submitting"
-          @update:checked="(v: boolean) => (microscopicImages = v)"
+          
         />
         <Label for="consent-images">Autorizo el uso de imágenes microscópicas con fines académicos</Label>
       </div>
