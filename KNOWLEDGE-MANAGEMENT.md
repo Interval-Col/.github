@@ -162,7 +162,39 @@ owner — do not correct it locally and leave the owner lying.
 | Schema / data-platform decisions | `nucleus-db/docs/decisions/` (single-repo) → `rfcs/` (cross-repo) | See *RFC vs. ADR* above |
 | PHI & security policy | `operations/policies/` | |
 | Team roster & operating model | `operations/ops/shared/` | Private by design |
+| **Operational facts a session must not miss, per repo** | that repo's **`CLAUDE.md`** | ⚠️ It is the **only** vector that reaches another person's agent — see below |
 | Knowledge-management conventions | this file | |
+
+### ⚠️ The vector that reaches other people's agents is a committed file
+
+A fact can be **correct in the RFC and still absent** from where it gets read. The
+two do not conflict, nothing fails, and the stale copy is the one that wins.
+
+**What does NOT reach a teammate's session:** your memory store, your personal
+`~/.claude/CLAUDE.md`, your chat context. Those are yours.
+
+**What does:** a file **committed in the repo they are working in** — that repo's
+`CLAUDE.md` above all, because it loads automatically into every session opened
+anywhere inside it.
+
+> 🔴 **Measured, 2026-08.** The cobolql forge cutover was executed **and documented**
+> in RFC 0009 on 2026-08-20. But `cobolql/CLAUDE.md` kept saying *"externalUse
+> deploys from Bitbucket"* for a week. Someone working the other lineage had no way
+> to know two deploy paths shared one set of host-secret names. Cost: **two days** of
+> blocked production deploys, CI green throughout.
+> Postmortem: `operations/incidents/2026-08-cobolql-secretos-compartidos-entre-linajes.md`.
+
+**So, when closing a cutover or an incident**, the question is not *"did I write it
+down?"* but *"where will the next person read it?"*:
+
+1. The **`CLAUDE.md` of every repo touched.** If a repo has none, that is the finding.
+2. The long document (`operations/docs/`, a runbook), **pointed at** from step 1.
+3. The **RFC**, if the decision is durable — but an RFC does **not** load into a
+   session on its own, so it never replaces step 1.
+4. The **durable rule** in `operations/lessons.md`.
+
+**And date the change.** *"Since 2026-08-20"* lets a reader recognise older material
+as superseded. Undated, two contradictory documents look equally credible.
 
 💡 **The test for a duplicate.** If two documents state the same fact and one goes
 stale, would a reader be able to tell which? If not, one of them must become a
