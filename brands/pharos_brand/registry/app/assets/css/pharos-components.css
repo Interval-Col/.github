@@ -1,6 +1,30 @@
 /* pharos-components.css — component-layer CSS. Apps @import this alongside pharos-tokens.css.
-   It powers the live pilot light on the Pháros logo (RFC 0008 §6.6); the animation cadence
-   quickens when <html data-status> is set to "drift" or "out" by the health-beacon plugin. */
+   It carries the base inheritance floor (below); it powers the live pilot light on the Pháros
+   logo (RFC 0008 §6.6), whose animation cadence quickens when <html data-status> is set to
+   "drift" or "out" by the health-beacon plugin. */
+
+/* ─── Base inheritance floor — portalled surfaces ──────────────────────
+   A Radix portal (dialog, popover, tooltip, toast) mounts on <body>, OUTSIDE
+   the layout div where the shell scaffold puts `text-foreground`. An element
+   that declares no color of its own therefore inherits the browser default —
+   pure black. In light mode that is right BY ACCIDENT (black on white); in
+   dark mode it is 1.05:1 against the app background, i.e. invisible, and it
+   survived this long because only half the product ever shows it.
+
+   Measured in biuman-lis (issue 388): label rgb(0,0,0) on rgb(11,15,20), no
+   overlay, opacity 1, `--foreground` correct — the defect is inheritance, not
+   a token. With this rule: 17.62:1.
+
+   ⚠️ No token gate can catch this class of defect: check-contrast.mjs compares
+   pairs of TOKENS and every pair here is correct. A correct color contract does
+   not guarantee a legible screen — the missing check is on the rendered DOM.
+
+   This is a FLOOR, not a mandate: it lives above the app's own main.css rules
+   (the registry @imports come first), so an app that declares its own body
+   color keeps it. finance-lch and pharos-lis/lab-qc already do. */
+body {
+  color: var(--foreground);
+}
 
 /* ─── Live pilot light — the dot over the logo's "P" ───────────────────
    The ONE live beacon (BRAND §6.6): steady at rest, quickening as the
