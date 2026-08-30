@@ -51,6 +51,22 @@ const props = withDefaults(defineProps<{
   /** Show the «no firma» control; the app records the decline. */
   declinable?: boolean
   title?: string
+  /**
+   * A QUÉ DISTANCIA SE MIRA ESTA SUPERFICIE.
+   *
+   * `escritorio` (por omisión) — un empleado sentado, con ratón, dentro de una
+   * app con barra lateral. Es lo que consumen lab-qc y Admisiones.
+   *
+   * `tablet` — un dispositivo que se le ENTREGA a un paciente: de pie, con el
+   * dedo, a veces con una sola mano. Cambia tres cosas y ninguna es cosmética:
+   *   · el área de firma MANDA sobre el documento. Una franja delgada se firma
+   *     mal —el trazo se sale y hay que repetirlo—, así que la firma crece con
+   *     el alto disponible en vez de quedarse en 200 px fijos.
+   *   · el documento deja de medir 384 px fijos y ocupa lo que le queda.
+   *   · nada táctil por debajo de 56 px, y el texto sube a 18–20 px.
+   * El widget no decide cuál es: la app lo sabe y lo dice.
+   */
+  density?: 'escritorio' | 'tablet'
 }>(), {
   documentError: null,
   orderNumber: null,
@@ -62,7 +78,10 @@ const props = withDefaults(defineProps<{
   maskedText: '•••',
   declinable: true,
   title: 'Firma del consentimiento',
+  density: 'escritorio',
 })
+
+const esTablet = computed(() => props.density === 'tablet')
 
 const emit = defineEmits<{
   /** The canonical body, ready for `POST /pdf_form/fill/{form.id}`. */
@@ -150,15 +169,24 @@ function submit() {
 </script>
 
 <template>
-  <section class="flex flex-col gap-4 rounded-lg border border-border bg-card p-4" :aria-busy="submitting">
+  <section
+    class="flex flex-col"
+    :class="esTablet
+      ? 'min-h-0 flex-1 gap-5'
+      : 'gap-4 rounded-lg border border-border bg-card p-4'"
+    :aria-busy="submitting"
+  >
     <!-- Header: what is being signed, by whom -->
     <header class="flex flex-wrap items-start justify-between gap-2">
       <div class="flex flex-col gap-0.5">
-        <h2 class="flex items-center gap-2 text-base font-semibold text-foreground">
-          <FileSignature class="size-5 text-primary" aria-hidden="true" />
+        <h2
+          class="flex items-center gap-2 font-semibold text-foreground"
+          :class="esTablet ? 'text-2xl' : 'text-base'"
+        >
+          <FileSignature :class="esTablet ? 'size-7 text-primary' : 'size-5 text-primary'" aria-hidden="true" />
           {{ title }}
         </h2>
-        <p class="text-sm text-muted-foreground">{{ form.name }}</p>
+        <p :class="esTablet ? 'text-lg text-muted-foreground' : 'text-sm text-muted-foreground'">{{ form.name }}</p>
       </div>
       <dl class="text-right text-sm">
         <dt class="text-xs uppercase tracking-wide text-muted-foreground">Paciente</dt>
@@ -171,12 +199,16 @@ function submit() {
     </header>
 
     <!-- The document: read before signing -->
-    <div class="overflow-hidden rounded-md border border-border bg-background">
+    <div
+      class="overflow-hidden rounded-md border border-border bg-background"
+      :class="esTablet && 'flex min-h-0 flex-[3]'"
+    >
       <iframe
         v-if="documentUrl"
         :src="documentUrl"
         title="Documento de consentimiento"
-        class="h-96 w-full"
+        class="w-full"
+        :class="esTablet ? 'h-full' : 'h-96'"
       />
       <div v-else-if="documentError" class="flex items-center gap-2 p-4 text-sm text-destructive">
         <AlertCircle class="size-4 shrink-0" aria-hidden="true" />
@@ -257,17 +289,28 @@ function submit() {
     </div>
 
     <!-- The pad -->
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2" :class="esTablet && 'min-h-[180px] flex-[2]'">
       <div class="flex items-center justify-between">
-        <Label>
+        <Label :class="esTablet && 'text-lg'">
           Firma {{ representativeSigns ? 'del representante legal' : 'del paciente' }}
         </Label>
-        <Button variant="ghost" size="sm" :disabled="!hasInk || submitting" @click="clearPad">
+        <Button
+          variant="ghost"
+          :size="esTablet ? 'default' : 'sm'"
+          :class="esTablet && 'h-14 px-5 text-base'"
+          :disabled="!hasInk || submitting"
+          @click="clearPad"
+        >
           <Eraser class="mr-1 size-4" aria-hidden="true" />
           Borrar
         </Button>
       </div>
-      <SignaturePad ref="pad" :disabled="submitting" @change="onInk" />
+      <SignaturePad
+        ref="pad"
+        :disabled="submitting"
+        :height="esTablet ? 260 : 200"
+        @change="onInk"
+      />
       <p v-if="form.requiresBacteriologist && bacteriologist" class="text-xs text-muted-foreground">
         Firma también {{ masked(bacteriologist.fullName) }} (bacteriólogo/a), con la firma registrada en su perfil.
       </p>
@@ -281,11 +324,17 @@ function submit() {
       Completa el nombre y el documento del representante para poder firmar.
     </p>
 
-    <footer class="flex flex-wrap items-center justify-end gap-2">
-      <Button v-if="declinable" variant="outline" :disabled="submitting" @click="emit('decline')">
+    <footer class="flex flex-wrap items-center justify-end gap-3">
+      <Button
+        v-if="declinable"
+        variant="outline"
+        :class="esTablet && 'h-14 px-6 text-lg'"
+        :disabled="submitting"
+        @click="emit('decline')"
+      >
         No firma
       </Button>
-      <Button :disabled="!canSign" @click="submit">
+      <Button :class="esTablet && 'h-14 px-8 text-lg'" :disabled="!canSign" @click="submit">
         <Loader2 v-if="submitting" class="mr-1 size-4 animate-spin" aria-hidden="true" />
         {{ submitting ? 'Guardando…' : 'Guardar firma' }}
       </Button>
