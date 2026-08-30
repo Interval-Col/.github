@@ -54,6 +54,22 @@ cualquier `.theme-*`. El trazo usa `currentColor` del canvas (`text-foreground`)
 | `maskedText` | `string` | `'•••'` | texto de máscara |
 | `declinable` | `boolean` | `true` | muestra «No firma»; la app responde el emit registrando el `declined` |
 | `title` | `string` | `'Firma del consentimiento'` | encabezado |
+| `density` | `'escritorio' \| 'tablet'` | `'escritorio'` | **a qué distancia se mira la superficie.** `escritorio` = un empleado sentado, con ratón, dentro de una app con barra lateral (lab-qc, Admisiones). `tablet` = un dispositivo que se le **entrega** a un paciente: de pie, con el dedo, a veces con una sola mano (consent-kiosk) |
+
+### `density: 'tablet'` — qué cambia, y por qué no es cosmético
+
+- **El área de firma manda sobre el documento** (`flex-[2]` con piso de 180 px,
+  contra `flex-[3]` del documento). Una franja delgada se firma mal: el trazo se
+  sale del área y hay que repetirlo, de pie y con el paciente esperando. El pad
+  sube de 200 a 260 px. ⚠️ El pad lleva su alto como **estilo en línea**, así que
+  una clase `flex-1` encima no hace nada — el alto se pasa por `height`.
+- **El documento deja de medir 384 px fijos** y ocupa el resto del alto. En una
+  tablet apaisada, 384 px fijos dejaban media pantalla en blanco.
+- **Nada táctil por debajo de 56 px** y el texto sube a 18–20 px.
+- **La tarjeta desaparece** (sin borde ni relleno propio): en un kiosco la
+  superficie ES la pantalla, y la app pone el fondo.
+
+El widget no adivina cuál es: la app lo sabe y lo declara.
 
 **Emits:**
 
