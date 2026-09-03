@@ -99,7 +99,11 @@ const representativeIdType = ref('NATIONAL_ID')
 const representativeIdNumber = ref('')
 const expeditionCity = ref(props.subject.expeditionPlace ?? '')
 const patientExpeditionCity = ref(props.subject.expeditionPlace ?? '')
-const entityServed = ref('')
+// Nombre distinto del de la prop `entityServed` a propósito: en `<script setup>`
+// un ref con el mismo nombre que una prop es una colisión real —el template
+// resuelve uno de los dos y el otro queda muerto sin avisar—. `vue/no-dupe-keys`
+// lo ataja, y por eso el nombre en español.
+const entidadEscrita = ref('')
 const conserveSamples = ref<boolean>(false)
 const microscopicImages = ref<boolean>(false)
 
@@ -140,7 +144,7 @@ const representativeIncomplete = computed(() =>
 const missingRequiredText = computed(() =>
   (props.form.requiresExpeditionCity && expeditionCity.value.trim().length === 0)
   || (props.form.requiresPatientExpeditionCity && effectivePatientCity.value.trim().length === 0)
-  || (props.form.requiresEntityServed && entityServed.value.trim().length === 0),
+  || (props.form.requiresEntityServed && entidadEscrita.value.trim().length === 0),
 )
 
 const canSign = computed(() =>
@@ -178,7 +182,7 @@ function submit() {
       : (props.subject.expeditionPlace ?? null),
     order_number: props.orderNumber ?? null,
     entity_served: props.form.requiresEntityServed
-      ? entityServed.value.trim() || props.entityServed || null
+      ? entidadEscrita.value.trim() || props.entityServed || null
       : (props.entityServed ?? null),
     authorize_conservation_of_biological_samples: props.form.hasSampleConservationChoice
       ? conserveSamples.value
@@ -312,7 +316,7 @@ function submit() {
       </div>
       <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
         <Label for="consent-entity">Entidad</Label>
-        <Input id="consent-entity" v-model="entityServed" autocomplete="off" :disabled="submitting" />
+        <Input id="consent-entity" v-model="entidadEscrita" autocomplete="off" :disabled="submitting" />
       </div>
     </div>
 
