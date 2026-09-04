@@ -97,15 +97,30 @@ const representativeSigns = ref(false)
 const representativeName = ref('')
 const representativeIdType = ref('NATIONAL_ID')
 const representativeIdNumber = ref('')
-const expeditionCity = ref('')
+const expeditionCity = ref(props.subject.expeditionPlace ?? '')
+const patientExpeditionCity = ref(props.subject.expeditionPlace ?? '')
+// Nombre distinto del de la prop `entityServed` a propósito: en `<script setup>`
+// un ref con el mismo nombre que una prop es una colisión real —el template
+// resuelve uno de los dos y el otro queda muerto sin avisar—. `vue/no-dupe-keys`
+// lo ataja, y por eso el nombre en español.
+const entidadEscrita = ref('')
 const conserveSamples = ref<boolean>(false)
 const microscopicImages = ref<boolean>(false)
 
 // Switching who signs empties the pad: a stroke drawn as one person is not
 // evidence of the other.
-watch(representativeSigns, () => {
+watch(representativeSigns, activo => {
   pad.value?.clear()
+  // La ciudad de expedición es la del DOCUMENTO DE QUIEN FIRMA: al cambiar de
+  // firmante deja de aplicar, igual que el trazo.
+  expeditionCity.value = activo ? '' : (props.subject.expeditionPlace ?? '')
 })
+
+// Cuando nadie representa, el firmante ES el paciente: una sola ciudad para las
+// dos casillas del PDF.
+const effectivePatientCity = computed(() =>
+  representativeSigns.value ? patientExpeditionCity.value : expeditionCity.value,
+)
 
 const masked = (value: string | undefined): string => {
   if (!value) return ''
@@ -124,11 +139,20 @@ const representativeIncomplete = computed(() =>
   && (representativeName.value.trim().length < 3 || representativeIdNumber.value.trim().length < 3),
 )
 
+// Lo que el formulario imprime y todavía no está escrito. Se valida ACÁ, no en
+// el servicio: un 422 después del trazo obliga al paciente a firmar dos veces.
+const missingRequiredText = computed(() =>
+  (props.form.requiresExpeditionCity && expeditionCity.value.trim().length === 0)
+  || (props.form.requiresPatientExpeditionCity && effectivePatientCity.value.trim().length === 0)
+  || (props.form.requiresEntityServed && entidadEscrita.value.trim().length === 0),
+)
+
 const canSign = computed(() =>
   hasInk.value
   && !props.submitting
   && !!props.documentUrl
-  && !representativeIncomplete.value,
+  && !representativeIncomplete.value
+  && !missingRequiredText.value,
 )
 
 function onInk(value: boolean) {
@@ -153,9 +177,13 @@ function submit() {
     legal_representative_name: representative ? representativeName.value.trim() : null,
     legal_representative_identification: representative ? representativeIdNumber.value.trim() : null,
     legal_representative_identification_type: representative ? representativeIdType.value : null,
-    patient_identification_expedition_place: props.subject.expeditionPlace ?? null,
+    patient_identification_expedition_place: props.form.requiresPatientExpeditionCity
+      ? effectivePatientCity.value.trim() || null
+      : (props.subject.expeditionPlace ?? null),
     order_number: props.orderNumber ?? null,
-    entity_served: props.entityServed ?? null,
+    entity_served: props.form.requiresEntityServed
+      ? entidadEscrita.value.trim() || props.entityServed || null
+      : (props.entityServed ?? null),
     authorize_conservation_of_biological_samples: props.form.hasSampleConservationChoice
       ? conserveSamples.value
       : null,
@@ -260,9 +288,35 @@ function submit() {
           />
         </div>
       </div>
-      <div class="flex flex-col gap-1.5 sm:max-w-xs">
-        <Label for="consent-expedition">Ciudad de expedición del documento</Label>
+    </div>
+
+    <!-- Lo que el PDF imprime además de las firmas. Vive FUERA del bloque del
+         representante: hay formularios sin representante que igual piden ciudad. -->
+    <div
+      v-if="form.requiresExpeditionCity || form.requiresPatientExpeditionCity || form.requiresEntityServed"
+      class="flex flex-col gap-3"
+    >
+      <div v-if="form.requiresExpeditionCity" class="flex flex-col gap-1.5 sm:max-w-xs">
+        <Label for="consent-expedition">
+          {{ representativeSigns ? 'Ciudad de expedición del documento del representante' : 'Ciudad de expedición del documento' }}
+        </Label>
         <Input id="consent-expedition" v-model="expeditionCity" autocomplete="off" :disabled="submitting" />
+      </div>
+      <div
+        v-if="form.requiresPatientExpeditionCity && representativeSigns"
+        class="flex flex-col gap-1.5 sm:max-w-xs"
+      >
+        <Label for="consent-patient-expedition">Ciudad de expedición del documento del paciente</Label>
+        <Input
+          id="consent-patient-expedition"
+          v-model="patientExpeditionCity"
+          autocomplete="off"
+          :disabled="submitting"
+        />
+      </div>
+      <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
+        <Label for="consent-entity">Entidad</Label>
+        <Input id="consent-entity" v-model="entidadEscrita" autocomplete="off" :disabled="submitting" />
       </div>
     </div>
 

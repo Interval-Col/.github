@@ -11,6 +11,15 @@ export interface ConsentFormDescriptor {
   allowsLegalRepresentative: boolean
   /** The form carries a bacteriologist signature slot (filled by the service from the SSO profile). */
   requiresBacteriologist: boolean
+  /** The form prints the city where the SIGNER's document was issued (14 of 15;
+   *  `data_treatment` is the only one that does not print it). */
+  requiresExpeditionCity: boolean
+  /** The form ALSO prints the city where the PATIENT's own document was issued — a
+   *  separate box, and a different value from the signer's only when a legal
+   *  representative signs. Ten forms print both. */
+  requiresPatientExpeditionCity: boolean
+  /** The form prints the entity (EPS) the patient is served by. */
+  requiresEntityServed: boolean
   /** Extra declarations some forms print as checkboxes. */
   hasSampleConservationChoice: boolean
   hasMicroscopicImagesChoice: boolean
