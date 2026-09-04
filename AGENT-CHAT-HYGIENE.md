@@ -271,6 +271,26 @@ it works for anyone on the team, not only the person who wrote the document.
 each colour with its swatch, value and contrast note — is more useful to a designer than the
 CSS, and it cannot go stale.
 
+### 🔴 First check that your reader can actually open the URL
+
+**Measured 2026-09-03, and it cost a rebuild the same day.** A published artifact did **not
+cross** from a personal space to the organisation's: the colleague it was written for, a member
+of the org, could not open it. The whole step-3 vehicle was inert for the one person who needed
+it, and nobody found out until he tried.
+
+⇒ **Before you build anything on a link, have the reader open it.** Thirty seconds, and it is
+the difference between a live document and a dead end.
+
+**If the link does not reach them**, the honest fallback is to upload the file after all — and
+then the drift the URL was avoiding comes back, so *something* has to watch it. Say so out loud
+in the instructions rather than letting the copy quietly age. Candidates for a vehicle that
+does cross: a document in whatever shared drive the organisation already connects, or any
+internal surface the reader already signs in to.
+
+🪤 **Do not infer reach from the account.** An account can belong to the organisation and still
+publish into a personal space. The configuration says one thing; what the reader sees is the
+only evidence that counts.
+
 ⚠️ **This is measured, not theoretical.** On one front, of the five files about to be loaded
 into a Project, **four changed the same day** — the main brief four times. A Project assembled
 that morning would have been wrong by that evening.
