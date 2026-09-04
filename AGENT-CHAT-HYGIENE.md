@@ -242,7 +242,59 @@ Everything above is about a _single_ chat. The moment you start spawning sub-age
 
 ---
 
-## 12. Decision cheat-sheet
+## 12. Claude Projects — what goes in, and what must not
+
+A Project's knowledge base is a **copy**. It has no link back to the file it came from,
+nothing warns you when it drifts, and a reader — person or model — obeys a six-week-old copy
+with exactly the confidence it gave the fresh one. That is the whole failure mode.
+
+> **The one rule: a Project holds only what does not change. Anything that changes lives
+> behind a URL.**
+
+### The four steps
+
+1. List the files you were about to upload.
+2. For each one, ask git how often it actually moved:
+   ```bash
+   git log --oneline --since="1 month ago" -- <path> | wc -l
+   ```
+3. **0 → upload it.** More than 0 → **do not upload it.** Publish it as a page instead and
+   give the Project its URL. Same link forever, content always current.
+4. Put this line in the Project's custom instructions, naming the URL:
+   > *The current \<document\> is at \<URL\>. Open it before answering. If anything in this
+   > Project's knowledge contradicts that page, the page wins.*
+
+Step 2 is the whole method, and it is a command rather than a judgement call — which is why
+it works for anyone on the team, not only the person who wrote the document.
+
+💡 **A rendered page usually beats the raw file anyway.** A design-token file read as a page —
+each colour with its swatch, value and contrast note — is more useful to a designer than the
+CSS, and it cannot go stale.
+
+⚠️ **This is measured, not theoretical.** On one front, of the five files about to be loaded
+into a Project, **four changed the same day** — the main brief four times. A Project assembled
+that morning would have been wrong by that evening.
+
+### Whoever owns the source owns the propagation
+
+A ruling taken in a terminal session reaches a Project **only if someone carries it there**.
+Carry it in the same sitting: commit it to the repo *and* republish the page before the
+session ends. A propagation that depends on remembering next week is a drift you have already
+shipped.
+
+### ⛔ What never goes into a Project
+
+Payroll, compensation and private team profiles · financial statements and going-concern
+material · anything carrying patient data, and anything from a repository that enforces a
+disclosure or privacy policy. A Project is shared with people whose access you are not
+re-checking each time you drop a file in. Scope the upload to the job the person is actually
+doing — brand and product, not the financial or the clinical plane.
+
+⚠️ Being in the organisation is not the same as needing the document. Default to less.
+
+---
+
+## 13. Decision cheat-sheet
 
 | Situation | Do this | Destroys anything? |
 |---|---|---|
@@ -251,9 +303,10 @@ Everything above is about a _single_ chat. The moment you start spawning sub-age
 | Task done, knowledge externalized (§4), no audit/onboarding value, won't resume | **Delete** the `.jsonl` (use the §7 one-liner; review first) | Yes — removes it from resume picker |
 | Work in flight, not yet externalized, might resume, or has audit/PR/debug/onboarding value | **Keep** it (auto-cleanup handles it at 30 days) | — |
 | Want an end-of-session nudge toward the delete command | **Opt into the §10 `SessionEnd` hook** (personal settings) | No — it only prints |
+| Assembling a Claude Project for a teammate | **Upload only what git says has not moved** (§12); everything else goes in as a URL | No — but a stale copy is obeyed as if fresh |
 | Spawning sub-agents or a Workflow fan-out | **Cheapest model that fits** (Haiku/Sonnet for bulk, Opus only for verify/synthesis), **fresh over `fork`**, width matched to the task (§11) | — |
 
-**The through-line:** put durable knowledge where it survives (repo + memory), keep each chat scoped to one task, and then treat the transcript as cheap. Compact to finish, clear to switch, keep when in doubt, delete only when it's truly spent.
+**The through-line:** put durable knowledge where it survives (repo + memory), keep each chat scoped to one task, share only what does not rot, and then treat the transcript as cheap. Compact to finish, clear to switch, keep when in doubt, delete only when it's truly spent.
 
 ---
 
