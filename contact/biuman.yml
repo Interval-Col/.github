@@ -13,6 +13,7 @@
 #
 # Consumers mirror these values rather than importing this file directly:
 #   - public-web (marketing site): apps/biuman-web/app/utils/entidad-clinica.ts
+#   - biuman-lis (pie del PDF del informe): lis/frontend/app/lib/entidadClinica.ts
 # When you change a value here, update the mirror too.
 #
 # ── Why this file exists ────────────────────────────────────────────────────

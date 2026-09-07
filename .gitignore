@@ -26,3 +26,8 @@ Icon?
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Worktrees y estado local de agentes de Claude — nunca se versionan.
+# Medido 2026-09-03: en public-web esto eran 401 MB y 17.902 archivos untracked,
+# que un `git add -A` se habría tragado enteros.
+.claude/
