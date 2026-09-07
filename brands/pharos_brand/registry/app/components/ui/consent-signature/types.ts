@@ -60,6 +60,13 @@ export interface ConsentSignaturePayload {
   authorize_conservation_of_biological_samples: boolean | null
   authorize_the_use_of_microscopic_images: boolean | null
   legal_representative_signature: string
+  /** Plan 5.3 — QUIÉN firma, dicho y no deducido.
+   *
+   *  El servicio rechaza con 422 un formulario que admite representante y llega
+   *  sin esto: antes lo deducía de la presencia del nombre, y así la AUSENCIA de
+   *  un dato se volvía la afirmación «firmó el paciente». `null` sólo es válido
+   *  en los formularios sin recuadro de representante. */
+  signed_by: 'patient' | 'legal_representative' | null
 }
 
 export interface IdentificationTypeOption {

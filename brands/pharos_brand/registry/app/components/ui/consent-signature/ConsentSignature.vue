@@ -93,7 +93,30 @@ const emit = defineEmits<{
 const pad = ref<InstanceType<typeof SignaturePad> | null>(null)
 const hasInk = ref(false)
 
-const representativeSigns = ref(false)
+// 🔑 `null` = todavía nadie respondió, y ese estado BLOQUEA la firma.
+//
+// La app que esto reemplaza (`sample-collection-workflow`, Bitbucket) hacía la
+// pregunta «¿Firma como representante legal del paciente?» con un radio SIN
+// valor por defecto, y se negaba a seguir sin respuesta:
+//
+//     if (isLegalRepresentative.value === null) {
+//       toast.error("Llene el campo de representante legal."); return;
+//     }
+//
+// El port la convirtió en un checkbox desmarcado — o sea, en un default
+// silencioso: no tocar nada significaba «firma el paciente». En un consentimiento
+// de médula ósea pediátrica o de tamizaje de drogas, eso guarda un documento que
+// dice que el menor firmó por sí mismo, sin error y sin rastro. Nadie lo
+// descubre hasta que alguien pregunta, años después, quién firmó por ese menor.
+//
+// Esto recupera la regla vieja: una respuesta explícita, siempre.
+const QUIEN_FIRMA_OPCIONES = [
+  { value: 'patient' as const, label: 'El paciente' },
+  { value: 'representative' as const, label: 'Su representante legal' },
+]
+
+const quienFirma = ref<'patient' | 'representative' | null>(null)
+const representativeSigns = computed(() => quienFirma.value === 'representative')
 const representativeName = ref('')
 const representativeIdType = ref('NATIONAL_ID')
 const representativeIdNumber = ref('')
@@ -147,10 +170,17 @@ const missingRequiredText = computed(() =>
   || (props.form.requiresEntityServed && entidadEscrita.value.trim().length === 0),
 )
 
+// Sin respuesta a «quién firma» no se puede firmar. Es la regla de la app vieja,
+// y es lo único que impide que el trazo se guarde atribuido a quien no fue.
+const quienFirmaSinResponder = computed(
+  () => props.form.allowsLegalRepresentative && quienFirma.value === null,
+)
+
 const canSign = computed(() =>
   hasInk.value
   && !props.submitting
   && !!props.documentUrl
+  && !quienFirmaSinResponder.value
   && !representativeIncomplete.value
   && !missingRequiredText.value,
 )
@@ -191,6 +221,9 @@ function submit() {
       ? microscopicImages.value
       : null,
     legal_representative_signature: representative ? image : '',
+    // La respuesta viaja tal cual: en los formularios sin representante no hay
+    // pregunta y va `null`, que es lo único que el servicio acepta ahí.
+    signed_by: props.form.allowsLegalRepresentative ? quienFirma.value : null,
   }
   emit('sign', payload)
 }
@@ -248,17 +281,38 @@ function submit() {
       </div>
     </div>
 
-    <!-- Who signs (bench forms only) -->
+    <!-- Quién firma (sólo los formularios que admiten representante).
+
+         Pregunta con dos opciones y SIN opción marcada, calcada de la app vieja:
+         mientras no se responda, el botón de firmar está deshabilitado. Un
+         checkbox desmarcado —lo que había antes— es una respuesta que nadie dio. -->
     <div v-if="form.allowsLegalRepresentative" class="flex flex-col gap-3">
-      <div class="flex items-center gap-2">
-        <Checkbox
-          id="consent-representative"
-          v-model="representativeSigns"
-          :disabled="submitting"
-          
-        />
-        <Label for="consent-representative">Firma un representante legal</Label>
-      </div>
+      <fieldset class="flex flex-col gap-2">
+        <legend class="text-sm font-medium text-foreground">
+          ¿Quién firma este consentimiento?
+        </legend>
+        <div class="flex flex-wrap gap-2">
+          <!-- Botones grandes y no radios diminutos: esto se responde con el dedo
+               en una tablet, de pie, con el paciente delante. -->
+          <button
+            v-for="opcion in QUIEN_FIRMA_OPCIONES"
+            :key="opcion.value"
+            type="button"
+            :disabled="submitting"
+            :aria-pressed="quienFirma === opcion.value"
+            class="min-h-11 rounded-md border px-4 py-2 text-sm transition-colors disabled:opacity-50"
+            :class="quienFirma === opcion.value
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-input bg-background text-foreground hover:bg-accent'"
+            @click="quienFirma = opcion.value"
+          >
+            {{ opcion.label }}
+          </button>
+        </div>
+        <p v-if="quienFirmaSinResponder" class="text-xs text-muted-foreground">
+          Responde quién va a firmar para poder continuar.
+        </p>
+      </fieldset>
       <div v-if="representativeSigns" class="grid gap-3 sm:grid-cols-3">
         <div class="flex flex-col gap-1.5 sm:col-span-3">
           <Label for="consent-rep-name">Nombre del representante</Label>
