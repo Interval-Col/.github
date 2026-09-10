@@ -13,14 +13,56 @@
 # reasons. The brand spec is now at `Interval-Col/brand-assets` →
 # `hematologico/LCH-BRAND.md`.
 #
-# Consumers mirror these values rather than importing this file directly:
-#   - public-web (results portal): apps/lch-results/app/utils/lab-contact.ts
-# When you change a value here, update the mirrors too.
+# Consumers mirror these values rather than importing this file directly.
+# 🪤 Esta lista tenía UN espejo y hay tres — un registro incompleto se lee como
+# «sólo hay uno» y es peor que no tenerlo. Medidos el 2026-09-09, en `public-web`:
+#   - apps/lch-web/app/utils/entidad-clinica.ts        (sitio público)
+#   - apps/lch-results/app/utils/lab-contact.ts        (portal de resultados)
+#   - apps/lch-results/backend/app/reports/report.html.j2  (informe impreso)
+# ✅ Y `apps/lch-web/app/components/SiteFooter.vue` NO es un cuarto espejo, aunque
+# se leyó así: pinta `{{ CONTACTO.nit }}`, o sea que consume el primero. Un
+# consumidor no diverge.
+#
+# When you change a value here, update the mirrors too. Los del bloque `legal:`
+# los vigila `public-web/apps/lch-web/tests/el-nit-y-la-supersalud-no-pueden-divergir.test.ts`.
 #
 # The shared national line is 444 4200: the landline reaches it through the
 # Medellín area code (604), the mobile through 320.
 
 brand: hematologico
+
+# ── Identificación legal ─────────────────────────────────────────────────────
+#
+# 🔑 EL NIT ES EL DATO DURO DE ESTE BLOQUE, y la razón de que exista.
+# Vivía repetido —idéntico, por suerte— en tres archivos de `public-web`, sin que
+# ninguno fuera la fuente: `apps/lch-web/app/utils/entidad-clinica.ts`,
+# `apps/lch-results/app/utils/lab-contact.ts` y
+# `apps/lch-results/backend/app/reports/report.html.j2`. Tres copias de un dato de
+# identificación sin canónico divergen; la pregunta era cuándo, no si.
+# Confirmado por German el 2026-09-09.
+#
+# 🛑 LA LEYENDA NO ES EL MECANISMO DE CUMPLIMIENTO, y conviene decirlo acá para que
+# nadie lo deduzca al revés dentro de seis meses.
+# La Circular Única (CE 047 de 2007, actualizada por la 2024151000000013-5 de 2024)
+# obliga a «Vigilado Supersalud» en PUBLICIDAD y difusión masiva — y para piezas
+# GRÁFICAS exige el LOGOTIPO, no la frase; el texto es el mínimo que basta al cierre
+# de un spot de radio o TV. El sitio público es pieza gráfica ⇒ lo que lo hace
+# cumplir es el SELLO, que ya está puesto en su pie.
+# ⇒ Esta cadena es la redacción ACORDADA para las superficies que ya la traen —no
+# estorba y no se quita—, no la obligación. Medido contra el normograma el
+# 2026-09-06: `public-web/apps/lch-web/docs/vigilancia-supersalud.md`.
+#
+# ⚠️ Y las superficies que NO son publicidad —el portal tras el login, el informe
+# de resultados— no están obligadas a ninguna de las dos. Lo que ya tengan, se
+# queda; nadie debe agregarlo «porque falta».
+legal:
+  # Número de Identificación Tributaria. Formato tal como se publica.
+  nit: "890.942.832-2"
+  # Cómo se imprime cuando va acompañado de su etiqueta.
+  nit_display: "NIT 890.942.832-2"
+  # Redacción acordada de la expresión de vigilancia. Ver la nota de arriba: el
+  # cumplimiento en pieza gráfica lo da el sello, no esta cadena.
+  supervision_text: "Vigilado Supersalud"
 
 phones:
   landline: "+57 604 444 42 00"
