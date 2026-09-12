@@ -70,3 +70,132 @@ id = "committed-dotenv"
 description = "A .env file must never be committed (use .env.example)"
 regex = '''(?s).*'''
 path = '''(^|/)\.env$'''
+
+# ═════════════════════════════════════════════════════════════════════
+# PHI — reglas de datos de paciente
+#
+# 🔴 POR QUÉ ESTÁN ACÁ Y NO EN UN REPO. Hasta el 2026-09-12 vivían SÓLO
+# en `public-web`: 1 de 21 repos con `.gitleaks.toml`. Los que tocan
+# paciente —`admission-patient`, `pharos-lis`, `biuman-lis`,
+# `cobol-migration`— escaneaban secretos y nada más. Cierra
+# operations#317, abierto el 2026-08-08 pidiendo exactamente esto.
+#
+# ⚠️ QUÉ VE EL SET POR DEFECTO, Y QUÉ NO. Un identificador de paciente es
+# una cadena CORTA y de BAJA ENTROPÍA. El set por defecto de gitleaks
+# está construido para llaves y tokens, así que no puede verlo y nunca
+# iba a verlo: por eso tres fugas seguidas pasaron el portón obligatorio
+# en VERDE. Un portón verde no dice «no hay PHI»; dice «no busqué».
+#
+# 🪤 Y NINGUNA prueba las encuentra: un identificador válido en un
+# placeholder, un docstring o el cuerpo de un issue no rompe nada.
+#
+# ⚠️ AL COPIAR ESTE ARCHIVO A UN REPO: las `allowlist.commits` de
+# `public-web` NO están acá a propósito. Son fugas históricas de ESE
+# repo, y excusarlas org-wide dejaría pasar una reintroducción en
+# cualquier otro — que es exactamente el fallo del 2026-08-08.
+# ═════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "lch-phi-paci-rec-code"
+description = "Código PACI-REC del LIS — 9 letras + 3 dígitos. Se construye con fragmentos del nombre de la persona, así que cualquiera real es directamente atribuible a un paciente identificable."
+regex = '''\b[A-Za-z]{9}[0-9]{3}\b'''
+
+  [rules.allowlist]
+  description = """
+  Dos cosas distintas, y la diferencia importa.
+
+  1) `regexes` — marcadores SINTÉTICOS que enseñan la forma sin deletrear a nadie.
+
+  2) `commits` — la fuga histórica, excusada POR COMMIT y no por valor. Es
+     deliberado: excusar el valor haría que una reintroducción en un commit
+     NUEVO pasara callada, que es exactamente lo que ocurrió el 2026-08-08.
+     Excusar el commit deja la historia verde y la reintroducción roja.
+     Verificado en los dos sentidos antes de commitear.
+
+  Por qué la historia no se reescribe (decisión del 2026-08-07, vigente): las
+  imágenes de ECR se etiquetan con el SHA del commit — 8 sitios del CD — así que
+  cambiar los SHA rompe la trazabilidad imagen→fuente, que es la cadena de
+  evidencia que PROT-SW-001 exige para liberar. Y aun reescribiendo, el valor
+  seguiría en `refs/pull/159|163/head`, que son de GitHub.
+
+  ⚠️ El escaneo de CI es `gitleaks detect` con `fetch-depth: 0` ⇒ HISTORIA
+  COMPLETA. Sin esta lista la rama sale roja con 10 hallazgos en 4 commits.
+  """
+  regexes = [
+    '''\bAAABBBCCC[0-9]{3}\b''',
+    '''\b[A-Z]{9}000\b''',
+  ]
+[[rules]]
+id = "lch-phi-colombian-document"
+description = "Número de documento colombiano junto a una etiqueta de identificación (cédula, documento, identificación). Contextual a propósito: un número suelto de 8-10 dígitos es demasiado común para bloquear."
+# ⚠️ AMPLIADA el 2026-08-23. La versión anterior sólo veía la etiqueta escrita con
+# guion bajo o como palabra suelta con `\b` a los dos lados. Como `_` ES carácter de
+# palabra en RE2, `\bdocumentos?\b` NO separa dentro de `TYPED_DOCUMENT`, y el `\b`
+# de apertura impedía ver `documentNumber`. Medido: `documentNumber`,
+# `numeroDocumento`, `TYPED_DOCUMENT` y un número bajo la clave `paciente:` pasaban
+# el gate obligatorio sin sonar — y las tres primeras formas EXISTEN en el árbol.
+#
+# 🪤 El ensanche obvio (agregar `documents?`, `identification` y `paciente` sueltos)
+# se PROBÓ y se descartó: dispara con prosa. Medido sobre la historia completa, daba
+# 2 falsos positivos — un sha de git de 7 dígitos y una fecha— porque en español
+# «paciente» y «documento» aparecen cerca de números todo el tiempo. Por eso
+# `paciente` sólo cuenta como etiqueta si viene con SEPARADOR DE CLAVE (`:` o `=`).
+#
+# 🪤 Y el `\b` DE APERTURA es obligatorio, aunque el de cierre no. Quitarlo hace que
+# `c\.?c\.?` empareje la doble c DENTRO de palabras españolas —«corre(cc)ión»,
+# «se(cc)ión»— y entonces cualquier sha de git de 7 dígitos a menos de 32 caracteres
+# sale como cédula. Medido: 1 falso positivo en `rfc0025-fase1-donde-se-escribe.md`.
+# El de CIERRE sí sobra: `_` es carácter de palabra, así que un `\b` final impide ver
+# `TYPED_DOCUMENT` y `documentNumber`, que es justo el hueco que esto viene a tapar.
+regex = '''(?i)(?:\b(?:c\.?c\.?|c[eé]dulas?|documentos?|identificaci[oó]n|document_?number|identification_?number|n[uú]mero_?documentos?|n[uú]mero_?identificaci[oó]n|typed_?documents?|patient_?documents?|patient_?id)[^0-9\n]{0,32}|\bpaciente["']?\s*[:=]\s*["']?)\b[1-9][0-9]{6,9}\b'''
+
+  [rules.allowlist]
+  description = "Ejemplos evidentemente sintéticos: dígitos repetidos o secuencia estricta."
+  # ⚠️ Go/RE2 no soporta retrorreferencias: `\b(\d)\1{6,9}\b` compila en PCRE y
+  # hace que gitleaks entre en panic acá. Los dígitos repetidos van enumerados.
+  regexes = [
+    '''\b(?:0{7,10}|1{7,10}|2{7,10}|3{7,10}|4{7,10}|5{7,10}|6{7,10}|7{7,10}|8{7,10}|9{7,10})\b''',
+    '''\b1234567(?:89(?:0)?)?\b''',
+    # 📐 LA CONVENCIÓN PARA DOCUMENTOS SINTÉTICOS, adoptada el 2026-08-23: diez
+    # dígitos TERMINADOS EN `000`. Es la hermana de `[A-Z]{9}000` que esta misma
+    # config ya usa para los códigos MEDI-REC sintéticos, y existe para que un
+    # fixture nuevo no obligue a elegir entre tocar el allowlist o dejar el gate
+    # en rojo. ⚠️ Un documento de verdad que termine en `000` es posible, así que
+    # esto NO excusa pegar un valor real: excusa el valor CONSTRUIDO para pruebas.
+    '''\b[1-9][0-9]{6}000\b''',
+  ]
+
+[[rules]]
+id = "lch-phi-order-number"
+description = "Número de ORDEN del LIS junto a su etiqueta. Una orden identifica el episodio de un paciente: por ella se llega a la persona a través del LIS. Contextual a propósito, igual que la de documento — un entero de 6-8 dígitos suelto es demasiado común para bloquear."
+# 🔑 NACE DE UNA FUGA REAL (public-web#858, 2026-09-12). Un número de orden vivió en
+# el cuerpo de un issue y en tres comentarios del hilo. Lo escribieron DOS partes
+# independientes —quien abrió el defecto y la sesión que lo arregló— porque es
+# exactamente lo que un buen reporte de defecto pide: el identificador del caso a
+# reproducir. No fue descuido: fue el formato empujando hacia el único dato que no
+# puede escribirse.
+#
+# ⚠️ LA LÍNEA, y hay que tenerla clara antes de tocar esta regla: un código de
+# EXAMEN (`58900`, `66400`, `66600`) SÍ se escribe — es catálogo, no identifica a
+# nadie, y el piso de divulgación está publicado en `registry.py`. Un número de
+# ORDEN no. Por eso el mínimo son 6 dígitos: los códigos del catálogo tienen 5 o
+# menos, así que quedan fuera POR CONSTRUCCIÓN y no hay que enumerarlos.
+#
+# 🪤 Contextual, no suelto — la lección que ya costó la regla de documento. Un
+# entero de 7 dígitos suelto es un sha corto, el id de cualquier cosa, o un monto en
+# pesos; bloquearlo dejaría el gate inservible en un estate que factura en COP.
+#
+# 🪤 `\b` de apertura obligatorio y NINGUNO de cierre antes del número: `_` es
+# carácter de palabra en RE2, así que un `\b` final impediría ver `order_id` y
+# `numero_orden` — el mismo hueco que la regla de documento tuvo hasta el 2026-08-23.
+regex = '''(?i)\b(?:[oó]rden(?:es)?|orders?|order_?(?:id|number|no)|orden_?id|n[uú]mero_?(?:de_?)?[oó]rden|nro\.?\s*[oó]rden)["\']?[^0-9\n]{0,24}\b[1-9][0-9]{5,7}\b'''
+
+  [rules.allowlist]
+  description = "Marcadores sintéticos: dígitos repetidos o secuencia estricta. Existen para poder DOCUMENTAR la forma sin deletrear una orden real."
+  # ⚠️ Go/RE2 no soporta retrorreferencias — `(\d)\1{5,7}` hace entrar a gitleaks en
+  # panic. Van enumerados, igual que en la regla de PACI-REC.
+  regexes = [
+    '''(?i)[oó]rden[^0-9\n]{0,24}1{6,8}\b''',
+    '''(?i)[oó]rden[^0-9\n]{0,24}9{6,8}\b''',
+    '''(?i)[oó]rden[^0-9\n]{0,24}1234567\b''',
+  ]

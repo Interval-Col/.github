@@ -1,0 +1,132 @@
+# ─────────────────────────────────────────────────────────────────────
+# El portón de PHI para lo que NO es código: issues, comentarios y PRs.
+#
+# 🔴 POR QUÉ EXISTE. `gitleaks` mira commits y archivos. El 2026-09-12
+# un número de orden de paciente vivió en el cuerpo de un issue y en
+# tres comentarios (public-web#858): 5 de las 6 ocurrencias estaban
+# FUERA del alcance del único escáner que teníamos, y el portón
+# obligatorio pasó verde todo el tiempo, correctamente — no estaba
+# mirando ahí.
+#
+# 🔑 Lo que NO hace, a propósito: no edita el texto de nadie y no cierra
+# nada. Avisa y etiqueta. Editar el texto de otra persona sin avisarle
+# es peor remedio que el problema, un falso positivo mutilaría un
+# reporte legítimo, y editar NO borra — GitHub conserva el historial de
+# edición. El saneamiento lo hace una persona, sabiendo eso.
+#
+# ⚠️ Y es un portón BLANDO por diseño: un aviso de más cuesta un
+# comentario; un aviso de menos cuesta lo del 2026-09-12.
+#
+# Uso desde otro repo (`.github/workflows/phi-gate-issues.yml`):
+#
+#   name: PHI gate (issues)
+#   on:
+#     issues: { types: [opened, edited] }
+#     issue_comment: { types: [created, edited] }
+#     pull_request_target: { types: [opened, edited] }
+#   permissions: { issues: write, pull-requests: write }
+#   jobs:
+#     phi:
+#       uses: Interval-Col/.github/.github/workflows/phi-gate-issues.yml@main
+# ─────────────────────────────────────────────────────────────────────
+name: PHI gate (issues)
+
+on:
+  workflow_call:
+    inputs:
+      label:
+        description: Etiqueta que se pone cuando hay un hallazgo.
+        type: string
+        default: phi-review
+        required: false
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Escanear el texto y avisar
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Las reglas viven acá y NO en el .gitleaks.toml a propósito: gitleaks
+            // escanea ARCHIVOS, y esto escanea una cadena que nunca toca el disco.
+            // Cuando cambie una, cambian las dos — están emparejadas por su id.
+            const REGLAS = [
+              { id: 'lch-phi-order-number',
+                que: 'un número de **orden**',
+                re: /\b(?:[oó]rden(?:es)?|orders?|order_?(?:id|number|no)|orden_?id|n[uú]mero_?(?:de_?)?[oó]rden|nro\.?\s*[oó]rden)["']?[^0-9\n]{0,24}\b[1-9][0-9]{5,7}\b/gi },
+              { id: 'lch-phi-colombian-document',
+                que: 'un número de **documento**',
+                re: /(?:\b(?:c\.?c\.?|c[eé]dulas?|documentos?|identificaci[oó]n|document_?number|n[uú]mero_?documentos?|patient_?id)[^0-9\n]{0,32}|\bpaciente["']?\s*[:=]\s*["']?)\b[1-9][0-9]{6,9}\b/gi },
+              { id: 'lch-phi-paci-rec-code',
+                que: 'un **código PACI-REC**',
+                re: /\b[A-Za-z]{9}[0-9]{3}\b/g },
+            ]
+            // Marcadores sintéticos: repetidos o secuencia estricta. Deben pasar, o
+            // la propia documentación de la regla dispararía la regla.
+            const SINTETICO = /^(?:([0-9])\1+|1234567890|123456789|12345678|1234567|E?4{6,8}|AAABBBCCC[0-9]{3}|[A-Z]{9}000)$/
+
+            const ev = context.payload
+            const esComentario = !!ev.comment
+            const cuerpo = esComentario ? ev.comment.body
+                         : (ev.issue || ev.pull_request)?.body || ''
+            const titulo  = esComentario ? '' : ((ev.issue || ev.pull_request)?.title || '')
+            const numero  = (ev.issue || ev.pull_request)?.number
+            if (!numero) return
+
+            const texto = `${titulo}\n${cuerpo}`
+            const hits = []
+            for (const r of REGLAS) {
+              for (const m of texto.matchAll(r.re)) {
+                const digitos = (m[0].match(/[0-9A-Za-z]+$/) || [''])[0]
+                if (SINTETICO.test(digitos)) continue
+                if (!hits.some(h => h.id === r.id)) hits.push(r)
+              }
+            }
+            if (!hits.length) return
+
+            const donde = esComentario ? 'Un comentario de este hilo' : 'Este issue'
+            const lista = hits.map(h => `- ${h.que} (\`${h.id}\`)`).join('\n')
+            const aviso = [
+              `### 🛑 Posible dato de paciente en el texto`,
+              ``,
+              `${donde} coincide con:`,
+              ``,
+              lista,
+              ``,
+              `**Por qué importa:** un número de orden o de documento **identifica a una`,
+              `persona** a través del LIS. Que el repositorio sea privado acota quién lo ve,`,
+              `no convierte el dato en otro — y un issue se edita, se cita y se exporta.`,
+              ``,
+              `**Qué hacer:**`,
+              ``,
+              `1. Describe el caso por sus **códigos de examen** (son catálogo, no identifican`,
+              `   a nadie), su estado y **fechas relativas**. El identificador va por canal interno.`,
+              `2. Si el texto es **tuyo y es un comentario**, **bórralo y republícalo** limpio —`,
+              `   borrar no deja rastro. **Editar sí**: GitHub conserva el historial de edición.`,
+              `3. Si es el **cuerpo** de un issue, edítalo sabiendo que la versión anterior`,
+              `   queda en ese historial. Para borrado real: soporte de GitHub.`,
+              ``,
+              `Cuando quede saneado, quita la etiqueta \`${{ inputs.label }}\`.`,
+              ``,
+              `<sub>🤖 Portón blando: avisa y etiqueta, nunca edita ni cierra. Puede equivocarse —`,
+              `si es un falso positivo, decilo en el hilo y quita la etiqueta. Regla y antídoto:`,
+              `\`Interval-Col/.github/.gitleaks.toml\` §PHI · incidente`,
+              `\`operations/incidents/2026-09-numero-de-orden-en-un-issue-de-github.md\`.</sub>`,
+            ].join('\n')
+
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number: numero, body: aviso,
+            })
+            try {
+              await github.rest.issues.addLabels({
+                ...context.repo, issue_number: numero, labels: ['${{ inputs.label }}'],
+              })
+            } catch (e) {
+              core.warning(`No se pudo poner la etiqueta (¿no existe en el repo?): ${e.message}`)
+            }
+            core.warning(`PHI posible en #${numero}: ${hits.map(h => h.id).join(', ')}`)
