@@ -1,0 +1,68 @@
+name: 🐛 Defecto / Bug
+description: Algo no hace lo que debería. Incluye cómo reproducirlo — sin identificar a un paciente.
+title: "[Área] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > 🛑 **Sin datos de paciente.** Ni número de **orden**, ni documento, ni nombre,
+        > ni teléfono — **tampoco en capturas de pantalla**. Da igual que el repositorio
+        > sea privado: privado acota quién lo ve, no convierte el dato en otro. Un issue
+        > además se edita, se cita y se exporta.
+        >
+        > ✅ **Un caso se describe igual de bien sin identificarlo:** por sus **códigos de
+        > examen** (`58900`, `66400` — son catálogo, no identifican a nadie), el estado en
+        > que estaba, y **fechas relativas** («una orden de anteayer»). Si alguien necesita
+        > el identificador para reproducirlo, se lo pasas por **canal interno**.
+        >
+        > Esto no es celo de más: el 2026-09-12 un número de orden vivió en un issue y en
+        > tres comentarios, escrito por dos personas distintas, porque es justo lo que un
+        > buen reporte pide. El formato tiene que ayudar, y para eso está este recuadro.
+
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Qué pasa
+      description: El comportamiento observado, y cuál esperabas.
+      placeholder: |
+        El portal muestra el aviso de «se entrega en el laboratorio» en órdenes que no
+        traen ningún examen de VIH. Debería salir sólo cuando hay un código reservado.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Cómo se reproduce — sin identificar a nadie
+      description: "Códigos de examen, estado y fechas relativas. ⚠️ Si escribes un número de orden, el gate de PHI lo va a marcar y alguien tendrá que sanear el hilo."
+      placeholder: |
+        Una orden con Hepatitis B (58900), Hepatitis C (59000) y VDRL (66400), sin
+        ningún código de VIH. Entrar como paciente y abrirla: el aviso aparece igual.
+    validations:
+      required: true
+
+  - type: input
+    id: donde
+    attributes:
+      label: Dónde
+      description: App, superficie y ambiente.
+      placeholder: "Portal v3 (lch-results), vista de paciente, producción"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alcance
+    attributes:
+      label: A quién afecta, hasta donde sepas
+      description: Un paciente, todos los de un tipo de examen, sólo el equipo… Si no sabes, dilo.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: sin-phi
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: "Releí lo que escribí — y las capturas — y no hay número de orden, documento, nombre ni teléfono de un paciente."
+          required: true
