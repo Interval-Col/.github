@@ -175,14 +175,24 @@ regex = '''(?i)(?:\b(?:c\.?c\.?|c[eé]dulas?|documentos?|identificaci[oó]n|docu
   # en un commit NUEVO, el gate sale rojo. Excusar el valor lo dejaría pasar callado,
   # que es exactamente el fallo del 2026-08-08.
   #
-  # 🔴 LO QUE ESTA LÍNEA **NO** DICE: no dice que los valores sean sintéticos. En las
-  # listas de `public-web` se verificó que lo eran —permutaciones de los diez dígitos,
-  # construidas a mano—. Acá **no se puede saber sin cruzarlos contra el LIS**, y este
-  # repo es el ÚNICO PÚBLICO de la organización. De los cuatro, sólo uno tiene marca
-  # de construido (secuencia estricta); los otros tres no tienen ninguna. La pregunta
-  # sigue ABIERTA y es de German (sale de public-web#858): si salieron de una consulta
-  # real, es un incidente de exposición PÚBLICA y se trata aparte. Esta lista sólo
-  # deja de mentir sobre el estado del gate; no cierra el hallazgo.
+  # ✅ NO SON DE PACIENTES REALES — fallo de German, 2026-09-13. Los cinco documentos
+  # de ejemplo de `PatientLookup.vue` son inventados, así que esto NO es una exposición
+  # de PHI y no hay incidente que levantar. La pregunta queda CERRADA; no la vuelvas a
+  # abrir al leer este bloque.
+  #
+  # ⚠️ Por qué estuvo abierta un rato, que es lo que vale para la próxima: por la FORMA
+  # no se podía saber. De los cuatro que disparan, sólo uno tiene marca de construido
+  # (secuencia estricta); los otros tres son de 8 dígitos sin repetición ni secuencia,
+  # indistinguibles de una cédula real para quien los lea desde fuera — y este es el
+  # único repo PÚBLICO de la organización. En `public-web` la pregunta no se planteó
+  # porque ahí los valores eran permutaciones de los diez dígitos, evidentes a la vista.
+  # ⇒ La lección no es sobre estos cinco: un dato de ejemplo escrito con forma realista
+  # obliga a un fallo humano para descartarlo. Por eso existe la convención sintética
+  # de arriba (dígitos repetidos, o diez terminados en `000`) — úsala y nadie tendrá
+  # que preguntar.
+  #
+  # 🔴 Y aun así, esta lista NO significa «acá no hay PHI»: excusa un commit, no un
+  # veredicto. Si mañana entra un valor real en un commit nuevo, el gate lo ve.
   #
   # Por qué no se reescribe la historia (decisión del 2026-08-07, vigente): los SHA de
   # commit etiquetan las imágenes de ECR — 8 sitios del CD—, y cambiarlos rompe la
