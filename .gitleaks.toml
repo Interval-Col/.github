@@ -102,24 +102,17 @@ regex = '''\b[A-Za-z]{9}[0-9]{3}\b'''
 
   [rules.allowlist]
   description = """
-  Dos cosas distintas, y la diferencia importa.
+  Marcadores SINTÉTICOS que enseñan la forma sin deletrear a nadie.
 
-  1) `regexes` — marcadores SINTÉTICOS que enseñan la forma sin deletrear a nadie.
-
-  2) `commits` — la fuga histórica, excusada POR COMMIT y no por valor. Es
-     deliberado: excusar el valor haría que una reintroducción en un commit
-     NUEVO pasara callada, que es exactamente lo que ocurrió el 2026-08-08.
-     Excusar el commit deja la historia verde y la reintroducción roja.
-     Verificado en los dos sentidos antes de commitear.
-
-  Por qué la historia no se reescribe (decisión del 2026-08-07, vigente): las
-  imágenes de ECR se etiquetan con el SHA del commit — 8 sitios del CD — así que
-  cambiar los SHA rompe la trazabilidad imagen→fuente, que es la cadena de
-  evidencia que PROT-SW-001 exige para liberar. Y aun reescribiendo, el valor
-  seguiría en `refs/pull/159|163/head`, que son de GitHub.
+  ⚠️ ACÁ NO HAY `commits`, Y ES A PROPÓSITO. La versión de `public-web` de esta
+  misma regla lleva cuatro SHA excusados; son fugas históricas de ESE repo, y
+  subirlas al canónico dejaría pasar una reintroducción en cualquier otro — que
+  es exactamente el fallo del 2026-08-08. La historia de ESTE repo no tiene
+  ningún PACI-REC, así que la lista sobra. Si algún día hace falta una acá, va
+  con el aviso de «repo-local, no se copia» que lleva la regla de documento.
 
   ⚠️ El escaneo de CI es `gitleaks detect` con `fetch-depth: 0` ⇒ HISTORIA
-  COMPLETA. Sin esta lista la rama sale roja con 10 hallazgos en 4 commits.
+  COMPLETA. Un valor no deja de contar porque el árbol ya esté limpio.
   """
   regexes = [
     '''\bAAABBBCCC[0-9]{3}\b''',
@@ -147,7 +140,15 @@ description = "Número de documento colombiano junto a una etiqueta de identific
 # sale como cédula. Medido: 1 falso positivo en `rfc0025-fase1-donde-se-escribe.md`.
 # El de CIERRE sí sobra: `_` es carácter de palabra, así que un `\b` final impide ver
 # `TYPED_DOCUMENT` y `documentNumber`, que es justo el hueco que esto viene a tapar.
-regex = '''(?i)(?:\b(?:c\.?c\.?|c[eé]dulas?|documentos?|identificaci[oó]n|document_?number|identification_?number|n[uú]mero_?documentos?|n[uú]mero_?identificaci[oó]n|typed_?documents?|patient_?documents?|patient_?id)[^0-9\n]{0,32}|\bpaciente["']?\s*[:=]\s*["']?)\b[1-9][0-9]{6,9}\b'''
+#
+# ⚠️ AMPLIADA otra vez el 2026-09-13, y el hueco lo destapó esta misma regla al
+# estrenarse. Marcó 3 de los 5 pacientes de ejemplo de `PatientLookup.vue`… pero NO
+# por su etiqueta `docNumber`: los vio por el `docType: 'CC'` de la misma línea, vía
+# `c\.?c\.?`. Las entradas con `docType: 'TI'` y `'CE'` —una de ellas con diez
+# dígitos— pasaron CALLADAS. O sea que la forma ABREVIADA `docNumber` era invisible,
+# que es el mismo hueco que el ensanche del 2026-08-23 vino a tapar para
+# `documentNumber`, sólo que una sílaba más corto. De ahí `doc_?numbers?`.
+regex = '''(?i)(?:\b(?:c\.?c\.?|c[eé]dulas?|documentos?|identificaci[oó]n|document_?number|doc_?numbers?|identification_?number|n[uú]mero_?documentos?|n[uú]mero_?identificaci[oó]n|typed_?documents?|patient_?documents?|patient_?id)[^0-9\n]{0,32}|\bpaciente["']?\s*[:=]\s*["']?)\b[1-9][0-9]{6,9}\b'''
 
   [rules.allowlist]
   description = "Ejemplos evidentemente sintéticos: dígitos repetidos o secuencia estricta."
@@ -163,6 +164,35 @@ regex = '''(?i)(?:\b(?:c\.?c\.?|c[eé]dulas?|documentos?|identificaci[oó]n|docu
     # en rojo. ⚠️ Un documento de verdad que termine en `000` es posible, así que
     # esto NO excusa pegar un valor real: excusa el valor CONSTRUIDO para pruebas.
     '''\b[1-9][0-9]{6}000\b''',
+  ]
+  # ⚠️ REPO-LOCAL — AL COPIAR ESTE ARCHIVO A OTRO REPO, ESTA LISTA NO VA.
+  # Es la historia de ESTE repo, no una excusa org-wide. Un SHA que no existe en el
+  # otro repo no empareja nada, así que copiarla no rompe nada: sólo miente sobre de
+  # quién es la fuga. Misma razón por la que las `commits` de `public-web` tampoco
+  # están acá — ver el aviso del encabezado de esta sección.
+  #
+  # Excusado POR COMMIT y no por valor: si alguien reintroduce uno de estos números
+  # en un commit NUEVO, el gate sale rojo. Excusar el valor lo dejaría pasar callado,
+  # que es exactamente el fallo del 2026-08-08.
+  #
+  # 🔴 LO QUE ESTA LÍNEA **NO** DICE: no dice que los valores sean sintéticos. En las
+  # listas de `public-web` se verificó que lo eran —permutaciones de los diez dígitos,
+  # construidas a mano—. Acá **no se puede saber sin cruzarlos contra el LIS**, y este
+  # repo es el ÚNICO PÚBLICO de la organización. De los cuatro, sólo uno tiene marca
+  # de construido (secuencia estricta); los otros tres no tienen ninguna. La pregunta
+  # sigue ABIERTA y es de German (sale de public-web#858): si salieron de una consulta
+  # real, es un incidente de exposición PÚBLICA y se trata aparte. Esta lista sólo
+  # deja de mentir sobre el estado del gate; no cierra el hallazgo.
+  #
+  # Por qué no se reescribe la historia (decisión del 2026-08-07, vigente): los SHA de
+  # commit etiquetan las imágenes de ECR — 8 sitios del CD—, y cambiarlos rompe la
+  # trazabilidad imagen→fuente que PROT-SW-001 exige como evidencia para liberar. Y
+  # aun reescribiendo, el valor seguiría en `refs/pull/*`, que son de GitHub.
+  commits = [
+    # Los 5 pacientes de ejemplo de `PatientLookup.vue` (registry de marca), de los
+    # que 4 disparan la regla ya ensanchada. El árbol quedó conforme en este mismo
+    # PR — dígitos repetidos—; la historia no se puede poner conforme.
+    "69562c3b97a14c7b4a62bda71919054c39e2d4d8",
   ]
 
 [[rules]]
