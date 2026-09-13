@@ -125,6 +125,33 @@ allowlist entry with a written reason in the app's own manifest (reviewed like
 any code change), and the checker lives here — a fix merged `@main` heals every
 app at once, no re-adoption.
 
+### 🆕 Servicios puros: C3 en sólo lectura, no una exención (precedente 2026-09-13)
+
+Un **servicio puro** —compartido, sin UI de administración, que no administra roles—
+parece necesitar una exención a **C3** (los siete `/auth/admin/*`). **No la necesita, y
+concederla sale más caro que cumplir.**
+
+`pharos-queue` (RFC 0031) fue el primero en toparse con esto, y su plan pedía exención a
+**C3/C4/C9**. Medido: **C4 y C9 no hacían falta** — `custom_roles: off` y
+`fe_registry_adopted: off` ya son declaraciones legales del manifiesto. Sólo C3 rompía.
+
+**La salida, y es la que debe copiar el próximo:** exponer los siete endpoints, con los de
+**lectura respondiendo de verdad** (`GET capabilities`, `GET roles`, `GET users`) y los de
+**escritura devolviendo `405` con la razón escrita** (`POST/PATCH/DELETE users`,
+`PUT roles/{role}/capabilities`). El chequeo **A2** pasa —los siete están—, el manifiesto
+dice la verdad, y el contrato conserva su propiedad más útil: *toda app se puede interrogar
+igual sobre quién puede qué*, que es justo lo que una exención rompe.
+
+🔑 **Y la distinción que hace falta para razonarlo:** *poseer un catálogo no es administrar
+roles.* Un servicio puro puede ser dueño de sus llaves `queue.*`, de su `require_capability`
+y de su matriz rol→capacidad, **sin** ser dueño de *quién tiene cuál rol* — eso se queda en
+la identidad de plataforma, así que una recepcionista se da de alta **una vez**. La
+proyección es local; la asignación no.
+
+💡 **La heurística general:** antes de pedir una exención, mirá si la obligación se puede
+**cumplir en sólo lectura**. Una exención hay que escribirla, revisarla, ponerle `review_by`
+y después perseguirla; cinco endpoints que devuelven `405` no hay que perseguirlos nunca.
+
 ---
 
 ## References
