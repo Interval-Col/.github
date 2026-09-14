@@ -81,6 +81,36 @@ PLAINTEXT_COL_MAPPED = re.compile(
 # H5 — a per-user rate-limit surface (module symbols) + the router gating on it.
 RATE_LIMIT_SYMBOL = re.compile(r"\b(check_user_quota|PER_USER_[A-Z_]*LIMIT|check_rate_limit)\b")
 RATE_LIMIT_IN_ROUTER = re.compile(r"\b(rate_limit|check_user_quota|check_rate_limit)\b")
+# H5 — public surfaces gate on session + IP, not on a per-user quota (CH3,
+# "Public surfaces"), so the per-user symbol names cannot apply there.
+RATE_LIMIT_PUBLIC_SYMBOL = re.compile(
+    r"\b([A-Z_]*(?:SESSION|SESION|IP)_[A-Z_]*LIMIT[A-Z_]*|[A-Z_]*LIMIT[A-Z_]*_(?:SESSION|SESION|IP)[A-Z_]*)\b"
+)
+
+
+def _rate_limit_in_router(rate_limit_path, router_text):
+    """Does the router gate on the rate limit the MANIFEST declares?
+
+    🔑 **Se pregunta por el módulo declarado, no por una lista de nombres en
+    inglés.** Antes esto sólo reconocía `rate_limit` / `check_user_quota` /
+    `check_rate_limit`, así que una app cuyo módulo se llame distinto fallaba H5
+    **teniendo el freno puesto y funcionando** — el chequeo adivinaba el nombre
+    en vez de leer el `rate_limit:` que el manifiesto ya declara.
+
+    Lo encontró `lch-citas` (Sol, la primera superficie pública): su freno vive
+    en `frenos.py` y el router llama a `frenos.revisar(...)` antes del proxy.
+    Nueve checks en verde y H5 en rojo por el idioma del identificador.
+
+    ⚠️ Los nombres de siempre se conservan: una app puede importar el símbolo sin
+    el módulo (`from .rate_limit import check_user_quota`), y quitarlos rompería
+    a las tres apps que ya pasan.
+    """
+    if RATE_LIMIT_IN_ROUTER.search(router_text):
+        return True
+    if not rate_limit_path:
+        return False
+    modulo = os.path.splitext(os.path.basename(rate_limit_path))[0]
+    return bool(modulo and re.search(r"\b" + re.escape(modulo) + r"\b", router_text))
 # `\b` forms NO boundary next to `_`, so `\b429\b` would MISS FastAPI's idiomatic
 # `status.HTTP_429_TOO_MANY_REQUESTS`. Match the digits via digit-lookaround and the
 # name as a plain substring so H5/H6 detect the real 429/503 CODE, not just docstring prose.
@@ -437,8 +467,15 @@ def check(manifest, results):
     # not satisfy a gate that CH3/CH4/CH5 require to be real code.
     rl = _py_code_no_docstrings(_read(rate_limit)) if rate_limit else None
     router_text = _py_code_no_docstrings(_read(router))
-    has_limit_module = bool(rl and RATE_LIMIT_SYMBOL.search(rl))
-    router_gates = bool(RATE_LIMIT_IN_ROUTER.search(router_text) and ROUTER_429.search(router_text))
+    # En una superficie pública el freno es por sesión + IP: sus topes se llaman
+    # distinto por fuerza, porque no existe el usuario que los nombres asumen.
+    limit_symbol = RATE_LIMIT_SYMBOL.search(rl) if rl else None
+    if not limit_symbol and rl and manifest.get("surface") == "public":
+        limit_symbol = RATE_LIMIT_PUBLIC_SYMBOL.search(rl)
+    has_limit_module = bool(limit_symbol)
+    router_gates = bool(
+        _rate_limit_in_router(rate_limit, router_text) and ROUTER_429.search(router_text)
+    )
     if router_gates and has_limit_module:
         results.append(("H5", PASS, "per-user rate limit present and gated in the router (429 before upstream)"))
     elif router_gates:
