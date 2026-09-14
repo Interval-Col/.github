@@ -85,8 +85,17 @@ locations:
 
   - name: "Sede C.C. Viva Palmas"
     unit: "Local 109-110"
-    address: null   # street address pending — not published yet
-    city: "Medellín"
+    # 🔴 Two corrections at once, both from German on 2026-09-13, and the second
+    #    was NOT a gap — it was WRONG, which is worse: a `null` announces itself,
+    #    a wrong city gets published, printed and believed.
+    #      · the address was pending since this file was written;
+    #      · the city said "Medellín" and the sede is in **Envigado**. C.C. Viva
+    #        Palmas sits on Vía Las Palmas at km 15+750, Vereda El Peñasco, which
+    #        is Envigado, not Medellín.
+    #    It propagated to every surface that mirrors this file — the public site
+    #    and the patient results report among them.
+    address: "Vía Las Palmas Kilómetro 15 + 750, Vereda El Peñasco"
+    city: "Envigado"
     hours:
       sample_collection:
         weekdays: "6:00 a.m. – 1:00 p.m."
