@@ -320,6 +320,50 @@ See `operations/incidents/2026-06-sso-lockout-user-not-found.md`.
 
 ---
 
+## 🗄️ Database writes — a write that touches no row is not an error
+
+Every mainstream driver we use (`sqlx`, `asyncpg`, SQLAlchemy Core) treats an
+`UPDATE`/`DELETE` whose `WHERE` matches **nothing** as a perfectly successful call. It
+returns `rows_affected = 0` and the code carries on as if it had written.
+
+That is the quietest failure mode a service can have, and it has the shape that costs
+most: **the endpoint answers `200`, and the damage surfaces on a later call, in another
+route, with an unrelated message.** Whoever debugs it starts from the wrong place.
+
+1. **A write that MUST touch exactly one row checks that it did**, and fails loudly when
+   it didn't. This is not defensive coding — it is the difference between a bug that
+   reports itself and one found by a user weeks later.
+2. **Fail loudly at the write**, not by letting the next read discover the absence.
+3. **Add the check in its own change**, separate from the fix that motivated it.
+   Turning silent no-ops into hard errors on a live path is itself a behaviour change:
+   if something was quietly broken, you want to learn that from one deploy, not two
+   mixed together.
+
+### 🪤 And the trap that produces this in the first place
+
+The `WHERE` stops matching when two columns that **used to hold the same value** drift
+apart. That happens most often right after an additive migration:
+
+> A migration adds a column whose value **duplicates** an existing one — backfilled equal
+> so nothing breaks on deploy, which is the correct and careful thing to do. But while the
+> two agree, **nothing distinguishes code that reads the wrong one.** Then the new column
+> gets a `DEFAULT` (a random id, a timestamp), the first row written after the migration
+> has them different, and every reader of the wrong column silently stops matching.
+
+The gap between «migration shipped» and «first divergent row» can be days, and by then
+the offending code is long deployed and green.
+
+⇒ **Whoever adds a column that duplicates the meaning of another one either migrates its
+readers in the same change, or leaves a guard that turns red.** If neither fits, ship the
+new column **without a `DEFAULT`**: failing on insert is better than diverging unnoticed.
+
+⚠️ String-built queries (`sqlx::query_as`, raw SQL in any language) are **not** verified
+against the schema at compile time. `cargo build`, `clippy` and the unit suite all pass
+over a query that can never match a row. A text-level guard that pins which column a
+lookup is allowed to use costs minutes and catches exactly this class.
+
+---
+
 ## 🔬 Marking a view as «en verificación» (Pháros apps)
 
 A Pháros view that is **deployed but not yet released** under `PROT-SW-001` looks
