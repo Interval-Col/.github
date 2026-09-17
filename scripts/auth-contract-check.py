@@ -101,8 +101,35 @@ def _capability_catalog(text):
     return set()
 FE_REQ  = re.compile(r'requiresCap:\s*["\']([\w.]+)["\']')
 FE_CAN  = re.compile(r'\bcan\(\s*["\']([\w.]+)["\']')
-ROLE_W  = re.compile(r'\brole\b[^\n]*String\((\d+)\)')
-TABLE   = re.compile(r'__tablename__\s*=\s*["\'](\w+)["\']')
+# A6 — dónde se DECLARA una tabla de auth. Dos formas, porque el estado tiene
+# las dos y ninguna es menos válida:
+#
+#   · `__tablename__ = "x"` — el modelo declarativo de SQLAlchemy, que es lo que
+#     usan las apps (finance-lch, lab-qc, admission-patient);
+#   · `CREATE TABLE [esquema.]x (` — DDL crudo en una migración, que es lo que
+#     usa un servicio que no tiene ORM. `pharos-queue` lee su matriz con SQL
+#     explícito a propósito: son dos columnas y un `SELECT`, y un modelo sería
+#     una capa que no compra nada.
+#
+# 🔑 Reconocer las dos no afloja el chequeo: sigue exigiendo que la tabla esté
+# declarada EN EL ARCHIVO que el manifiesto señala. Lo que cambia es que ese
+# archivo pueda ser una migración y no sólo un `models.py`.
+ROLE_W  = re.compile(r'\brole\b[^\n]*(?:String\((\d+)\)|VARCHAR\s*\((\d+)\))', re.I)
+TABLE   = re.compile(
+    r'__tablename__\s*=\s*["\'](\w+)["\']'
+    r'|CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:[\w{}.]*\.)?(\w+)\s*\(',
+    re.I,
+)
+
+
+def _declared_tables(text: str) -> set:
+    """Las tablas que `text` declara, por cualquiera de las dos formas."""
+    return {name for match in TABLE.findall(text) for name in match if name}
+
+
+def _role_widths(text: str) -> list:
+    """Los anchos de la columna `role`, en `String(n)` o en `VARCHAR(n)`."""
+    return [int(w) for match in ROLE_W.findall(text) for w in match if w]
 
 # A9 — FE admin registry adoption markers (RFC 0016 Phase 4, .github#110).
 # The extracted primitives live in the registry and sync into the app verbatim;
@@ -292,9 +319,41 @@ def check(manifest, results):
     caps       = manifest.get("capabilities")
     models     = manifest.get("models") or (auth_dir and os.path.join(auth_dir, "models.py"))
     frontend   = manifest.get("frontend_dir")
-    for label, p in (("auth_dir", auth_dir), ("admin_router", admin_rt),
-                     ("deps", deps), ("capabilities", caps), ("models", models),
-                     ("frontend_dir", frontend)):
+
+    # 🔑 `frontend_dir: none` — la ausencia DECLARADA de frontend.
+    #
+    # Un SERVICIO PURO no tiene navegador que le hable (RFC 0013; `pharos-queue`
+    # lo lleva como regla 1 de su CLAUDE.md), así que no hay directorio que
+    # señalar. El contrato ya bendijo este caso para C3 —«servicios puros: C3 en
+    # sólo lectura, no una exención»— pero este verificador no podía expresarlo,
+    # y un servicio que seguía la receta al pie igual fallaba A1.
+    #
+    # ⚠️ **Se exige DECLARARLO, no omitirlo**, y esa distinción es el control: una
+    # app con frontend que se olvide de `frontend_dir` sigue fallando igual que
+    # hoy. Escribir `none` es una afirmación que alguien revisa en un PR; omitir
+    # una clave no es una afirmación de nada.
+    #
+    # A5 y A9 ya sabían convivir sin frontend (SKIP e INFO), así que A1 era el
+    # único sitio que lo impedía.
+    # 🪤 Se comprueba que la CLAVE ESTÉ y que su valor sea `none`, no que el valor
+    # resuelto sea nulo. Una primera versión de esto escribía
+    # `str(frontend).lower() == "none"`, y como `str(None)` es exactamente
+    # `"None"`, **omitir la clave pasaba igual que declararla** — el control se
+    # caía entero y en silencio. Lo encontró la prueba que dice que omitir tiene
+    # que seguir fallando.
+    sin_frontend = (
+        "frontend_dir" in manifest
+        and isinstance(frontend, str)
+        and frontend.strip().lower() == "none"
+    )
+    if sin_frontend:
+        frontend = None
+
+    obligatorios = [("auth_dir", auth_dir), ("admin_router", admin_rt),
+                    ("deps", deps), ("capabilities", caps), ("models", models)]
+    if not sin_frontend:
+        obligatorios.append(("frontend_dir", frontend))
+    for label, p in obligatorios:
         if not p or not os.path.exists(p):
             problems.append(f"{label} missing or not found: {p!r}")
     if problems:
@@ -313,11 +372,21 @@ def check(manifest, results):
         results.append(("A2", PASS, f"all 7 /auth/admin/* endpoints present in {admin_rt}"))
 
     # A3 — require_capability rejects unknown ids
-    if re.search(r"if\s+capability\s+not\s+in\s+CAPABILITIES", deps_text):
-        results.append(("A3", PASS, f"require_capability guards unknown ids in {deps}"))
+    #
+    # 🔑 Se busca en `deps` Y en `capabilities`, porque lo que el contrato exige es
+    # la PROPIEDAD —que un id desconocido reviente al importar— y no el archivo
+    # donde vive la línea. Poner el guardián junto al catálogo que lo define es
+    # tan válido como ponerlo en las dependencias, y discutible que mejor: el
+    # dueño del catálogo es quien sabe qué hay en él.
+    #
+    # ⚠️ Lo que NO se afloja: si no está en ninguno de los dos, sigue siendo FAIL.
+    caps_guard_text = deps_text + "\n" + (_read(caps) or "")
+    if re.search(r"if\s+capability\s+not\s+in\s+CAPABILITIES", caps_guard_text):
+        donde = deps if re.search(r"if\s+capability\s+not\s+in\s+CAPABILITIES", deps_text) else caps
+        results.append(("A3", PASS, f"require_capability guards unknown ids in {donde}"))
     else:
         results.append(("A3", FAIL,
-                        f"no `if capability not in CAPABILITIES` guard in {deps} "
+                        f"no `if capability not in CAPABILITIES` guard in {deps} nor {caps} "
                         "— an unknown capability must raise at import, not pass silently"))
 
     # A4 — no seeding/DDL on app startup
@@ -368,10 +437,10 @@ def check(manifest, results):
 
     # A6 — auth tables present; role column width >= standard
     models_text = _read(models) or ""
-    tables = set(TABLE.findall(models_text))
+    tables = _declared_tables(models_text)
     want_tables = manifest.get("auth_tables") or []
     missing_t = [t for t in want_tables if t not in tables]
-    widths = [int(w) for w in ROLE_W.findall(models_text)]
+    widths = _role_widths(models_text)
     role_min = manifest.get("role_col_min") or 32
     if missing_t:
         results.append(("A6", FAIL, f"auth table(s) not found in {models}: " + ", ".join(missing_t)))
