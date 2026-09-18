@@ -111,9 +111,19 @@ FE_CAN  = re.compile(r'\bcan\(\s*["\']([\w.]+)["\']')
 #     explícito a propósito: son dos columnas y un `SELECT`, y un modelo sería
 #     una capa que no compra nada.
 #
-# 🔑 Reconocer las dos no afloja el chequeo: sigue exigiendo que la tabla esté
-# declarada EN EL ARCHIVO que el manifiesto señala. Lo que cambia es que ese
+# 🔑 Reconocer las dos casi no afloja el chequeo: sigue exigiendo que la tabla
+# esté declarada EN EL ARCHIVO que el manifiesto señala. Lo que cambia es que ese
 # archivo pueda ser una migración y no sólo un `models.py`.
+#
+# ⚠️ **Pero afloja algo, y conviene decirlo en vez de descubrirlo.** Esto es una
+# búsqueda de texto, no un parser: un `CREATE TABLE x` escrito **dentro de un
+# comentario** del archivo señalado cuenta como declaración. O sea que si alguien
+# borra la tabla y deja la frase en un comentario, A6 pasa igual.
+#
+# El agujero es estrecho —hay que apuntar `models` a ese archivo Y que el nombre
+# esté escrito ahí— y cerrarlo bien exigiría parsear SQL, que rompe la regla de
+# este script: **stdlib puro, sin dependencias en el camino de merge**. Se
+# prefiere el agujero estrecho y dicho, a una dependencia en un chequeo requerido.
 ROLE_W  = re.compile(r'\brole\b[^\n]*(?:String\((\d+)\)|VARCHAR\s*\((\d+)\))', re.I)
 TABLE   = re.compile(
     r'__tablename__\s*=\s*["\'](\w+)["\']'
