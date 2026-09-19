@@ -474,6 +474,48 @@ collections layout documented in
 Never hand-edit GitHub Secrets in the UI — Bitwarden is the source of
 truth.
 
+### 🔴 A `PROD_*` secret read without `environment:` is NOT production's
+
+**Measured 2026-09-19, after a deploy landed on the wrong machine.**
+
+The same secret name can exist at **two levels with different values** — at the
+organisation, and inside a repo's `production` environment. GitHub resolves
+**environment → repository → organisation**, so the environment's value shadows
+the organisation's — **but only for a job that declares `environment:`**.
+
+```yaml
+jobs:
+  configure:                      # ⚠️ no `environment:` — sees the ORG value
+    runs-on: self-hosted
+    steps:
+      - run: echo "${{ secrets.PROD_HOST }}"   # NOT production's host
+
+  deploy:
+    environment: production       # ✅ sees the environment's value
+```
+
+⚠️ **This does not fail in a way that points at the cause.** The job connects,
+authenticates and deploys — to a different machine. The run that exposed this
+died much later, on a missing external docker network, which looks nothing like
+a wrong-host problem.
+
+**Two rules follow.**
+
+1. **Any job that reads a deployment secret declares `environment:`.** This is the
+   same rule already stated for *variables* elsewhere in this document; it applies
+   to secrets for exactly the same reason, and the failure is quieter.
+2. **A new environment needs its OWN secrets. There is no inheritance between
+   environments.** A job running under `environment: staging` cannot see
+   `production`'s secrets — it silently falls through to the organisation's. An
+   environment that tries to *borrow* another's credentials gets the org value and
+   deploys somewhere nobody intended.
+
+💡 **Verify by measuring the target, never by reading the secret** (you cannot read
+it back anyway). Compare something cheap and host-specific — the container count,
+the set of docker networks — between the machine you meant and the one the run
+actually reported. Two hosts in this estate differ by more than 2× in container
+count, which is what identified the wrong one.
+
 ### CI escalation
 
 Two known escalations are deferred until the prerequisite is in place:
