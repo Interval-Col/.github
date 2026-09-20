@@ -95,6 +95,27 @@ const props = withDefaults(defineProps<{
   probe?: () => Promise<ChatHealth>
   /** Render corpus citations on grounded replies (chat-contract CH5). */
   citations?: boolean
+  /** El PAPEL del asistente, bajo el nombre («Asistente virtual»). Vacío = no se pinta.
+   *
+   *  🔴 Existe porque el encabezado es `assistantName || title`, así que una app que
+   *  pasa las dos cosas —nombre propio Y papel— **pierde el papel en silencio**. Medido
+   *  en `lch-web` el 2026-09-19: la app pasaba `assistant-name="Sol"` y
+   *  `:title="$t('sol.papel')"`, el panel decía «Sol» a secas, y el canon §4.1 («nunca
+   *  finge ser humana») quedaba delegado a que el paciente preguntara.
+   *
+   *  ⚠️ Se llama `assistantRole` y no `role` a propósito: `role` es un atributo ARIA, y
+   *  declararlo como prop se lo robaría al `fallthrough`. */
+  assistantRole?: string
+  /** Encabezado del aviso de «sin datos de pacientes». Por defecto, el de siempre. */
+  privacyTitle?: string
+  /** Cuerpo del aviso. Por defecto, el de siempre.
+   *
+   *  🔑 Es un prop y no una constante porque **el trato cambia por superficie**: Nerea
+   *  trata de usted (`NEREA.md` §3) y Sol tutea (`SOL.md` §6, fallo del 2026-09-08). Un
+   *  texto cableado obliga a una de las dos a hablar como la otra. Y «cómo funciona la
+   *  aplicación» es vocabulario de personal: en `lch.co` no hay ninguna aplicación, hay
+   *  un laboratorio, y quien pregunta ES el paciente. */
+  privacyBody?: string
 }>(), {
   brandName: 'Pháros',
   title: 'Asistente de ayuda',
@@ -109,6 +130,9 @@ const props = withDefaults(defineProps<{
   statusLine: false,
   probe: undefined,
   citations: true,
+  assistantRole: '',
+  privacyTitle: 'Sin datos de pacientes.',
+  privacyBody: 'No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la aplicación.',
 })
 
 // A TS literal union is erased at runtime — Vue does not validate it — so an app passing a typo
@@ -441,6 +465,37 @@ async function submit(textOverride?: string) {
   loading.value = true
   await nextTick()
   scrollToBottom()
+/** El mensaje que el backend de la app escribió para esta persona, si escribió uno.
+ *
+ * 🔴 **El widget estaba tirando un texto mejor que el suyo.** Ante un 429, el backend de
+ * Sol responde «Has hecho muchas preguntas seguidas. Intenta más tarde, o llama al
+ * 604 444 42 00» —con el tuteo de su canon y con el teléfono— y el widget lo reemplazaba
+ * por «Ha alcanzado el límite de consultas. Intente más tarde.»: en usted, sin salida, y
+ * escrito por alguien que no conoce a esa persona. Medido el 2026-09-19.
+ *
+ * 🔑 El backend de cada app sabe a quién le habla; el widget no. Así que cuando el
+ * servidor manda copy, gana el servidor — y el texto cableado se queda como respaldo para
+ * las apps que no mandan ninguno. Ni un prop nuevo por cada código.
+ *
+ * ⚠️ **Sólo para 4xx.** El cuerpo de un 5xx puede traer una traza o un mensaje de
+ * framework; ahí el texto cableado es lo correcto y no se toca.
+ * ⚠️ Y se pinta con `{{ }}`, que Vue escapa. Nunca con `v-html`.
+ */
+const TOPE_MENSAJE_DEL_SERVIDOR = 300
+function mensajeDelServidor(err: unknown): string {
+  const e = err as {
+    data?: { detail?: unknown; message?: unknown }
+    response?: { _data?: { detail?: unknown; message?: unknown } }
+  }
+  const crudo = e?.data?.detail ?? e?.data?.message
+    ?? e?.response?._data?.detail ?? e?.response?._data?.message
+  if (typeof crudo !== 'string') return ''
+  const limpio = crudo.trim()
+  // Un cuerpo que empieza por `<` o `{` es HTML o JSON crudo, no copy para una persona.
+  if (!limpio || limpio.length > TOPE_MENSAJE_DEL_SERVIDOR || /^[<{[]/.test(limpio)) return ''
+  return limpio
+}
+
 
   try {
     let resp: ChatReply
@@ -492,20 +547,22 @@ async function submit(textOverride?: string) {
   } catch (err: unknown) {
     const code = (err as { status?: number; statusCode?: number }).status
       ?? (err as { status?: number; statusCode?: number }).statusCode
+    const delServidor = code && code >= 400 && code < 500 ? mensajeDelServidor(err) : ''
     if (code === 429) {
-      errorText.value = 'Ha alcanzado el límite de consultas. Intente más tarde.'
+      errorText.value = delServidor || 'Ha alcanzado el límite de consultas. Intente más tarde.'
       status.value = 'limitado'
     } else if (code === 401) {
       // La app dueña del transporte rebota a SSO; aquí solo se dice la verdad mientras tanto.
-      errorText.value = 'Su sesión expiró. Vuelva a iniciar sesión.'
+      errorText.value = delServidor || 'Su sesión expiró. Vuelva a iniciar sesión.'
       status.value = 'desconocido'
     } else if (code === 403) {
-      errorText.value = 'No tiene permiso para usar el asistente. Solicítelo a su administrador.'
+      errorText.value = delServidor
+        || 'No tiene permiso para usar el asistente. Solicítelo a su administrador.'
       status.value = 'sin-permiso'
     } else if (code === 422) {
       // Survived the retry above, so it is this MESSAGE, not the history. The assistant
       // is fine — say so, and deliberately leave `status` alone (see below).
-      errorText.value = 'No pude procesar ese mensaje. Intente reformularlo.'
+      errorText.value = delServidor || 'No pude procesar ese mensaje. Intente reformularlo.'
     } else if (code && code >= 500 && code !== 503) {
       // A 500 is a bug in the app's own chat route, not a statement about whether the
       // assistant is reachable. Reporting «no disponible» here sends the user to wait for
@@ -629,6 +686,11 @@ function onKeydown(e: KeyboardEvent) {
         </span>
         <div class="pharos-chat-identity">
           <h3>{{ heading }}</h3>
+          <!-- El PAPEL, bajo el nombre. Sólo si la app lo pasa: sin él, el encabezado
+               es exactamente el de siempre. Va como `<p>` y no dentro del `<h3>` para
+               que un lector de pantalla anuncie el nombre como título y el papel como
+               texto, que es lo que son. -->
+          <p v-if="assistantRole" class="pharos-chat-role">{{ assistantRole }}</p>
           <p v-if="statusLine" class="pharos-chat-status" :class="`is-${status}`" role="status">
             <svg
               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -758,9 +820,8 @@ function onKeydown(e: KeyboardEvent) {
               <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             </svg>
             <span>
-              <strong>Sin datos de pacientes.</strong>
-              No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la
-              aplicación.
+              <strong>{{ privacyTitle }}</strong>
+              {{ privacyBody }}
             </span>
           </p>
           <div v-if="starters.length" class="pharos-chat-starters">
@@ -867,13 +928,13 @@ function onKeydown(e: KeyboardEvent) {
            mensaje — justo cuando la persona empieza a escribir con confianza — así que la
            regla vive también aquí, junto al cuadro de texto, durante toda la conversación.
            Compacto a propósito: tiene que poder ignorarse sin estorbar, pero estar. -->
-      <p class="pharos-chat-phi-reminder" title="No escriba nombres, documentos ni resultados de pacientes en el chat.">
+      <p class="pharos-chat-phi-reminder" :title="privacyBody">
         <svg
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
         </svg>
-        Sin datos de pacientes
+        {{ privacyTitle.replace(/\.$/, '') }}
       </p>
 
       <footer class="pharos-chat-input-row">
@@ -1111,6 +1172,17 @@ function onKeydown(e: KeyboardEvent) {
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+/* El PAPEL, bajo el nombre. Mismo peso visual que la línea de estado: es contexto,
+   no título — quien ya sabe con qué habla no tiene que leerlo dos veces. */
+.pharos-chat-role {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pharos-chat-status {
   margin: 0;
