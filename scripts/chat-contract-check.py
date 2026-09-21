@@ -13,9 +13,10 @@ app's in-app AI chat feature, driven by the app's own `.chat-contract.yml` manif
   H6  graceful degradation — the router maps a proxy outage to 503, not a 500 (info/warn)
   H7  sources cited — a corpus-backed (rag) chat returns a `sources` field (info if rag off)
   H8  FE widget is the registry PharosHelpChat, not a hand-rolled one (info until adopted)
-  H9  persona is the canonical registry block — with `persona: nerea`, a synced
-      nerea_persona.py exists in a chat_dir, matches the registry canon byte-for-byte
-      (when the registry checkout is reachable), and SYSTEM_PROMPT composes from it
+  H9  persona is the canonical registry block — with any SHARED persona (`nerea`,
+      `sol`), a synced <name>_persona.py exists in a chat_dir, matches the registry
+      canon byte-for-byte (when that checkout is reachable), and SYSTEM_PROMPT
+      composes from <NAME>_PERSONA
 
 Deliberately stdlib-only (same rule as auth-contract-check.py / db-tenant-check.py):
 a future *required* check must not depend on PyPI on the merge path. The manifest
@@ -147,16 +148,57 @@ FE_PHAROS_WIDGET = re.compile(r"<PharosHelpChat\b|import\s+PharosHelpChat\b|Phar
 
 # H9 — the persona block composed into the system prompt. Real code only (comment
 # stripping applies): an import of the synced fragment plus a SYSTEM_PROMPT that
-# starts from NEREA_PERSONA.
-PERSONA_FRAGMENT = "nerea_persona.py"
-PERSONA_IMPORT = re.compile(r"from\s+\.?\S*nerea_persona\s+import\s+.*\bNEREA_PERSONA\b")
-PERSONA_COMPOSED = re.compile(r"\bSYSTEM_PROMPT\s*=\s*\(?\s*NEREA_PERSONA\b")
-# Canonical copy, resolved from THIS script's home (Interval-Col/.github) — present in
-# CI (the reusable workflow checks out the org repo) and in a sibling ~/dev checkout;
-# absent when a per-repo copy runs standalone, where H9 degrades to structure-only.
-PERSONA_CANON = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "..", "brands", "pharos_brand", "registry", "prompts",
-                             "nerea_persona.py")
+# starts from the persona's symbol.
+#
+# 🔴 **Every SHARED persona is checked, not just Nerea** (2026-09-20). This used to
+# hard-code `nerea`, and for `persona: sol` the gate answered «app-owned, nothing to
+# verify» — so `sol_persona.py` sat with the pre-2026-09-08 text («tratas a la persona
+# de usted, siempre») while SOL.md already said Sol tutea, and NOTHING said a word.
+# ⇒ A gate that names one instance of a shared thing protects that instance only, and
+# its silence on the others reads exactly like a pass.
+#
+# ⚠️ An unlisted name is still informational (an app-owned persona is legitimate —
+# CH7). Adding a row here is what makes a persona SHARED and therefore verified; the
+# canon file must exist in this repo or the row is a lie the gate will not catch.
+PERSONAS_COMPARTIDAS = ("nerea", "sol")
+REGISTRY_PROMPTS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "brands", "pharos_brand", "registry", "prompts")
+
+
+def _persona_spec(nombre):
+    """Fragment name, import/compose patterns and canon path for a shared persona.
+
+    Derived from the name, not tabulated per persona: a table would let the four
+    values drift apart, which is the same class of defect H9 exists to catch. The
+    naming convention is the registry's own — `<name>_persona.py` exporting
+    `<NAME>_PERSONA` (see sync-pharos-registry.sh --persona-dir).
+
+    🪤 The canon path is resolved from THIS script's home (Interval-Col/.github) —
+    present in CI (the reusable workflow checks out the org repo) and in a sibling
+    ~/dev checkout; absent when a per-repo copy runs standalone, where H9 degrades
+    to structure-only rather than failing.
+    """
+    modulo = f"{nombre}_persona"
+    simbolo = f"{nombre.upper()}_PERSONA"
+    return {
+        "fragment": f"{modulo}.py",
+        "simbolo": simbolo,
+        "import": re.compile(rf"from\s+\.?\S*{modulo}\s+import\s+.*\b{simbolo}\b"),
+        # 🔴 **DOS formas de componer, y las dos son correctas** (2026-09-20). Esto
+        # aceptaba sólo la estática (`SYSTEM_PROMPT = <SIMBOLO> + …`), que es la de
+        # las apps sin corpus por turno. Sol arma su bloque local con los fragmentos
+        # RAG del turno, así que no tiene un SYSTEM_PROMPT constante: pasa
+        # `system=SOL_PERSONA + …` en la llamada. Exigir la forma estática la
+        # obligaría a retorcer el código para complacer a una regex — el mismo error
+        # que cablear un solo nombre de persona.
+        # 🔑 Lo que SÍ se verifica en ambas formas es el invariante de CH7: el
+        # personaje va PRIMERO. `<local> + <SIMBOLO>` no pasa, y ahí está el valor:
+        # un bloque local que preceda al canon puede contradecirlo.
+        "composed": re.compile(
+            rf"\bSYSTEM_PROMPT\s*=\s*\(?\s*(?:\w+\.)?{simbolo}\b"
+            rf"|\bsystem\s*=\s*\(?\s*(?:\w+\.)?{simbolo}\s*\+"),
+        "canon": os.path.join(REGISTRY_PROMPTS, f"{modulo}.py"),
+    }
 
 PASS, FAIL, WARN, INFO, SKIP = "PASS", "FAIL", "WARN", "INFO", "SKIP"
 ICON = {PASS: "✅", FAIL: "❌", WARN: "⚠️", INFO: "ℹ️", SKIP: "⏭️"}
@@ -545,27 +587,31 @@ def check(manifest, results):
                             "`fe_registry_widget: on` but no PharosHelpChat usage found under "
                             f"{frontend}"))
 
-    # H9 — canonical persona block composed into the system prompt (NEREA.md §6).
+    # H9 — canonical persona block composed into the system prompt (NEREA.md §6 /
+    # SOL.md §6). Any name in PERSONAS_COMPARTIDAS gets the same three checks.
     persona = str(manifest.get("persona", "off")).lower()
+    compartidas = ", ".join(f"`{n}`" for n in PERSONAS_COMPARTIDAS)
     if persona in ("off", "none", "false"):
         results.append(("H9", INFO, "no shared persona declared — H9 applies once the manifest "
-                        "sets `persona: nerea` (brands/pharos_brand/NEREA.md)"))
-    elif persona != "nerea":
-        results.append(("H9", INFO, f"persona {persona!r} is app-owned (not the shared Nerea "
-                        "block) — nothing to verify"))
+                        f"sets a shared persona ({compartidas}; brands/pharos_brand/)"))
+    elif persona not in PERSONAS_COMPARTIDAS:
+        results.append(("H9", INFO, f"persona {persona!r} is app-owned (not one of the shared "
+                        f"Pháros blocks: {compartidas}) — nothing to verify"))
     else:
+        spec = _persona_spec(persona)
+        fragment, simbolo = spec["fragment"], spec["simbolo"]
         fragments = [os.path.join(dirpath, f)
                      for d in chat_dirs
                      for dirpath, _, files in os.walk(d)
-                     for f in files if f == PERSONA_FRAGMENT]
+                     for f in files if f == fragment]
         if not fragments:
             results.append(("H9", FAIL,
-                            f"`persona: nerea` but no {PERSONA_FRAGMENT} in any chat_dir — sync it "
+                            f"`persona: {persona}` but no {fragment} in any chat_dir — sync it "
                             "with sync-pharos-registry.sh --persona-dir <backend-chat-dir>"))
         else:
             frag = fragments[0]
             problems = []
-            canon = _read(PERSONA_CANON)
+            canon = _read(spec["canon"])
             if canon is None:
                 canon_note = "canon not reachable from this checkout — byte-compare skipped"
             elif (_read(frag) or "") != canon:
@@ -575,12 +621,13 @@ def check(manifest, results):
             else:
                 canon_note = "matches the registry canon byte-for-byte"
             code = "\n".join(_py_code(_read(f) or "") for d in chat_dirs for f in _iter_py(d)
-                             if not f.endswith(PERSONA_FRAGMENT))
-            if not PERSONA_IMPORT.search(code):
-                problems.append("no `from …nerea_persona import NEREA_PERSONA` in the chat feature")
-            if not PERSONA_COMPOSED.search(code):
-                problems.append("SYSTEM_PROMPT does not compose from NEREA_PERSONA "
-                                "(expected `SYSTEM_PROMPT = NEREA_PERSONA + <local block>`)")
+                             if not f.endswith(fragment))
+            if not spec["import"].search(code):
+                problems.append(f"no `from …{persona}_persona import {simbolo}` in the chat feature")
+            if not spec["composed"].search(code):
+                problems.append(f"the system prompt does not lead with {simbolo} "
+                                f"(expected `SYSTEM_PROMPT = {simbolo} + <local block>`, or "
+                                f"`system={simbolo} + …` for a per-turn local block)")
             if problems:
                 results.append(("H9", FAIL, "; ".join(problems)))
             elif canon_note and "skipped" in canon_note:
@@ -588,8 +635,8 @@ def check(manifest, results):
                                 f"persona composed from {os.path.relpath(frag)}, but {canon_note}"))
             else:
                 results.append(("H9", PASS,
-                                f"SYSTEM_PROMPT composes from NEREA_PERSONA ({os.path.relpath(frag)} "
-                                f"{canon_note})"))
+                                f"the system prompt leads with {simbolo} "
+                                f"({os.path.relpath(frag)} {canon_note})"))
 
     # H10 — the assistant reports its own readiness, per caller (CH8).
     # Comment-stripped like H2/H4/H5: a promised route in a docstring must not satisfy a
