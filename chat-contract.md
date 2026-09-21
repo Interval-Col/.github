@@ -56,7 +56,7 @@ thin caller workflow; the check itself lives here and evolves centrally.
 | H6 | *info/warn:* the router maps a proxy outage to 503 (not a 500) | CH4 |
 | H7 | with `rag: on`, the chat response exposes a `sources` field | CH5 |
 | H8 | *info until adopted:* with `fe_registry_widget: on`, the FE references the registry `PharosHelpChat` — a hand-rolled `HelpChat.vue` **FAILs** | CH7 |
-| H9 | *info until adopted:* with `persona: nerea`, a synced `nerea_persona.py` exists in a `chat_dir`, matches the registry canon byte-for-byte (when the org checkout is reachable; else warn), and `SYSTEM_PROMPT` composes from `NEREA_PERSONA` | CH7 |
+| H9 | *info until adopted:* with **any shared persona** — `nerea` or `sol` — a synced `<persona>_persona.py` exists in a `chat_dir`, matches the registry canon byte-for-byte (when the org checkout is reachable; else warn), and the system prompt **leads with** `<PERSONA>_PERSONA`, either statically (`SYSTEM_PROMPT = …`) or per turn (`system=… + <local block>`, for a corpus-backed app whose local block varies). 🔴 **This checked only `nerea` until 2026-09-20**, and for `persona: sol` it answered «app-owned, nothing to verify» — which is why `sol_persona.py` kept the pre-2026-09-08 «usted» text while `SOL.md` said Sol tutea, silently. A gate that names one instance of a shared thing protects that instance only. | CH7 |
 | H10 | *warn until every chat app ships it, then FAIL:* the router exposes a `/health` route that is **not** capability-gated and answers with `enabled`/`allowed`/`upstream` | CH8 |
 
 The checks are deliberate **text-level heuristics** — cheap, deterministic,
@@ -85,10 +85,13 @@ response_model: backend/app/features/help/router.py   # optional; where the `sou
 rag: on                               # H7: corpus-backed → a `sources` field is required
 frontend_dir: frontend                # app-scoped in a monorepo (e.g. lis/frontend)
 fe_registry_widget: off               # H8; flip `on` once the FE mounts PharosHelpChat (Phase 4/5)
-persona: off                          # H9; `nerea` = the shared Pháros persona (brands/pharos_brand/NEREA.md §6):
-                                      #   sync-pharos-registry.sh --persona-dir <backend-chat-dir> copies the
-                                      #   fragment; SYSTEM_PROMPT = NEREA_PERSONA + <local block>. Other values
-                                      #   (e.g. `rigel`) = app-owned persona, informational only.
+persona: off                          # H9; the SHARED Pháros personas are `nerea` (internal surfaces,
+                                      #   brands/pharos_brand/NEREA.md §6) and `sol` (public surfaces, SOL.md §6).
+                                      #   sync-pharos-registry.sh --persona-dir <backend-chat-dir> --persona <name>
+                                      #   copies the fragment; the system prompt then LEADS with <NAME>_PERSONA.
+                                      #   Any other value (e.g. `rigel`) = app-owned persona, informational only —
+                                      #   ⚠️ and therefore UNVERIFIED: an app-owned persona is a choice, not a
+                                      #   default to drift into.
 provider_sdk_allow:                   # optional; every entry needs a reason (H2 escape hatch)
   - file: backend/app/features/help/legacy_client.py
     reason: "transitional local proxy, removed in Phase 5 — fin#NNN"
