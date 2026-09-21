@@ -53,6 +53,9 @@ export interface ChatHealth {
   upstream: boolean
 }
 
+/** Las seis situaciones de error que el panel sabe nombrar. */
+type ClaveDeError = 'limite' | 'sesion' | 'permiso' | 'invalido' | 'fallo' | 'caido'
+
 const props = withDefaults(defineProps<{
   /** App-owned transport to the chat endpoint (Bearer / 401 bounce stay app-side). */
   send: (payload: { message: string; history: ChatMessage[] }) => Promise<ChatReply>
@@ -133,6 +136,22 @@ const props = withDefaults(defineProps<{
    *  ⚠️ Es ADITIVO: sin el prop el texto es byte por byte el de antes, así que Nerea y
    *  Admisiones no se enteran. */
   greeting?: string
+  /** Los textos de error del panel, por si el trato de la app no es el del canon.
+   *  Se mezcla con los de abajo: lo que no se pase, se queda como está.
+   *
+   *  🔴 **Existe porque el trato NO es una preferencia de estilo: es canon de la
+   *  asistente.** Nerea trata de usted (`NEREA.md` §3) y Sol tutea (`SOL.md` §6). Estos
+   *  seis textos estaban cableados en usted, así que en `lch.co` un paciente leía «Intente
+   *  más tarde» y «Solicítelo a su administrador» — que además es vocabulario de personal:
+   *  un paciente no tiene administrador.
+   *
+   *  🪤 **Y el `detail` del servidor NO alcanzaba a taparlo.** Sólo se lee en 4xx
+   *  (`code >= 400 && code < 500`), y el camino más probable de una asistente apagada o
+   *  con el proxy caído es **503** — justo donde no hay nada que pise el texto cableado.
+   *
+   *  ⚠️ Es ADITIVO: sin el prop, los seis textos son byte por byte los de antes, así que
+   *  Nerea y Admisiones no se enteran. */
+  errorCopy?: Partial<Record<ClaveDeError, string>>
 }>(), {
   brandName: 'Pháros',
   title: 'Asistente de ayuda',
@@ -151,6 +170,7 @@ const props = withDefaults(defineProps<{
   privacyTitle: 'Sin datos de pacientes.',
   privacyBody: 'No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la aplicación.',
   greeting: '',
+  errorCopy: () => ({}),
 })
 
 // A TS literal union is erased at runtime — Vue does not validate it — so an app passing a typo
@@ -167,6 +187,25 @@ const isModal = computed(() => formMode.value === 'sheet')
 /** Panel heading: the assistant's name when it has one, else the generic title. */
 const heading = computed(() => props.assistantName || props.title)
 /** Greeting: the canonical micro-copy (NEREA.md §7) when named, else the brand fallback. */
+/** Los textos de error por defecto. En USTED a propósito: el consumidor histórico del
+ *  registry es Nerea, que trata de usted. Una app cuya asistente tutea los sobreescribe
+ *  con `errorCopy` — ver el docblock del prop. */
+const ERROR_POR_DEFECTO = {
+  limite: 'Ha alcanzado el límite de consultas. Intente más tarde.',
+  sesion: 'Su sesión expiró. Vuelva a iniciar sesión.',
+  permiso: 'No tiene permiso para usar el asistente. Solicítelo a su administrador.',
+  invalido: 'No pude procesar ese mensaje. Intente reformularlo.',
+  fallo: 'El asistente falló al responder. Intente más tarde.',
+  caido: 'Asistente no disponible. Intente más tarde.',
+} as const
+
+/** Un texto de error: el de la app si lo pasó, si no el del canon.
+ *  🪤 `||` y no `??`: una cadena VACÍA en `errorCopy` es un descuido, no una decisión de
+ *  dejar al usuario sin mensaje. Con `??` el panel mostraría un error en blanco. */
+function textoDeError(clave: ClaveDeError): string {
+  return props.errorCopy?.[clave] || ERROR_POR_DEFECTO[clave]
+}
+
 const greeting = computed(() => props.greeting
   || (props.assistantName
     ? `Hola, soy ${props.assistantName}. ¿En qué te ayudo?`
@@ -573,29 +612,28 @@ function mensajeDelServidor(err: unknown): string {
       ?? (err as { status?: number; statusCode?: number }).statusCode
     const delServidor = code && code >= 400 && code < 500 ? mensajeDelServidor(err) : ''
     if (code === 429) {
-      errorText.value = delServidor || 'Ha alcanzado el límite de consultas. Intente más tarde.'
+      errorText.value = delServidor || textoDeError('limite')
       status.value = 'limitado'
     } else if (code === 401) {
       // La app dueña del transporte rebota a SSO; aquí solo se dice la verdad mientras tanto.
-      errorText.value = delServidor || 'Su sesión expiró. Vuelva a iniciar sesión.'
+      errorText.value = delServidor || textoDeError('sesion')
       status.value = 'desconocido'
     } else if (code === 403) {
-      errorText.value = delServidor
-        || 'No tiene permiso para usar el asistente. Solicítelo a su administrador.'
+      errorText.value = delServidor || textoDeError('permiso')
       status.value = 'sin-permiso'
     } else if (code === 422) {
       // Survived the retry above, so it is this MESSAGE, not the history. The assistant
       // is fine — say so, and deliberately leave `status` alone (see below).
-      errorText.value = delServidor || 'No pude procesar ese mensaje. Intente reformularlo.'
+      errorText.value = delServidor || textoDeError('invalido')
     } else if (code && code >= 500 && code !== 503) {
       // A 500 is a bug in the app's own chat route, not a statement about whether the
       // assistant is reachable. Reporting «no disponible» here sends the user to wait for
       // an outage that is not happening, and — worse — overwrites a probe result that
       // measured the real thing.
-      errorText.value = 'El asistente falló al responder. Intente más tarde.'
+      errorText.value = textoDeError('fallo')
     } else {
       // 503 / network / unknown: genuinely unreachable.
-      errorText.value = 'Asistente no disponible. Intente más tarde.'
+      errorText.value = textoDeError('caido')
       status.value = 'no-disponible'
     }
     // Only refresh the probe clock when the failure actually MEASURED availability.
