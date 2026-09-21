@@ -116,6 +116,23 @@ const props = withDefaults(defineProps<{
    *  aplicación» es vocabulario de personal: en `lch.co` no hay ninguna aplicación, hay
    *  un laboratorio, y quien pregunta ES el paciente. */
   privacyBody?: string
+  /** Saludo exacto del panel. Vacío = el compuesto de siempre.
+   *
+   *  🔴 **Vuelve del fork, no nace acá** (2026-09-20). Este prop se escribió en las
+   *  copias vendorizadas de `lch-citas` y `lch-web` y nunca subió. Medido ese día: el
+   *  canon era superconjunto en tres props y SUBCONJUNTO en éste, así que un
+   *  `sync-pharos-registry.sh` sobre cualquiera de las dos apps **les borraba el
+   *  saludo** — las dos pasan `:greeting`. Un registry que no es superconjunto
+   *  convierte su propia herramienta de sincronización en una regresión.
+   *
+   *  🔑 Existe porque `SOL.md` §7 lo pide por su nombre: el saludo compuesto «no admite
+   *  el matiz del portafolio: es una cadena fija». Las personas del registry fijan
+   *  micro-copys al carácter —Sol dice «¿En qué te PUEDO ayudar?»— y sin este prop la
+   *  única forma de honrarlos era bifurcar el widget, que es justo lo que pasó.
+   *
+   *  ⚠️ Es ADITIVO: sin el prop el texto es byte por byte el de antes, así que Nerea y
+   *  Admisiones no se enteran. */
+  greeting?: string
 }>(), {
   brandName: 'Pháros',
   title: 'Asistente de ayuda',
@@ -133,6 +150,7 @@ const props = withDefaults(defineProps<{
   assistantRole: '',
   privacyTitle: 'Sin datos de pacientes.',
   privacyBody: 'No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la aplicación.',
+  greeting: '',
 })
 
 // A TS literal union is erased at runtime — Vue does not validate it — so an app passing a typo
@@ -149,9 +167,10 @@ const isModal = computed(() => formMode.value === 'sheet')
 /** Panel heading: the assistant's name when it has one, else the generic title. */
 const heading = computed(() => props.assistantName || props.title)
 /** Greeting: the canonical micro-copy (NEREA.md §7) when named, else the brand fallback. */
-const greeting = computed(() => props.assistantName
-  ? `Hola, soy ${props.assistantName}. ¿En qué te ayudo?`
-  : `Hola, soy la asistente de ${props.brandName}. ¿En qué te ayudo?`)
+const greeting = computed(() => props.greeting
+  || (props.assistantName
+    ? `Hola, soy ${props.assistantName}. ¿En qué te ayudo?`
+    : `Hola, soy la asistente de ${props.brandName}. ¿En qué te ayudo?`))
 
 const isOpen = ref(false)
 const input = ref('')
@@ -444,7 +463,12 @@ function navigateHistory(dir: -1 | 1, ta: HTMLTextAreaElement) {
     }
     if (historyCursor < 0) historyCursor = 0
   }
-  input.value = inputHistory.value[historyCursor]
+  // 🪤 **`?? ''` no es defensivo por gusto: las apps typechequean con
+  // `noUncheckedIndexedAccess`, que tipa un índice de arreglo como `T | undefined`.
+  // Sin él, asignar a un `Ref<string>` no compila y el build falla. En dev no se veía
+  // —Vite no typechequea—; lo cazó CI en `lch-web`. Vive acá desde el 2026-09-20: era
+  // la segunda cosa que el canon NO tenía y sus consumidores sí.
+  input.value = inputHistory.value[historyCursor] ?? ''
   restoreCaretEnd(ta)
 }
 
