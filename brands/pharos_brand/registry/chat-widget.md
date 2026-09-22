@@ -14,7 +14,7 @@ slide-up chat panel. ONE definition so it can't drift across apps
 | Entry | Path | What it is |
 |---|---|---|
 | `PharosHelpChat` | `app/components/PharosHelpChat.vue` | launcher + panel; sessionStorage history, marked+DOMPurify rendering, es-CO usted copy, graceful outage/rate-limit states, corpus-source chips (CH5) |
-| `PharosChatAvatar` | `app/components/PharosChatAvatar.vue` | the assistant's mark — 11 glyphs (nautical-robot marks + plain nautical marks), all **inline SVG, zero deps** (the playground's copy imports lucide; the registry deliberately does not push an icon library onto adopters) |
+| `PharosChatAvatar` | `app/components/PharosChatAvatar.vue` | the assistant's mark — 12 glyphs (`sol` for the public assistant, nautical-robot marks + plain nautical marks), all **inline SVG, zero deps** (the playground's copy imports lucide; the registry deliberately does not push an icon library onto adopters) |
 
 **Deps (per adopting app):** `pnpm add marked dompurify` (+ `pnpm add -D @types/dompurify`).
 `marked` renders the assistant's markdown; `DOMPurify` sanitizes it before
