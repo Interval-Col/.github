@@ -288,6 +288,7 @@ añade las **deps de adopción** indicadas (todas seguras para `check-fe-bloat`)
 | Primitivo | Ruta | Para qué | Deps de adopción |
 |---|---|---|---|
 | **SearchableSelect** | `ui/searchable-select` | Desplegable con filtro al teclear (estático o `searchFn` async); maneja valor vacío sin sentinel | — |
+| **MultiSelect** | `ui/multi-select` | Selección de varias opciones (casillas en un popover); la lista se limita al alto libre de la pantalla y hace scroll, y el botón muestra los nombres en una línea + el conteo. **Úsalo en vez de armar `Popover` + `Checkbox` a mano** | — |
 | **EntityLookup** (+ `ScopedSearchInput`, `PatientLookup`, `PhysicianLookup`) | `ui/entity-lookup`, `ui/scoped-search` | Búsqueda de persona con chips de filtro guiados (cédula con tipo de doc, nombre, orden…) → resultados → selección | — |
 | **PageHeader** | `ui/page-header` | Encabezado de contenido (título/descripción/`#actions`/`#toolbar`); título `<h2>`, breadcrumb-as-title | — |
 | **Icon** | `ui/icon` | Un solo tag de icono sobre `@iconify/tailwind` + registro curado (~94) | `@iconify-json/lucide`, `@iconify-json/material-symbols`, `@iconify/tailwind`, `@import "./pharos-icons.css"` |
