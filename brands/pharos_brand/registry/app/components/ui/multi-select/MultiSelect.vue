@@ -5,7 +5,7 @@
 //
 // Why it is a primitive and not a snippet: every hand-rolled copy forgot the
 // height cap, so on a short screen the list ran past the bottom edge and the
-// last options were unreachable (pharos-lis#496). Here the list is capped at the
+// last options were unreachable (pharos-lis PR 496). Here the list is capped at the
 // room reka measures below the trigger and scrolls — the consumer cannot forget.
 //
 // The trigger keeps a stable height: the chosen names on ONE truncating line,
