@@ -20,9 +20,29 @@ defineProps<{
 <template>
   <!-- ── Nautical-robot marks (hand-drawn) ───────────────────────────────────── -->
 
+  <!-- Sol (aureola) — la marca de la asistente pública (SOL.md; elegida por German 2026-09-21).
+       La cabeza de la familia de Nerea sin su ola: el sol va DETRÁS, rayos que asoman por
+       encima de la cabeza, sin disco ni arco. Ojos verticales, sin boca (SOL.md §3).
+       🪤 Nace aquí, en el original. La versión provisional vivía sólo en la copia de
+       public-web/apps/lch-web y el próximo sync la habría borrado. -->
+  <svg
+    v-if="id === 'sol'" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="4" y="10" width="16" height="10.4" rx="2.5"/>
+    <path d="M12 6.3V4.3"/>
+    <path d="M14.6 7.2l1-1.7"/>
+    <path d="M9.4 7.2l-1-1.7"/>
+    <path d="M17.4 8.6l1.8-1"/>
+    <path d="M6.6 8.6l-1.8-1"/>
+    <path d="M2 15.2h2"/>
+    <path d="M20 15.2h2"/>
+    <path d="M9.3 13.9v2.5"/>
+    <path d="M14.7 13.9v2.5"/>
+  </svg>
+
   <!-- Buzo — casco de escafandra -->
   <svg
-    v-if="id === 'diver'" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    v-else-if="id === 'diver'" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M6 11a6 6 0 0 1 12 0v4a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/>
     <circle cx="12" cy="12" r="3.2"/>

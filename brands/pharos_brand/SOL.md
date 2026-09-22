@@ -263,5 +263,13 @@ respuestas, que las compone cada app.
   se pone **rojo** hasta que la app sincronice el fragmento. El PR de `public-web`
   va **primero**; bajo el H9 viejo ese cambio es informativo, así que no hay ventana
   en rojo en ningún orden salvo éste invertido.
-- 🛑 **Avatar del registry.** Sol necesita el suyo, o comparte el de Nerea. Decide
-  design-studio.
+- ✅ **Avatar del registry — fallado el 2026-09-21: Sol tiene el suyo, «Aureola».**
+  Es la cabeza de la familia de Nerea sin la ola, con el sol **detrás**: cinco rayos
+  que asoman por encima de la cabeza, sin disco ni arco. Tiene ojos verticales y no
+  tiene boca. Vive en `registry/app/components/PharosChatAvatar.vue` bajo el id `sol`.
+  🔑 **Por qué la familia y no un símbolo abstracto:** se exploró la ruta sin cara y
+  se descartó a la vista. La cabeza compartida dice «asistente» sin explicación, y
+  el sol detrás dice «Sol» sin letrero.
+  🪤 **El glifo nace en este original.** La versión provisional existía sólo en la copia
+  vendorizada de `public-web/apps/lch-web` (commit `2054c4cb`), así que el próximo sync
+  la habría borrado y Sol habría caído al robot genérico.
