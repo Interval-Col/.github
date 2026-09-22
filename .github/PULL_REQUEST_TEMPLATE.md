@@ -18,8 +18,13 @@
 
 ## Why
 
-<!-- What problem does this solve? Link the plan / issue / discussion if
-     any. One paragraph max. -->
+<!-- What problem does this solve? One paragraph max.
+     Say which issue this closes on its own line — `Closes #N`, or
+     `Closes owner/repo#N` if the issue lives in another repo. That is
+     how the org measures who asked for the work. If nobody asked on
+     purpose, add the `sin-issue` label instead of leaving it blank. -->
+
+Closes #
 
 ## What changed
 
