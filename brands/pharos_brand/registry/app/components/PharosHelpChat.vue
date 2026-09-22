@@ -1048,9 +1048,18 @@ function onKeydown(e: KeyboardEvent) {
   display: contents;
 }
 
+/* 🔑 Tamaños del avatar AJUSTABLES por variable, con el valor de siempre como default.
+   Existen porque una sola prop (`avatarBg`) gobierna los DOS lugares —el botón flotante y
+   la cabecera del panel— y una app puede querer disco en uno y glifo suelto en el otro
+   (lch-web / Sol, 2026-09-21). Una app que no declara nada se ve exactamente igual.
+     --pharos-chat-launcher-size   diámetro del botón flotante            (52px)
+     --pharos-chat-launcher-glyph  glifo dentro del botón con disco       (22px)
+     --pharos-chat-avatar-plate    fondo del círculo de la cabecera       (tinte del primary)
+     --pharos-chat-avatar-size     diámetro de ese círculo                (30px)
+     --pharos-chat-avatar-glyph    glifo de la cabecera                   (18px) */
 .pharos-chat-launcher {
-  width: 52px;
-  height: 52px;
+  width: var(--pharos-chat-launcher-size, 52px);
+  height: var(--pharos-chat-launcher-size, 52px);
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--primary);
@@ -1066,7 +1075,10 @@ function onKeydown(e: KeyboardEvent) {
   transform: translateY(-1px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
-.pharos-chat-launcher svg { width: 22px; height: 22px; }
+.pharos-chat-launcher svg {
+  width: var(--pharos-chat-launcher-glyph, 22px);
+  height: var(--pharos-chat-launcher-glyph, 22px);
+}
 /* Bare glyph: no chip, the mark itself IS the launcher (accent-coloured, no plate). */
 .pharos-chat-launcher.bg-solo {
   width: 56px;
@@ -1268,12 +1280,15 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--primary);
 }
 .pharos-chat-avatar.bg-circulo {
-  width: 30px;
-  height: 30px;
+  width: var(--pharos-chat-avatar-size, 30px);
+  height: var(--pharos-chat-avatar-size, 30px);
   border-radius: 999px;
-  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  background: var(--pharos-chat-avatar-plate, color-mix(in oklab, var(--primary) 12%, transparent));
 }
-.pharos-chat-avatar svg { width: 18px; height: 18px; }
+.pharos-chat-avatar svg {
+  width: var(--pharos-chat-avatar-glyph, 18px);
+  height: var(--pharos-chat-avatar-glyph, 18px);
+}
 .pharos-chat-avatar.bg-solo svg { width: 22px; height: 22px; }
 
 .pharos-chat-header-actions {

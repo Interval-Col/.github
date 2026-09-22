@@ -60,6 +60,13 @@ mount renders exactly what it rendered before.
 | `privacyTitle` | `string` | `'Sin datos de pacientes.'` | — | encabezado del aviso de PHI, en sus dos sitios |
 | `privacyBody` | `string` | (el de siempre, en usted) | — | cuerpo del aviso. **El trato cambia por superficie**: Nerea trata de usted, Sol tutea |
 
+> **Tamaños del avatar, por CSS y no por prop.** `avatarBg` gobierna a la vez el botón flotante y la
+> cabecera del panel. Para separar los dos, la app declara en su CSS cualquiera de estas variables;
+> sin ellas se ve igual que siempre: `--pharos-chat-launcher-size` (52px) ·
+> `--pharos-chat-launcher-glyph` (22px) · `--pharos-chat-avatar-size` (30px) ·
+> `--pharos-chat-avatar-glyph` (18px) · `--pharos-chat-avatar-plate` (tinte del `--primary`;
+> `transparent` lo quita). Primer uso: Sol en `lch-web`, 2026-09-21.
+
 ### Por qué el aviso de PHI y el papel son props (2026-09-20)
 
 🔴 **El encabezado es `assistantName || title`**, así que una app que pasa las dos cosas
