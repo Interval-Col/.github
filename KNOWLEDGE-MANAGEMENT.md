@@ -162,6 +162,8 @@ owner — do not correct it locally and leave the owner lying.
 | Schema / data-platform decisions | `nucleus-db/docs/decisions/` (single-repo) → `rfcs/` (cross-repo) | See *RFC vs. ADR* above |
 | PHI & security policy | `operations/policies/` | |
 | Team roster & operating model | `operations/ops/shared/` | Private by design |
+| **What an agent knows how to do** (`SKILL.md`) | `claude-skills` | The catalog — org skills under `*/propias/`, vendored upstream under `*/instaladas/`. A skill is an *instruction*, and it belongs where the catalog's gates can see it |
+| **The machinery that produces a recurring deliverable** | `operations/ops/<entregable>/` | Scripts, runbooks and editorial live next to the thing they emit: `weekly/`, `eod/`, `estate/`, `board/`, `arbol/`. Deterministic here, judgment in the session that runs it |
 | **Operational facts a session must not miss, per repo** | that repo's **`CLAUDE.md`** | ⚠️ It is the **only** vector that reaches another person's agent — see below |
 | Knowledge-management conventions | this file | |
 
@@ -201,6 +203,26 @@ stale, would a reader be able to tell which? If not, one of them must become a
 pointer. A wrong copy is worse than no copy, because it looks like an answer.
 
 ---
+
+## Skill or pipeline? (the boundary that keeps getting re-litigated)
+
+Three repos hold agent-adjacent material and the line between them is not obvious,
+so it gets asked again every few weeks:
+
+- **`claude-skills`** — *what an agent knows how to do*. `SKILL.md` files, nothing else.
+- **`operations/ops/`** — *what the organization produces on a schedule*. The scripts,
+  runbooks and data behind the weekly brief, the EOD bitácora, the estate audit, the
+  Árbol de Frentes.
+- **`.github`** — *what every repo must comply with*. Standards, reusable workflows, gates.
+
+They compose rather than compete: a recurring deliverable's machinery goes to
+`operations/ops/<name>/`, and if it also deserves a slash-command, the `SKILL.md` goes to
+`claude-skills` and **points at** the pipeline. Skills were removed from `operations` on
+purpose (operations#660) — that move was about the instructions, not the pipelines, which
+stayed.
+
+A new deliverable does **not** need a new repo. If you think it does, say which of these
+three it fails, in a PR to this file.
 
 ## Cross-repo decision ledger
 
