@@ -224,6 +224,30 @@ stayed.
 A new deliverable does **not** need a new repo. If you think it does, say which of these
 three it fails, in a PR to this file.
 
+### Skills, commands and agent files are written in ENGLISH
+
+The **name** and the **body** of a `SKILL.md`, a `commands/*.md` and an `*.agent.md` are
+English — always, including the ones an agent writes for us. This holds even though most
+of what these files *talk about* is Spanish: the board stays «Árbol de Frentes», a guide
+in `operations/guides/` stays Spanish, and what a skill **reports back to the user** stays
+Spanish. What is English is the instruction file itself.
+
+Three reasons, in order of how much they cost when ignored:
+
+1. **A command name is an API.** `/alignment-tree` is typed, scripted, grepped and quoted
+   in issues. An accented, gendered name is a name people mistype
+   (`/parametrización-exámenes` vs `/parametrizacion-examenes`) and that tooling has to
+   normalize forever.
+2. **They sit next to English standards.** Every file in this repo, every ADR and every
+   RFC is English (see the five buckets above). A catalog half in each language is one
+   more thing to remember rather than one rule to follow.
+3. **Upstream skills are English.** `claude-skills` vendors ~180 of them under
+   `*/instaladas/`. Ours reading differently makes the catalog scan as two products.
+
+Existing Spanish-named skills are **not** being renamed en masse — a rename breaks
+whoever has it in muscle memory. They get renamed when they are next edited for another
+reason.
+
 ## Cross-repo decision ledger
 
 ### RFCs (org-wide)
