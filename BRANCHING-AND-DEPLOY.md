@@ -124,13 +124,34 @@ applies automatically (GitHub falls back to the `.github` repo's
 template for any repo without its own — so docs/meta repos don't need
 their own copy). Required sections (template-enforced):
 
-- **Why** — what problem this solves; link the plan / issue if any.
+- **Why** — what problem this solves, and **which issue it closes**
+  (`Closes #N` on its own line — see [PR ↔ issue](#pr--issue)).
 - **What changed** — short paragraph; readers should not have to read
   the diff to understand the shape of the change.
 - **Test plan** — what was verified, and how. Include test names,
   manual-verification steps, or screenshots.
 - **Rollout / rollback notes** — if it affects deploys (env vars,
   migrations, feature flags).
+
+### PR ↔ issue
+
+Every PR says which issue it closes: `Closes #N` in the description, or
+`Closes owner/repo#N` when the issue lives in another repo (GitHub resolves
+both, and links the sidebar "Development" field). If nobody asked for the
+work **on purpose**, put the `sin-issue` label on the PR instead.
+
+Why it matters: the link is the only machine-readable answer to *who asked
+for this*. The reusable check
+[`pr-issue-link.yml`](.github/workflows/pr-issue-link.yml) reads it and, for
+each linked issue, reports whether it was opened by someone else (**demand**)
+or by the PR's own author (**self-generated**). In 2026-Q3 zero of 3,508
+merged PRs carried that link, so unrequested work could only be inferred by
+absence.
+
+Exempt without a link: bot PRs and promotion PRs (`develop` → `main`,
+`release…`). The check ships **advisory** (`enforce: false`: it annotates,
+never blocks); making it required is a separate, per-repo decision taken
+after adoption is measured.
 
 ### Reviewers
 

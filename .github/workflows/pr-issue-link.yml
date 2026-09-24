@@ -1,0 +1,132 @@
+# Reusable: PR ↔ issue link — every PR says which issue it closes, and who asked.
+#
+# Reads the PR's closing references (what GitHub resolves from `Closes #N`,
+# `Fixes owner/repo#N`, or the "Development" sidebar) and reports, for each
+# linked issue, whether it was opened by SOMEONE ELSE (demand) or by the PR's
+# own author (self-generated). The job summary carries that table; a PR with no
+# link gets an inline warning.
+#
+# Why this exists: in 2026-Q3, 0 of 3,508 merged PRs carried a structured issue
+# link and only 8% named an issue in the title. The weekly alignment board
+# (Árbol de Frentes) can therefore tell "this landed on a strategic head" but
+# not "anyone asked for this" — so unrequested work could only be inferred by
+# absence. This check makes demand a measured fact instead of a guess.
+#
+# Rollout (mirrors plans-check / db-tenant-check): callers ship with
+# enforce=false — a missing link annotates and NEVER blocks. Only after a
+# convergence cycle, and by an explicit decision, does a caller flip
+# enforce=true and mark the check required. Never enforce before adoption is
+# measured: small iterative PRs legitimately have no issue of their own.
+#
+# Exempt without a link: bot authors; promotion PRs (head `develop`, or a
+# `release…` title); and any PR carrying the exempt label (default
+# `sin-issue`) — the label is itself data: a declared "nobody asked, on
+# purpose", which is different from a forgotten link.
+#
+# Runner: private callers use the self-hosted pool (the default). PUBLIC
+# callers MUST pass runner '["ubuntu-latest"]' — the self-hosted pool excludes
+# public repos and the job would queue forever (see plans-check.yml).
+#
+# Caller (in the consuming repo):
+#
+#   on:
+#     pull_request:
+#       types: [opened, edited, reopened, synchronize, labeled, unlabeled]
+#   jobs:
+#     issue-link:
+#       uses: Interval-Col/.github/.github/workflows/pr-issue-link.yml@main
+#       permissions: { pull-requests: read, issues: read }
+#
+# No secrets needed: GITHUB_TOKEN reads the PR and its linked issues.
+
+name: pr-issue-link
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check when a non-exempt PR links no issue
+        type: boolean
+        required: false
+        default: false
+      exempt-label:
+        description: label that declares "no issue, on purpose"
+        type: string
+        required: false
+        default: sin-issue
+
+jobs:
+  issue-link:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+    permissions:
+      pull-requests: read
+      issues: read
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          ENFORCE: ${{ inputs.enforce }}
+          EXEMPT_LABEL: ${{ inputs.exempt-label }}
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const enforce = process.env.ENFORCE === 'true';
+            const exemptLabel = process.env.EXEMPT_LABEL;
+
+            const q = `query($owner:String!, $repo:String!, $n:Int!) {
+              repository(owner:$owner, name:$repo) {
+                pullRequest(number:$n) {
+                  author { login }
+                  closingIssuesReferences(first: 10) {
+                    nodes { number title author { login }
+                            repository { nameWithOwner } }
+                  }
+                }
+              }
+            }`;
+            const res = await github.graphql(q, {
+              owner: context.repo.owner, repo: context.repo.repo, n: pr.number });
+            const data = res.repository.pullRequest;
+            const prAuthor = (data.author && data.author.login) || pr.user.login;
+            const issues = data.closingIssuesReferences.nodes;
+
+            const labels = (pr.labels || []).map(l => l.name);
+            const isBot = pr.user.type === 'Bot' || /\[bot\]$/.test(pr.user.login);
+            const isPromotion = pr.head.ref === 'develop' || /^release\b/i.test(pr.title);
+            const isLabeled = labels.includes(exemptLabel);
+
+            const rows = issues.map(i => {
+              const opener = (i.author && i.author.login) || '(desconocido)';
+              const demand = opener !== prAuthor;
+              return [`${i.repository.nameWithOwner}#${i.number}`, opener,
+                      demand ? 'demanda — lo pidió otra persona' : 'auto-generado — lo abrió el mismo autor'];
+            });
+
+            let verdict;
+            if (issues.length) {
+              const ext = rows.filter(r => r[2].startsWith('demanda')).length;
+              verdict = ext ? `Cierra ${issues.length} issue(s); ${ext} pedido(s) por otra persona.`
+                            : `Cierra ${issues.length} issue(s), todos abiertos por el mismo autor.`;
+            } else if (isBot)        verdict = 'Exento: PR de un bot.';
+            else if (isPromotion)    verdict = 'Exento: PR de promoción.';
+            else if (isLabeled)      verdict = `Sin issue, declarado con la etiqueta \`${exemptLabel}\`.`;
+            else                     verdict = 'No cierra ningún issue.';
+
+            const summary = core.summary.addHeading('PR ↔ issue', 3).addRaw(verdict + '\n\n');
+            if (rows.length)
+              summary.addTable([[{data:'Issue', header:true}, {data:'Lo abrió', header:true},
+                                 {data:'Lectura', header:true}], ...rows]);
+            await summary.write();
+
+            const missing = !issues.length && !isBot && !isPromotion && !isLabeled;
+            if (missing) {
+              const msg = `Este PR no cierra ningún issue. Agregá "Closes #N" a la descripción ` +
+                          `(o "Closes owner/repo#N" si el issue vive en otro repo). Si nadie lo ` +
+                          `pidió a propósito, poné la etiqueta "${exemptLabel}" — eso también se mide.`;
+              if (enforce) core.setFailed(msg); else core.warning(msg);
+            }
