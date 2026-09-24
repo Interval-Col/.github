@@ -225,6 +225,19 @@ COMPANIONS=(
   "components/ui/consent-signature/ConsentSignature.vue:components/ui/checkbox/Checkbox.vue"
   "components/ui/consent-signature/ConsentSignature.vue:components/ui/checkbox/index.ts"
   "components/ui/consent-signature/ConsentSignature.vue:lib/utils.ts"
+  # MultiSelect: a Popover of Checkbox rows behind a Button trigger. Without these, an
+  # `--add` of the component would land it with broken imports.
+  "components/ui/multi-select/MultiSelect.vue:components/ui/multi-select/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/Popover.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/PopoverAnchor.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/PopoverContent.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/PopoverTrigger.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/checkbox/Checkbox.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/checkbox/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/button/Button.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/button/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:lib/utils.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion

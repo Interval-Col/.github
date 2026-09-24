@@ -30,6 +30,13 @@ tools: [read, edit, search]   # tools it may use
 - **`operator-profile-template.md`** — blank operator profile, filled by `operator-calibration` and stored in private agent memory (not committed).
 - **`operator-profile-example.md`** — anonymized "what good looks like" sample profile.
 
+## Language
+
+Agent files, like skills and `commands/*.md`, are **written in English** — name and body,
+including the ones an agent authors for us. The Spanish lives in what they *produce* (a
+guide, a brief, a PR comment), never in the instruction file. Rationale and the full rule:
+[KNOWLEDGE-MANAGEMENT.md → Skills, commands and agent files are written in ENGLISH](../KNOWLEDGE-MANAGEMENT.md#skills-commands-and-agent-files-are-written-in-english).
+
 ## Adding an agent
 
 Name it `<slug>.agent.md`, add the frontmatter above, write the system prompt in the body, and list it here. If you're adding a template/example/doc instead, use a plain `.md` and file it under "Data artifacts."
