@@ -23,6 +23,15 @@
 #                  (correct for single-app repos). Pass the repo root for
 #                  monorepos (e.g. the checkout root when fe is under frontend/).
 #   --dry-run      Print what WOULD be copied; write nothing.
+#   --add <path>   Adopt a NEW registry file (without it, only what you already
+#                  have is refreshed).
+#   --persona-dir <dir>
+#                  Also refresh the shared persona fragment into that backend chat
+#                  dir (chat-contract H9).
+#   --persona <name>
+#                  WHICH shared persona to copy: `nerea` (default) or `sol`.
+#                  ⚠️ The default is what keeps older callers working — it is not a
+#                  statement that Nerea is the only persona.
 # =============================================================================
 set -euo pipefail
 
@@ -32,7 +41,9 @@ REGISTRY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../brands/pharos_brand/regist
 DRY_RUN=false
 POSITIONAL=()
 ADD_LIST=()          # --add <relpath>: adopt a NEW registry file (else: refresh what you have)
-PERSONA_DIR=""       # --persona-dir <backend-chat-dir>: refresh the Nerea persona fragment there
+PERSONA_DIR=""       # --persona-dir <backend-chat-dir>: refresh the persona fragment there
+PERSONA="nerea"      # --persona <name>: WHICH shared persona (nerea | sol). Default keeps
+                     # every existing caller working unchanged.
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run)        DRY_RUN=true; shift ;;
@@ -40,6 +51,8 @@ while [[ $# -gt 0 ]]; do
     --add=*)          ADD_LIST+=("${1#--add=}"); shift ;;
     --persona-dir)    PERSONA_DIR="$2"; shift 2 ;;
     --persona-dir=*)  PERSONA_DIR="${1#--persona-dir=}"; shift ;;
+    --persona)        PERSONA="$2"; shift 2 ;;
+    --persona=*)      PERSONA="${1#--persona=}"; shift ;;
     *)                POSITIONAL+=("$1"); shift ;;
   esac
 done
@@ -212,6 +225,19 @@ COMPANIONS=(
   "components/ui/consent-signature/ConsentSignature.vue:components/ui/checkbox/Checkbox.vue"
   "components/ui/consent-signature/ConsentSignature.vue:components/ui/checkbox/index.ts"
   "components/ui/consent-signature/ConsentSignature.vue:lib/utils.ts"
+  # MultiSelect: a Popover of Checkbox rows behind a Button trigger. Without these, an
+  # `--add` of the component would land it with broken imports.
+  "components/ui/multi-select/MultiSelect.vue:components/ui/multi-select/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/Popover.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/PopoverAnchor.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/PopoverContent.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/PopoverTrigger.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/popover/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/checkbox/Checkbox.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/checkbox/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/button/Button.vue"
+  "components/ui/multi-select/MultiSelect.vue:components/ui/button/index.ts"
+  "components/ui/multi-select/MultiSelect.vue:lib/utils.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion
@@ -283,17 +309,34 @@ else
   echo "wrote:  $MANIFEST_DEST ($(grep -c . "$MANIFEST_DEST") entries)"
 fi
 
-# ── 4d. Nerea persona fragment (backend, chat-contract H9) ────────────────────
-# The BE half of the persona: registry/prompts/nerea_persona.py is copied verbatim
-# into the app's backend chat dir (--persona-dir). Enforcement is NOT Lock 3 (that
-# manifest is FE-scoped): chat-contract-check H9 compares the app copy byte-for-byte
-# against the registry canon when the manifest declares `persona: nerea`.
+# ── 4d. Shared persona fragment (backend, chat-contract H9) ───────────────────
+# The BE half of the persona: registry/prompts/<persona>_persona.py is copied
+# verbatim into the app's backend chat dir (--persona-dir). Enforcement is NOT
+# Lock 3 (that manifest is FE-scoped): chat-contract-check H9 compares the app copy
+# byte-for-byte against the registry canon when the manifest declares that persona.
+#
+# 🔴 **There are TWO shared personas since 2026-09-20, and this used to know one.**
+# It hard-coded nerea_persona.py, so the only way to propagate Sol was copying the
+# file by hand — which is precisely how her canon and the registry drifted for six
+# days without a sound. --persona defaults to nerea, so every existing caller is
+# unaffected.
 if [[ -n "$PERSONA_DIR" ]]; then
   if [[ ! -d "$PERSONA_DIR" ]]; then
     echo "error: --persona-dir not found: $PERSONA_DIR" >&2
     exit 1
   fi
-  copy_file "$REGISTRY_DIR/prompts/nerea_persona.py" "$PERSONA_DIR/nerea_persona.py"
+  PERSONA_SRC="$REGISTRY_DIR/prompts/${PERSONA}_persona.py"
+  if [[ ! -f "$PERSONA_SRC" ]]; then
+    # 🪤 A typo here would otherwise copy nothing and exit 0 — the app would keep an
+    # old fragment and look synced. Name what exists instead of failing blankly.
+    echo "error: unknown persona '${PERSONA}' — no $(basename "$PERSONA_SRC") in the registry." >&2
+    echo "       available:" >&2
+    for f in "$REGISTRY_DIR"/prompts/*_persona.py; do
+      [[ -f "$f" ]] && echo "         $(basename "$f" _persona.py)" >&2
+    done
+    exit 1
+  fi
+  copy_file "$PERSONA_SRC" "$PERSONA_DIR/${PERSONA}_persona.py"
 fi
 
 # ── 5. Pre-commit: never overwrite — print merge instructions ─────────────────

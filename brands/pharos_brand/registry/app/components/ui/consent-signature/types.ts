@@ -11,6 +11,15 @@ export interface ConsentFormDescriptor {
   allowsLegalRepresentative: boolean
   /** The form carries a bacteriologist signature slot (filled by the service from the SSO profile). */
   requiresBacteriologist: boolean
+  /** The form prints the city where the SIGNER's document was issued (14 of 15;
+   *  `data_treatment` is the only one that does not print it). */
+  requiresExpeditionCity: boolean
+  /** The form ALSO prints the city where the PATIENT's own document was issued — a
+   *  separate box, and a different value from the signer's only when a legal
+   *  representative signs. Ten forms print both. */
+  requiresPatientExpeditionCity: boolean
+  /** The form prints the entity (EPS) the patient is served by. */
+  requiresEntityServed: boolean
   /** Extra declarations some forms print as checkboxes. */
   hasSampleConservationChoice: boolean
   hasMicroscopicImagesChoice: boolean
@@ -51,6 +60,13 @@ export interface ConsentSignaturePayload {
   authorize_conservation_of_biological_samples: boolean | null
   authorize_the_use_of_microscopic_images: boolean | null
   legal_representative_signature: string
+  /** Plan 5.3 — QUIÉN firma, dicho y no deducido.
+   *
+   *  El servicio rechaza con 422 un formulario que admite representante y llega
+   *  sin esto: antes lo deducía de la presencia del nombre, y así la AUSENCIA de
+   *  un dato se volvía la afirmación «firmó el paciente». `null` sólo es válido
+   *  en los formularios sin recuadro de representante. */
+  signed_by: 'patient' | 'legal_representative' | null
 }
 
 export interface IdentificationTypeOption {

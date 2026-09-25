@@ -1,0 +1,40 @@
+# This repo's own caller for the reusable `pr-issue-link` check — and the
+# reference stub every other repo copies.
+#
+# Runner: THIS repo is public → hosted minutes are free AND the org's
+# self-hosted pool excludes public repos (a self-hosted job here queues
+# forever — bit us on PR #107). So this caller passes ubuntu-latest. PRIVATE
+# callers omit `runner` and take the '["self-hosted"]' default.
+#
+# `enforce: false` — a PR with no linked issue gets an inline annotation and
+# never blocks. A repo flips it to true only after adoption is measured: small
+# iterative PRs legitimately have no issue of their own, and in 2026-Q3 zero of
+# 3,508 merged PRs carried the link at all. Enforcing on day one would block
+# almost every PR in the org.
+#
+# `types:` is deliberate, unlike plan-lint's bare `pull_request`. The check
+# reads the PR body and its labels, and both change AFTER a PR opens: `edited`
+# catches someone adding `Closes #N`, and `labeled`/`unlabeled` catch the
+# `sin-issue` escape hatch. Without them the verdict would freeze at open time.
+#
+# Deliberately NO `paths:` filter — same reason as plan-lint: a paths-filtered
+# workflow never reports its context on PRs that miss the filter, so the moment
+# it became required it would hang every unrelated PR on "Expected".
+
+name: PR ↔ issue (advisory)
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  issue-link:
+    uses: ./.github/workflows/pr-issue-link.yml
+    with:
+      runner: '["ubuntu-latest"]'
+      enforce: false

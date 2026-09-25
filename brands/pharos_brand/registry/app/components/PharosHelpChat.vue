@@ -53,6 +53,9 @@ export interface ChatHealth {
   upstream: boolean
 }
 
+/** Las seis situaciones de error que el panel sabe nombrar. */
+type ClaveDeError = 'limite' | 'sesion' | 'permiso' | 'invalido' | 'fallo' | 'caido'
+
 const props = withDefaults(defineProps<{
   /** App-owned transport to the chat endpoint (Bearer / 401 bounce stay app-side). */
   send: (payload: { message: string; history: ChatMessage[] }) => Promise<ChatReply>
@@ -95,6 +98,60 @@ const props = withDefaults(defineProps<{
   probe?: () => Promise<ChatHealth>
   /** Render corpus citations on grounded replies (chat-contract CH5). */
   citations?: boolean
+  /** El PAPEL del asistente, bajo el nombre («Asistente virtual»). Vacío = no se pinta.
+   *
+   *  🔴 Existe porque el encabezado es `assistantName || title`, así que una app que
+   *  pasa las dos cosas —nombre propio Y papel— **pierde el papel en silencio**. Medido
+   *  en `lch-web` el 2026-09-19: la app pasaba `assistant-name="Sol"` y
+   *  `:title="$t('sol.papel')"`, el panel decía «Sol» a secas, y el canon §4.1 («nunca
+   *  finge ser humana») quedaba delegado a que el paciente preguntara.
+   *
+   *  ⚠️ Se llama `assistantRole` y no `role` a propósito: `role` es un atributo ARIA, y
+   *  declararlo como prop se lo robaría al `fallthrough`. */
+  assistantRole?: string
+  /** Encabezado del aviso de «sin datos de pacientes». Por defecto, el de siempre. */
+  privacyTitle?: string
+  /** Cuerpo del aviso. Por defecto, el de siempre.
+   *
+   *  🔑 Es un prop y no una constante porque **el trato cambia por superficie**: Nerea
+   *  trata de usted (`NEREA.md` §3) y Sol tutea (`SOL.md` §6, fallo del 2026-09-08). Un
+   *  texto cableado obliga a una de las dos a hablar como la otra. Y «cómo funciona la
+   *  aplicación» es vocabulario de personal: en `lch.co` no hay ninguna aplicación, hay
+   *  un laboratorio, y quien pregunta ES el paciente. */
+  privacyBody?: string
+  /** Saludo exacto del panel. Vacío = el compuesto de siempre.
+   *
+   *  🔴 **Vuelve del fork, no nace acá** (2026-09-20). Este prop se escribió en las
+   *  copias vendorizadas de `lch-citas` y `lch-web` y nunca subió. Medido ese día: el
+   *  canon era superconjunto en tres props y SUBCONJUNTO en éste, así que un
+   *  `sync-pharos-registry.sh` sobre cualquiera de las dos apps **les borraba el
+   *  saludo** — las dos pasan `:greeting`. Un registry que no es superconjunto
+   *  convierte su propia herramienta de sincronización en una regresión.
+   *
+   *  🔑 Existe porque `SOL.md` §7 lo pide por su nombre: el saludo compuesto «no admite
+   *  el matiz del portafolio: es una cadena fija». Las personas del registry fijan
+   *  micro-copys al carácter —Sol dice «¿En qué te PUEDO ayudar?»— y sin este prop la
+   *  única forma de honrarlos era bifurcar el widget, que es justo lo que pasó.
+   *
+   *  ⚠️ Es ADITIVO: sin el prop el texto es byte por byte el de antes, así que Nerea y
+   *  Admisiones no se enteran. */
+  greeting?: string
+  /** Los textos de error del panel, por si el trato de la app no es el del canon.
+   *  Se mezcla con los de abajo: lo que no se pase, se queda como está.
+   *
+   *  🔴 **Existe porque el trato NO es una preferencia de estilo: es canon de la
+   *  asistente.** Nerea trata de usted (`NEREA.md` §3) y Sol tutea (`SOL.md` §6). Estos
+   *  seis textos estaban cableados en usted, así que en `lch.co` un paciente leía «Intente
+   *  más tarde» y «Solicítelo a su administrador» — que además es vocabulario de personal:
+   *  un paciente no tiene administrador.
+   *
+   *  🪤 **Y el `detail` del servidor NO alcanzaba a taparlo.** Sólo se lee en 4xx
+   *  (`code >= 400 && code < 500`), y el camino más probable de una asistente apagada o
+   *  con el proxy caído es **503** — justo donde no hay nada que pise el texto cableado.
+   *
+   *  ⚠️ Es ADITIVO: sin el prop, los seis textos son byte por byte los de antes, así que
+   *  Nerea y Admisiones no se enteran. */
+  errorCopy?: Partial<Record<ClaveDeError, string>>
 }>(), {
   brandName: 'Pháros',
   title: 'Asistente de ayuda',
@@ -109,6 +166,11 @@ const props = withDefaults(defineProps<{
   statusLine: false,
   probe: undefined,
   citations: true,
+  assistantRole: '',
+  privacyTitle: 'Sin datos de pacientes.',
+  privacyBody: 'No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la aplicación.',
+  greeting: '',
+  errorCopy: () => ({}),
 })
 
 // A TS literal union is erased at runtime — Vue does not validate it — so an app passing a typo
@@ -125,9 +187,29 @@ const isModal = computed(() => formMode.value === 'sheet')
 /** Panel heading: the assistant's name when it has one, else the generic title. */
 const heading = computed(() => props.assistantName || props.title)
 /** Greeting: the canonical micro-copy (NEREA.md §7) when named, else the brand fallback. */
-const greeting = computed(() => props.assistantName
-  ? `Hola, soy ${props.assistantName}. ¿En qué te ayudo?`
-  : `Hola, soy la asistente de ${props.brandName}. ¿En qué te ayudo?`)
+/** Los textos de error por defecto. En USTED a propósito: el consumidor histórico del
+ *  registry es Nerea, que trata de usted. Una app cuya asistente tutea los sobreescribe
+ *  con `errorCopy` — ver el docblock del prop. */
+const ERROR_POR_DEFECTO = {
+  limite: 'Ha alcanzado el límite de consultas. Intente más tarde.',
+  sesion: 'Su sesión expiró. Vuelva a iniciar sesión.',
+  permiso: 'No tiene permiso para usar el asistente. Solicítelo a su administrador.',
+  invalido: 'No pude procesar ese mensaje. Intente reformularlo.',
+  fallo: 'El asistente falló al responder. Intente más tarde.',
+  caido: 'Asistente no disponible. Intente más tarde.',
+} as const
+
+/** Un texto de error: el de la app si lo pasó, si no el del canon.
+ *  🪤 `||` y no `??`: una cadena VACÍA en `errorCopy` es un descuido, no una decisión de
+ *  dejar al usuario sin mensaje. Con `??` el panel mostraría un error en blanco. */
+function textoDeError(clave: ClaveDeError): string {
+  return props.errorCopy?.[clave] || ERROR_POR_DEFECTO[clave]
+}
+
+const greeting = computed(() => props.greeting
+  || (props.assistantName
+    ? `Hola, soy ${props.assistantName}. ¿En qué te ayudo?`
+    : `Hola, soy la asistente de ${props.brandName}. ¿En qué te ayudo?`))
 
 const isOpen = ref(false)
 const input = ref('')
@@ -420,7 +502,12 @@ function navigateHistory(dir: -1 | 1, ta: HTMLTextAreaElement) {
     }
     if (historyCursor < 0) historyCursor = 0
   }
-  input.value = inputHistory.value[historyCursor]
+  // 🪤 **`?? ''` no es defensivo por gusto: las apps typechequean con
+  // `noUncheckedIndexedAccess`, que tipa un índice de arreglo como `T | undefined`.
+  // Sin él, asignar a un `Ref<string>` no compila y el build falla. En dev no se veía
+  // —Vite no typechequea—; lo cazó CI en `lch-web`. Vive acá desde el 2026-09-20: era
+  // la segunda cosa que el canon NO tenía y sus consumidores sí.
+  input.value = inputHistory.value[historyCursor] ?? ''
   restoreCaretEnd(ta)
 }
 
@@ -441,6 +528,37 @@ async function submit(textOverride?: string) {
   loading.value = true
   await nextTick()
   scrollToBottom()
+/** El mensaje que el backend de la app escribió para esta persona, si escribió uno.
+ *
+ * 🔴 **El widget estaba tirando un texto mejor que el suyo.** Ante un 429, el backend de
+ * Sol responde «Has hecho muchas preguntas seguidas. Intenta más tarde, o llama al
+ * 604 444 42 00» —con el tuteo de su canon y con el teléfono— y el widget lo reemplazaba
+ * por «Ha alcanzado el límite de consultas. Intente más tarde.»: en usted, sin salida, y
+ * escrito por alguien que no conoce a esa persona. Medido el 2026-09-19.
+ *
+ * 🔑 El backend de cada app sabe a quién le habla; el widget no. Así que cuando el
+ * servidor manda copy, gana el servidor — y el texto cableado se queda como respaldo para
+ * las apps que no mandan ninguno. Ni un prop nuevo por cada código.
+ *
+ * ⚠️ **Sólo para 4xx.** El cuerpo de un 5xx puede traer una traza o un mensaje de
+ * framework; ahí el texto cableado es lo correcto y no se toca.
+ * ⚠️ Y se pinta con `{{ }}`, que Vue escapa. Nunca con `v-html`.
+ */
+const TOPE_MENSAJE_DEL_SERVIDOR = 300
+function mensajeDelServidor(err: unknown): string {
+  const e = err as {
+    data?: { detail?: unknown; message?: unknown }
+    response?: { _data?: { detail?: unknown; message?: unknown } }
+  }
+  const crudo = e?.data?.detail ?? e?.data?.message
+    ?? e?.response?._data?.detail ?? e?.response?._data?.message
+  if (typeof crudo !== 'string') return ''
+  const limpio = crudo.trim()
+  // Un cuerpo que empieza por `<` o `{` es HTML o JSON crudo, no copy para una persona.
+  if (!limpio || limpio.length > TOPE_MENSAJE_DEL_SERVIDOR || /^[<{[]/.test(limpio)) return ''
+  return limpio
+}
+
 
   try {
     let resp: ChatReply
@@ -492,29 +610,30 @@ async function submit(textOverride?: string) {
   } catch (err: unknown) {
     const code = (err as { status?: number; statusCode?: number }).status
       ?? (err as { status?: number; statusCode?: number }).statusCode
+    const delServidor = code && code >= 400 && code < 500 ? mensajeDelServidor(err) : ''
     if (code === 429) {
-      errorText.value = 'Ha alcanzado el límite de consultas. Intente más tarde.'
+      errorText.value = delServidor || textoDeError('limite')
       status.value = 'limitado'
     } else if (code === 401) {
       // La app dueña del transporte rebota a SSO; aquí solo se dice la verdad mientras tanto.
-      errorText.value = 'Su sesión expiró. Vuelva a iniciar sesión.'
+      errorText.value = delServidor || textoDeError('sesion')
       status.value = 'desconocido'
     } else if (code === 403) {
-      errorText.value = 'No tiene permiso para usar el asistente. Solicítelo a su administrador.'
+      errorText.value = delServidor || textoDeError('permiso')
       status.value = 'sin-permiso'
     } else if (code === 422) {
       // Survived the retry above, so it is this MESSAGE, not the history. The assistant
       // is fine — say so, and deliberately leave `status` alone (see below).
-      errorText.value = 'No pude procesar ese mensaje. Intente reformularlo.'
+      errorText.value = delServidor || textoDeError('invalido')
     } else if (code && code >= 500 && code !== 503) {
       // A 500 is a bug in the app's own chat route, not a statement about whether the
       // assistant is reachable. Reporting «no disponible» here sends the user to wait for
       // an outage that is not happening, and — worse — overwrites a probe result that
       // measured the real thing.
-      errorText.value = 'El asistente falló al responder. Intente más tarde.'
+      errorText.value = textoDeError('fallo')
     } else {
       // 503 / network / unknown: genuinely unreachable.
-      errorText.value = 'Asistente no disponible. Intente más tarde.'
+      errorText.value = textoDeError('caido')
       status.value = 'no-disponible'
     }
     // Only refresh the probe clock when the failure actually MEASURED availability.
@@ -629,6 +748,11 @@ function onKeydown(e: KeyboardEvent) {
         </span>
         <div class="pharos-chat-identity">
           <h3>{{ heading }}</h3>
+          <!-- El PAPEL, bajo el nombre. Sólo si la app lo pasa: sin él, el encabezado
+               es exactamente el de siempre. Va como `<p>` y no dentro del `<h3>` para
+               que un lector de pantalla anuncie el nombre como título y el papel como
+               texto, que es lo que son. -->
+          <p v-if="assistantRole" class="pharos-chat-role">{{ assistantRole }}</p>
           <p v-if="statusLine" class="pharos-chat-status" :class="`is-${status}`" role="status">
             <svg
               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -758,9 +882,8 @@ function onKeydown(e: KeyboardEvent) {
               <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             </svg>
             <span>
-              <strong>Sin datos de pacientes.</strong>
-              No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la
-              aplicación.
+              <strong>{{ privacyTitle }}</strong>
+              {{ privacyBody }}
             </span>
           </p>
           <div v-if="starters.length" class="pharos-chat-starters">
@@ -867,13 +990,13 @@ function onKeydown(e: KeyboardEvent) {
            mensaje — justo cuando la persona empieza a escribir con confianza — así que la
            regla vive también aquí, junto al cuadro de texto, durante toda la conversación.
            Compacto a propósito: tiene que poder ignorarse sin estorbar, pero estar. -->
-      <p class="pharos-chat-phi-reminder" title="No escriba nombres, documentos ni resultados de pacientes en el chat.">
+      <p class="pharos-chat-phi-reminder" :title="privacyBody">
         <svg
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
         </svg>
-        Sin datos de pacientes
+        {{ privacyTitle.replace(/\.$/, '') }}
       </p>
 
       <footer class="pharos-chat-input-row">
@@ -925,9 +1048,18 @@ function onKeydown(e: KeyboardEvent) {
   display: contents;
 }
 
+/* 🔑 Tamaños del avatar AJUSTABLES por variable, con el valor de siempre como default.
+   Existen porque una sola prop (`avatarBg`) gobierna los DOS lugares —el botón flotante y
+   la cabecera del panel— y una app puede querer disco en uno y glifo suelto en el otro
+   (lch-web / Sol, 2026-09-21). Una app que no declara nada se ve exactamente igual.
+     --pharos-chat-launcher-size   diámetro del botón flotante            (52px)
+     --pharos-chat-launcher-glyph  glifo dentro del botón con disco       (22px)
+     --pharos-chat-avatar-plate    fondo del círculo de la cabecera       (tinte del primary)
+     --pharos-chat-avatar-size     diámetro de ese círculo                (30px)
+     --pharos-chat-avatar-glyph    glifo de la cabecera                   (18px) */
 .pharos-chat-launcher {
-  width: 52px;
-  height: 52px;
+  width: var(--pharos-chat-launcher-size, 52px);
+  height: var(--pharos-chat-launcher-size, 52px);
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--primary);
@@ -943,7 +1075,10 @@ function onKeydown(e: KeyboardEvent) {
   transform: translateY(-1px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
-.pharos-chat-launcher svg { width: 22px; height: 22px; }
+.pharos-chat-launcher svg {
+  width: var(--pharos-chat-launcher-glyph, 22px);
+  height: var(--pharos-chat-launcher-glyph, 22px);
+}
 /* Bare glyph: no chip, the mark itself IS the launcher (accent-coloured, no plate). */
 .pharos-chat-launcher.bg-solo {
   width: 56px;
@@ -1112,6 +1247,17 @@ function onKeydown(e: KeyboardEvent) {
   display: flex;
   flex-direction: column;
 }
+/* El PAPEL, bajo el nombre. Mismo peso visual que la línea de estado: es contexto,
+   no título — quien ya sabe con qué habla no tiene que leerlo dos veces. */
+.pharos-chat-role {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .pharos-chat-status {
   margin: 0;
   display: inline-flex;
@@ -1134,12 +1280,15 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--primary);
 }
 .pharos-chat-avatar.bg-circulo {
-  width: 30px;
-  height: 30px;
+  width: var(--pharos-chat-avatar-size, 30px);
+  height: var(--pharos-chat-avatar-size, 30px);
   border-radius: 999px;
-  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  background: var(--pharos-chat-avatar-plate, color-mix(in oklab, var(--primary) 12%, transparent));
 }
-.pharos-chat-avatar svg { width: 18px; height: 18px; }
+.pharos-chat-avatar svg {
+  width: var(--pharos-chat-avatar-glyph, 18px);
+  height: var(--pharos-chat-avatar-glyph, 18px);
+}
 .pharos-chat-avatar.bg-solo svg { width: 22px; height: 22px; }
 
 .pharos-chat-header-actions {
