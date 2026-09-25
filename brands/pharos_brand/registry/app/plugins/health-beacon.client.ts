@@ -13,8 +13,19 @@
 //     e.g. behind a shared reverse proxy that only forwards a versioned path
 //     (admission-patient: the proxy forwards `…/queue/api/v1/health`, not the
 //     unversioned `…/queue/api/health`, which 404s + spams CORS).
-//   • Otherwise the default is the app's own backend liveness at `apiBase/health`.
-//   • If neither is configured, the beacon stays quiet (no errant fetch).
+//   • Otherwise, an app that declares `public.ownBackend: true` gets its liveness
+//     DERIVED from where the app is mounted: `app.baseURL` + `api/health`.
+//   • If none of those apply, the beacon stays quiet (no errant fetch).
+//
+// 🔴 POR QUÉ LA DERIVADA, y por qué `apiBase` dejó de ser la fuente por defecto
+// (2026-09-25, medido en lab-qc). `runtimeConfig.public.<clave>` la sobreescribe
+// `NUXT_PUBLIC_<CLAVE>` **al arrancar**, sobre cualquier valor que la app calcule en
+// su `nuxt.config`. En lab-qc eso mandaba al navegador una URL ABSOLUTA del backend,
+// y la app entera quedaba en blanco sin un solo error visible. Tres arreglos
+// sucesivos fallaron porque todos seguían apoyados en una clave sobreescribible.
+// `app.baseURL` no tiene ese problema: es lo que sostiene los assets, así que si
+// estuviera mal la app falla RUIDOSAMENTE. Y una ruta unida a otra ruta no puede
+// volverse absoluta.
 // Reads are cast through the public-config bag so apps need only declare the
 // key(s) they actually use (not every app has `apiBase`, nor `healthBeaconUrl`).
 export default defineNuxtPlugin(() => {
@@ -22,7 +33,11 @@ export default defineNuxtPlugin(() => {
   const pub = config.public as Record<string, unknown>
   const explicit = String(pub.healthBeaconUrl ?? '')
   const apiBase = String(pub.apiBase ?? '')
-  const url = explicit || (apiBase ? `${apiBase}/health` : '')
+  // La derivada: donde vive la app, más `api/health`. `app.baseURL` siempre termina en `/`.
+  const derivada = pub.ownBackend === true
+    ? `${String(config.app?.baseURL ?? '/').replace(/\/+$/, '')}/api/health`
+    : ''
+  const url = explicit || derivada || (apiBase ? `${apiBase}/health` : '')
   if (!url) return
   startHealthBeacon(url)
 })
