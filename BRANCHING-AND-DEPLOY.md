@@ -124,13 +124,34 @@ applies automatically (GitHub falls back to the `.github` repo's
 template for any repo without its own — so docs/meta repos don't need
 their own copy). Required sections (template-enforced):
 
-- **Why** — what problem this solves; link the plan / issue if any.
+- **Why** — what problem this solves, and **which issue it closes**
+  (`Closes #N` on its own line — see [PR ↔ issue](#pr--issue)).
 - **What changed** — short paragraph; readers should not have to read
   the diff to understand the shape of the change.
 - **Test plan** — what was verified, and how. Include test names,
   manual-verification steps, or screenshots.
 - **Rollout / rollback notes** — if it affects deploys (env vars,
   migrations, feature flags).
+
+### PR ↔ issue
+
+Every PR says which issue it closes: `Closes #N` in the description, or
+`Closes owner/repo#N` when the issue lives in another repo (GitHub resolves
+both, and links the sidebar "Development" field). If nobody asked for the
+work **on purpose**, put the `sin-issue` label on the PR instead.
+
+Why it matters: the link is the only machine-readable answer to *who asked
+for this*. The reusable check
+[`pr-issue-link.yml`](.github/workflows/pr-issue-link.yml) reads it and, for
+each linked issue, reports whether it was opened by someone else (**demand**)
+or by the PR's own author (**self-generated**). In 2026-Q3 zero of 3,508
+merged PRs carried that link, so unrequested work could only be inferred by
+absence.
+
+Exempt without a link: bot PRs and promotion PRs (`develop` → `main`,
+`release…`). The check ships **advisory** (`enforce: false`: it annotates,
+never blocks); making it required is a separate, per-repo decision taken
+after adoption is measured.
 
 ### Reviewers
 
@@ -473,6 +494,48 @@ collections layout documented in
 [ENGINEERING_STANDARDS.md §"Secret management"](ENGINEERING_STANDARDS.md#-secret-management).
 Never hand-edit GitHub Secrets in the UI — Bitwarden is the source of
 truth.
+
+### 🔴 A `PROD_*` secret read without `environment:` is NOT production's
+
+**Measured 2026-09-19, after a deploy landed on the wrong machine.**
+
+The same secret name can exist at **two levels with different values** — at the
+organisation, and inside a repo's `production` environment. GitHub resolves
+**environment → repository → organisation**, so the environment's value shadows
+the organisation's — **but only for a job that declares `environment:`**.
+
+```yaml
+jobs:
+  configure:                      # ⚠️ no `environment:` — sees the ORG value
+    runs-on: self-hosted
+    steps:
+      - run: echo "${{ secrets.PROD_HOST }}"   # NOT production's host
+
+  deploy:
+    environment: production       # ✅ sees the environment's value
+```
+
+⚠️ **This does not fail in a way that points at the cause.** The job connects,
+authenticates and deploys — to a different machine. The run that exposed this
+died much later, on a missing external docker network, which looks nothing like
+a wrong-host problem.
+
+**Two rules follow.**
+
+1. **Any job that reads a deployment secret declares `environment:`.** This is the
+   same rule already stated for *variables* elsewhere in this document; it applies
+   to secrets for exactly the same reason, and the failure is quieter.
+2. **A new environment needs its OWN secrets. There is no inheritance between
+   environments.** A job running under `environment: staging` cannot see
+   `production`'s secrets — it silently falls through to the organisation's. An
+   environment that tries to *borrow* another's credentials gets the org value and
+   deploys somewhere nobody intended.
+
+💡 **Verify by measuring the target, never by reading the secret** (you cannot read
+it back anyway). Compare something cheap and host-specific — the container count,
+the set of docker networks — between the machine you meant and the one the run
+actually reported. Two hosts in this estate differ by more than 2× in container
+count, which is what identified the wrong one.
 
 ### CI escalation
 

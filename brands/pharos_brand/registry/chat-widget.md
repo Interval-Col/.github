@@ -14,7 +14,7 @@ slide-up chat panel. ONE definition so it can't drift across apps
 | Entry | Path | What it is |
 |---|---|---|
 | `PharosHelpChat` | `app/components/PharosHelpChat.vue` | launcher + panel; sessionStorage history, marked+DOMPurify rendering, es-CO usted copy, graceful outage/rate-limit states, corpus-source chips (CH5) |
-| `PharosChatAvatar` | `app/components/PharosChatAvatar.vue` | the assistant's mark — 11 glyphs (nautical-robot marks + plain nautical marks), all **inline SVG, zero deps** (the playground's copy imports lucide; the registry deliberately does not push an icon library onto adopters) |
+| `PharosChatAvatar` | `app/components/PharosChatAvatar.vue` | the assistant's mark — 12 glyphs (`sol` for the public assistant, nautical-robot marks + plain nautical marks), all **inline SVG, zero deps** (the playground's copy imports lucide; the registry deliberately does not push an icon library onto adopters) |
 
 **Deps (per adopting app):** `pnpm add marked dompurify` (+ `pnpm add -D @types/dompurify`).
 `marked` renders the assistant's markdown; `DOMPurify` sanitizes it before
@@ -56,6 +56,45 @@ mount renders exactly what it rendered before.
 | `statusLine` | `boolean` | `false` | **`true`** | live status under the name + a presence dot on the topbar button. **Real, not decorative** — see below |
 | `citations` | `boolean` | `true` | **`true`** | render corpus-source chips on grounded replies (CH5) |
 | `probe` | `() => Promise<ChatHealth>` | — | — | app-owned readiness probe → `GET {base}/v1/chat/health` (chat-contract **CH8**). Same ownership split as `send` |
+| `assistantRole` | `string` | `''` | — | el PAPEL, bajo el nombre («Asistente virtual»). `''` = no se pinta. ⚠️ Se llama así y no `role` porque `role` es un atributo ARIA |
+| `privacyTitle` | `string` | `'Sin datos de pacientes.'` | — | encabezado del aviso de PHI, en sus dos sitios |
+| `privacyBody` | `string` | (el de siempre, en usted) | — | cuerpo del aviso. **El trato cambia por superficie**: Nerea trata de usted, Sol tutea |
+
+> **Tamaños del avatar, por CSS y no por prop.** `avatarBg` gobierna a la vez el botón flotante y la
+> cabecera del panel. Para separar los dos, la app declara en su CSS cualquiera de estas variables;
+> sin ellas se ve igual que siempre: `--pharos-chat-launcher-size` (52px) ·
+> `--pharos-chat-launcher-glyph` (22px) · `--pharos-chat-avatar-size` (30px) ·
+> `--pharos-chat-avatar-glyph` (18px) · `--pharos-chat-avatar-plate` (tinte del `--primary`;
+> `transparent` lo quita). Primer uso: Sol en `lch-web`, 2026-09-21.
+
+### Por qué el aviso de PHI y el papel son props (2026-09-20)
+
+🔴 **El encabezado es `assistantName || title`**, así que una app que pasa las dos cosas
+—nombre propio Y papel— **pierde el papel en silencio**. Medido en `lch-web`: pasaba
+`assistant-name="Sol"` y `:title="$t('sol.papel')"`, el panel decía «Sol» a secas, y el
+canon §4.1 («nunca finge ser humana») quedaba delegado a que el paciente preguntara.
+`assistantRole` lo pinta debajo; sin él, el encabezado es exactamente el de antes.
+
+🔑 **Y el aviso de PHI estaba cableado en usted, con vocabulario de personal:** «No escriba
+nombres… Pregunte por cómo funciona **la aplicación**». Eso es correcto para Nerea
+(`NEREA.md` §3: trata de usted) y equivocado para Sol (`SOL.md` §6: tutea, fallo del
+2026-09-08) — y en `lch.co` no hay ninguna aplicación, hay un laboratorio, y quien pregunta
+**es** el paciente. Un texto cableado obliga a una de las dos a hablar como la otra.
+
+### El copy de error: gana el servidor (2026-09-20)
+
+No es un prop, es una regla. Ante un **4xx**, si el backend de la app mandó un mensaje
+(`detail` o `message`), **ese se pinta**; el texto cableado queda de respaldo para las apps
+que no mandan ninguno.
+
+🔴 El widget estaba tirando un texto mejor que el suyo: ante un 429 el backend de Sol
+responde «Has hecho muchas preguntas seguidas. Intenta más tarde, **o llama al
+604 444 42 00**» —con su tuteo y con una salida— y el widget lo reemplazaba por «Ha
+alcanzado el límite de consultas. Intente más tarde.»
+
+⚠️ **Sólo 4xx.** El cuerpo de un 5xx puede traer una traza o un mensaje de framework; ahí el
+texto cableado es lo correcto. El mensaje se recorta a 300 caracteres, se descarta si empieza
+por `<`, `{` o `[`, y se pinta con `{{ }}`, que Vue escapa.
 
 ### The status indicator (`statusLine` + `probe`)
 

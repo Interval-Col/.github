@@ -28,7 +28,15 @@ const emit = defineEmits<{ 'sign-out': [], profile: [], preferences: [] }>()
 
 const { state } = useSidebar()
 const showText = computed(() => props.variant === 'navbar' || state.value === 'expanded')
-const menuAlign = computed(() => (props.variant === 'navbar' ? 'end' : 'end'))
+// `align` de PopoverContent pide una unión literal (`'start' | 'center' | 'end'`), y un
+// `computed` sin anotar infiere `string`. Sin la anotación, TODA app que sincronice este
+// componente arrastra un error de tipo — medido en lab-qc el 2026-09-20.
+//
+// ⚠️ Los dos brazos del ternario dan 'end'. Se deja tal cual A PROPÓSITO: parece un ternario
+// a medio diferenciar, y no es de este arreglo adivinar qué debía valer cada rama. Colapsarlo
+// borraría la señal de que alguien quiso distinguir las dos variantes.
+const menuAlign = computed<'start' | 'center' | 'end'>(() =>
+  props.variant === 'navbar' ? 'end' : 'end')
 const dotClass = computed(() => ({ ok: 'bg-status-success', drift: 'bg-status-warning', out: 'bg-status-error' }[props.status]))
 </script>
 
