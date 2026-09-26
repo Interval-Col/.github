@@ -88,17 +88,37 @@ export function startHealthBeacon(
         set('drift') // reachable but unhealthy → degraded, not alarmist
         return
       }
+      // 🔴 EL LATIDO SÓLO DICE «SANO» SI EL BACKEND LO DICE — corregido el 2026-09-25.
+      //
+      // Antes, un 2xx que no fuera JSON se leía como salud (`non-JSON 2xx = up`). Medido en
+      // producción y en devapps: `/health` en la raíz del origen devuelve **302 → HTML** del
+      // portal de SSO, o sea que una URL mal resuelta pintaba el tablero en VERDE con el
+      // backend caído. La ausencia de información se estaba leyendo como buena noticia.
+      //
+      // 🔑 La regla, que es la misma que ya gobierna `can()`: un indicador de seguridad
+      // **falla cerrado**. «Sano» exige una afirmación positiva del backend; todo lo demás
+      // —redirección, HTML, JSON sin `status`, cuerpo ilegible— es `drift`, que es lo que
+      // significa de verdad «no sé si esto está bien».
+      if (res.redirected) {
+        // Un endpoint de liveness no redirige jamás. Si redirigió, quien contestó es otro.
+        set('drift')
+        return
+      }
       let body: unknown = null
       try {
         body = await res.json()
       } catch {
-        /* non-JSON 2xx = up */
+        // No contestó JSON ⇒ no contestó. No es salud: es que no sabemos.
+        set('drift')
+        return
       }
       const record = body && typeof body === 'object' ? (body as Record<string, unknown>) : null
-      set(
-        record && 'status' in record ? normalizeStatus(record.status) : 'ok',
-        record ? parseSubsystems(record.subsystems) : [],
-      )
+      if (!record || !('status' in record)) {
+        // JSON sin `status` no cumple el contrato de liveness. Tampoco es una afirmación.
+        set('drift')
+        return
+      }
+      set(normalizeStatus(record.status), parseSubsystems(record.subsystems))
     } catch {
       set('drift') // unreachable / timeout → degraded; never crash the shell
     } finally {
