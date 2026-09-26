@@ -364,6 +364,39 @@ lookup is allowed to use costs minutes and catches exactly this class.
 
 ---
 
+## 🟢 A green signal has to be ASSERTED — never inferred from the absence of a red one
+
+Three defects landed in one week in September 2026, in three unrelated parts of the estate.
+They looked like three bugs. They were one:
+
+| What was green | What it actually proved |
+|---|---|
+| The shared health beacon read **any `2xx`** as healthy | A `302` to an HTML login page was being counted as health (`.github#241`) |
+| The `same-origin` CI gate verified a **function** returned the right base URL | Nothing about whether the running system used it — an env var overrode it in production and the gate stayed green (`pharos-lis#491`) |
+| A feature declared `parentId` in the type; readiness gates passed | The gestures never implemented it: one arrow click left the data on the floor, still green (`pharos-lis#515`) |
+
+In every case **nothing failed, and "nothing failed" was read as "it works."** That inference
+is never valid. A check that cannot distinguish *working* from *never wired* is not measuring
+the thing it is named after.
+
+1. **Name the positive fact, then assert that fact.** Not "the request didn't throw" —
+   *the body parsed as JSON and carries `status`*. Not "the helper returns `/lab-qc/api`" —
+   *the client the app actually constructs points at its own origin*.
+2. **Fail closed.** When the evidence is missing, absent or unreadable, the verdict is
+   **not healthy / drifted / unverified** — never the benign one. The benign verdict is the
+   expensive one to get wrong, because nobody investigates it.
+3. **A check must be able to fail.** Before trusting a new gate, break the thing it guards
+   and watch it go red. If it can't, it is decoration. One mutation, once, at the end.
+4. **Declaring a capability is not implementing it.** A field in a type, a flag in a config
+   or a row in a table asserts nothing about behaviour. The assertion is a test that exercises
+   the behaviour and fails without it.
+
+⚠️ The same applies to reporting. "CI passed" is a claim about a run, not about the change;
+say which checks, on which commit, and say plainly what was **not** exercised. A report that
+lists only green ticks hides exactly the part a reader needs.
+
+---
+
 ## 🔬 Marking a view as «en verificación» (Pháros apps)
 
 A Pháros view that is **deployed but not yet released** under `PROT-SW-001` looks
