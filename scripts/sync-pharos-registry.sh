@@ -161,7 +161,16 @@ SCAFFOLD_SKIP_RELPATHS=(
   "components/AppLogo.vue"
   "layouts/default.vue"
   "navigation/menu.example.ts"
-  "plugins/health-beacon.client.ts"
+  # 🔴 `plugins/health-beacon.client.ts` SALIÓ de esta lista el 2026-09-25.
+  #
+  # Estaba marcado como andamiaje propio de la app, así que el script lo SALTABA en toda
+  # sincronización. Consecuencia medida: ninguna app recibió nunca un cambio del latido, su
+  # copia quedó desviada en silencio, y como el manifiesto se genera de lo que se sincroniza,
+  # tampoco entraba ahí ⇒ `check-registry-drift` era ciego a ella.
+  #
+  # Lo destapó un arreglo que dependía de que el latido llegara: se mergeó en el registry y
+  # nunca aterrizó en la app. No es andamiaje —no lo adapta nadie, es la misma lógica en
+  # todas— así que se distribuye como cualquier otro archivo del registry.
 )
 KEEP_MARKER="pharos-registry:keep"
 
