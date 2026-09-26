@@ -155,23 +155,25 @@ fi
 #                 with `pharos-registry:keep`. Preserved (not overwritten),
 #                 excluded from the manifest — the documented escape hatch (e.g.
 #                 finance-lch's denser SearchableSelect anchor).
-SCAFFOLD_SKIP_RELPATHS=(
-  "components/ui/entity-lookup/PatientLookup.vue"
-  "components/ui/entity-lookup/PhysicianLookup.vue"
-  "components/AppLogo.vue"
-  "layouts/default.vue"
-  "navigation/menu.example.ts"
-  # 🔴 `plugins/health-beacon.client.ts` SALIÓ de esta lista el 2026-09-25.
-  #
-  # Estaba marcado como andamiaje propio de la app, así que el script lo SALTABA en toda
-  # sincronización. Consecuencia medida: ninguna app recibió nunca un cambio del latido, su
-  # copia quedó desviada en silencio, y como el manifiesto se genera de lo que se sincroniza,
-  # tampoco entraba ahí ⇒ `check-registry-drift` era ciego a ella.
-  #
-  # Lo destapó un arreglo que dependía de que el latido llegara: se mergeó en el registry y
-  # nunca aterrizó en la app. No es andamiaje —no lo adapta nadie, es la misma lógica en
-  # todas— así que se distribuye como cualquier otro archivo del registry.
-)
+# 🔴 LA LISTA VIVE EN `registry/scaffold.txt`, NO ACÁ, y eso no es organización: la leen DOS
+# programas —este script y `registry/scripts/check-registry-fresh.mjs`, que desde 2026-09-26
+# falla si un archivo adoptado no tiene entrada en el manifiesto—. Escrita dos veces, la
+# primera divergencia entre las copias reabre el hueco que el portón existe para cerrar.
+SCAFFOLD_LIST_FILE="$REGISTRY_DIR/scaffold.txt"
+SCAFFOLD_SKIP_RELPATHS=()
+if [[ -f "$SCAFFOLD_LIST_FILE" ]]; then
+  while IFS= read -r line; do
+    line="${line%%$'\r'}"
+    [[ -z "${line// }" || "${line#"${line%%[![:space:]]*}"}" == \#* ]] && continue
+    SCAFFOLD_SKIP_RELPATHS+=("$line")
+  done < "$SCAFFOLD_LIST_FILE"
+else
+  # Fallar cerrado: sin la lista no se puede distinguir andamiaje de archivo normal, y
+  # adivinar sobrescribiría el logo o el layout de la app.
+  echo "ERROR: falta $SCAFFOLD_LIST_FILE — sin la lista de andamiaje no se sincroniza." >&2
+  exit 2
+fi
+
 KEEP_MARKER="pharos-registry:keep"
 
 is_scaffold() {

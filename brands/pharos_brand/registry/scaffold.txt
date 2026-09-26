@@ -1,0 +1,35 @@
+# LOS ARCHIVOS «ANDAMIAJE» DEL REGISTRY — la lista, en UN solo sitio.
+#
+# Un archivo de andamiaje se entrega una vez y después es de la app: se copia si no existe,
+# NUNCA se sobrescribe, y NO entra al manifiesto `pharos-registry.sha256` — porque cada app lo
+# adapta y comparar su hash contra el del registry daría un falso positivo eterno.
+#
+# 🔴 POR QUÉ ESTA LISTA VIVE ACÁ Y NO DENTRO DE UN SCRIPT. La leen DOS programas:
+# `scripts/sync-pharos-registry.sh`, que decide qué no sobrescribir, y
+# `registry/scripts/check-registry-fresh.mjs`, que decide qué ausencia del manifiesto es
+# legítima. Con la lista escrita dos veces, la primera divergencia entre ambas copias vuelve
+# a abrir exactamente el hueco que el portón existe para cerrar.
+#
+# Formato: una ruta por línea, relativa a `registry/app/`. Las líneas vacías y las que
+# empiezan por `#` se ignoran.
+#
+# ⚠️ La OTRA forma de quedar fuera del manifiesto es la marca `pharos-registry:keep` dentro
+# del archivo: una primitiva compartida que una app afinó a propósito. Esa es por archivo y
+# por app; ésta es para todas.
+
+components/ui/entity-lookup/PatientLookup.vue
+components/ui/entity-lookup/PhysicianLookup.vue
+components/AppLogo.vue
+layouts/default.vue
+navigation/menu.example.ts
+
+# 🔴 `plugins/health-beacon.client.ts` SALIÓ de esta lista el 2026-09-25.
+#
+# Estaba marcado como andamiaje propio de la app, así que el script lo SALTABA en toda
+# sincronización. Consecuencia medida: ninguna app recibió nunca un cambio del latido, su copia
+# quedó desviada en silencio, y como el manifiesto se genera de lo que se sincroniza, tampoco
+# entraba ahí ⇒ `check-registry-drift` era ciego a ella.
+#
+# Lo destapó un arreglo que dependía de que el latido llegara: se mergeó en el registry y nunca
+# aterrizó en la app. No es andamiaje —no lo adapta nadie, es la misma lógica en todas— así que
+# se distribuye como cualquier otro archivo del registry.
