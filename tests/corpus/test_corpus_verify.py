@@ -126,6 +126,14 @@ class AnswerTest(unittest.TestCase):
         ok, _ = cv.check_answer(q, "Puede pedir 5 códigos por día.", ["guias/a"])
         self.assertFalse(ok)
 
+    def test_numbers_keep_their_punctuation(self):
+        # Codex on #254: the unit or the decimals are part of the fact.
+        self.assertFalse(cv.says("5%", "El plazo es 5 minutos"))
+        self.assertFalse(cv.says("1.5", "entre 1 y 5 días"))
+        self.assertFalse(cv.says("10-15", "10 o 15 minutos"))
+        self.assertTrue(cv.says("10-15", "tarda 10-15 minutos"))
+        self.assertTrue(cv.says("5%", "sube un 5% al año"))
+
     def test_a_suffix_is_not_a_citation(self):
         self.assertFalse(cv.cites(["otras/guias/a"], "guias/a"))
 
