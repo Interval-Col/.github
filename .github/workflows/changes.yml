@@ -1,0 +1,112 @@
+# Reusable: does this change carry code, or only documentation?
+#
+# So a PR that only edits a plan does not run the backend suite, build the
+# frontend and deploy to dev. Measured 2026-09-28: pharos-llm-proxy ran `tests`
+# (~2 min) and rebuilt its image, and admission-patient built its frontend
+# (~10 min) and deployed dev, for changes that touched only `.md` files.
+#
+# The rule lives in scripts/changes_classify.py — ONE list for the whole org:
+# `*.md`, `docs/`, `plans/`, `LICENSE`. Everything else is code.
+#
+# Caller:
+#
+#   jobs:
+#     changes:
+#       uses: Interval-Col/.github/.github/workflows/changes.yml@main
+#     tests:
+#       needs: changes
+#       # 🔑 `!= 'false'`, never `== 'true'`: if `changes` itself fails its output
+#       # is empty, and an empty output must RUN the tests, not skip them.
+#       if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+#
+# 🪤 Do NOT use `paths-ignore` on a workflow that produces a REQUIRED check: a
+#    workflow that never starts leaves the check «Expected — waiting» forever and
+#    the PR cannot merge. A job skipped by `if:` reports `skipped`, which branch
+#    protection counts as passing. That is why this is a job, not a trigger filter.
+#
+# Fails OPEN everywhere: an event without a diff (workflow_dispatch,
+# repository_dispatch, schedule), a new branch, a force-push, an API error or a
+# diff over the compare API's 300-file cap all answer `code=true`.
+
+name: changes
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels (the caller's private repo pays the minutes)
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      code_regex:
+        description: paths that count as code even when they look like docs
+        type: string
+        required: false
+        default: ""
+    outputs:
+      code:
+        description: "'true' when the change carries code (or when it could not tell)"
+        value: ${{ jobs.changes.outputs.code }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changes:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .changes-org
+          sparse-checkout: scripts/changes_classify.py
+          sparse-checkout-cone-mode: false
+
+      - name: List the changed files
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -uo pipefail
+          : > files.txt
+          ok=true
+          case "$EVENT" in
+            pull_request|pull_request_target)
+              gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename' > files.txt || ok=false ;;
+            push)
+              if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+                ok=false   # new branch: no base to diff against
+              else
+                n=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '.files | length') || n=""
+                if [ -z "$n" ] || [ "$n" -ge 300 ]; then
+                  ok=false   # API error, force-push, or the 300-file compare cap
+                else
+                  gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '.files[].filename' > files.txt || ok=false
+                fi
+              fi ;;
+            *) ok=false ;;  # dispatch / schedule: no diff — run everything
+          esac
+          [ "$ok" = true ] || : > files.txt   # empty list ⇒ the classifier says code=true
+          echo "event=$EVENT files=$(wc -l < files.txt | tr -d ' ') listed=$ok"
+
+      - name: Classify
+        id: classify
+        env:
+          CODE_REGEX: ${{ inputs.code_regex }}
+        run: |
+          set -euo pipefail
+          python3 .changes-org/scripts/changes_classify.py --code-regex "$CODE_REGEX" \
+            < files.txt | tee -a "$GITHUB_OUTPUT"
+          if grep -q '^code=false' "$GITHUB_OUTPUT"; then
+            echo "::notice title=Sólo documentación::Este cambio sólo toca documentación (*.md, docs/, plans/) — los tests, el build y el despliegue se saltan."
+            { echo "### ⏭️ Sólo documentación"; echo; echo "Archivos:"; sed 's/^/- `/; s/$/`/' files.txt; } >> "$GITHUB_STEP_SUMMARY"
+          fi
