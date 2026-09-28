@@ -1,0 +1,197 @@
+# Reusable: publish a KB — build its v5 index, ship its site image, tell its
+# consumers, and wait until they say they learned it.
+#
+# Task 1.3 of pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md. Replaces
+# the three legs every KB repo carried by hand (biuman-kb, lch-kb `build-site.yml`):
+#
+#   1. build  — scripts/kb_index.py writes the v5 index from corpus-registry.yml
+#               (an unknown audience, an empty KB or a broken frontmatter fails
+#               HERE, before an image exists); the KB's Dockerfile COPIES that file.
+#   2. ship   — main only: OIDC → ECR, tags <sha> + latest.
+#   3. tell   — main only: `kb-updated` to every `wait`/`notify` consumer in the
+#               registry — no hardcoded list — and WAIT for each `wait` consumer's
+#               run to finish green (scripts/kb_dispatch.py). A 204 proves nothing.
+#
+# 🔴 Nothing here fails open. The old legs warned and moved on when the dispatch
+# token was missing or a dispatch bounced, and a month of red consumer runs went
+# unseen. A publish is green only when its consumers are.
+#
+# Caller (in the KB repo):
+#
+#   on:
+#     pull_request: { paths: ["<roots>/**", "site/**", ".github/workflows/build-site.yml"] }
+#     push: { branches: [main] }
+#   permissions: { contents: read, id-token: write }
+#   jobs:
+#     publish:
+#       uses: Interval-Col/.github/.github/workflows/kb-publish.yml@main
+#       with: { kb: biuman-kb }
+#       secrets: inherit
+#
+# Secrets (inherited): AWS_OIDC_ROLE_ARN, AWS_REGION, AWS_REGISTRY — the KB repo's,
+# as today — and the org's PHAROS_BOT_PRIVATE_KEY. Variable: org PHAROS_BOT_APP_ID.
+# ⚠️ The bot needs `actions: read` to see the consumers' runs; without it the wait
+# fails with a message naming the permission.
+#
+# Runner: self-hosted (the KB repos are private and the org has a $0 Actions
+# limit). The wait job holds one runner while consumers deploy — ~15 min for a
+# dev deploy — which is why every consumer is dispatched first and waited on
+# together, not one after another.
+
+name: kb-publish
+
+on:
+  workflow_call:
+    inputs:
+      kb:
+        description: the KB id in corpus-registry.yml
+        type: string
+        required: true
+      index_path:
+        description: where the index is written, repo-relative — the Dockerfile COPIES it
+        type: string
+        required: false
+        default: site/kb-index.json
+      dockerfile:
+        type: string
+        required: false
+        default: site/Dockerfile
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      wait_timeout_minutes:
+        type: number
+        required: false
+        default: 45
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .corpus-org
+
+      - name: Build the v5 index (fails on unknown audiences, empty KB, bad frontmatter)
+        env:
+          GIT_SHA: ${{ github.sha }}
+          KB: ${{ inputs.kb }}
+          INDEX: ${{ inputs.index_path }}
+        run: |
+          set -euo pipefail
+          python3 .corpus-org/scripts/kb_index.py --kb "$KB" --root . --out "$INDEX" \
+            --registry .corpus-org/corpus-registry.yml
+
+      - id: meta
+        run: echo "image=${{ inputs.kb }}-site" >> "$GITHUB_OUTPUT"
+
+      - name: Build the site image
+        run: |
+          docker build -f "${{ inputs.dockerfile }}" --build-arg GIT_SHA="${{ github.sha }}" \
+            -t "${{ steps.meta.outputs.image }}:${{ github.sha }}" .
+
+      # The image must serve THIS index: v5, this commit, the same article count.
+      # An image that still builds its own old index would pass a plain 200.
+      - name: Smoke-test the image serves this index
+        env:
+          IMG: ${{ steps.meta.outputs.image }}:${{ github.sha }}
+          NAME: kb-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          INDEX: ${{ inputs.index_path }}
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name "$NAME" "$IMG" >/dev/null
+          trap 'docker stop "$NAME" >/dev/null' EXIT
+          for _ in $(seq 1 10); do
+            docker exec "$NAME" wget -q -O /tmp/served.json http://127.0.0.1/kb-index.json && break
+            sleep 1
+          done
+          docker cp "$NAME:/tmp/served.json" served.json
+          python3 - "$INDEX" served.json <<'PY'
+          import json, sys
+          built, served = (json.load(open(p)) for p in sys.argv[1:3])
+          problems = [
+              f"{k}: built {built.get(k)!r}, served {served.get(k)!r}"
+              for k in ("version", "kb", "source_commit", "article_count")
+              if built.get(k) != served.get(k)
+          ]
+          if problems:
+              sys.exit("the image does not serve the index this job built:\n  " + "\n  ".join(problems))
+          print(f"image serves v{served['version']} of {served['kb']}: {served['article_count']} articles")
+          PY
+
+      - name: Configure AWS credentials (OIDC) (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Push to ECR (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          REG: ${{ secrets.AWS_REGISTRY }}
+          IMG: ${{ steps.meta.outputs.image }}
+        run: |
+          set -euo pipefail
+          aws ecr get-login-password --region "${{ secrets.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "$REG"
+          for tag in "${{ github.sha }}" latest; do
+            docker tag "$IMG:${{ github.sha }}" "$REG/$IMG:$tag"
+            docker push "$REG/$IMG:$tag"
+          done
+
+  tell-consumers:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .corpus-org
+
+      - name: Who consumes this KB (from the registry)
+        id: who
+        env:
+          KB: ${{ inputs.kb }}
+        run: |
+          set -euo pipefail
+          repos=$(python3 .corpus-org/scripts/corpus_registry.py consumers --kb "$KB" --field repo \
+                  | sort -u | paste -sd, -)
+          echo "repos=$repos" >> "$GITHUB_OUTPUT"
+          echo "consumers of $KB: ${repos:-none}"
+
+      # NOT continue-on-error: a token that cannot be minted means nobody is told,
+      # and that must be red. (It used to warn and exit 0.)
+      - name: Mint the org bot token
+        id: token
+        if: steps.who.outputs.repos != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.PHAROS_BOT_APP_ID }}
+          private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.who.outputs.repos }}
+
+      - name: Dispatch kb-updated and wait for every consumer's verdict
+        if: steps.who.outputs.repos != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          KB: ${{ inputs.kb }}
+          TIMEOUT: ${{ inputs.wait_timeout_minutes }}
+        run: |
+          python3 .corpus-org/scripts/kb_dispatch.py --kb "$KB" --sha "${{ github.sha }}" \
+            --owner "${{ github.repository_owner }}" --timeout-minutes "$TIMEOUT" \
+            --registry .corpus-org/corpus-registry.yml

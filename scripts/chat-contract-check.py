@@ -17,6 +17,10 @@ app's in-app AI chat feature, driven by the app's own `.chat-contract.yml` manif
       `sol`), a synced <name>_persona.py exists in a chat_dir, matches the registry
       canon byte-for-byte (when that checkout is reachable), and SYSTEM_PROMPT
       composes from <NAME>_PERSONA
+  H10 readiness route — `/health`, un-gated, reporting enabled/allowed/upstream
+  H11 corpus contract — a `rag: on` chat names its `corpus_app` in corpus-registry.yml,
+      calls the reusable corpus-verify.yml, and ships the `ask_module` it answers
+      verification questions through (warn until enforced)
 
 Deliberately stdlib-only (same rule as auth-contract-check.py / db-tenant-check.py):
 a future *required* check must not depend on PyPI on the merge path. The manifest
@@ -140,6 +144,18 @@ NEXT_DECORATOR = re.compile(r"^@\w+\.(get|post|put|patch|delete)\(", re.M)
 # widget's indicator falls back to guessing and can claim «en línea» having verified
 # nothing, the exact defect CH8 was written to remove.
 H10_ENFORCED = True
+
+# H11 — the corpus contract (plan pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md,
+# task 1.5). A corpus-backed chat is only as good as the last embed, and until now
+# nothing checked that one had happened: Admisiones' dev corpus sat a month stale
+# behind red runs nobody read. So a `rag: on` app must (1) say which registry app
+# it is, (2) run corpus-verify after its embed, and (3) ship the ask module V4
+# questions go through. WARN until the consumers adopt it (Phase 3), then FAIL.
+H11_ENFORCED = False
+CORPUS_REGISTRY = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir,
+                               "corpus-registry.yml")
+CORPUS_VERIFY_USE = re.compile(
+    r"uses:\s*Interval-Col/\.github/\.github/workflows/corpus-verify\.yml@")
 
 # H8 — the registry chat widget vs a hand-rolled one (mirrors auth A9). Match real
 # USAGE (a <PharosHelpChat> tag, an import, or a direct .vue reference) — not a bare
@@ -668,6 +684,75 @@ def check(manifest, results):
         else:
             results.append(("H10", PASS,
                             "readiness route present, un-gated, and reports enabled/allowed/upstream (CH8)"))
+
+    check_h11(manifest, results)
+
+
+def check_h11(manifest, results, registry_path=CORPUS_REGISTRY, workflows_dir=".github/workflows"):
+    """H11 — the corpus contract: registry entry + corpus-verify + ask module."""
+    rag = str(manifest.get("rag", "off")).lower() in ("on", "true", "yes")
+    if not rag:
+        results.append(("H11", INFO, "`rag: off` — no corpus, so no corpus contract"))
+        return
+    sev = FAIL if H11_ENFORCED else WARN
+    corpus_app = manifest.get("corpus_app")
+    if corpus_app == "none":
+        # finance-lch's help chat embeds its own docs, not a KB repo: nothing to
+        # register, nothing for kb-publish to tell. Declaring it is the point —
+        # silence would look the same as forgetting.
+        results.append(("H11", INFO, "`corpus_app: none` — the corpus is app-owned, not a KB "
+                                     "in corpus-registry.yml"))
+        return
+    if not corpus_app:
+        results.append(("H11", sev, "`rag: on` but no `corpus_app:` — name this app's id in "
+                                    "Interval-Col/.github corpus-registry.yml"))
+        return
+
+    registry_text = _read(registry_path)
+    if registry_text is None:
+        results.append(("H11", WARN, "corpus-registry.yml not reachable from this checkout — "
+                                     "cannot confirm the registry entry (runs from the org "
+                                     "checkout in CI)"))
+        return
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # corpus_lib lives beside us
+    try:
+        from corpus_lib import RegistryError, load_registry
+        rows = [c for c in load_registry(registry_text)["consumers"] if c["app"] == corpus_app]
+    except (ImportError, RegistryError) as exc:
+        results.append(("H11", WARN, f"cannot read corpus-registry.yml: {exc}"))
+        return
+    if not rows:
+        results.append(("H11", sev, f"`corpus_app: {corpus_app}` is not a consumer in "
+                                    "corpus-registry.yml — register which KBs it loads and "
+                                    "what it may serve"))
+        return
+    live = [c for c in rows if c["mode"] != "planned"]
+    if not live:
+        results.append(("H11", INFO, f"{corpus_app}: every registry edge is `planned` — "
+                                     "corpus-verify applies once one goes live"))
+        return
+
+    problems = []
+    uses = False
+    if os.path.isdir(workflows_dir):
+        for name in sorted(os.listdir(workflows_dir)):
+            if name.endswith((".yml", ".yaml")):
+                if CORPUS_VERIFY_USE.search(_read(os.path.join(workflows_dir, name)) or ""):
+                    uses = True
+    if not uses:
+        problems.append("no workflow calls Interval-Col/.github corpus-verify.yml after the embed")
+    ask = manifest.get("ask_module")
+    if not ask:
+        problems.append("no `ask_module:` (the file behind `python -m …` that answers "
+                        "verification questions)")
+    elif not os.path.exists(ask):
+        problems.append(f"ask_module not found: {ask!r}")
+    kbs = ", ".join(f"{c['kb']} ({c['mode']})" for c in live)
+    if problems:
+        results.append(("H11", sev, f"{corpus_app} loads {kbs}, but " + "; ".join(problems)))
+    else:
+        results.append(("H11", PASS, f"{corpus_app} loads {kbs}; corpus-verify is called and "
+                                     f"the ask module exists"))
 
 
 # --------------------------------------------------------------------------
