@@ -9,6 +9,7 @@ reads it without PyYAML.
     python3 scripts/corpus_registry.py consumers --kb biuman-kb             # JSON rows
     python3 scripts/corpus_registry.py consumers --kb biuman-kb --mode wait --field repo
     python3 scripts/corpus_registry.py grants --app admission-patient       # audiences per KB
+    python3 scripts/corpus_registry.py corpus --app admission-patient       # the embed's KB_CORPUS
     python3 scripts/corpus_registry.py table                                # Markdown, for humans
 
 Exit codes: 0 ok · 1 the registry is invalid (every problem listed) · 2 usage.
@@ -27,6 +28,22 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from corpus_lib import MODES, RegistryError, consumers_of, load_registry  # noqa: E402
 
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "corpus-registry.yml"
+
+
+def corpus_for(reg: dict, app: str) -> dict:
+    """What the shared embedder (registry/corpus/kb_embedder.py) loads for `app`:
+    {kb: {"url", "audiences"}} for its LIVE edges only — a `planned` edge is not
+    embedded, so corpus-verify never sees chunks the registry does not grant yet.
+    The URL is the KB's sidecar on the app's own network: `http://<image>`, the
+    compose service name every consumer already uses (biuman-kb-site, …)."""
+    out = {}
+    for c in reg["consumers"]:
+        if c["app"] == app and c["mode"] != "planned":
+            out[c["kb"]] = {
+                "url": f"http://{reg['kbs'][c['kb']]['image']}",
+                "audiences": sorted(c["audiences"]),
+            }
+    return out
 
 
 def table(reg: dict) -> str:
@@ -52,6 +69,8 @@ def main() -> int:
     c.add_argument("--field", help="print one field per line instead of JSON")
     g = sub.add_parser("grants")
     g.add_argument("--app", required=True)
+    k = sub.add_parser("corpus", help="KB_CORPUS JSON for the shared embedder (live edges only)")
+    k.add_argument("--app", required=True)
     args = ap.parse_args()
 
     try:
@@ -78,6 +97,8 @@ def main() -> int:
             print("\n".join(str(r.get(args.field, "")) for r in rows))
         else:
             print(json.dumps(rows, ensure_ascii=False))
+    elif args.cmd == "corpus":
+        print(json.dumps(corpus_for(reg, args.app), ensure_ascii=False, sort_keys=True))
     elif args.cmd == "grants":
         rows = [x for x in reg["consumers"] if x["app"] == args.app]
         if not rows:
