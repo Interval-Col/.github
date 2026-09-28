@@ -12,6 +12,7 @@
 #
 #   jobs:
 #     changes:
+#       permissions: { contents: read, pull-requests: read }   # + actions: read with since_last_success
 #       uses: Interval-Col/.github/.github/workflows/changes.yml@main
 #     tests:
 #       needs: changes
@@ -26,7 +27,8 @@
 #
 # Fails OPEN everywhere: an event without a diff (workflow_dispatch,
 # repository_dispatch, schedule), a new branch, a force-push, an API error, a
-# diff over the compare API's 300-file cap, or a PR listing cut short by the
+# diff over the compare API's 300-file cap, no previous successful run (with
+# `since_last_success`), or a PR listing cut short by the
 # files API's 3,000-file cap all answer `code=true`. A rename counts BOTH its
 # paths: moving code into `docs/` still removes code.
 
@@ -45,14 +47,27 @@ on:
         type: string
         required: false
         default: ""
+      since_last_success:
+        description: >-
+          On push, diff against the head of this workflow's last SUCCESSFUL push run on
+          the branch (e.g. `ci-cd.yml`), not against the previous push. Use it for a
+          deploy workflow with `cancel-in-progress`: otherwise a docs push that cancels
+          a code deploy would skip, and the code would never deploy. Needs `actions: read`.
+        type: string
+        required: false
+        default: ""
     outputs:
       code:
         description: "'true' when the change carries code (or when it could not tell)"
         value: ${{ jobs.changes.outputs.code }}
 
-permissions:
-  contents: read
-  pull-requests: read
+# 🔑 NO `permissions:` block, on purpose. A reusable workflow can only DOWNGRADE
+# the caller's token, and one that asks for more than the caller granted fails
+# to start. So each caller grants what it uses (Codex on #247):
+#   contents: read + pull-requests: read   — always (the PR file listing)
+#   actions: read                          — only with `since_last_success`
+# Declaring them here would either starve `since_last_success` (without
+# actions) or break every caller that doesn't use it (with actions).
 
 jobs:
   changes:
@@ -77,6 +92,8 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           BEFORE: ${{ github.event.before }}
           SHA: ${{ github.sha }}
+          SINCE: ${{ inputs.since_last_success }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           set -uo pipefail
           : > files.txt
@@ -94,6 +111,16 @@ jobs:
                 ok=false
               fi ;;
             push)
+              if [ -n "$SINCE" ]; then
+                # The last deploy that FINISHED green, not the previous push: a push
+                # that was cancelled mid-deploy must not vanish from the diff.
+                # Measured 2026-09-28: this listing is sometimes served STALE (an
+                # older run). An older base only widens the diff, so it can only err
+                # toward running — never toward skipping code.
+                BEFORE=$(gh api "repos/$REPO/actions/workflows/$SINCE/runs?branch=$BRANCH&event=push&status=success&per_page=1" \
+                         --jq '.workflow_runs[0].head_sha // empty') || BEFORE=""
+                echo "base = last successful $SINCE run on $BRANCH: ${BEFORE:-none}"
+              fi
               if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
                 ok=false   # new branch: no base to diff against
               else
