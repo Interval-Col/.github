@@ -28,6 +28,10 @@
 #   --persona-dir <dir>
 #                  Also refresh the shared persona fragment into that backend chat
 #                  dir (chat-contract H9).
+#   --embedder-dir <dir>
+#                  Also refresh the shared KB embedder (registry/corpus/kb_embedder.py)
+#                  into that backend chat dir — the ONE embedder every Nerea uses
+#                  (plan nerea-con-conocimiento, task 3.1). Never edit the copy.
 #   --persona <name>
 #                  WHICH shared persona to copy: `nerea` (default) or `sol`.
 #                  ⚠️ The default is what keeps older callers working — it is not a
@@ -42,6 +46,7 @@ DRY_RUN=false
 POSITIONAL=()
 ADD_LIST=()          # --add <relpath>: adopt a NEW registry file (else: refresh what you have)
 PERSONA_DIR=""       # --persona-dir <backend-chat-dir>: refresh the persona fragment there
+EMBEDDER_DIR=""      # --embedder-dir <backend-chat-dir>: refresh kb_embedder.py there
 PERSONA="nerea"      # --persona <name>: WHICH shared persona (nerea | sol). Default keeps
                      # every existing caller working unchanged.
 while [[ $# -gt 0 ]]; do
@@ -51,6 +56,8 @@ while [[ $# -gt 0 ]]; do
     --add=*)          ADD_LIST+=("${1#--add=}"); shift ;;
     --persona-dir)    PERSONA_DIR="$2"; shift 2 ;;
     --persona-dir=*)  PERSONA_DIR="${1#--persona-dir=}"; shift ;;
+    --embedder-dir)   EMBEDDER_DIR="$2"; shift 2 ;;
+    --embedder-dir=*) EMBEDDER_DIR="${1#--embedder-dir=}"; shift ;;
     --persona)        PERSONA="$2"; shift 2 ;;
     --persona=*)      PERSONA="${1#--persona=}"; shift ;;
     *)                POSITIONAL+=("$1"); shift ;;
@@ -348,6 +355,16 @@ if [[ -n "$PERSONA_DIR" ]]; then
     exit 1
   fi
   copy_file "$PERSONA_SRC" "$PERSONA_DIR/${PERSONA}_persona.py"
+fi
+
+# The shared KB embedder travels exactly like the persona: byte-for-byte, into the
+# backend chat dir, never edited there (chat-contract H11 compares it).
+if [[ -n "$EMBEDDER_DIR" ]]; then
+  if [[ ! -d "$EMBEDDER_DIR" ]]; then
+    echo "error: --embedder-dir not found: $EMBEDDER_DIR" >&2
+    exit 1
+  fi
+  copy_file "$REGISTRY_DIR/corpus/kb_embedder.py" "$EMBEDDER_DIR/kb_embedder.py"
 fi
 
 # ── 5. Pre-commit: never overwrite — print merge instructions ─────────────────

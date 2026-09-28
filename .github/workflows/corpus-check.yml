@@ -19,6 +19,8 @@ on:
       - "scripts/corpus_*.py"
       - "scripts/kb_*.py"
       - "scripts/changes_*.py"
+      - "brands/pharos_brand/registry/corpus/**"
+      - "scripts/sync-pharos-registry.sh"
       - "scripts/chat-contract-check.py"
       - "tests/corpus/**"
       - ".github/workflows/corpus-check.yml"
@@ -32,6 +34,8 @@ on:
       - "scripts/corpus_*.py"
       - "scripts/kb_*.py"
       - "scripts/changes_*.py"
+      - "brands/pharos_brand/registry/corpus/**"
+      - "scripts/sync-pharos-registry.sh"
       - "scripts/chat-contract-check.py"
       - "tests/corpus/**"
 
