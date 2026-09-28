@@ -2,7 +2,7 @@
 #
 # Guards corpus-registry.yml (which KB feeds which app, and what each app may
 # SERVE) and the scripts every KB publisher and Nerea consumer runs from here:
-# scripts/corpus_lib.py, scripts/corpus_registry.py, scripts/kb_index.py.
+# scripts/corpus_*.py, scripts/kb_*.py, and H11 in scripts/chat-contract-check.py.
 # Plan: pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md, Phase 1.
 #
 # github-hosted on purpose: this repo is public, so its runs don't count against
@@ -16,15 +16,19 @@ on:
     paths:
       - "corpus-registry.yml"
       - "scripts/corpus_*.py"
-      - "scripts/kb_index.py"
+      - "scripts/kb_*.py"
+      - "scripts/chat-contract-check.py"
       - "tests/corpus/**"
       - ".github/workflows/corpus-check.yml"
+      - ".github/workflows/kb-publish.yml"
+      - ".github/workflows/corpus-verify.yml"
   push:
     branches: [main]
     paths:
       - "corpus-registry.yml"
       - "scripts/corpus_*.py"
-      - "scripts/kb_index.py"
+      - "scripts/kb_*.py"
+      - "scripts/chat-contract-check.py"
       - "tests/corpus/**"
 
 permissions:
