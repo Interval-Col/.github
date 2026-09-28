@@ -1,0 +1,173 @@
+# Reusable: after every embed, prove the Nerea learned what its KBs say —
+# and serves nothing it shouldn't.
+#
+# Task 1.4 of pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md. Runs
+# scripts/corpus_verify.py INSIDE the app's backend container on its deploy
+# host (it already holds the DB connection, the CA and the path to its KB
+# sidecars), over SSH, the same way each app's «Verify KB embed» step reaches
+# its host today. Checks, per KB the app is granted in corpus-registry.yml:
+#
+#   V1 floor   — the KB loaded at all
+#   V2 fresh   — every servable article is stored at its CURRENT content_hash
+#   V3 absent  — removed, non-vigente, ungranted or unattributed chunks: zero
+#   V4 answers — each article's `verificacion` questions, asked through the
+#                app's ask module, cite the guide and say the key fact
+#
+# Only edges in `wait`/`notify` mode are granted here: an app that loads a KB
+# whose registry row is still `planned` fails V3, on purpose — flip the row in
+# the same change that wires the KB.
+#
+# Caller (in the consumer app, after its embed step, in the SAME environment):
+#
+#   corpus-verify:
+#     needs: deploy-backend
+#     uses: Interval-Col/.github/.github/workflows/corpus-verify.yml@main
+#     with:
+#       app: admission-patient
+#       environment: development
+#       ssh_host_secret: DEV_HOST
+#       ssh_user_secret: DEV_USER
+#       ssh_key_secret: DEV_SSH_KEY
+#       container: admission-patient-backend
+#       table: admision.kb_embeddings
+#       db: attr:app.core.config:settings.sync_database_url
+#       sources: |
+#         biuman-kb=http://biuman-kb-site
+#         lch-admin-kb=http://lch-admin-kb-site
+#       ask_module: app.chat.ask
+#     secrets: inherit
+#
+# 🔴 `environment` is required and the SSH secret names have NO default. An
+#    org-level `PROD_HOST` points at .231 whatever the app is; a job without
+#    `environment:` silently reads it and verifies the wrong machine
+#    (~/dev/CLAUDE.md, «PROD_HOST no es una sola cosa»). Name the secrets.
+#
+# Self-hosted: the consumer repos are private (org $0 Actions limit), and the
+# deploy hosts are only reachable from the runners.
+
+name: corpus-verify
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: the app id in corpus-registry.yml
+        type: string
+        required: true
+      environment:
+        description: the GitHub environment whose secrets reach this app's host
+        type: string
+        required: true
+      ssh_host_secret:
+        type: string
+        required: true
+      ssh_user_secret:
+        type: string
+        required: true
+      ssh_key_secret:
+        type: string
+        required: true
+      container:
+        description: the backend container that runs the check
+        type: string
+        required: true
+      table:
+        description: schema-qualified embeddings table
+        type: string
+        required: true
+      db:
+        description: "`env:VAR` or `attr:module:path` (URL, Engine, or a callable returning one)"
+        type: string
+        required: true
+      sources:
+        description: one `kb=url` per line — where the container reaches each KB's index
+        type: string
+        required: true
+      ask_module:
+        description: "`python -m <module> --question … --audiences …` → {reply, sources}"
+        type: string
+        required: false
+        default: ""
+      floor:
+        type: number
+        required: false
+        default: 1
+      runner:
+        type: string
+        required: false
+        default: '["self-hosted"]'
+
+permissions:
+  contents: read
+
+jobs:
+  corpus-verify:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .corpus-org
+
+      - name: Build the check's configuration from the registry
+        id: cfg
+        env:
+          APP: ${{ inputs.app }}
+          SOURCES: ${{ inputs.sources }}
+          TABLE: ${{ inputs.table }}
+          DB: ${{ inputs.db }}
+          ASK: ${{ inputs.ask_module }}
+          FLOOR: ${{ inputs.floor }}
+        run: |
+          set -euo pipefail
+          python3 .corpus-org/scripts/corpus_registry.py --registry .corpus-org/corpus-registry.yml \
+            grants --app "$APP" > grants.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import base64, json, os
+          grants = {kb: g["audiences"] for kb, g in json.load(open("grants.json")).items()
+                    if g["mode"] != "planned"}
+          sources = dict(line.strip().split("=", 1) for line in os.environ["SOURCES"].splitlines()
+                         if line.strip())
+          missing = sorted(set(grants) - set(sources))
+          if missing:
+              raise SystemExit(f"granted KBs with no `sources` line: {missing}")
+          cfg = {"app": os.environ["APP"], "grants": grants, "sources": sources,
+                 "table": os.environ["TABLE"], "db": os.environ["DB"],
+                 "ask_module": os.environ["ASK"] or None, "floor": int(float(os.environ["FLOOR"]))}
+          print("config=" + base64.b64encode(json.dumps(cfg).encode()).decode())
+          PY
+
+      - name: SSH to the app's host
+        env:
+          HOST: ${{ secrets[inputs.ssh_host_secret] }}
+          KEY: ${{ secrets[inputs.ssh_key_secret] }}
+        run: |
+          set -euo pipefail
+          [ -n "$HOST" ] && [ -n "$KEY" ] || {
+            echo "::error::${{ inputs.ssh_host_secret }} / ${{ inputs.ssh_key_secret }} are empty in environment '${{ inputs.environment }}'"
+            exit 1
+          }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/corpus_verify && chmod 600 ~/.ssh/corpus_verify
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: corpus-verify (V1–V4)
+        env:
+          TARGET: ${{ secrets[inputs.ssh_user_secret] }}@${{ secrets[inputs.ssh_host_secret] }}
+          CONTAINER: ${{ inputs.container }}
+          CFG: ${{ steps.cfg.outputs.config }}
+        run: |
+          set -uo pipefail
+          ssh -i ~/.ssh/corpus_verify -o BatchMode=yes "$TARGET" \
+            "docker exec -i -e CORPUS_VERIFY_CONFIG=$CFG $CONTAINER python -" \
+            < .corpus-org/scripts/corpus_verify.py | tee verify.out
+          code=${PIPESTATUS[0]}
+          sed '/^CORPUS-VERIFY /d' verify.out >> "$GITHUB_STEP_SUMMARY"
+          grep -q '^CORPUS-VERIFY ' verify.out || { echo "::error::the check never reported — it did not run"; exit 1; }
+          exit "$code"
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/corpus_verify

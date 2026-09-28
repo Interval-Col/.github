@@ -112,7 +112,8 @@ class PublishTest(unittest.TestCase):
     def test_correlation_id_match_has_no_warning(self):
         http = FakeHttp()
         cid = kb_dispatch.correlation_id("biuman-kb", "a" * 40)
-        http.runs = {"app-a": [run("completed", "success", title=f"kb-updated · biuman-kb · {cid}")]}
+        title = f"kb-updated · biuman-kb · {cid}"
+        http.runs = {"app-a": [run("completed", "success", title=title)]}
         [o] = publish(http, [consumer("app-a")])
         self.assertTrue(o.ok)
         self.assertEqual(o.warnings, [])
