@@ -115,7 +115,9 @@ class RegistryTest(unittest.TestCase):
         reg = load_registry(REAL_REGISTRY)
         waits = corpus_lib.consumers_of(reg, "biuman-kb", ("wait",))
         self.assertEqual([c["app"] for c in waits], ["admission-patient"])
-        self.assertEqual(corpus_lib.consumers_of(reg, "lch-admin-kb", ("wait", "notify")), [])
+        # lch-admin-kb → Admisiones went live on 2026-09-28; Pháros TI is still planned.
+        active = corpus_lib.consumers_of(reg, "lch-admin-kb", ("wait", "notify"))
+        self.assertEqual([c["app"] for c in active], ["admission-patient"])
 
 
 # ── v5 builder ────────────────────────────────────────────────────────
