@@ -25,8 +25,10 @@
 #    protection counts as passing. That is why this is a job, not a trigger filter.
 #
 # Fails OPEN everywhere: an event without a diff (workflow_dispatch,
-# repository_dispatch, schedule), a new branch, a force-push, an API error or a
-# diff over the compare API's 300-file cap all answer `code=true`.
+# repository_dispatch, schedule), a new branch, a force-push, an API error, a
+# diff over the compare API's 300-file cap, or a PR listing cut short by the
+# files API's 3,000-file cap all answer `code=true`. A rename counts BOTH its
+# paths: moving code into `docs/` still removes code.
 
 name: changes
 
@@ -81,7 +83,16 @@ jobs:
           ok=true
           case "$EVENT" in
             pull_request|pull_request_target)
-              gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename' > files.txt || ok=false ;;
+              # Both sides of a rename: moving `src/x.py` to `docs/x.py` removes code.
+              gh api --paginate "repos/$REPO/pulls/$PR/files" \
+                --jq '.[] | .filename, (.previous_filename // empty)' > files.txt || ok=false
+              # The files endpoint stops at 3,000 files and still exits 0: a short
+              # list could hide the one code file. Compare with the PR's own count.
+              total=$(gh api "repos/$REPO/pulls/$PR" --jq '.changed_files') || total=""
+              listed=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename' | wc -l | tr -d ' ') || listed=""
+              if [ -z "$total" ] || [ -z "$listed" ] || [ "$listed" -lt "$total" ]; then
+                ok=false
+              fi ;;
             push)
               if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
                 ok=false   # new branch: no base to diff against
@@ -90,7 +101,8 @@ jobs:
                 if [ -z "$n" ] || [ "$n" -ge 300 ]; then
                   ok=false   # API error, force-push, or the 300-file compare cap
                 else
-                  gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '.files[].filename' > files.txt || ok=false
+                  gh api "repos/$REPO/compare/$BEFORE...$SHA" \
+                    --jq '.files[] | .filename, (.previous_filename // empty)' > files.txt || ok=false
                 fi
               fi ;;
             *) ok=false ;;  # dispatch / schedule: no diff — run everything

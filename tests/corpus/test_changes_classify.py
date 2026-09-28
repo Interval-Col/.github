@@ -54,6 +54,8 @@ class ClassifyTest(unittest.TestCase):
 
 
 class WorkflowShapeTest(unittest.TestCase):
+    """The workflow can't run here; these pin its fail-open properties."""
+
     wf = (REPO / ".github/workflows/changes.yml").read_text(encoding="utf-8")
     code = "\n".join(ln for ln in wf.splitlines() if not ln.lstrip().startswith("#"))
 
@@ -64,6 +66,15 @@ class WorkflowShapeTest(unittest.TestCase):
     def test_never_uses_trigger_path_filters(self):
         # A required check behind paths-ignore waits forever.
         self.assertNotIn("paths-ignore", self.code)
+
+    def test_renames_classify_both_paths(self):
+        # Codex on #246: `src/x.py` → `docs/x.py` must not read as docs-only.
+        self.assertEqual(self.code.count(".previous_filename // empty"), 2)
+        self.assertTrue(cc.classify(["docs/module.py", "src/module.py"]))
+
+    def test_a_pr_listing_cut_short_fails_open(self):
+        self.assertIn(".changed_files", self.code)
+        self.assertIn('"$listed" -lt "$total"', self.code)
 
     def test_events_without_a_diff_run_everything(self):
         self.assertIn("*) ok=false", self.code)
