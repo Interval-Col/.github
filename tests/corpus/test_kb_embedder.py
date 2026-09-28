@@ -219,6 +219,17 @@ class RunTest(unittest.TestCase):
         self.assertTrue(all(len(c) <= ke.TARGET_CHARS for c in cs))
 
 
+class FetchTest(unittest.TestCase):
+    def test_only_http_urls_are_fetched(self):
+        with self.assertRaises(ValueError):
+            ke.fetch_index("file:///etc/passwd")
+
+    def test_redirects_are_never_followed(self):
+        handler = ke._NoRedirect()
+        self.assertIsNone(handler.redirect_request(None, None, 302, "Found", {}, "ftp://x/y"))
+        self.assertIn(ke._NoRedirect, [type(h) for h in ke._OPENER.handlers])
+
+
 class SyncTest(unittest.TestCase):
     def test_sync_script_knows_the_embedder(self):
         sh = (REPO / "scripts/sync-pharos-registry.sh").read_text(encoding="utf-8")
