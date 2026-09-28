@@ -219,6 +219,12 @@ class RunTest(unittest.TestCase):
         self.assertTrue(all(len(c) <= ke.TARGET_CHARS for c in cs))
 
 
+class FetchTest(unittest.TestCase):
+    def test_only_http_urls_are_fetched(self):
+        with self.assertRaises(ValueError):
+            ke.fetch_index("file:///etc/passwd")
+
+
 class SyncTest(unittest.TestCase):
     def test_sync_script_knows_the_embedder(self):
         sh = (REPO / "scripts/sync-pharos-registry.sh").read_text(encoding="utf-8")

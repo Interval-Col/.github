@@ -148,11 +148,16 @@ def select(index: dict, kb: str, audiences: list[str]) -> Selection:
         original = a.get("body_md") or ""
         if not original.strip():
             continue
-        sel.articles.append(Article(
-            kb=kb, slug=a["slug"], area=area, audience=audience,
-            content_hash=a.get("content_hash") or content_hash(original),
-            body=sin_correos(original),
-        ))
+        sel.articles.append(
+            Article(
+                kb=kb,
+                slug=a["slug"],
+                area=area,
+                audience=audience,
+                content_hash=a.get("content_hash") or content_hash(original),
+                body=sin_correos(original),
+            )
+        )
     return sel
 
 
@@ -193,8 +198,9 @@ def metadata(article: Article, chunk_index: int, tenant: str = "") -> dict:
     return meta
 
 
-def embed_with_retry(embed: EmbedFn, texts: list[str], attempts: int = 3,
-                     sleep: Callable[[float], None] = time.sleep):
+def embed_with_retry(
+    embed: EmbedFn, texts: list[str], attempts: int = 3, sleep: Callable[[float], None] = time.sleep
+):
     """Retry `Transient` with 2 s, 4 s … backoff; `Blocked` is raised at once."""
     for n in range(1, attempts + 1):
         try:
@@ -207,23 +213,37 @@ def embed_with_retry(embed: EmbedFn, texts: list[str], attempts: int = 3,
 
 
 def fetch_index(url: str, timeout: float = 30.0) -> dict:
-    with urllib.request.urlopen(url.rstrip("/") + "/kb-index.json", timeout=timeout) as r:
+    """GET <url>/kb-index.json from a KB sidecar. Only http(s): the URL comes from
+    the registry (`http://<image>`), and nothing else is a KB site."""
+    if not url.startswith(("http://", "https://")):
+        raise ValueError(f"KB site URL must be http(s): {url!r}")
+    target = url.rstrip("/") + "/kb-index.json"
+    with urllib.request.urlopen(target, timeout=timeout) as r:  # noqa: S310 — scheme checked above
         return json.load(r)
 
 
 # ── The run ───────────────────────────────────────────────────────────
 
 
-def run(corpus: dict[str, dict], store: Store, embed: EmbedFn, *, only_slug: str | None = None,
-        dry_run: bool = False, log: Callable[[str], None] = print,
-        err: Callable[[str], None] = print,
-        fetch: Callable[[str], dict] = fetch_index,
-        sleep: Callable[[float], None] = time.sleep) -> int:
+def run(
+    corpus: dict[str, dict],
+    store: Store,
+    embed: EmbedFn,
+    *,
+    only_slug: str | None = None,
+    dry_run: bool = False,
+    log: Callable[[str], None] = print,
+    err: Callable[[str], None] = print,
+    fetch: Callable[[str], dict] = fetch_index,
+    sleep: Callable[[float], None] = time.sleep,
+) -> int:
     """Refresh every KB in `corpus`. Returns the process exit code: 0 all refreshed
     (`[done]`), 1 something did not (`[partial]`), 2 configuration."""
     if not corpus:
-        err("ERROR: no KB corpus configured (KB_CORPUS is empty) — nothing is embedded. "
-            "The deploy passes it from corpus-registry.yml.")
+        err(
+            "ERROR: no KB corpus configured (KB_CORPUS is empty) — nothing is embedded. "
+            "The deploy passes it from corpus-registry.yml."
+        )
         return 2
 
     selections: dict[str, Selection] = {}
@@ -240,9 +260,11 @@ def run(corpus: dict[str, dict], store: Store, embed: EmbedFn, *, only_slug: str
             err(f"[fail] {kb}: the index at {spec['url']} has zero articles")
             failed_sources.append(kb)
             continue
-        log(f"[source] {kb}: {len(sel.articles)} of {sel.total} articles served (skipped "
+        log(
+            f"[source] {kb}: {len(sel.articles)} of {sel.total} articles served (skipped "
             f"{sel.skipped_status} not vigente, {sel.skipped_audience} outside the grant "
-            f"{spec['audiences']})")
+            f"{spec['audiences']})"
+        )
         selections[kb] = sel
 
     articles = [a for s in selections.values() for a in s.articles]
@@ -254,8 +276,10 @@ def run(corpus: dict[str, dict], store: Store, embed: EmbedFn, *, only_slug: str
 
     planned = [(a, chunk(a.body)) for a in articles]
     chars = sum(len(c) for _, cs in planned for c in cs)
-    log(f"[embed_kb] articles={len(articles)} chunks={sum(len(cs) for _, cs in planned)} "
-        f"chars={chars} ~tokens={chars // 4}")
+    log(
+        f"[embed_kb] articles={len(articles)} chunks={sum(len(cs) for _, cs in planned)} "
+        f"chars={chars} ~tokens={chars // 4}"
+    )
     if dry_run:
         for a, cs in planned:
             log(f"  [{a.kb}:{a.slug}] audience={a.audience} chunks={len(cs)}")
