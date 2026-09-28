@@ -12,6 +12,7 @@
 #
 #   jobs:
 #     changes:
+#       permissions: { contents: read, pull-requests: read }   # + actions: read with since_last_success
 #       uses: Interval-Col/.github/.github/workflows/changes.yml@main
 #     tests:
 #       needs: changes
@@ -60,9 +61,13 @@ on:
         description: "'true' when the change carries code (or when it could not tell)"
         value: ${{ jobs.changes.outputs.code }}
 
-permissions:
-  contents: read
-  pull-requests: read
+# 🔑 NO `permissions:` block, on purpose. A reusable workflow can only DOWNGRADE
+# the caller's token, and one that asks for more than the caller granted fails
+# to start. So each caller grants what it uses (Codex on #247):
+#   contents: read + pull-requests: read   — always (the PR file listing)
+#   actions: read                          — only with `since_last_success`
+# Declaring them here would either starve `since_last_success` (without
+# actions) or break every caller that doesn't use it (with actions).
 
 jobs:
   changes:
