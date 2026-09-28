@@ -7,7 +7,8 @@
 #   1. build  — scripts/kb_index.py writes the v5 index from corpus-registry.yml
 #               (an unknown audience, an empty KB or a broken frontmatter fails
 #               HERE, before an image exists); the KB's Dockerfile COPIES that file.
-#   2. ship   — main only: OIDC → ECR, tags <sha> + latest.
+#   2. ship   — main only (a push, or a manual workflow_dispatch to republish
+#               without touching a document): OIDC → ECR, tags <sha> + latest.
 #   3. tell   — main only: `kb-updated` to every `wait`/`notify` consumer in the
 #               registry — no hardcoded list — and WAIT for each `wait` consumer's
 #               run to finish green (scripts/kb_dispatch.py). A 204 proves nothing.
@@ -131,14 +132,14 @@ jobs:
           PY
 
       - name: Configure AWS credentials (OIDC) (main only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Push to ECR (main only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           REG: ${{ secrets.AWS_REGISTRY }}
           IMG: ${{ steps.meta.outputs.image }}
@@ -153,7 +154,7 @@ jobs:
 
   tell-consumers:
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7
