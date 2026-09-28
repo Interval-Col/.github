@@ -1,0 +1,123 @@
+# corpus-registry.yml — which KB feeds which app, and what each app may SERVE.
+#
+# The one file every KB publisher and every Nerea consumer reads (plan
+# pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md, task 1.1). No workflow
+# keeps a hardcoded dispatch list again: `kb-publish.yml` asks this file.
+#
+# Validated by scripts/corpus_registry.py (`validate`), which runs on every PR
+# that touches it. Parsed by the strict mini-YAML in scripts/corpus_lib.py —
+# one level of nesting, inline lists, comments; anything deeper is an error.
+#
+# 🔴 `audiences` on a consumer decides what that Nerea SERVES, not who can READ
+#    the KB. A Claude Project, a clone or GitHub itself sees the whole repo
+#    (lch-admin-kb#7): a KB never carries what its repo's readers must not see.
+
+version: 1
+
+# D1 (German, 2026-09-27) — the ONLY audience vocabulary. An article declaring
+# anything else fails its KB's build; coercing unknown values to `liderazgo` is
+# what hid the customer-service and IT guides until now.
+audiences: [publico, staff, servicio-al-cliente, ti, liderazgo]
+
+# ── KBs ──────────────────────────────────────────────────────────────
+# How scripts/kb_index.py builds each KB's v5 index:
+#   roots           folders indexed (README.md is always an area landing, never an article)
+#   recursive       also index sub-folders of each root
+#   skip            file stems, or root-relative paths without `.md`, left out
+#   url             `site` → /<slug>/ on the KB's reading site · `github` → blob URL
+#   default_status  status of an article that declares none
+#   liderazgo_areas areas whose articles default to `liderazgo` when they declare no audience
+#   audiences       what this KB's articles MAY declare (a subset of D1); outside it, the build fails
+
+kbs:
+  - id: biuman-kb
+    repo: biuman-kb
+    image: biuman-kb-site
+    roots: [servicios, protocolos, procesos, comercial, politicas, referencia]
+    recursive: false
+    skip: []
+    url: site
+    default_status: vigente
+    liderazgo_areas: [comercial, politicas]
+    audiences: [staff, servicio-al-cliente, liderazgo]
+
+  - id: lch-kb
+    repo: lch-kb
+    image: lch-kb-site
+    roots: [fase-0]
+    recursive: false
+    skip: [guion-presentacion, derrotero-taller-canario, brief-documentacion-viva]
+    url: github
+    default_status: borrador
+    liderazgo_areas: []
+    audiences: [publico, staff, liderazgo]
+
+  - id: lch-admin-kb
+    repo: lch-admin-kb
+    image: lch-admin-kb-site
+    # publicaciones-obligatorias/ holds PDFs and their manifest; proyectos/ is
+    # work in flight. Neither is guidance a Nerea should serve.
+    roots: [servicio-al-cliente, mesa-de-ayuda-ti, lexico]
+    recursive: true
+    skip: []
+    url: github
+    default_status: borrador
+    liderazgo_areas: []
+    audiences: [staff, servicio-al-cliente, ti, liderazgo]
+
+# ── Consumers ────────────────────────────────────────────────────────
+# One row per KB → app edge.
+#   app           the app (and its Nerea) that loads this KB
+#   repo          where its `repository_dispatch: kb-updated` receiver lives
+#   environments  where this edge is live (dispatch refreshes dev; prod refreshes on deploy)
+#   audiences     what this app may SERVE from this KB (D1 grants)
+#   mode          how kb-publish treats it:
+#                   wait    — dispatch, then wait for the consumer's run to come back green.
+#                             A 204 proves nothing (Codex, #70): GitHub accepts a dispatch
+#                             with no handler or a failing run.
+#                   notify  — dispatch only. Transitional: a consumer that reads the index
+#                             but runs no verification (biuman-lis's help panel).
+#                   planned — not dispatched: the consumer is not built yet.
+
+consumers:
+  - kb: biuman-kb
+    app: admission-patient
+    repo: admission-patient
+    environments: [development]
+    audiences: [staff, servicio-al-cliente]
+    mode: wait
+
+  - kb: biuman-kb
+    app: biuman-lis
+    repo: biuman-lis
+    environments: [development, production]
+    audiences: [staff, liderazgo]
+    mode: notify
+
+  - kb: lch-kb
+    app: lab-qc
+    repo: pharos-lis
+    environments: [development, production]
+    audiences: [staff]
+    mode: wait
+
+  - kb: lch-kb
+    app: lch-citas
+    repo: public-web
+    environments: [development]
+    audiences: [publico]
+    mode: planned   # Sol reads lch-kb once Quality marks a document `publico` (CORPUS_KB_INDEX)
+
+  - kb: lch-admin-kb
+    app: admission-patient
+    repo: admission-patient
+    environments: [development]
+    audiences: [staff, servicio-al-cliente]
+    mode: planned   # task 3.2: the lch-admin-kb-site sidecar in Admisiones
+
+  - kb: lch-admin-kb
+    app: pharos-ti
+    repo: pharos-ti
+    environments: [development]
+    audiences: [staff, servicio-al-cliente, ti]
+    mode: planned   # task 3.4: Pháros TI gets its Nerea (D2)
