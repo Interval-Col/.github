@@ -212,13 +212,23 @@ def embed_with_retry(
     raise AssertionError("unreachable")
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A KB sidecar never redirects. Following one could leave http(s) — the
+    default handler accepts ftp:// — so a 3xx is an error (Codex on #252)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 def fetch_index(url: str, timeout: float = 30.0) -> dict:
-    """GET <url>/kb-index.json from a KB sidecar. Only http(s): the URL comes from
-    the registry (`http://<image>`), and nothing else is a KB site."""
+    """GET <url>/kb-index.json from a KB sidecar. Only http(s), and no redirects:
+    the URL comes from the registry (`http://<image>`), and nothing else is a KB site."""
     if not url.startswith(("http://", "https://")):
         raise ValueError(f"KB site URL must be http(s): {url!r}")
-    target = url.rstrip("/") + "/kb-index.json"
-    with urllib.request.urlopen(target, timeout=timeout) as r:  # noqa: S310 — scheme checked above
+    with _OPENER.open(url.rstrip("/") + "/kb-index.json", timeout=timeout) as r:
         return json.load(r)
 
 

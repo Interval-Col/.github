@@ -224,6 +224,11 @@ class FetchTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ke.fetch_index("file:///etc/passwd")
 
+    def test_redirects_are_never_followed(self):
+        handler = ke._NoRedirect()
+        self.assertIsNone(handler.redirect_request(None, None, 302, "Found", {}, "ftp://x/y"))
+        self.assertIn(ke._NoRedirect, [type(h) for h in ke._OPENER.handlers])
+
 
 class SyncTest(unittest.TestCase):
     def test_sync_script_knows_the_embedder(self):
