@@ -116,7 +116,7 @@ consumers:
     repo: admission-patient
     environments: [development]
     audiences: [staff, servicio-al-cliente]
-    mode: planned   # task 3.2: the lch-admin-kb-site sidecar in Admisiones
+    mode: wait      # live since 2026-09-28 (admission-patient#535): Nerea answers the portal guide in dev
 
   - kb: lch-admin-kb
     app: pharos-ti
