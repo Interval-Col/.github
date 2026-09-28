@@ -1,0 +1,45 @@
+# corpus-check — the registry is valid and the corpus scripts pass their tests.
+#
+# Guards corpus-registry.yml (which KB feeds which app, and what each app may
+# SERVE) and the scripts every KB publisher and Nerea consumer runs from here:
+# scripts/corpus_lib.py, scripts/corpus_registry.py, scripts/kb_index.py.
+# Plan: pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md, Phase 1.
+#
+# github-hosted on purpose: this repo is public, so its runs don't count against
+# the org's Actions minutes (the tenant repos' checks run self-hosted for that
+# reason). Stdlib only: no pip install on the path.
+
+name: corpus-check
+
+on:
+  pull_request:
+    paths:
+      - "corpus-registry.yml"
+      - "scripts/corpus_*.py"
+      - "scripts/kb_index.py"
+      - "tests/corpus/**"
+      - ".github/workflows/corpus-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "corpus-registry.yml"
+      - "scripts/corpus_*.py"
+      - "scripts/kb_index.py"
+      - "tests/corpus/**"
+
+permissions:
+  contents: read
+
+jobs:
+  corpus-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The registry is valid
+        run: |
+          python3 scripts/corpus_registry.py validate
+          python3 scripts/corpus_registry.py table >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests/corpus -v
