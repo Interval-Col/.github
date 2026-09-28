@@ -39,7 +39,10 @@ kbs:
     url: site
     default_status: vigente
     liderazgo_areas: [comercial, politicas]
-    audiences: [staff, servicio-al-cliente, liderazgo]
+    # `publico` added 2026-09-28 (German, Checkpoint 1): Sol may serve Biuman
+    # articles on lch.co. Still never inferred — only a `vigente` article that
+    # declares `audience: publico` by hand reaches it (kb_index.py).
+    audiences: [publico, staff, servicio-al-cliente, liderazgo]
 
   - id: lch-kb
     repo: lch-kb
@@ -98,7 +101,7 @@ consumers:
     app: lab-qc
     repo: pharos-lis
     environments: [development, production]
-    audiences: [staff]
+    audiences: [staff, liderazgo]   # liderazgo added 2026-09-28 (German, Checkpoint 1)
     mode: wait
 
   - kb: lch-kb
@@ -121,3 +124,52 @@ consumers:
     environments: [development]
     audiences: [staff, servicio-al-cliente, ti]
     mode: planned   # task 3.4: Pháros TI gets its Nerea (D2)
+
+# ── Added 2026-09-28 — German's selection at Checkpoint 1 ────────────
+# Chosen in the «Audiencias de Nerea» mock-up (claude.ai/artifact/AN7P8jWKTX17bwdewjYC8j).
+# All `planned`: no app loads these yet. Each flips to `wait` in the same
+# change that wires the KB into that app, so nothing turns red early.
+# Cross-brand on purpose (German): Biuman LIS serves LCH knowledge, and Sol
+# serves Biuman articles marked `publico`.
+
+  - kb: lch-kb
+    app: admission-patient
+    repo: admission-patient
+    environments: [development]
+    audiences: [staff]
+    mode: planned
+
+  - kb: lch-admin-kb
+    app: lab-qc
+    repo: pharos-lis
+    environments: [development]
+    audiences: [staff, servicio-al-cliente]
+    mode: planned
+
+  - kb: lch-kb
+    app: biuman-lis
+    repo: biuman-lis
+    environments: [development]
+    audiences: [staff]
+    mode: planned
+
+  - kb: lch-admin-kb
+    app: biuman-lis
+    repo: biuman-lis
+    environments: [development]
+    audiences: [staff, servicio-al-cliente]
+    mode: planned
+
+  - kb: biuman-kb
+    app: lch-citas
+    repo: public-web
+    environments: [development]
+    audiences: [publico]
+    mode: planned
+
+  - kb: lch-admin-kb
+    app: finance-lch
+    repo: finance-lch
+    environments: [development]
+    audiences: [staff, servicio-al-cliente, liderazgo]
+    mode: planned   # finance-lch keeps its own docs too; its manifest moves off `corpus_app: none` when wired
