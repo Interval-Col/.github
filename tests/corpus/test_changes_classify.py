@@ -76,6 +76,11 @@ class WorkflowShapeTest(unittest.TestCase):
         self.assertIn(".changed_files", self.code)
         self.assertIn('"$listed" -lt "$total"', self.code)
 
+    def test_since_last_success_diffs_against_the_last_green_run(self):
+        # A docs push that cancels a code deploy must not skip it.
+        self.assertIn("since_last_success:", self.code)
+        self.assertIn("status=success", self.code)
+
     def test_events_without_a_diff_run_everything(self):
         self.assertIn("*) ok=false", self.code)
         self.assertIn("-ge 300", self.code)
