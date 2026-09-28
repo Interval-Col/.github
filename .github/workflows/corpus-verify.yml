@@ -92,6 +92,14 @@ on:
         type: number
         required: false
         default: 1
+      wait_for:
+        description: >-
+          A one-shot container to wait for before verifying (the app's embed, which
+          runs detached). Verifying while it still loads would fail V2 on a corpus
+          that is simply not finished.
+        type: string
+        required: false
+        default: ""
       runner:
         type: string
         required: false
@@ -152,6 +160,16 @@ jobs:
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/corpus_verify && chmod 600 ~/.ssh/corpus_verify
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Wait for the embed to finish
+        if: inputs.wait_for != ''
+        env:
+          TARGET: ${{ secrets[inputs.ssh_user_secret] }}@${{ secrets[inputs.ssh_host_secret] }}
+          WAIT_FOR: ${{ inputs.wait_for }}
+        run: |
+          set -uo pipefail
+          code=$(ssh -i ~/.ssh/corpus_verify -o BatchMode=yes "$TARGET" "timeout 1500 docker wait $WAIT_FOR" || echo "?")
+          echo "$WAIT_FOR exited with ${code} — verifying what it left, whatever the outcome"
 
       - name: corpus-verify (V1–V4)
         env:

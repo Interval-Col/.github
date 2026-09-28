@@ -114,6 +114,18 @@ class AnswerTest(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("5 minutos", detail)
 
+    def test_the_fact_in_other_words_passes(self):
+        # Measured on Admisiones: right answer, not the literal phrase.
+        q = dict(self.Q, debe_decir="5 por hora")
+        ok, _ = cv.check_answer(q, "Puede pedir hasta 5 códigos de recuperación por hora.",
+                                ["guias/a"])
+        self.assertTrue(ok)
+
+    def test_a_missing_word_of_the_fact_still_fails(self):
+        q = dict(self.Q, debe_decir="5 por hora")
+        ok, _ = cv.check_answer(q, "Puede pedir 5 códigos por día.", ["guias/a"])
+        self.assertFalse(ok)
+
     def test_a_suffix_is_not_a_citation(self):
         self.assertFalse(cv.cites(["otras/guias/a"], "guias/a"))
 
@@ -214,6 +226,10 @@ class WorkflowShapeTest(unittest.TestCase):
             self.assertIn("required: true", "\n".join(block[:3]), name)
         self.assertNotIn("PROD_HOST", "\n".join(
             ln for ln in self.wf.splitlines() if not ln.lstrip().startswith("#")))
+
+    def test_can_wait_for_the_detached_embed(self):
+        self.assertIn("wait_for:", self.wf)
+        self.assertIn("docker wait $WAIT_FOR", self.wf)
 
     def test_planned_edges_are_not_granted(self):
         self.assertIn('g["mode"] != "planned"', self.wf)

@@ -26,9 +26,9 @@ For each KB the app is granted (corpus-registry.yml), against that KB's v5 index
 - **V4 answers** — each article's `verificacion` questions go to the app's own
   chat service through its ask module (`python -m <ask_module> --question …
   --audiences …`, which prints `{"reply": …, "sources": [...]}`). The answer must
-  cite `debe_citar` and contain `debe_decir` (accent- and case-insensitive). It
-  asserts citation and key facts, never wording, and retries once: a flaky check
-  that gets muted is worse than none.
+  cite `debe_citar` and contain `debe_decir` — the exact phrase or every one of its
+  words, accent- and case-insensitive. It asserts citation and key facts, never
+  wording, and retries once: a flaky check that gets muted is worse than none.
 
 The embedder's side of the contract: every row carries `metadata.kb` (the KB id)
 and `metadata.content_hash` (the index's hash of the article it came from), and
@@ -43,6 +43,7 @@ import base64
 import importlib
 import json
 import os
+import re
 import subprocess
 import sys
 import unicodedata
@@ -126,11 +127,25 @@ def cites(sources: list, slug: str) -> bool:
     return False
 
 
+def says(fact: str, reply: str) -> bool:
+    """The key fact is in the reply: the exact phrase, or every one of its words.
+
+    Measured on Admisiones (2026-09-28): asked how many codes per hour, Nerea said
+    «hasta 5 códigos de recuperación por hora» — right, but not the literal
+    «5 por hora». A check on wording would go red on a correct answer and get
+    muted; it has to assert the FACT. Word order is not checked; every word is."""
+    f, r = _norm(fact), _norm(reply)
+    if f in r:
+        return True
+    words = set(re.findall(r"\w+", r))
+    return all(w in words for w in re.findall(r"\w+", f))
+
+
 def check_answer(item: dict, reply: str, sources: list) -> tuple[bool, str]:
     problems = []
     if not cites(sources, item["debe_citar"]):
         problems.append(f"did not cite `{item['debe_citar']}` (cited: {sources or 'nothing'})")
-    if item.get("debe_decir") and _norm(item["debe_decir"]) not in _norm(reply):
+    if item.get("debe_decir") and not says(item["debe_decir"], reply):
         problems.append(f"did not say «{item['debe_decir']}»")
     return (not problems), "; ".join(problems) or "cited and said it"
 
