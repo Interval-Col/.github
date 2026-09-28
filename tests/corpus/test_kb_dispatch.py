@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sys
 import unittest
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -15,7 +15,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 
 import kb_dispatch  # noqa: E402
 
-NOW = datetime.now(UTC)
+NOW = datetime.now(timezone.utc)
 LATER = (NOW + timedelta(seconds=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
