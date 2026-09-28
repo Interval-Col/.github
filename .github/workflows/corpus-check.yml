@@ -41,8 +41,18 @@ permissions:
 jobs:
   corpus-check:
     runs-on: ubuntu-latest
+    # 🔴 3.10 is what the org's self-hosted runners ship (jammy), and it is where
+    # kb-publish and corpus-verify actually run these scripts. `datetime.UTC`
+    # (3.11+) passed here on 3.12 and crashed biuman-kb's first real publish
+    # (2026-09-28). Test on the oldest interpreter the scripts meet, too.
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
 
       - name: The registry is valid
         run: |

@@ -44,7 +44,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -184,7 +184,7 @@ def publish(http: Http, owner: str, kb: str, sha: str, consumers: list[dict],
     outcomes, pending = [], []
     for c in consumers:
         out = Outcome(repo=c["repo"], app=c["app"], mode=c["mode"])
-        since = datetime.now(UTC)
+        since = datetime.now(timezone.utc)
         sent, out.detail = dispatch(http, owner, c["repo"], payload)
         if sent and c["mode"] == "notify":
             out.ok = True
