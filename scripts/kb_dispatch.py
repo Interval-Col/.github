@@ -215,8 +215,8 @@ def publish(http: Http, owner: str, kb: str, sha: str, consumers: list[dict],
     return outcomes
 
 
-def report(kb: str, sha: str, outcomes: list[Outcome]) -> str:
-    lines = [f"## kb-publish · `{kb}` @ `{sha[:12]}`", "",
+def report(kb: str, sha: str, outcomes: list[Outcome], title: str = "kb-publish") -> str:
+    lines = [f"## {title} · `{kb}` @ `{sha[:12]}`", "",
              "| Consumer | Mode | Result | Run |", "|---|---|---|---|"]
     for o in outcomes:
         run = f"[run]({o.run_url})" if o.run_url else "—"

@@ -1,0 +1,139 @@
+# A corpus-registry.yml change reaches the consumers it affects — and they answer.
+#
+# Task 1.6 of pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md. Every consumer
+# reads its grants from the registry on each deploy (`corpus_registry.py corpus
+# --app X --environment E`), so a changed grant only needs that deploy to happen.
+# Until now it happened on the next KB publish, whatever that was: a widened grant
+# loaded nothing, and a narrowed one left chunks corpus-verify V3 rejects.
+#
+#   1. plan — scripts/registry_dispatch.py diffs the LIVE edges between the
+#             registry the consumers were last told about (the head of this
+#             workflow's last GREEN run — not the previous push, see below) and
+#             now, per consumer repo (app, kb, audiences, environments, image).
+#             An unreadable "before" counts as everything changed.
+#   2. tell — `kb-updated` (source: registry) to exactly those repos, and wait
+#             for each `wait` consumer's run with a green corpus-verify job —
+#             kb_dispatch.publish(), the same contract kb-publish uses.
+#
+# 🔴 Nothing here fails open: a token that cannot be minted, a refused dispatch,
+# a red or skipped verify and a timeout are all red. So is revoking an app's LAST
+# live KB when that app waited: it keeps its mode, and stays red until its rows
+# are cleared.
+#
+# A change to the `kbs:` block (roots, default_status, a KB's audiences…) is read
+# when the KB builds its index, in ITS repo. So this run REPUBLISHES that KB: it
+# runs the KB's build-site.yml on main (German, 2026-09-29), and kb-publish there
+# rebuilds, ships and waits for its own consumers — that run is the verdict; this
+# one does not wait for it (it could only be found by time). A refused dispatch
+# is red. ⚠️ The org bot needs `actions: write` for it, and each KB's
+# build-site.yml needs `workflow_dispatch` (lch-kb has it; biuman-kb#58,
+# lch-admin-kb#11).
+#
+# 🪤 Why "last green run" and not `github.event.before`: GitHub keeps ONE pending
+# run per concurrency group. Three registry merges during one wait cancel the
+# middle run, and the third, diffed only against the second push, would never
+# tell anyone about the first-to-second change. A red run is re-told too.
+#
+# Order when a consumer goes live for a new KB: wire the app first (compose
+# sidecar + corpus-verify `sources:`), merge it, THEN flip the registry edge.
+# Registry-first makes this run red until the app ships — closed, but noisy.
+#
+# The consumers' KB lane (`kb-dispatch`) also keeps one pending run: a registry
+# merge landing while two KB publishes queue there cancels one of them, whose
+# publish goes red although this run redeploys the same images. Re-run it.
+#
+# Runner: GitHub-hosted. This repo is public, and the org's runner groups do not
+# take public repos (measured 2026-09-29) — which also means the wait holds no
+# self-hosted runner while the consumers deploy on theirs.
+# Secrets: the org's PHAROS_BOT_PRIVATE_KEY (visibility: all) and variable
+# PHAROS_BOT_APP_ID. Push to main only: a pull request never gets them.
+
+name: corpus-registry-changed
+
+on:
+  push:
+    branches: [main]
+    paths: [corpus-registry.yml]
+  # Re-tell every live consumer (e.g. after fixing a consumer's red run).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read     # this workflow's last green run = the "before"
+
+# One registry change at a time: two overlapping ones would dispatch the same
+# consumer twice and each wait on the other's run.
+concurrency:
+  group: corpus-registry-changed
+  cancel-in-progress: false
+
+jobs:
+  tell-consumers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # The registry as it was before this push. A manual run, a first push or a
+      # base that cannot be fetched leaves `before` empty ⇒ every live consumer.
+      - name: The registry the consumers were last told about
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -uo pipefail
+          : > before.yml
+          BEFORE=""
+          if [ "$EVENT" = push ]; then
+            BEFORE=$(gh api "repos/$REPO/actions/workflows/corpus-registry-changed.yml/runs?branch=main&status=success&per_page=1" \
+                     --jq '.workflow_runs[0].head_sha // empty') || BEFORE=""
+            if [ -z "$BEFORE" ]; then
+              BEFORE="$PUSH_BEFORE"   # first run ever: the previous push
+              echo "no green run yet — base = the previous push"
+            fi
+          fi
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
+            if git fetch -q --depth=1 origin "$BEFORE" && git show "$BEFORE:corpus-registry.yml" > before.yml; then
+              echo "before = $BEFORE"
+            else
+              echo "::warning::cannot read corpus-registry.yml at $BEFORE — telling every live consumer"
+              : > before.yml
+            fi
+          else
+            echo "no base ($EVENT) — telling every live consumer"
+          fi
+
+      - name: Which consumers this change touches
+        id: plan
+        run: |
+          set -euo pipefail
+          before=""; [ -s before.yml ] && before="--before before.yml"
+          repos=$(python3 scripts/registry_dispatch.py plan $before --after corpus-registry.yml)
+          echo "repos=$repos" >> "$GITHUB_OUTPUT"
+          echo "touched: ${repos:-none}"
+
+      # Scoped to exactly the consumers to tell and the KBs to republish.
+      - name: Mint the org bot token
+        id: token
+        if: steps.plan.outputs.repos != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.PHAROS_BOT_APP_ID }}
+          private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.plan.outputs.repos }}
+
+      # Always runs: with nothing touched it needs no token and says so; a stale
+      # KB (a changed `kbs:` field) is republished here even if no consumer was.
+      - name: Dispatch kb-updated and wait for every touched consumer's verdict
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          SHA: ${{ github.sha }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          before=""; [ -s before.yml ] && before="--before before.yml"
+          python3 scripts/registry_dispatch.py run $before --after corpus-registry.yml \
+            --sha "$SHA" --owner "$OWNER" --timeout-minutes 45
