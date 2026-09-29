@@ -161,6 +161,10 @@ class WorkflowShapeTest(unittest.TestCase):
         # The old legs had `continue-on-error: true` on the token mint.
         self.assertFalse("continue-on-error" in self.code, "a step fails open")
 
+    def test_a_manual_dispatch_on_main_publishes_like_a_push(self):
+        # lch-kb republishes on demand (e.g. to force a corpus refresh).
+        self.assertEqual(self.code.count("github.event_name == 'workflow_dispatch'"), 3)
+
     def test_no_hardcoded_consumer_list(self):
         for repo in ("admission-patient", "biuman-lis", "pharos-lis"):
             self.assertFalse(repo in self.code, f"hardcoded consumer {repo}")
