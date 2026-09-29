@@ -5,7 +5,10 @@
 # keeps a hardcoded dispatch list again: `kb-publish.yml` asks this file.
 #
 # Validated by scripts/corpus_registry.py (`validate`), which runs on every PR
-# that touches it. Parsed by the strict mini-YAML in scripts/corpus_lib.py —
+# that touches it. 🔔 Merging a change here TELLS the consumers it touches
+# (`corpus-registry-changed.yml`): every repo whose live edges differ gets
+# `kb-updated`, redeploys with its new grants, and — if `wait` — must pass
+# corpus-verify, or the push to main goes red. A mode-only change tells no one. Parsed by the strict mini-YAML in scripts/corpus_lib.py —
 # one level of nesting, inline lists, comments; anything deeper is an error.
 #
 # 🔴 `audiences` on a consumer decides what that Nerea SERVES, not who can READ

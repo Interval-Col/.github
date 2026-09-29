@@ -1,0 +1,99 @@
+# A corpus-registry.yml change reaches the consumers it affects — and they answer.
+#
+# Task 1.6 of pharos-llm-proxy/plans/nerea-con-conocimiento-plan.md. Every consumer
+# reads its grants from the registry on each deploy (`corpus_registry.py corpus
+# --app X --environment E`), so a changed grant only needs that deploy to happen.
+# Until now it happened on the next KB publish, whatever that was: a widened grant
+# loaded nothing, and a narrowed one left chunks corpus-verify V3 rejects.
+#
+#   1. plan — scripts/registry_dispatch.py diffs the LIVE edges before and after
+#             the push, per consumer repo (app, kb, audiences, environments,
+#             image). An unreadable "before" counts as everything changed.
+#   2. tell — `kb-updated` (source: registry) to exactly those repos, and wait
+#             for each `wait` consumer's run with a green corpus-verify job —
+#             kb_dispatch.publish(), the same contract kb-publish uses.
+#
+# 🔴 Nothing here fails open: a token that cannot be minted, a refused dispatch,
+# a red or skipped verify and a timeout are all red.
+#
+# Runner: GitHub-hosted. This repo is public, and the org's runner groups do not
+# take public repos (measured 2026-09-29) — which also means the wait holds no
+# self-hosted runner while the consumers deploy on theirs.
+# Secrets: the org's PHAROS_BOT_PRIVATE_KEY (visibility: all) and variable
+# PHAROS_BOT_APP_ID. Push to main only: a pull request never gets them.
+
+name: corpus-registry-changed
+
+on:
+  push:
+    branches: [main]
+    paths: [corpus-registry.yml]
+  # Re-tell every live consumer (e.g. after fixing a consumer's red run).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One registry change at a time: two overlapping ones would dispatch the same
+# consumer twice and each wait on the other's run.
+concurrency:
+  group: corpus-registry-changed
+  cancel-in-progress: false
+
+jobs:
+  tell-consumers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # The registry as it was before this push. A manual run, a first push or a
+      # base that cannot be fetched leaves `before` empty ⇒ every live consumer.
+      - name: The registry before the push
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -uo pipefail
+          : > before.yml
+          if [ "$EVENT" = push ] && [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
+            if git fetch -q --depth=1 origin "$BEFORE" && git show "$BEFORE:corpus-registry.yml" > before.yml; then
+              echo "before = $BEFORE"
+            else
+              echo "::warning::cannot read corpus-registry.yml at $BEFORE — telling every live consumer"
+              : > before.yml
+            fi
+          else
+            echo "no base ($EVENT) — telling every live consumer"
+          fi
+
+      - name: Which consumers this change touches
+        id: plan
+        run: |
+          set -euo pipefail
+          before=""; [ -s before.yml ] && before="--before before.yml"
+          repos=$(python3 scripts/registry_dispatch.py plan $before --after corpus-registry.yml)
+          echo "repos=$repos" >> "$GITHUB_OUTPUT"
+          echo "touched: ${repos:-none}"
+
+      - name: Mint the org bot token
+        id: token
+        if: steps.plan.outputs.repos != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.PHAROS_BOT_APP_ID }}
+          private-key: ${{ secrets.PHAROS_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.plan.outputs.repos }}
+
+      - name: Dispatch kb-updated and wait for every touched consumer's verdict
+        if: steps.plan.outputs.repos != ''
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          SHA: ${{ github.sha }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          before=""; [ -s before.yml ] && before="--before before.yml"
+          python3 scripts/registry_dispatch.py run $before --after corpus-registry.yml \
+            --sha "$SHA" --owner "$OWNER" --timeout-minutes 45
