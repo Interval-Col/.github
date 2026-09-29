@@ -6,15 +6,33 @@
 # Until now it happened on the next KB publish, whatever that was: a widened grant
 # loaded nothing, and a narrowed one left chunks corpus-verify V3 rejects.
 #
-#   1. plan — scripts/registry_dispatch.py diffs the LIVE edges before and after
-#             the push, per consumer repo (app, kb, audiences, environments,
-#             image). An unreadable "before" counts as everything changed.
+#   1. plan — scripts/registry_dispatch.py diffs the LIVE edges between the
+#             registry the consumers were last told about (the head of this
+#             workflow's last GREEN run — not the previous push, see below) and
+#             now, per consumer repo (app, kb, audiences, environments, image).
+#             An unreadable "before" counts as everything changed.
 #   2. tell — `kb-updated` (source: registry) to exactly those repos, and wait
 #             for each `wait` consumer's run with a green corpus-verify job —
 #             kb_dispatch.publish(), the same contract kb-publish uses.
 #
 # 🔴 Nothing here fails open: a token that cannot be minted, a refused dispatch,
-# a red or skipped verify and a timeout are all red.
+# a red or skipped verify and a timeout are all red. So is a change to the
+# `kbs:` block (roots, default_status, a KB's audiences…): those are read when the
+# KB builds its index, in ITS repo, and nothing here rebuilds it — the run names
+# the stale KBs and stays red until they republish.
+#
+# 🪤 Why "last green run" and not `github.event.before`: GitHub keeps ONE pending
+# run per concurrency group. Three registry merges during one wait cancel the
+# middle run, and the third, diffed only against the second push, would never
+# tell anyone about the first-to-second change. A red run is re-told too.
+#
+# Order when a consumer goes live for a new KB: wire the app first (compose
+# sidecar + corpus-verify `sources:`), merge it, THEN flip the registry edge.
+# Registry-first makes this run red until the app ships — closed, but noisy.
+#
+# The consumers' KB lane (`kb-dispatch`) also keeps one pending run: a registry
+# merge landing while two KB publishes queue there cancels one of them, whose
+# publish goes red although this run redeploys the same images. Re-run it.
 #
 # Runner: GitHub-hosted. This repo is public, and the org's runner groups do not
 # take public repos (measured 2026-09-29) — which also means the wait holds no
@@ -33,6 +51,7 @@ on:
 
 permissions:
   contents: read
+  actions: read     # this workflow's last green run = the "before"
 
 # One registry change at a time: two overlapping ones would dispatch the same
 # consumer twice and each wait on the other's run.
@@ -49,14 +68,25 @@ jobs:
 
       # The registry as it was before this push. A manual run, a first push or a
       # base that cannot be fetched leaves `before` empty ⇒ every live consumer.
-      - name: The registry before the push
+      - name: The registry the consumers were last told about
         env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
-          BEFORE: ${{ github.event.before }}
+          PUSH_BEFORE: ${{ github.event.before }}
         run: |
           set -uo pipefail
           : > before.yml
-          if [ "$EVENT" = push ] && [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
+          BEFORE=""
+          if [ "$EVENT" = push ]; then
+            BEFORE=$(gh api "repos/$REPO/actions/workflows/corpus-registry-changed.yml/runs?branch=main&status=success&per_page=1" \
+                     --jq '.workflow_runs[0].head_sha // empty') || BEFORE=""
+            if [ -z "$BEFORE" ]; then
+              BEFORE="$PUSH_BEFORE"   # first run ever: the previous push
+              echo "no green run yet — base = the previous push"
+            fi
+          fi
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
             if git fetch -q --depth=1 origin "$BEFORE" && git show "$BEFORE:corpus-registry.yml" > before.yml; then
               echo "before = $BEFORE"
             else
@@ -86,8 +116,9 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ steps.plan.outputs.repos }}
 
+      # Always runs: with no consumer touched it needs no token, and it is where a
+      # stale KB (a changed `kbs:` field) turns the run red.
       - name: Dispatch kb-updated and wait for every touched consumer's verdict
-        if: steps.plan.outputs.repos != ''
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           SHA: ${{ github.sha }}

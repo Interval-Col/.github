@@ -13,10 +13,19 @@ all a change needs is to trigger that deploy — for the consumers it touched,
 and no one else.
 
 What counts as touched: a repo whose LIVE edges (`wait`/`notify`) differ before
-and after, compared on (app, kb, audiences, environments, the KB's image). A
-repo whose last live edge went away (removed, or back to `planned`) is touched
-too — it is dispatched as `notify`, since it has nothing left to verify. Mode
-for the rest is `wait` if any of its live edges waits.
+and after, compared on (app, kb, audiences, environments, the KB's image). Mode
+is `wait` if any of its live edges waits, else `notify`.
+
+Two cases this does NOT fix, said out loud (Fable review of 1.6, 2026-09-29):
+
+- A repo that lost its LAST live edge is told as `notify`, but its rows stay:
+  the app redeploys with `KB_CORPUS={}`, and the shared embedder refuses an
+  empty corpus before it prunes. They are never SERVED — retrieval grants are
+  `{}` too, so nothing matches — but cleaning them means unwiring the app.
+- The `kbs:` block (`roots`, `skip`, `default_status`, `liderazgo_areas`, a KB's
+  own `audiences`, …) is read when the KB BUILDS its index, in the KB's repo.
+  Changing it tells no consumer and rebuilds nothing: `changed_kbs()` names
+  them, and the workflow fails until someone republishes those KBs.
 
 The dispatch and the wait are kb_dispatch.publish(): the same correlation id in
 the consumer's `run-name`, the same demand for a green `corpus-verify…` job, the
@@ -67,6 +76,20 @@ def live_edges(reg: dict | None) -> dict[str, set[tuple]]:
     return out
 
 
+KB_FIELDS_AT_BUILD = ("roots", "skip", "recursive", "url", "default_status",
+                      "liderazgo_areas", "audiences", "repo")
+
+
+def changed_kbs(before: dict | None, after: dict) -> list[str]:
+    """KBs whose build-time fields changed: their index is stale until they
+    republish. (`image` is not here — touched() handles it on the consumer side.)"""
+    if before is None:
+        return []
+    old, new = before["kbs"], after["kbs"]
+    return sorted(k for k in new if k in old and any(
+        old[k].get(f) != new[k].get(f) for f in KB_FIELDS_AT_BUILD))
+
+
 def touched(before: dict | None, after: dict) -> list[dict]:
     """The consumers to dispatch, as kb_dispatch.publish() takes them:
     [{"repo", "app", "mode"}], sorted by repo. `before=None` = everything changed."""
@@ -79,7 +102,7 @@ def touched(before: dict | None, after: dict) -> list[dict]:
     for repo in sorted(repos):
         modes = {c["mode"] for c in after["consumers"]
                  if c["repo"] == repo and c["mode"] in LIVE}
-        apps = sorted({c["app"] for c in after["consumers"] if c["repo"] == repo}
+        apps = sorted({e[0] for e in new.get(repo, set())}
                       or {e[0] for e in old.get(repo, set())})
         out.append({"repo": repo, "app": ", ".join(apps),
                     "mode": "wait" if "wait" in modes else "notify"})
@@ -114,7 +137,9 @@ def main() -> int:
     except (OSError, RegistryError) as exc:
         print(f"::error::{args.after} is invalid:\n{exc}", file=sys.stderr)
         return 2
-    consumers = touched(_load(args.before), after)
+    before = _load(args.before)
+    consumers = touched(before, after)
+    stale_kbs = changed_kbs(before, after)
 
     if args.cmd == "plan":
         print(",".join(c["repo"] for c in consumers))
@@ -123,9 +148,17 @@ def main() -> int:
     if not args.sha:
         print("::error::run needs --sha", file=sys.stderr)
         return 2
+    stale = [
+        f"{kb}: a build-time field changed (roots, default_status, audiences, …) — its index "
+        "is stale until it republishes; merge any change to that KB's repo, or run its "
+        "build-site workflow by hand"
+        for kb in stale_kbs
+    ]
+    for line in stale:
+        print(f"::error::{line}")
     if not consumers:
         print("::notice::this registry change touches no live consumer — nothing to tell")
-        return 0
+        return 1 if stale else 0
     token = os.environ.get("GH_TOKEN", "")
     if not token:
         print("::error::GH_TOKEN is empty — the org bot token was not minted", file=sys.stderr)
@@ -133,8 +166,7 @@ def main() -> int:
 
     outcomes = kb_dispatch.publish(kb_dispatch.Http(token), args.owner, SOURCE, args.sha,
                                    consumers, args.timeout_minutes * 60, args.poll_seconds)
-    text = kb_dispatch.report(SOURCE, args.sha, outcomes).replace(
-        "## kb-publish ·", "## corpus-registry-changed ·", 1)
+    text = kb_dispatch.report(SOURCE, args.sha, outcomes, title="corpus-registry-changed")
     print(text)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
@@ -145,7 +177,7 @@ def main() -> int:
             print(f"::warning::{w}")
         if not o.ok:
             print(f"::error::{o.repo} ({o.mode}): {o.detail}")
-    return 0 if all(o.ok for o in outcomes) else 1
+    return 0 if all(o.ok for o in outcomes) and not stale else 1
 
 
 if __name__ == "__main__":

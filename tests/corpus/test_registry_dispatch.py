@@ -121,7 +121,8 @@ class TouchedTest(unittest.TestCase):
                          [{"repo": "repo-three", "app": "app-three", "mode": "wait"}])
 
     def test_losing_the_last_live_edge_is_told_as_notify(self):
-        # Back to planned: it has nothing left to verify, but its rows must go.
+        # Back to planned: nothing left to verify. Its rows are not pruned (the
+        # embedder refuses an empty corpus) but never served: its grants are {}.
         after = edit("    audiences: [staff, liderazgo]\n    mode: notify",
                      "    audiences: [staff, liderazgo]\n    mode: planned")
         self.assertEqual(rd.touched(reg(), after),
@@ -145,6 +146,22 @@ class TouchedTest(unittest.TestCase):
 
     def test_an_unusable_before_touches_every_live_consumer(self):
         self.assertEqual(repos(rd.touched(None, reg())), ["repo-one", "repo-two"])
+
+
+class ChangedKbsTest(unittest.TestCase):
+    """The `kbs:` block acts at the KB's build, not at the consumer (Fable, 1.6)."""
+
+    def test_a_build_time_field_names_the_kb(self):
+        after = edit("image: kb-b-site\n    roots: [guias]",
+                     "image: kb-b-site\n    roots: [guias, procesos]")
+        self.assertEqual(rd.changed_kbs(reg(), after), ["kb-b"])
+        self.assertEqual(rd.touched(reg(), after), [])  # no consumer grant changed
+
+    def test_an_image_change_is_the_consumers_business_not_a_stale_index(self):
+        self.assertEqual(rd.changed_kbs(reg(), edit("image: kb-b-site", "image: kb-b2")), [])
+
+    def test_nothing_is_stale_without_a_before(self):
+        self.assertEqual(rd.changed_kbs(None, reg()), [])
 
 
 class RunTest(unittest.TestCase):
@@ -214,6 +231,17 @@ class CliTest(unittest.TestCase):
             self.assertEqual(r.returncode, 2)
             self.assertIn("GH_TOKEN", r.stderr)
 
+    def test_a_stale_kb_makes_run_red_even_with_no_consumer_touched(self):
+        with tempfile.TemporaryDirectory() as d:
+            b, a = Path(d) / "b.yml", Path(d) / "a.yml"
+            b.write_text(BASE, encoding="utf-8")
+            a.write_text(BASE.replace("default_status: vigente\n    audiences: [staff]\n",
+                                      "default_status: borrador\n    audiences: [staff]\n"),
+                         encoding="utf-8")
+            r = self.cli("run", "--before", str(b), "--after", str(a), "--sha", "c" * 40)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn("kb-b: a build-time field changed", r.stdout)
+
     def test_the_real_registry_plans(self):
         r = self.cli("plan", "--before", str(REPO / "corpus-registry.yml"),
                      "--after", str(REPO / "corpus-registry.yml"))
@@ -237,6 +265,16 @@ class WorkflowShapeTest(unittest.TestCase):
     def test_nothing_fails_open(self):
         self.assertNotIn("continue-on-error", self.code)
         self.assertNotIn("|| true", self.code)
+
+    def test_before_is_the_last_green_run_not_the_previous_push(self):
+        # One pending run per group: diffing against event.before loses a change.
+        self.assertIn("corpus-registry-changed.yml/runs?branch=main&status=success", self.code)
+        self.assertIn("actions: read", self.code)
+
+    def test_the_verdict_step_always_runs(self):
+        # With no consumer touched it is still where a stale KB turns the run red.
+        step = self.code.split("- name: Dispatch kb-updated")[1]
+        self.assertNotIn("if:", step)
 
     def test_it_calls_the_script(self):
         self.assertIn("scripts/registry_dispatch.py plan", self.code)

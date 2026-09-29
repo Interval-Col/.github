@@ -8,7 +8,11 @@
 # that touches it. 🔔 Merging a change here TELLS the consumers it touches
 # (`corpus-registry-changed.yml`): every repo whose live edges differ gets
 # `kb-updated`, redeploys with its new grants, and — if `wait` — must pass
-# corpus-verify, or the push to main goes red. A mode-only change tells no one. Parsed by the strict mini-YAML in scripts/corpus_lib.py —
+# corpus-verify, or the push to main goes red. A mode-only change tells no one.
+#    ⚠️ The `kbs:` block is read when a KB BUILDS its index: changing roots,
+#    default_status or a KB's audiences here rebuilds nothing — that run goes red
+#    naming the KB, until it republishes. And wire an app to a new KB (sidecar +
+#    corpus-verify `sources:`) BEFORE flipping its edge live here. Parsed by the strict mini-YAML in scripts/corpus_lib.py —
 # one level of nesting, inline lists, comments; anything deeper is an error.
 #
 # 🔴 `audiences` on a consumer decides what that Nerea SERVES, not who can READ
