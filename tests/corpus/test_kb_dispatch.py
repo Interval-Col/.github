@@ -189,6 +189,12 @@ class WorkflowShapeTest(unittest.TestCase):
         # lch-kb republishes on demand (e.g. to force a corpus refresh).
         self.assertEqual(self.code.count("github.event_name == 'workflow_dispatch'"), 3)
 
+    def test_latest_moves_only_while_the_commit_is_the_tip(self):
+        # Concurrency order is arbitrary (Codex, #255): the freshness check is the guard.
+        self.assertIn('git ls-remote origin "$REF"', self.code)
+        self.assertIn('"$tip" != "$SHA"', self.code)
+        self.assertIn("needs.build.outputs.superseded != 'true'", self.code)
+
     def test_no_hardcoded_consumer_list(self):
         for repo in ("admission-patient", "biuman-lis", "pharos-lis"):
             self.assertFalse(repo in self.code, f"hardcoded consumer {repo}")
