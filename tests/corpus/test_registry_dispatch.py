@@ -173,6 +173,43 @@ class ChangedKbsTest(unittest.TestCase):
         self.assertEqual(rd.changed_kbs(None, reg()), [])
 
 
+class RepublishTest(unittest.TestCase):
+    """A stale KB is rebuilt by running its build-site.yml on main (German, 2026-09-29)."""
+
+    class Http:
+        def __init__(self, code, body=None):
+            self.code, self.body, self.calls = code, body or {}, []
+
+        def request(self, method, url, body=None):
+            self.calls.append((method, url, body))
+            return self.code, self.body
+
+    def test_204_queues_the_kbs_own_workflow_on_main(self):
+        http = self.Http(204)
+        ok, detail = rd.republish(http, "Interval-Col", "kb-b")
+        self.assertTrue(ok, detail)
+        [(method, url, body)] = http.calls
+        self.assertEqual(method, "POST")
+        self.assertTrue(url.endswith("/repos/Interval-Col/kb-b/actions/workflows/"
+                                     "build-site.yml/dispatches"), url)
+        self.assertEqual(body, {"ref": "main"})
+        self.assertIn("kb-publish run", detail)
+
+    def test_403_names_the_missing_permission(self):
+        ok, detail = rd.republish(self.Http(403, {"message": "Resource not accessible"}),
+                                  "Interval-Col", "kb-b")
+        self.assertFalse(ok)
+        self.assertIn("actions: write", detail)
+
+    def test_404_is_red_too(self):
+        # A KB without workflow_dispatch in build-site.yml answers 422/404.
+        ok, detail = rd.republish(self.Http(422, {"message": "Workflow does not have "
+                                                  "'workflow_dispatch' trigger"}),
+                                  "Interval-Col", "kb-b")
+        self.assertFalse(ok)
+        self.assertIn("workflow_dispatch", detail)
+
+
 class RunTest(unittest.TestCase):
     """The dispatch and the wait are kb_dispatch.publish(): same contract."""
 
@@ -240,17 +277,27 @@ class CliTest(unittest.TestCase):
             self.assertEqual(r.returncode, 2)
             self.assertIn("GH_TOKEN", r.stderr)
 
-    def test_a_stale_kb_warns_but_does_not_turn_the_run_red(self):
-        # Red could never clear: the baseline is the last green run (Codex, #256).
+    def stale_pair(self, d):
+        b, a = Path(d) / "b.yml", Path(d) / "a.yml"
+        b.write_text(BASE, encoding="utf-8")
+        a.write_text(BASE.replace("image: kb-b-site\n    roots: [guias]",
+                                  "image: kb-b-site\n    roots: [guias, procesos]"),
+                     encoding="utf-8")
+        return b, a
+
+    def test_plan_mints_for_the_kb_to_republish(self):
+        # No consumer grant changed, but the token must reach kb-b's repo.
         with tempfile.TemporaryDirectory() as d:
-            b, a = Path(d) / "b.yml", Path(d) / "a.yml"
-            b.write_text(BASE, encoding="utf-8")
-            a.write_text(BASE.replace("default_status: vigente\n    audiences: [staff]\n",
-                                      "default_status: borrador\n    audiences: [staff]\n"),
-                         encoding="utf-8")
+            b, a = self.stale_pair(d)
+            r = self.cli("plan", "--before", str(b), "--after", str(a))
+            self.assertEqual(r.stdout.strip(), "kb-b", r.stderr)
+
+    def test_a_stale_kb_without_a_token_is_red(self):
+        with tempfile.TemporaryDirectory() as d:
+            b, a = self.stale_pair(d)
             r = self.cli("run", "--before", str(b), "--after", str(a), "--sha", "c" * 40)
-            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-            self.assertIn("::warning::kb-b: a build-time field changed", r.stdout)
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+            self.assertIn("GH_TOKEN", r.stderr)
 
     def test_the_real_registry_plans(self):
         r = self.cli("plan", "--before", str(REPO / "corpus-registry.yml"),
@@ -282,7 +329,7 @@ class WorkflowShapeTest(unittest.TestCase):
         self.assertIn("actions: read", self.code)
 
     def test_the_verdict_step_always_runs(self):
-        # With no consumer touched it is still where a stale KB is named.
+        # With no consumer touched it is still where a stale KB is republished.
         step = self.code.split("- name: Dispatch kb-updated")[1]
         self.assertNotIn("if:", step)
 

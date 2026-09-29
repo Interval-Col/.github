@@ -27,10 +27,13 @@ Two cases, said out loud (Fable + Codex review of 1.6, 2026-09-29):
   learns to prune on `{}` — an open question in the plan.
 - The `kbs:` block (`roots`, `skip`, `default_status`, `liderazgo_areas`, a KB's
   own `audiences`, …) is read when the KB BUILDS its index, in the KB's repo.
-  Changing it tells no consumer and rebuilds nothing. `changed_kbs()` names
-  them as a WARNING, not a failure: the baseline is the last green run, so a red
-  here could never clear by republishing (Codex, #256); and a stale index never
-  over-serves — what an app serves is bounded by its own grants, which DO apply.
+  So `changed_kbs()` names those KBs and this script REPUBLISHES them — a
+  `workflow_dispatch` of the KB's `build-site.yml` on `main`, which kb-publish
+  treats like a push: rebuild, ship, tell its consumers and wait (German,
+  2026-09-29). It does not wait for that run: finding it would mean matching
+  by time again. The KB's own publish run is the verdict. A dispatch that is
+  refused (the bot needs `actions: write`) is red, and — the baseline being the
+  last green run — is retried by the next registry change until it lands.
 
 The dispatch and the wait are kb_dispatch.publish(): the same correlation id in
 the consumer's `run-name`, the same demand for a green `corpus-verify…` job, the
@@ -81,6 +84,7 @@ def live_edges(reg: dict | None) -> dict[str, set[tuple]]:
     return out
 
 
+BUILD_WORKFLOW = "build-site.yml"
 KB_FIELDS_AT_BUILD = ("roots", "skip", "recursive", "url", "default_status",
                       "liderazgo_areas", "audiences", "repo")
 
@@ -93,6 +97,21 @@ def changed_kbs(before: dict | None, after: dict) -> list[str]:
     old, new = before["kbs"], after["kbs"]
     return sorted(k for k in new if k in old and any(
         old[k].get(f) != new[k].get(f) for f in KB_FIELDS_AT_BUILD))
+
+
+def republish(http: kb_dispatch.Http, owner: str, repo: str) -> tuple[bool, str]:
+    """Run the KB's build-site.yml on main. 204 = queued; anything else is red."""
+    code, body = http.request(
+        "POST", f"{kb_dispatch.API}/repos/{owner}/{repo}/actions/workflows/{BUILD_WORKFLOW}"
+        "/dispatches", {"ref": "main"})
+    if code == 204:
+        return True, (f"republish queued — its verdict is the kb-publish run: https://github.com/"
+                      f"{owner}/{repo}/actions/workflows/{BUILD_WORKFLOW}")
+    if code == 403:
+        return False, ("HTTP 403 — the org bot lacks `actions: write` on this KB (org App "
+                       "settings → pharos-planning-bot → Actions: Read and write, then accept "
+                       "it on the installation)")
+    return False, f"HTTP {code} {body.get('message', '')}".strip()
 
 
 def touched(before: dict | None, after: dict) -> list[dict]:
@@ -149,31 +168,38 @@ def main() -> int:
     consumers = touched(before, after)
     stale_kbs = changed_kbs(before, after)
 
+    kb_repos = sorted({after["kbs"][kb]["repo"] for kb in stale_kbs})
+
     if args.cmd == "plan":
-        print(",".join(c["repo"] for c in consumers))
+        # The bot token covers both: the consumers to tell and the KBs to republish.
+        print(",".join(sorted({c["repo"] for c in consumers} | set(kb_repos))))
         return 0
 
     if not args.sha:
         print("::error::run needs --sha", file=sys.stderr)
         return 2
-    stale = [
-        f"{kb}: a build-time field changed (roots, default_status, audiences, …) — its index "
-        "is stale until it republishes; merge any change to that KB's repo, or run its "
-        "build-site workflow by hand"
-        for kb in stale_kbs
-    ]
-    for line in stale:
-        print(f"::warning::{line}")
-    if not consumers:
-        print("::notice::this registry change touches no live consumer — nothing to tell")
+    if not consumers and not stale_kbs:
+        print("::notice::this registry change touches no live consumer and no KB build — "
+              "nothing to tell")
         return 0
     token = os.environ.get("GH_TOKEN", "")
     if not token:
         print("::error::GH_TOKEN is empty — the org bot token was not minted", file=sys.stderr)
         return 2
+    http = kb_dispatch.Http(token)
 
-    outcomes = kb_dispatch.publish(kb_dispatch.Http(token), args.owner, SOURCE, args.sha,
-                                   consumers, args.timeout_minutes * 60, args.poll_seconds)
+    # KBs first: their publish runs long, and it tells its own consumers.
+    republished = []
+    for kb in stale_kbs:
+        repo = after["kbs"][kb]["repo"]
+        ok, detail = republish(http, args.owner, repo)
+        out = kb_dispatch.Outcome(repo=repo, app=f"KB {kb}", mode="republish", ok=ok,
+                                  detail=detail)
+        republished.append(out)
+
+    outcomes = kb_dispatch.publish(http, args.owner, SOURCE, args.sha, consumers,
+                                   args.timeout_minutes * 60, args.poll_seconds)
+    outcomes = republished + outcomes
     text = kb_dispatch.report(SOURCE, args.sha, outcomes, title="corpus-registry-changed")
     print(text)
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

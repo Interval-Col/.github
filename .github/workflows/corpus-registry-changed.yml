@@ -18,11 +18,16 @@
 # 🔴 Nothing here fails open: a token that cannot be minted, a refused dispatch,
 # a red or skipped verify and a timeout are all red. So is revoking an app's LAST
 # live KB when that app waited: it keeps its mode, and stays red until its rows
-# are cleared. A change to the `kbs:` block (roots, default_status, a KB's
-# audiences…) is read when the KB builds its index, in ITS repo; nothing here
-# rebuilds it, so the run names the stale KBs as a WARNING — a red could never
-# clear (the baseline is the last green run), and a stale index never
-# over-serves: each app's own grants bound what it serves, and those do apply.
+# are cleared.
+#
+# A change to the `kbs:` block (roots, default_status, a KB's audiences…) is read
+# when the KB builds its index, in ITS repo. So this run REPUBLISHES that KB: it
+# runs the KB's build-site.yml on main (German, 2026-09-29), and kb-publish there
+# rebuilds, ships and waits for its own consumers — that run is the verdict; this
+# one does not wait for it (it could only be found by time). A refused dispatch
+# is red. ⚠️ The org bot needs `actions: write` for it, and each KB's
+# build-site.yml needs `workflow_dispatch` (lch-kb has it; biuman-kb#58,
+# lch-admin-kb#11).
 #
 # 🪤 Why "last green run" and not `github.event.before`: GitHub keeps ONE pending
 # run per concurrency group. Three registry merges during one wait cancel the
@@ -109,6 +114,7 @@ jobs:
           echo "repos=$repos" >> "$GITHUB_OUTPUT"
           echo "touched: ${repos:-none}"
 
+      # Scoped to exactly the consumers to tell and the KBs to republish.
       - name: Mint the org bot token
         id: token
         if: steps.plan.outputs.repos != ''
@@ -119,8 +125,8 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ steps.plan.outputs.repos }}
 
-      # Always runs: with no consumer touched it needs no token, and it is where a
-      # stale KB (a changed `kbs:` field) is named.
+      # Always runs: with nothing touched it needs no token and says so; a stale
+      # KB (a changed `kbs:` field) is republished here even if no consumer was.
       - name: Dispatch kb-updated and wait for every touched consumer's verdict
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
