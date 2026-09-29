@@ -11,18 +11,22 @@ run it received was red, and biuman-kb's build stayed green for a month. So:
 
 - `notify` consumers get the dispatch, and a non-204 fails the publish;
 - `wait` consumers get it with a correlation id; this script finds the run it
-  started and fails unless that run finishes `success` within the timeout.
+  started and fails unless that run finishes `success` within the timeout AND a
+  job named `corpus-verify…` in it finished `success`. A green run whose check was
+  skipped (a switch off, a job gated out) proved it deployed, not that it learned.
 
-The correlation id travels in `client_payload.correlation_id`. A consumer that
-puts it in its `run-name` is matched exactly:
+The correlation id travels in `client_payload.correlation_id`, and a `wait`
+consumer MUST put it in its `run-name`:
 
     run-name: ${{ github.event_name == 'repository_dispatch'
                   && format('kb-updated · {0} · {1}', github.event.client_payload.source,
                             github.event.client_payload.correlation_id) || '' }}
 
-One that doesn't is matched by time (the first `repository_dispatch` run created
-after the dispatch), with a warning — right in the quiet case, ambiguous when two
-KBs publish in the same minute.
+There is no fallback by time any more. It used to take the first
+`repository_dispatch` run created after the dispatch, and two KBs publishing
+together bound to each other's runs — with a runner clock behind GitHub's, one
+could go green on the other's run while its own failed (Fable review, 2026-09-28).
+A `wait` consumer without the run-name times out red, saying so.
 
 Reading the consumer's runs needs `actions: read` on the token. The org bot
 (`pharos-planning-bot`) mints it; without that permission the wait fails with a
@@ -111,12 +115,11 @@ def dispatch(http: Http, owner: str, repo: str, payload: dict) -> tuple[bool, st
     return False, f"dispatch refused: HTTP {code} {body.get('message', '')}".strip()
 
 
-def find_run(http: Http, owner: str, repo: str, cid: str, since: datetime,
-             ) -> tuple[dict | None, str | None]:
-    """(run, warning). The run whose title carries `cid`, else the first
-    repository_dispatch run created after `since`."""
-    # One minute of slack: the consumer's clock stamps `created_at`, ours stamps `since`.
-    after = (since - timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+def find_run(http: Http, owner: str, repo: str, cid: str, since: datetime) -> dict | None:
+    """The repository_dispatch run whose title carries `cid` — nothing else."""
+    # Only narrows the listing — the match is the id. GitHub stamps `created_at`, the
+    # runner stamps `since`; five minutes of slack so a slow runner clock can't hide it.
+    after = (since - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
     code, body = http.request(
         "GET",
         f"{API}/repos/{owner}/{repo}/actions/runs"
@@ -130,20 +133,29 @@ def find_run(http: Http, owner: str, repo: str, cid: str, since: datetime,
         )
     if code != 200:
         raise RuntimeError(f"HTTP {code} listing {owner}/{repo}'s runs: {body.get('message', '')}")
-    runs = body.get("workflow_runs", [])
-    for run in runs:
-        if cid in (run.get("display_title") or "") or cid in (run.get("name") or ""):
-            return run, None
-    later = sorted(
-        (r for r in runs if r.get("created_at", "") >= since.strftime("%Y-%m-%dT%H:%M:%SZ")),
-        key=lambda r: r["created_at"],
-    )
-    if later:
-        return later[0], (
-            f"{repo}: matched by time, not by correlation id — add the id to the consumer's "
-            "`run-name` so two publishes in the same minute cannot be confused"
-        )
-    return None, None
+    for run in body.get("workflow_runs", []):
+        if cid in (run.get("display_title") or ""):
+            return run
+    return None
+
+
+VERIFY_JOB = "corpus-verify"
+
+
+def verified(http: Http, owner: str, repo: str, run_id: int) -> tuple[bool, str]:
+    """Did a `corpus-verify…` job in this run finish green? (A reusable workflow's
+    job is listed as `<caller job> / <job>`, so the prefix is the caller's name.)"""
+    code, body = http.request(
+        "GET", f"{API}/repos/{owner}/{repo}/actions/runs/{run_id}/jobs?per_page=100")
+    if code != 200:
+        raise RuntimeError(f"HTTP {code} listing the jobs of {repo} run {run_id}: "
+                           f"{body.get('message', '')}")
+    jobs = [j for j in body.get("jobs", []) if (j.get("name") or "").startswith(VERIFY_JOB)]
+    if any(j.get("conclusion") == "success" for j in jobs):
+        return True, "run `success`, corpus-verify `success`"
+    seen = ", ".join(f"`{j.get('conclusion')}`" for j in jobs) or "no such job"
+    return False, (f"run `success` but corpus-verify did not pass ({seen}) — the run "
+                   "deployed, nothing proved the app learned")
 
 
 def wait_for(http: Http, owner: str, out: Outcome, cid: str, since: datetime,
@@ -151,9 +163,7 @@ def wait_for(http: Http, owner: str, out: Outcome, cid: str, since: datetime,
     run = None
     while clock() < deadline:
         if run is None:
-            run, warning = find_run(http, owner, out.repo, cid, since)
-            if warning:
-                out.warnings.append(warning)
+            run = find_run(http, owner, out.repo, cid, since)
         else:
             url = f"{API}/repos/{owner}/{out.repo}/actions/runs/{run['id']}"
             code, body = http.request("GET", url)
@@ -162,14 +172,17 @@ def wait_for(http: Http, owner: str, out: Outcome, cid: str, since: datetime,
         if run is not None:
             out.run_url = run.get("html_url", "")
             if run.get("status") == "completed":
-                out.ok = run.get("conclusion") == "success"
-                out.detail = f"run finished `{run.get('conclusion')}`"
+                if run.get("conclusion") == "success":
+                    out.ok, out.detail = verified(http, owner, out.repo, run["id"])
+                else:
+                    out.detail = f"run finished `{run.get('conclusion')}`"
                 return
         sleep(poll_s)
     out.detail = (
         "no verdict before the timeout — "
-        + ("the run is still going" if run else "no run started: is there a `kb-updated` handler "
-           "on the default branch?")
+        + ("the run is still going" if run else
+           f"no run titled with `{cid}`: is there a `kb-updated` handler on the default "
+           "branch, and does its `run-name` carry `client_payload.correlation_id`?")
     )
 
 

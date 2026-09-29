@@ -22,10 +22,11 @@ LATER = (NOW + timedelta(seconds=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
 class FakeHttp:
     """Scripted GitHub: dispatch codes per repo, and a run sequence per repo."""
 
-    def __init__(self, dispatch=None, runs=None, list_code=200):
+    def __init__(self, dispatch=None, runs=None, list_code=200, jobs=None):
         self.dispatch = dispatch or {}
         self.runs = runs or {}          # repo -> list of run dicts returned in order
         self.list_code = list_code
+        self.jobs = jobs or {}          # repo -> jobs of its run (default: verify green)
         self.calls: list[tuple[str, str]] = []
 
     def request(self, method, url, body=None):
@@ -35,6 +36,8 @@ class FakeHttp:
             self.last_payload = body
             return self.dispatch.get(repo, 204), {}
         seq = self.runs.get(repo, [])
+        if url.endswith("/jobs?per_page=100"):
+            return 200, {"jobs": self.jobs.get(repo, [VERIFY_GREEN])}
         if "/actions/runs?" in url:
             if self.list_code != 200:
                 return self.list_code, {"message": "Resource not accessible by integration"}
@@ -56,7 +59,12 @@ class FakeClock:
         self.t += s
 
 
-def run(state, conclusion=None, title=""):
+CID = kb_dispatch.correlation_id("biuman-kb", "a" * 40)
+TITLE = f"kb-updated · biuman-kb · {CID}"
+VERIFY_GREEN = {"name": "corpus-verify / corpus-verify", "conclusion": "success"}
+
+
+def run(state, conclusion=None, title=TITLE):
     return {"id": 7, "status": state, "conclusion": conclusion, "created_at": LATER,
             "display_title": title, "html_url": "https://github.com/x/runs/7"}
 
@@ -77,7 +85,24 @@ class PublishTest(unittest.TestCase):
                                         run("completed", "success")]})
         [o] = publish(http, [consumer("app-a")])
         self.assertTrue(o.ok, o.detail)
-        self.assertIn("success", o.detail)
+        self.assertIn("corpus-verify `success`", o.detail)
+
+    def test_green_run_with_verify_skipped_fails(self):
+        # ADMISSION_DEPLOY_ENABLED off ⇒ deploy and corpus-verify skipped, run green.
+        http = FakeHttp(runs={"app-a": [run("completed", "success")]},
+                        jobs={"app-a": [{"name": "corpus-verify / corpus-verify",
+                                         "conclusion": "skipped"}]})
+        [o] = publish(http, [consumer("app-a")])
+        self.assertFalse(o.ok)
+        self.assertIn("`skipped`", o.detail)
+
+    def test_green_run_with_no_verify_job_fails(self):
+        # lab-qc today: a deploy, no corpus-verify at all.
+        http = FakeHttp(runs={"app-a": [run("completed", "success")]},
+                        jobs={"app-a": [{"name": "Deploy Backend", "conclusion": "success"}]})
+        [o] = publish(http, [consumer("app-a")])
+        self.assertFalse(o.ok)
+        self.assertIn("no such job", o.detail)
 
     def test_red_consumer_run_fails_the_publish(self):
         # The Admisiones month: dispatch accepted, run red.
@@ -90,7 +115,7 @@ class PublishTest(unittest.TestCase):
         http = FakeHttp(runs={"app-a": []})
         [o] = publish(http, [consumer("app-a")], timeout_s=120)
         self.assertFalse(o.ok)
-        self.assertIn("no run started", o.detail)
+        self.assertIn("no run titled with", o.detail)
 
     def test_refused_dispatch_fails_even_for_notify(self):
         http = FakeHttp(dispatch={"app-a": 404})
@@ -110,20 +135,19 @@ class PublishTest(unittest.TestCase):
         self.assertIn("actions: read", o.detail)
 
     def test_correlation_id_match_has_no_warning(self):
-        http = FakeHttp()
-        cid = kb_dispatch.correlation_id("biuman-kb", "a" * 40)
-        title = f"kb-updated · biuman-kb · {cid}"
-        http.runs = {"app-a": [run("completed", "success", title=title)]}
+        http = FakeHttp(runs={"app-a": [run("completed", "success")]})
         [o] = publish(http, [consumer("app-a")])
         self.assertTrue(o.ok)
         self.assertEqual(o.warnings, [])
-        self.assertEqual(http.last_payload["client_payload"]["correlation_id"], cid)
+        self.assertEqual(http.last_payload["client_payload"]["correlation_id"], CID)
 
-    def test_time_match_warns(self):
+    def test_a_run_without_the_id_is_never_taken(self):
+        # The time fallback bound two publishes to each other's runs; now an
+        # untitled run — even a green one — is someone else's.
         http = FakeHttp(runs={"app-a": [run("completed", "success", title="CI/CD")]})
-        [o] = publish(http, [consumer("app-a")])
-        self.assertTrue(o.ok)
-        self.assertTrue(any("matched by time" in w for w in o.warnings))
+        [o] = publish(http, [consumer("app-a")], timeout_s=120)
+        self.assertFalse(o.ok)
+        self.assertIn("run-name", o.detail)
 
     def test_every_consumer_is_dispatched_before_anyone_is_waited_on(self):
         http = FakeHttp(runs={"app-a": [run("completed", "success")],

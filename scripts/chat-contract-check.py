@@ -19,8 +19,9 @@ app's in-app AI chat feature, driven by the app's own `.chat-contract.yml` manif
       composes from <NAME>_PERSONA
   H10 readiness route — `/health`, un-gated, reporting enabled/allowed/upstream
   H11 corpus contract — a `rag: on` chat names its `corpus_app` in corpus-registry.yml,
-      calls the reusable corpus-verify.yml, and ships the `ask_module` it answers
-      verification questions through (warn until enforced)
+      calls the reusable corpus-verify.yml, ships the `ask_module` it answers
+      verification questions through (warn until enforced), and its `embedder` is
+      byte-identical to registry/corpus/kb_embedder.py (a drifted copy always FAILS)
 
 Deliberately stdlib-only (same rule as auth-contract-check.py / db-tenant-check.py):
 a future *required* check must not depend on PyPI on the merge path. The manifest
@@ -36,6 +37,7 @@ executed from there by the reusable workflow chat-contract-check.yml.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -154,8 +156,15 @@ H10_ENFORCED = True
 H11_ENFORCED = False
 CORPUS_REGISTRY = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir,
                                "corpus-registry.yml")
+# Anchored to a real `uses:` line: a commented-out job must not count as a call.
 CORPUS_VERIFY_USE = re.compile(
-    r"uses:\s*Interval-Col/\.github/\.github/workflows/corpus-verify\.yml@")
+    r"^[ \t]*(?:-[ \t]*)?uses:[ \t]*Interval-Col/\.github/\.github/workflows/corpus-verify\.yml@",
+    re.M)
+# The shared embedder every consumer copies BYTE FOR BYTE (sync-pharos-registry.sh).
+# A drifted copy FAILS even while H11 warns: it is not a missing adoption step but
+# an app embedding with code nobody reviewed as the contract (Fable review, 2026-09-28).
+EMBEDDER_REF = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "brands",
+                            "pharos_brand", "registry", "corpus", "kb_embedder.py")
 
 # H8 — the registry chat widget vs a hand-rolled one (mirrors auth A9). Match real
 # USAGE (a <PharosHelpChat> tag, an import, or a direct .vue reference) — not a bare
@@ -688,8 +697,15 @@ def check(manifest, results):
     check_h11(manifest, results)
 
 
-def check_h11(manifest, results, registry_path=CORPUS_REGISTRY, workflows_dir=".github/workflows"):
-    """H11 — the corpus contract: registry entry + corpus-verify + ask module."""
+def _sha256(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def check_h11(manifest, results, registry_path=CORPUS_REGISTRY, workflows_dir=".github/workflows",
+              embedder_ref=EMBEDDER_REF):
+    """H11 — the corpus contract: registry entry + corpus-verify + ask module + the
+    embedder copy byte-identical to the org's."""
     rag = str(manifest.get("rag", "off")).lower() in ("on", "true", "yes")
     if not rag:
         results.append(("H11", INFO, "`rag: off` — no corpus, so no corpus contract"))
@@ -747,12 +763,27 @@ def check_h11(manifest, results, registry_path=CORPUS_REGISTRY, workflows_dir=".
                         "verification questions)")
     elif not os.path.exists(ask):
         problems.append(f"ask_module not found: {ask!r}")
+    drift = None
+    embedder = manifest.get("embedder")
+    if not embedder:
+        problems.append("no `embedder:` (the app's copy of registry/corpus/kb_embedder.py)")
+    elif not os.path.exists(embedder):
+        problems.append(f"embedder not found: {embedder!r}")
+    elif not os.path.exists(embedder_ref):
+        problems.append("the org's kb_embedder.py is not reachable from this checkout — cannot "
+                        "compare the copy (runs from the org checkout in CI)")
+    elif _sha256(embedder) != _sha256(embedder_ref):
+        drift = (f"{embedder} is NOT byte-identical to registry/corpus/kb_embedder.py "
+                 f"({_sha256(embedder)[:12]} ≠ {_sha256(embedder_ref)[:12]}) — re-sync it with "
+                 "sync-pharos-registry.sh, or land the change in the registry first")
     kbs = ", ".join(f"{c['kb']} ({c['mode']})" for c in live)
-    if problems:
+    if drift:
+        results.append(("H11", FAIL, f"{corpus_app}: " + "; ".join([drift] + problems)))
+    elif problems:
         results.append(("H11", sev, f"{corpus_app} loads {kbs}, but " + "; ".join(problems)))
     else:
-        results.append(("H11", PASS, f"{corpus_app} loads {kbs}; corpus-verify is called and "
-                                     f"the ask module exists"))
+        results.append(("H11", PASS, f"{corpus_app} loads {kbs}; corpus-verify is called, "
+                                     "the ask module exists and the embedder is the org's"))
 
 
 # --------------------------------------------------------------------------

@@ -358,7 +358,7 @@ if [[ -n "$PERSONA_DIR" ]]; then
 fi
 
 # The shared KB embedder travels exactly like the persona: byte-for-byte, into the
-# backend chat dir, never edited there (chat-contract H11 compares it).
+# backend chat dir, never edited there (chat-contract H11 compares its sha256 and FAILS on drift).
 if [[ -n "$EMBEDDER_DIR" ]]; then
   if [[ ! -d "$EMBEDDER_DIR" ]]; then
     echo "error: --embedder-dir not found: $EMBEDDER_DIR" >&2

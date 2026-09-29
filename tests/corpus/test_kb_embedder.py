@@ -105,6 +105,16 @@ class CorpusTest(unittest.TestCase):
              "--app", "pharos-ti"], capture_output=True, text=True, check=True).stdout
         self.assertEqual(json.loads(out), {})
 
+    def test_an_environment_gets_only_its_own_edges(self):
+        # Admisiones' edges are dev-only: a prod deploy must be handed nothing.
+        def corpus(env):
+            return json.loads(subprocess.run(
+                [sys.executable, str(REPO / "scripts/corpus_registry.py"), "corpus",
+                 "--app", "admission-patient", "--environment", env],
+                capture_output=True, text=True, check=True).stdout)
+        self.assertIn("biuman-kb", corpus("development"))
+        self.assertEqual(corpus("production"), {})
+
 
 class RetryTest(unittest.TestCase):
     def test_transient_is_retried_then_succeeds(self):

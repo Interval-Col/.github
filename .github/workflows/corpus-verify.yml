@@ -123,6 +123,7 @@ jobs:
         id: cfg
         env:
           APP: ${{ inputs.app }}
+          ENV_NAME: ${{ inputs.environment }}
           SOURCES: ${{ inputs.sources }}
           TABLE: ${{ inputs.table }}
           DB: ${{ inputs.db }}
@@ -131,7 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 .corpus-org/scripts/corpus_registry.py --registry .corpus-org/corpus-registry.yml \
-            grants --app "$APP" > grants.json
+            grants --app "$APP" --environment "$ENV_NAME" > grants.json
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import base64, json, os
           grants = {kb: g["audiences"] for kb, g in json.load(open("grants.json")).items()
@@ -151,10 +152,13 @@ jobs:
         env:
           HOST: ${{ secrets[inputs.ssh_host_secret] }}
           KEY: ${{ secrets[inputs.ssh_key_secret] }}
+          HOST_NAME: ${{ inputs.ssh_host_secret }}
+          KEY_NAME: ${{ inputs.ssh_key_secret }}
+          ENV_NAME: ${{ inputs.environment }}
         run: |
           set -euo pipefail
           [ -n "$HOST" ] && [ -n "$KEY" ] || {
-            echo "::error::${{ inputs.ssh_host_secret }} / ${{ inputs.ssh_key_secret }} are empty in environment '${{ inputs.environment }}'"
+            echo "::error::${HOST_NAME} / ${KEY_NAME} are empty in environment '${ENV_NAME}'"
             exit 1
           }
           mkdir -p ~/.ssh && chmod 700 ~/.ssh

@@ -11,7 +11,9 @@
 #               without touching a document): OIDC → ECR, tags <sha> + latest.
 #   3. tell   — main only: `kb-updated` to every `wait`/`notify` consumer in the
 #               registry — no hardcoded list — and WAIT for each `wait` consumer's
-#               run to finish green (scripts/kb_dispatch.py). A 204 proves nothing.
+#               run to finish green WITH its corpus-verify job green, found by the
+#               correlation id in its run-name (scripts/kb_dispatch.py). A 204
+#               proves nothing, and neither does a green run that skipped the check.
 #
 # 🔴 Nothing here fails open. The old legs warned and moved on when the dispatch
 # token was missing or a dispatch bounced, and a month of red consumer runs went
@@ -74,6 +76,15 @@ permissions:
 jobs:
   build:
     runs-on: ${{ fromJSON(inputs.runner) }}
+    # One push of this KB's image at a time, in order. Without it two merges close
+    # together can finish their `docker push` backwards, and `:latest` — what every
+    # consumer pulls — ends up at the OLDER commit while both publishes go green.
+    # Keyed on the ref so a PR build never queues behind (or bumps) a main push. A
+    # third main push while one runs and one waits replaces the waiting one: that
+    # run ends `cancelled` (red), and the newer commit it carries publishes anyway.
+    concurrency:
+      group: kb-publish-${{ inputs.kb }}-${{ github.ref }}
+      cancel-in-progress: false
     outputs:
       image: ${{ steps.meta.outputs.image }}
     steps:
@@ -94,13 +105,19 @@ jobs:
           python3 .corpus-org/scripts/kb_index.py --kb "$KB" --root . --out "$INDEX" \
             --registry .corpus-org/corpus-registry.yml
 
+      # Inputs reach the shell through env, never pasted into the script.
       - id: meta
-        run: echo "image=${{ inputs.kb }}-site" >> "$GITHUB_OUTPUT"
+        env:
+          KB: ${{ inputs.kb }}
+        run: echo "image=${KB}-site" >> "$GITHUB_OUTPUT"
 
       - name: Build the site image
+        env:
+          DOCKERFILE: ${{ inputs.dockerfile }}
+          IMG: ${{ steps.meta.outputs.image }}
+          SHA: ${{ github.sha }}
         run: |
-          docker build -f "${{ inputs.dockerfile }}" --build-arg GIT_SHA="${{ github.sha }}" \
-            -t "${{ steps.meta.outputs.image }}:${{ github.sha }}" .
+          docker build -f "$DOCKERFILE" --build-arg GIT_SHA="$SHA" -t "$IMG:$SHA" .
 
       # The image must serve THIS index: v5, this commit, the same article count.
       # An image that still builds its own old index would pass a plain 200.
@@ -142,13 +159,15 @@ jobs:
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           REG: ${{ secrets.AWS_REGISTRY }}
+          REGION: ${{ secrets.AWS_REGION }}
           IMG: ${{ steps.meta.outputs.image }}
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          aws ecr get-login-password --region "${{ secrets.AWS_REGION }}" \
+          aws ecr get-login-password --region "$REGION" \
             | docker login --username AWS --password-stdin "$REG"
-          for tag in "${{ github.sha }}" latest; do
-            docker tag "$IMG:${{ github.sha }}" "$REG/$IMG:$tag"
+          for tag in "$SHA" latest; do
+            docker tag "$IMG:$SHA" "$REG/$IMG:$tag"
             docker push "$REG/$IMG:$tag"
           done
 
@@ -192,7 +211,9 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           KB: ${{ inputs.kb }}
           TIMEOUT: ${{ inputs.wait_timeout_minutes }}
+          SHA: ${{ github.sha }}
+          OWNER: ${{ github.repository_owner }}
         run: |
-          python3 .corpus-org/scripts/kb_dispatch.py --kb "$KB" --sha "${{ github.sha }}" \
-            --owner "${{ github.repository_owner }}" --timeout-minutes "$TIMEOUT" \
+          python3 .corpus-org/scripts/kb_dispatch.py --kb "$KB" --sha "$SHA" \
+            --owner "$OWNER" --timeout-minutes "$TIMEOUT" \
             --registry .corpus-org/corpus-registry.yml
