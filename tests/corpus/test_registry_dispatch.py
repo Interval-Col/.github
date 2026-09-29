@@ -120,13 +120,22 @@ class TouchedTest(unittest.TestCase):
         self.assertEqual(rd.touched(reg(), after),
                          [{"repo": "repo-three", "app": "app-three", "mode": "wait"}])
 
-    def test_losing_the_last_live_edge_is_told_as_notify(self):
-        # Back to planned: nothing left to verify. Its rows are not pruned (the
-        # embedder refuses an empty corpus) but never served: its grants are {}.
+    def test_losing_the_last_live_edge_keeps_the_mode_it_had(self):
+        # A revocation needs proof the app redeployed (Codex, #256): a consumer
+        # that waited still waits; one that only listened still only listens.
         after = edit("    audiences: [staff, liderazgo]\n    mode: notify",
                      "    audiences: [staff, liderazgo]\n    mode: planned")
         self.assertEqual(rd.touched(reg(), after),
                          [{"repo": "repo-two", "app": "app-two", "mode": "notify"}])
+        waited = BASE.replace("    audiences: [staff]\n    mode: wait\n  - kb: kb-b\n"
+                              "    app: app-one", "    audiences: [staff]\n    mode: planned\n"
+                              "  - kb: kb-b\n    app: app-one")
+        gone = waited.replace("    audiences: [staff]\n    mode: wait\n  - kb: kb-a\n"
+                              "    app: app-two", "    audiences: [staff]\n    mode: planned\n"
+                              "  - kb: kb-a\n    app: app-two")
+        self.assertNotIn("repo-one", rd.live_edges(reg(gone)))  # BOTH edges went planned
+        self.assertEqual(rd.touched(reg(), reg(gone))[0],
+                         {"repo": "repo-one", "app": "app-one", "mode": "wait"})
 
     def test_a_mode_change_alone_is_not_a_change(self):
         # wait → notify changes how the publisher listens, not what the app loads.
@@ -231,7 +240,8 @@ class CliTest(unittest.TestCase):
             self.assertEqual(r.returncode, 2)
             self.assertIn("GH_TOKEN", r.stderr)
 
-    def test_a_stale_kb_makes_run_red_even_with_no_consumer_touched(self):
+    def test_a_stale_kb_warns_but_does_not_turn_the_run_red(self):
+        # Red could never clear: the baseline is the last green run (Codex, #256).
         with tempfile.TemporaryDirectory() as d:
             b, a = Path(d) / "b.yml", Path(d) / "a.yml"
             b.write_text(BASE, encoding="utf-8")
@@ -239,8 +249,8 @@ class CliTest(unittest.TestCase):
                                       "default_status: borrador\n    audiences: [staff]\n"),
                          encoding="utf-8")
             r = self.cli("run", "--before", str(b), "--after", str(a), "--sha", "c" * 40)
-            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
-            self.assertIn("kb-b: a build-time field changed", r.stdout)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("::warning::kb-b: a build-time field changed", r.stdout)
 
     def test_the_real_registry_plans(self):
         r = self.cli("plan", "--before", str(REPO / "corpus-registry.yml"),
@@ -272,7 +282,7 @@ class WorkflowShapeTest(unittest.TestCase):
         self.assertIn("actions: read", self.code)
 
     def test_the_verdict_step_always_runs(self):
-        # With no consumer touched it is still where a stale KB turns the run red.
+        # With no consumer touched it is still where a stale KB is named.
         step = self.code.split("- name: Dispatch kb-updated")[1]
         self.assertNotIn("if:", step)
 

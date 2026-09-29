@@ -16,10 +16,13 @@
 #             kb_dispatch.publish(), the same contract kb-publish uses.
 #
 # 🔴 Nothing here fails open: a token that cannot be minted, a refused dispatch,
-# a red or skipped verify and a timeout are all red. So is a change to the
-# `kbs:` block (roots, default_status, a KB's audiences…): those are read when the
-# KB builds its index, in ITS repo, and nothing here rebuilds it — the run names
-# the stale KBs and stays red until they republish.
+# a red or skipped verify and a timeout are all red. So is revoking an app's LAST
+# live KB when that app waited: it keeps its mode, and stays red until its rows
+# are cleared. A change to the `kbs:` block (roots, default_status, a KB's
+# audiences…) is read when the KB builds its index, in ITS repo; nothing here
+# rebuilds it, so the run names the stale KBs as a WARNING — a red could never
+# clear (the baseline is the last green run), and a stale index never
+# over-serves: each app's own grants bound what it serves, and those do apply.
 #
 # 🪤 Why "last green run" and not `github.event.before`: GitHub keeps ONE pending
 # run per concurrency group. Three registry merges during one wait cancel the
@@ -117,7 +120,7 @@ jobs:
           repositories: ${{ steps.plan.outputs.repos }}
 
       # Always runs: with no consumer touched it needs no token, and it is where a
-      # stale KB (a changed `kbs:` field) turns the run red.
+      # stale KB (a changed `kbs:` field) is named.
       - name: Dispatch kb-updated and wait for every touched consumer's verdict
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}

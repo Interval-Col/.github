@@ -16,16 +16,21 @@ What counts as touched: a repo whose LIVE edges (`wait`/`notify`) differ before
 and after, compared on (app, kb, audiences, environments, the KB's image). Mode
 is `wait` if any of its live edges waits, else `notify`.
 
-Two cases this does NOT fix, said out loud (Fable review of 1.6, 2026-09-29):
+Two cases, said out loud (Fable + Codex review of 1.6, 2026-09-29):
 
-- A repo that lost its LAST live edge is told as `notify`, but its rows stay:
-  the app redeploys with `KB_CORPUS={}`, and the shared embedder refuses an
-  empty corpus before it prunes. They are never SERVED — retrieval grants are
-  `{}` too, so nothing matches — but cleaning them means unwiring the app.
+- A repo that lost its LAST live edge keeps the mode it HAD: a revocation is
+  the change that most needs proof the app redeployed, and a 204 is no proof
+  (Codex, #256). For a consumer that waited, that run is red today and stays
+  red: the app redeploys with `KB_CORPUS={}` (so it serves nothing), but the
+  shared embedder refuses an empty corpus before it prunes, and corpus-verify
+  V3 then finds rows outside the grants. Loud on purpose, until the embedder
+  learns to prune on `{}` — an open question in the plan.
 - The `kbs:` block (`roots`, `skip`, `default_status`, `liderazgo_areas`, a KB's
   own `audiences`, …) is read when the KB BUILDS its index, in the KB's repo.
-  Changing it tells no consumer and rebuilds nothing: `changed_kbs()` names
-  them, and the workflow fails until someone republishes those KBs.
+  Changing it tells no consumer and rebuilds nothing. `changed_kbs()` names
+  them as a WARNING, not a failure: the baseline is the last green run, so a red
+  here could never clear by republishing (Codex, #256); and a stale index never
+  over-serves — what an app serves is bounded by its own grants, which DO apply.
 
 The dispatch and the wait are kb_dispatch.publish(): the same correlation id in
 the consumer's `run-name`, the same demand for a green `corpus-verify…` job, the
@@ -102,6 +107,9 @@ def touched(before: dict | None, after: dict) -> list[dict]:
     for repo in sorted(repos):
         modes = {c["mode"] for c in after["consumers"]
                  if c["repo"] == repo and c["mode"] in LIVE}
+        if not modes and before is not None:  # its last live edge went away
+            modes = {c["mode"] for c in before["consumers"]
+                     if c["repo"] == repo and c["mode"] in LIVE}
         apps = sorted({e[0] for e in new.get(repo, set())}
                       or {e[0] for e in old.get(repo, set())})
         out.append({"repo": repo, "app": ", ".join(apps),
@@ -155,10 +163,10 @@ def main() -> int:
         for kb in stale_kbs
     ]
     for line in stale:
-        print(f"::error::{line}")
+        print(f"::warning::{line}")
     if not consumers:
         print("::notice::this registry change touches no live consumer — nothing to tell")
-        return 1 if stale else 0
+        return 0
     token = os.environ.get("GH_TOKEN", "")
     if not token:
         print("::error::GH_TOKEN is empty — the org bot token was not minted", file=sys.stderr)
@@ -177,7 +185,7 @@ def main() -> int:
             print(f"::warning::{w}")
         if not o.ok:
             print(f"::error::{o.repo} ({o.mode}): {o.detail}")
-    return 0 if all(o.ok for o in outcomes) and not stale else 1
+    return 0 if all(o.ok for o in outcomes) else 1
 
 
 if __name__ == "__main__":
