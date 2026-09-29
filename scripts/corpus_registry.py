@@ -30,20 +30,26 @@ from corpus_lib import MODES, RegistryError, consumers_of, load_registry  # noqa
 DEFAULT_REGISTRY = Path(__file__).resolve().parent.parent / "corpus-registry.yml"
 
 
-def corpus_for(reg: dict, app: str) -> dict:
+def live_edges(reg: dict, app: str, environment: str | None = None) -> list[dict]:
+    """`app`'s non-planned edges; with `environment`, only the ones the registry
+    lists for it. Without the filter a prod deploy inherits dev-only grants and the
+    `environments` column is decoration (Fable review, 2026-09-28)."""
+    return [c for c in reg["consumers"]
+            if c["app"] == app and c["mode"] != "planned"
+            and (environment is None or environment in c["environments"])]
+
+
+def corpus_for(reg: dict, app: str, environment: str | None = None) -> dict:
     """What the shared embedder (registry/corpus/kb_embedder.py) loads for `app`:
     {kb: {"url", "audiences"}} for its LIVE edges only — a `planned` edge is not
     embedded, so corpus-verify never sees chunks the registry does not grant yet.
     The URL is the KB's sidecar on the app's own network: `http://<image>`, the
     compose service name every consumer already uses (biuman-kb-site, …)."""
-    out = {}
-    for c in reg["consumers"]:
-        if c["app"] == app and c["mode"] != "planned":
-            out[c["kb"]] = {
-                "url": f"http://{reg['kbs'][c['kb']]['image']}",
-                "audiences": sorted(c["audiences"]),
-            }
-    return out
+    return {
+        c["kb"]: {"url": f"http://{reg['kbs'][c['kb']]['image']}",
+                  "audiences": sorted(c["audiences"])}
+        for c in live_edges(reg, app, environment)
+    }
 
 
 def table(reg: dict) -> str:
@@ -69,8 +75,11 @@ def main() -> int:
     c.add_argument("--field", help="print one field per line instead of JSON")
     g = sub.add_parser("grants")
     g.add_argument("--app", required=True)
+    g.add_argument("--environment", help="only the edges the registry lists for it")
     k = sub.add_parser("corpus", help="KB_CORPUS JSON for the shared embedder (live edges only)")
     k.add_argument("--app", required=True)
+    k.add_argument("--environment", help="only the edges the registry lists for it; "
+                   "an environment with none gets `{}` — Nerea serves nothing")
     args = ap.parse_args()
 
     try:
@@ -98,9 +107,11 @@ def main() -> int:
         else:
             print(json.dumps(rows, ensure_ascii=False))
     elif args.cmd == "corpus":
-        print(json.dumps(corpus_for(reg, args.app), ensure_ascii=False, sort_keys=True))
+        print(json.dumps(corpus_for(reg, args.app, args.environment), ensure_ascii=False,
+                         sort_keys=True))
     elif args.cmd == "grants":
-        rows = [x for x in reg["consumers"] if x["app"] == args.app]
+        rows = [x for x in reg["consumers"] if x["app"] == args.app
+                and (args.environment is None or args.environment in x["environments"])]
         if not rows:
             print(f"::error::app `{args.app}` consumes no KB in the registry", file=sys.stderr)
             return 2

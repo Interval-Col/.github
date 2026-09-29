@@ -57,8 +57,17 @@ class H11Test(unittest.TestCase):
         self.registry.write_text(REGISTRY, encoding="utf-8")
         self.wf = self.root / ".github/workflows"
         self.wf.mkdir(parents=True)
+        self.embedder_ref = self.root / "org_kb_embedder.py"
+        self.embedder_ref.write_text("# the org's embedder\n", encoding="utf-8")
         self.cwd = os.getcwd()
         os.chdir(self.root)
+
+    def conformant(self, embedder_text="# the org's embedder\n"):
+        (self.wf / "ci-cd.yml").write_text(CALLER, encoding="utf-8")
+        (self.root / "ask.py").write_text("", encoding="utf-8")
+        (self.root / "kb_embedder.py").write_text(embedder_text, encoding="utf-8")
+        return dict(rag="on", corpus_app="live-app", ask_module="ask.py",
+                    embedder="kb_embedder.py")
 
     def tearDown(self):
         os.chdir(self.cwd)
@@ -66,7 +75,8 @@ class H11Test(unittest.TestCase):
 
     def h11(self, **manifest):
         results = []
-        ccc.check_h11(manifest, results, registry_path=str(self.registry))
+        ccc.check_h11(manifest, results, registry_path=str(self.registry),
+                      embedder_ref=str(self.embedder_ref))
         [(cid, status, detail)] = results
         self.assertEqual(cid, "H11")
         return status, detail
@@ -97,10 +107,30 @@ class H11Test(unittest.TestCase):
         self.assertIn("ask_module", detail)
 
     def test_conformant_app_passes(self):
-        (self.wf / "ci-cd.yml").write_text(CALLER, encoding="utf-8")
-        (self.root / "ask.py").write_text("", encoding="utf-8")
-        status, detail = self.h11(rag="on", corpus_app="live-app", ask_module="ask.py")
+        status, detail = self.h11(**self.conformant())
         self.assertEqual(status, "PASS", detail)
+
+    def test_a_drifted_embedder_fails_even_unenforced(self):
+        # One hotfix in the app's copy and nothing else would ever notice.
+        status, detail = self.h11(**self.conformant("# the org's embedder\n# hotfix\n"))
+        self.assertEqual(status, "FAIL")
+        self.assertIn("NOT byte-identical", detail)
+
+    def test_no_embedder_declared_warns(self):
+        m = self.conformant()
+        del m["embedder"]
+        status, detail = self.h11(**m)
+        self.assertEqual(status, "WARN")
+        self.assertIn("embedder", detail)
+
+    def test_a_commented_out_call_does_not_count(self):
+        m = self.conformant()
+        (self.wf / "ci-cd.yml").write_text(
+            "jobs:\n  # corpus-verify:\n  #   uses: Interval-Col/.github/.github/workflows/"
+            "corpus-verify.yml@main\n", encoding="utf-8")
+        status, detail = self.h11(**m)
+        self.assertEqual(status, "WARN")
+        self.assertIn("corpus-verify.yml", detail)
 
     def test_enforced_flips_to_fail(self):
         try:

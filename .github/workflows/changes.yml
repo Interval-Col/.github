@@ -94,6 +94,7 @@ jobs:
           SHA: ${{ github.sha }}
           SINCE: ${{ inputs.since_last_success }}
           BRANCH: ${{ github.ref_name }}
+          FORCED: ${{ github.event.forced }}
         run: |
           set -uo pipefail
           : > files.txt
@@ -111,7 +112,11 @@ jobs:
                 ok=false
               fi ;;
             push)
-              if [ -n "$SINCE" ]; then
+              # A force-push can DROP a code commit while adding a docs one; the
+              # three-dot compare below diffs from the merge base and would only
+              # see the docs. Run everything.
+              [ "$FORCED" = true ] && ok=false
+              if [ "$ok" = true ] && [ -n "$SINCE" ]; then
                 # The last deploy that FINISHED green, not the previous push: a push
                 # that was cancelled mid-deploy must not vanish from the diff.
                 # Measured 2026-09-28: this listing is sometimes served STALE (an
@@ -121,12 +126,14 @@ jobs:
                          --jq '.workflow_runs[0].head_sha // empty') || BEFORE=""
                 echo "base = last successful $SINCE run on $BRANCH: ${BEFORE:-none}"
               fi
-              if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              if [ "$ok" != true ]; then
+                :          # forced: already running everything
+              elif [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
                 ok=false   # new branch: no base to diff against
               else
                 n=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '.files | length') || n=""
                 if [ -z "$n" ] || [ "$n" -ge 300 ]; then
-                  ok=false   # API error, force-push, or the 300-file compare cap
+                  ok=false   # API error or the 300-file compare cap
                 else
                   gh api "repos/$REPO/compare/$BEFORE...$SHA" \
                     --jq '.files[] | .filename, (.previous_filename // empty)' > files.txt || ok=false

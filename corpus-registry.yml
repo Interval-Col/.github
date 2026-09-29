@@ -102,7 +102,11 @@ consumers:
     repo: pharos-lis
     environments: [development, production]
     audiences: [staff, liderazgo]   # liderazgo added 2026-09-28 (German, Checkpoint 1)
-    mode: wait
+    # `notify` until 3.3: lab-qc has no audience filter and no corpus-verify yet, so
+    # `wait` promised "learned" and meant "deployed" (Fable review, 2026-09-28). Now
+    # that kb-publish demands a green corpus-verify, `wait` here would turn every
+    # lch-kb publish red. Back to `wait` when lab-qc adopts the shared embedder.
+    mode: notify
 
   - kb: lch-kb
     app: lch-citas

@@ -71,7 +71,12 @@ class KbError(Exception):
 
 
 def split_frontmatter(text: str, path: str) -> tuple[dict, str]:
-    """(meta, body). Flat `key: value` plus block lists (`verificacion:`)."""
+    """(meta, body). Flat `key: value` plus block lists (`verificacion:`).
+    A leading BOM (Notepad's UTF-8) is dropped first: with it `^---` did not match,
+    the frontmatter was silently ignored, and a draft fell back to the KB's default
+    status — `vigente` for biuman-kb, which non-technical staff edit. (CRLF is
+    already folded by `read_text`; the replace covers callers passing raw text.)"""
+    text = text.lstrip("\ufeff").replace("\r\n", "\n")
     m = _FM.match(text)
     if not m:
         return {}, text

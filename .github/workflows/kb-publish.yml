@@ -8,10 +8,13 @@
 #               (an unknown audience, an empty KB or a broken frontmatter fails
 #               HERE, before an image exists); the KB's Dockerfile COPIES that file.
 #   2. ship   — main only (a push, or a manual workflow_dispatch to republish
-#               without touching a document): OIDC → ECR, tags <sha> + latest.
+#               without touching a document): OIDC → ECR, tags <sha>, and `latest` only
+#               while the commit is still the branch tip.
 #   3. tell   — main only: `kb-updated` to every `wait`/`notify` consumer in the
 #               registry — no hardcoded list — and WAIT for each `wait` consumer's
-#               run to finish green (scripts/kb_dispatch.py). A 204 proves nothing.
+#               run to finish green WITH its corpus-verify job green, found by the
+#               correlation id in its run-name (scripts/kb_dispatch.py). A 204
+#               proves nothing, and neither does a green run that skipped the check.
 #
 # 🔴 Nothing here fails open. The old legs warned and moved on when the dispatch
 # token was missing or a dispatch bounced, and a month of red consumer runs went
@@ -74,8 +77,18 @@ permissions:
 jobs:
   build:
     runs-on: ${{ fromJSON(inputs.runner) }}
+    # One push of this KB's image at a time. It does NOT guarantee order — GitHub
+    # runs a group's queue in arbitrary order — so the push step below also refuses
+    # to move `:latest` unless this commit is still the branch tip. Keyed on the ref
+    # so a PR build never queues behind (or bumps) a main push. A third main push
+    # while one runs and one waits replaces the waiting one: that run ends
+    # `cancelled` (red), and the newer commit publishes anyway.
+    concurrency:
+      group: kb-publish-${{ inputs.kb }}-${{ github.ref }}
+      cancel-in-progress: false
     outputs:
       image: ${{ steps.meta.outputs.image }}
+      superseded: ${{ steps.push.outputs.superseded }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
@@ -94,13 +107,19 @@ jobs:
           python3 .corpus-org/scripts/kb_index.py --kb "$KB" --root . --out "$INDEX" \
             --registry .corpus-org/corpus-registry.yml
 
+      # Inputs reach the shell through env, never pasted into the script.
       - id: meta
-        run: echo "image=${{ inputs.kb }}-site" >> "$GITHUB_OUTPUT"
+        env:
+          KB: ${{ inputs.kb }}
+        run: echo "image=${KB}-site" >> "$GITHUB_OUTPUT"
 
       - name: Build the site image
+        env:
+          DOCKERFILE: ${{ inputs.dockerfile }}
+          IMG: ${{ steps.meta.outputs.image }}
+          SHA: ${{ github.sha }}
         run: |
-          docker build -f "${{ inputs.dockerfile }}" --build-arg GIT_SHA="${{ github.sha }}" \
-            -t "${{ steps.meta.outputs.image }}:${{ github.sha }}" .
+          docker build -f "$DOCKERFILE" --build-arg GIT_SHA="$SHA" -t "$IMG:$SHA" .
 
       # The image must serve THIS index: v5, this commit, the same article count.
       # An image that still builds its own old index would pass a plain 200.
@@ -138,23 +157,40 @@ jobs:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # `:<sha>` always; `:latest` — what consumers pull — only while this commit is
+      # still the tip. An older run that lands after a newer one would otherwise put
+      # `:latest` back on stale content with both publishes green (Codex, #255).
       - name: Push to ECR (main only)
+        id: push
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           REG: ${{ secrets.AWS_REGISTRY }}
+          REGION: ${{ secrets.AWS_REGION }}
           IMG: ${{ steps.meta.outputs.image }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          aws ecr get-login-password --region "${{ secrets.AWS_REGION }}" \
+          aws ecr get-login-password --region "$REGION" \
             | docker login --username AWS --password-stdin "$REG"
-          for tag in "${{ github.sha }}" latest; do
-            docker tag "$IMG:${{ github.sha }}" "$REG/$IMG:$tag"
-            docker push "$REG/$IMG:$tag"
-          done
+          docker tag "$IMG:$SHA" "$REG/$IMG:$SHA"
+          docker push "$REG/$IMG:$SHA"
+          tip=$(git ls-remote origin "$REF" | cut -f1)
+          [ -n "$tip" ] || { echo "::error::cannot read the tip of $REF"; exit 1; }
+          if [ "$tip" != "$SHA" ]; then
+            echo "::notice::$REF moved on to ${tip:0:12}: \`:latest\` stays for that run to publish"
+            echo "superseded=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          docker tag "$IMG:$SHA" "$REG/$IMG:latest"
+          docker push "$REG/$IMG:latest"
+          echo "superseded=false" >> "$GITHUB_OUTPUT"
 
+  # A superseded run tells nobody: its consumers would pull `:latest`, which is not
+  # its content, and the newer run's verdict is the one that means something.
   tell-consumers:
     needs: build
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.build.outputs.superseded != 'true'
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7
@@ -192,7 +228,9 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           KB: ${{ inputs.kb }}
           TIMEOUT: ${{ inputs.wait_timeout_minutes }}
+          SHA: ${{ github.sha }}
+          OWNER: ${{ github.repository_owner }}
         run: |
-          python3 .corpus-org/scripts/kb_dispatch.py --kb "$KB" --sha "${{ github.sha }}" \
-            --owner "${{ github.repository_owner }}" --timeout-minutes "$TIMEOUT" \
+          python3 .corpus-org/scripts/kb_dispatch.py --kb "$KB" --sha "$SHA" \
+            --owner "$OWNER" --timeout-minutes "$TIMEOUT" \
             --registry .corpus-org/corpus-registry.yml

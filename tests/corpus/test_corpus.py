@@ -145,6 +145,14 @@ class BuildTest(unittest.TestCase):
     def by_slug(self, index: dict) -> dict:
         return {a["slug"]: a for a in index["articles"]}
 
+    def test_a_bom_or_crlf_does_not_hide_the_frontmatter(self):
+        # A draft saved by Notepad must stay a draft, not fall back to `vigente`.
+        for name, raw in (("bom", "\ufeff---\ntitle: A\nstatus: borrador\n---\n# A\n\nx\n"),
+                          ("crlf", "---\r\ntitle: A\r\nstatus: borrador\r\n---\r\n# A\r\n\r\nx\r\n")):
+            (self.root / "guias" / f"{name}.md").write_bytes(raw.encode("utf-8"))
+        idx = self.by_slug(self.build())
+        self.assertEqual({a["status"] for a in idx.values()}, {"borrador"}, idx)
+
     def test_unknown_audience_fails_the_build(self):
         self.write("guias/a.md", "title: A\naudience: gerencia\n")
         with self.assertRaisesRegex(kb_index.KbError, "not in D1"):
