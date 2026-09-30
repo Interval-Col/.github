@@ -80,7 +80,12 @@ kbs:
 # One row per KB → app edge.
 #   app           the app (and its Nerea) that loads this KB
 #   repo          where its `repository_dispatch: kb-updated` receiver lives
-#   environments  where this edge is live (dispatch refreshes dev; prod refreshes on deploy)
+#   environments  where this edge is live (dispatch refreshes dev; prod refreshes on deploy).
+#                 The consumer repo's OWN GitHub environment names: its deploy passes its
+#                 `environment` to `corpus_registry.py --environment`, and corpus-verify uses
+#                 the same input for secrets AND grants. A name the repo does not use gets
+#                 `{}` — Nerea serves nothing, silently. Most repos: development/production;
+#                 biuman-lis: dev/prod until its rename (biuman-lis#488).
 #   audiences     what this app may SERVE from this KB (D1 grants)
 #   mode          how kb-publish treats it:
 #                   wait    — dispatch, then wait for the consumer's run to come back green.
@@ -101,7 +106,7 @@ consumers:
   - kb: biuman-kb
     app: biuman-lis
     repo: biuman-lis
-    environments: [development, production]
+    environments: [dev, prod]   # its GitHub env names (biuman-lis#488)
     audiences: [staff, liderazgo]
     mode: notify
 
@@ -164,14 +169,14 @@ consumers:
   - kb: lch-kb
     app: biuman-lis
     repo: biuman-lis
-    environments: [development]
+    environments: [dev]
     audiences: [staff]
     mode: planned
 
   - kb: lch-admin-kb
     app: biuman-lis
     repo: biuman-lis
-    environments: [development]
+    environments: [dev]
     audiences: [staff, servicio-al-cliente]
     mode: planned
 
