@@ -108,7 +108,11 @@ consumers:
     repo: biuman-lis
     environments: [dev, prod]   # its GitHub env names (biuman-lis#488)
     audiences: [staff, liderazgo]
-    mode: notify
+    # `wait` since 2026-09-30 (task 3.5): biuman-lis adopted the shared embedder and
+    # runs corpus-verify (biuman-lis#490), and that reached main — where `kb-updated`
+    # runs — with the promote biuman-lis#425. Its first real kb-updated on main
+    # (run 36722458171, 2026-09-30): corpus-verify V1–V3 PASS. Prod embed done (35 chunks).
+    mode: wait
 
   - kb: lch-kb
     app: lab-qc

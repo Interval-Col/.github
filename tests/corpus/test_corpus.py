@@ -114,7 +114,8 @@ class RegistryTest(unittest.TestCase):
     def test_consumers_of_filters_by_mode(self):
         reg = load_registry(REAL_REGISTRY)
         waits = corpus_lib.consumers_of(reg, "biuman-kb", ("wait",))
-        self.assertEqual([c["app"] for c in waits], ["admission-patient"])
+        # biuman-lis joined on 2026-09-30 (task 3.5: shared embedder + corpus-verify on main).
+        self.assertEqual([c["app"] for c in waits], ["admission-patient", "biuman-lis"])
         # lch-admin-kb → Admisiones went live on 2026-09-28, → Pháros TI on 2026-09-29.
         active = corpus_lib.consumers_of(reg, "lch-admin-kb", ("wait", "notify"))
         self.assertEqual([c["app"] for c in active], ["admission-patient", "pharos-ti"])
