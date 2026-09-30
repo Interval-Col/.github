@@ -26,7 +26,17 @@ What v5 adds, and why each piece exists:
         - pregunta: "¿Cómo entra un médico al portal?"
           debe-citar: servicio-al-cliente/portal-de-resultados/ingreso-pacientes-y-medicos
 
-  `debe-citar` defaults to the article itself.
+  `debe-citar` defaults to the article itself. It can also be a LIST — the answer
+  passes if it cites ANY of them — for a fact that lives in two twin guides
+  (e.g. the IT and the customer-service versions of the same procedure): an app
+  granted both may ground on either, and requiring one would fail a right answer
+  (measured on Pháros TI, 2026-09-30). An app granted only one of them still has
+  to cite that one, since it can retrieve nothing else.
+
+      verificacion:
+        - pregunta: "¿Cuántos códigos se pueden pedir por hora?"
+          debe-decir: "5 por hora"
+          debe-citar: [servicio-al-cliente/portal/ingreso, mesa-de-ayuda-ti/portal/ingreso]
 
 Layout and allowed audiences come from `corpus-registry.yml`, not from here, so
 a KB never carries its own copy of the rules.
@@ -159,10 +169,25 @@ def verificacion_of(meta: dict, slug: str) -> list[dict]:
             raise KbError(f"verificacion #{i}: unknown key(s) {sorted(unknown)}")
         out.append({
             "pregunta": _text(item["pregunta"]),
-            "debe_citar": _text(item.get("debe-citar")) or slug,
+            "debe_citar": _debe_citar(item.get("debe-citar"), slug, i),
             "debe_decir": _text(item.get("debe-decir")),
         })
     return out
+
+
+def _debe_citar(raw, slug: str, i: int) -> str | list[str]:
+    """One slug (the index keeps a plain string, as before) or several — any-of.
+    Absent ⇒ the article itself. An empty or malformed list is an error, never a
+    silent default: a check that quietly stops checking is how a corpus rots."""
+    if isinstance(raw, list):
+        slugs = [_text(s) for s in raw]
+        if not slugs or any(not s or isinstance(r, (list, dict)) for s, r in zip(slugs, raw)):
+            raise KbError(f"verificacion #{i}: `debe-citar` must be a slug or a list of slugs")
+        slugs = list(dict.fromkeys(slugs))
+        return slugs[0] if len(slugs) == 1 else slugs
+    if isinstance(raw, dict):
+        raise KbError(f"verificacion #{i}: `debe-citar` must be a slug or a list of slugs")
+    return _text(raw) or slug
 
 
 # ── Build ─────────────────────────────────────────────────────────────
