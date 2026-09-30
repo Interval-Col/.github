@@ -139,6 +139,25 @@ class AnswerTest(unittest.TestCase):
                                 ["guias/a"])
         self.assertTrue(ok)
 
+    def test_another_form_of_the_same_verb_says_it(self):
+        # Pháros TI, 2026-09-30: guide «escala de inmediato», Nerea «debes escalar
+        # de inmediato». Right answer; the check must not demand the wording.
+        q = dict(self.Q, debe_decir="escala")
+        for reply in ("Debes escalar de inmediato.", "Escálalo de inmediato.", "Escala ya."):
+            ok, _ = cv.check_answer(q, reply, ["guias/a"])
+            self.assertTrue(ok, reply)
+
+    def test_singular_and_plural_are_the_same_word(self):
+        q = dict(self.Q, debe_decir="5 minutos")
+        self.assertTrue(cv.check_answer(q, "Queda bloqueada 5 minuto más.", ["guias/a"])[0])
+
+    def test_a_longer_different_word_is_not_the_same_word(self):
+        # «hora» is not «horario»: 3 letters apart, a different word.
+        q = dict(self.Q, debe_decir="por hora")
+        self.assertFalse(cv.check_answer(q, "Según el horario de la sede.", ["guias/a"])[0])
+        self.assertFalse(cv.same_word("hora", "horario"))
+        self.assertFalse(cv.same_word("pie", "pies"))  # < 4 letters: exact only
+
     def test_a_missing_word_of_the_fact_still_fails(self):
         q = dict(self.Q, debe_decir="5 por hora")
         ok, _ = cv.check_answer(q, "Puede pedir 5 códigos por día.", ["guias/a"])
