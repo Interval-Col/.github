@@ -141,7 +141,7 @@ consumers:
   - kb: lch-admin-kb
     app: pharos-ti
     repo: pharos-ti
-    environments: [development]
+    environments: [development, production]   # production since 2026-09-30 (task 4.3, German)
     audiences: [staff, servicio-al-cliente, ti]
     # `wait` since 2026-09-29 (task 3.4): Pháros TI adopted the shared embedder and
     # runs corpus-verify after every dev deploy (pharos-ti#79, merged to develop — its
