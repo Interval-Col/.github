@@ -157,7 +157,25 @@ def says(fact: str, reply: str) -> bool:
         return True
     need_n, need_w, need_s = _pieces(f)
     have_n, have_w, have_s = _pieces(r)
-    return need_n <= have_n and need_w <= have_w and need_s <= have_s
+    words_ok = all(any(same_word(w, h) for h in have_w) for w in need_w)
+    return need_n <= have_n and words_ok and need_s <= have_s
+
+
+def same_word(a: str, b: str) -> bool:
+    """Two normalised words are the same WORD in another form: equal, or one is a
+    prefix of the other, the shorter has ≥ 4 letters, and they differ by ≤ 2
+    letters — «escala» / «escalar» / «escálalo», «minuto» / «minutos».
+
+    Measured on Pháros TI (2026-09-30): the guide says «escala de inmediato», Nerea
+    answered «debes escalar de inmediato» — right — and V4 failed on «escala».
+    German: «no podemos estar ajustando el lenguaje a que trabaje bien con el AI»
+    — so the check learns the inflection, not the KB its wording. Deliberately
+    narrow: «hora» does NOT match «horario» (3 letters apart), and numbers never
+    go through here — they stay exact (`_NUMBER`)."""
+    if a == b:
+        return True
+    short, long_ = (a, b) if len(a) <= len(b) else (b, a)
+    return len(short) >= 4 and long_.startswith(short) and len(long_) - len(short) <= 2
 
 
 def check_answer(item: dict, reply: str, sources: list) -> tuple[bool, str]:
