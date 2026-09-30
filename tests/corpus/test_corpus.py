@@ -211,6 +211,28 @@ class BuildTest(unittest.TestCase):
             {"pregunta": "¿Dónde está la guía?", "debe_citar": "guias/otra", "debe_decir": ""},
         ])
 
+    def test_debe_citar_can_name_twin_guides(self):
+        # Pháros TI, 2026-09-30: the same fact lives in the IT and the
+        # customer-service guide; an app granted both may ground on either.
+        self.write("guias/a.md", textwrap.dedent("""\
+            title: A
+            verificacion:
+              - pregunta: "¿Cuántos códigos por hora?"
+                debe-decir: "5 por hora"
+                debe-citar: [guias/a, mesa/a]
+              - pregunta: "¿Una sola, en lista?"
+                debe-citar: [guias/a, guias/a]
+            """))
+        [a] = self.build()["articles"]
+        self.assertEqual(a["verificacion"][0]["debe_citar"], ["guias/a", "mesa/a"])
+        # Deduped to one: the index keeps the plain string it always had.
+        self.assertEqual(a["verificacion"][1]["debe_citar"], "guias/a")
+
+    def test_an_empty_debe_citar_list_is_an_error_not_a_default(self):
+        self.write("guias/a.md", "verificacion:\n  - pregunta: x\n    debe-citar: []\n")
+        with self.assertRaisesRegex(kb_index.KbError, "debe-citar"):
+            self.build()
+
     def test_verificacion_rejects_unknown_keys(self):
         self.write("guias/a.md", "verificacion:\n  - pregunta: x\n    debe-responder: y\n")
         with self.assertRaisesRegex(kb_index.KbError, "unknown key"):

@@ -108,6 +108,24 @@ class AnswerTest(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("did not cite", detail)
 
+    def test_twin_guides_pass_on_either_citation(self):
+        q = dict(self.Q, debe_citar=["sac/ingreso", "mesa/ingreso"], debe_decir="5 por hora")
+        for cited in (["lch-admin-kb:sac/ingreso"], ["lch-admin-kb:mesa/ingreso"]):
+            ok, _ = cv.check_answer(q, "Hasta 5 por hora.", cited)
+            self.assertTrue(ok, cited)
+
+    def test_twin_guides_still_fail_when_neither_is_cited(self):
+        q = dict(self.Q, debe_citar=["sac/ingreso", "mesa/ingreso"], debe_decir="5 por hora")
+        ok, detail = cv.check_answer(q, "Hasta 5 por hora.", ["lch-admin-kb:otra/guia"])
+        self.assertFalse(ok)
+        self.assertIn("any of `sac/ingreso`, `mesa/ingreso`", detail)
+
+    def test_a_suffix_is_not_a_citation(self):
+        # `endswith(":" + slug)` must not let «x/sac/ingreso» count for «sac/ingreso».
+        q = dict(self.Q, debe_citar=["sac/ingreso"], debe_decir="")
+        ok, _ = cv.check_answer(q, "", ["lch-admin-kb:x/sac/ingreso"])
+        self.assertFalse(ok)
+
     def test_citation_with_wrong_fact_fails(self):
         # The error the plan names: the guide said 5 minutes, an answer said an hour.
         ok, detail = cv.check_answer(self.Q, "Dura hasta una hora.", ["guias/a"])

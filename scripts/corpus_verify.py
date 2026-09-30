@@ -26,7 +26,8 @@ For each KB the app is granted (corpus-registry.yml), against that KB's v5 index
 - **V4 answers** — each article's `verificacion` questions go to the app's own
   chat service through its ask module (`python -m <ask_module> --question …
   --audiences …`, which prints `{"reply": …, "sources": [...]}`). The answer must
-  cite `debe_citar` and contain `debe_decir` — the exact phrase or every one of its
+  cite `debe_citar` (one slug, or ANY of a list — twin guides) and contain
+  `debe_decir` — the exact phrase or every one of its
   words, accent- and case-insensitive. It asserts citation and key facts, never
   wording, and retries once: a flaky check that gets muted is worse than none.
 
@@ -119,10 +120,12 @@ def _norm(s: str) -> str:
     return " ".join(s.lower().split())
 
 
-def cites(sources: list, slug: str) -> bool:
+def cites(sources: list, slug: str | list[str]) -> bool:
+    """`sources` cites `slug` — or, for a list (twin guides), ANY of them."""
+    wanted = [slug] if isinstance(slug, str) else list(slug)
     for s in sources or []:
         s = str(s)
-        if s == slug or s.endswith(":" + slug):
+        if any(s == w or s.endswith(":" + w) for w in wanted):
             return True
     return False
 
@@ -160,7 +163,9 @@ def says(fact: str, reply: str) -> bool:
 def check_answer(item: dict, reply: str, sources: list) -> tuple[bool, str]:
     problems = []
     if not cites(sources, item["debe_citar"]):
-        problems.append(f"did not cite `{item['debe_citar']}` (cited: {sources or 'nothing'})")
+        want = item["debe_citar"]
+        want = f"`{want}`" if isinstance(want, str) else "any of " + ", ".join(f"`{w}`" for w in want)
+        problems.append(f"did not cite {want} (cited: {sources or 'nothing'})")
     if item.get("debe_decir") and not says(item["debe_decir"], reply):
         problems.append(f"did not say «{item['debe_decir']}»")
     return (not problems), "; ".join(problems) or "cited and said it"
