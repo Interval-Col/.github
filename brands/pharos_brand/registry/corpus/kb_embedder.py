@@ -161,9 +161,49 @@ def select(index: dict, kb: str, audiences: list[str]) -> Selection:
     return sel
 
 
-def chunk(text: str, max_chars: int = TARGET_CHARS, overlap: int = OVERLAP_CHARS) -> list[str]:
-    """Greedy chunker: largest prefix ≤ max_chars ending at a paragraph break, then a
-    sentence, then a space; each chunk starts `overlap` chars before the last end."""
+_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+_FENCE = re.compile(r"^\s*(```|~~~)")
+
+
+def sections(text: str) -> list[tuple[list[str], str]]:
+    """Split markdown at its headings: `[(breadcrumb, body)]`, body INCLUDING its own
+    heading line. `#` lines inside code fences are not headings. A heading whose
+    section has no text of its own (a parent immediately followed by a child) yields
+    no section — it survives in its children's breadcrumb. Text before the first
+    heading is a section with an empty breadcrumb."""
+    out: list[tuple[list[str], str]] = []
+    stack: list[tuple[int, str]] = []
+    crumb: list[str] = []
+    buf: list[str] = []
+    in_fence = False
+
+    def flush() -> None:
+        body = "\n".join(buf).strip()
+        # A section that is only its heading line carries nothing to embed.
+        lines = [ln for ln in body.splitlines() if ln.strip()]
+        if lines and not (len(lines) == 1 and _HEADING.match(lines[0])):
+            out.append((list(crumb), body))
+
+    for line in text.splitlines():
+        if _FENCE.match(line):
+            in_fence = not in_fence
+        m = None if in_fence else _HEADING.match(line)
+        if m:
+            flush()
+            buf = []
+            level, title = len(m.group(1)), m.group(2).strip()
+            while stack and stack[-1][0] >= level:
+                stack.pop()
+            stack.append((level, title))
+            crumb = [t for _, t in stack]
+        buf.append(line)
+    flush()
+    return out
+
+
+def _greedy(text: str, max_chars: int, overlap: int) -> list[str]:
+    """Largest prefix ≤ max_chars ending at a paragraph break, then a sentence, then
+    a space; each chunk starts `overlap` chars before the last end."""
     if len(text) <= max_chars:
         return [text.strip()] if text.strip() else []
     chunks, start = [], 0
@@ -182,6 +222,28 @@ def chunk(text: str, max_chars: int = TARGET_CHARS, overlap: int = OVERLAP_CHARS
             break
         start = max(end - overlap, start + 1)
     return chunks
+
+
+def chunk(text: str, max_chars: int = TARGET_CHARS, overlap: int = OVERLAP_CHARS) -> list[str]:
+    """Chunk markdown SECTION BY SECTION: a chunk never crosses a heading, and every
+    chunk of a titled section starts with its breadcrumb («§ Manual › 1.5.2
+    Coagulación»), so the model knows which section a passage belongs to.
+
+    Why (measured 2026-09-30, lab-qc in production): one character-window chunk held
+    the end of §1.5.1 (EDTA tubes: process «idealmente antes de 1 hora») and the
+    start of §1.5.2 (Coagulación: citrate 3.2%). Asked a vague question, Nerea
+    fused them into «coagulación con EDTA, antes de 1 hora» — a clinical statement
+    that is in no document — and cited the manual for it. Overlap never crosses a
+    section either. Text with no headings chunks exactly as before."""
+    out: list[str] = []
+    for crumb, body in sections(text):
+        pieces = _greedy(body, max_chars, overlap)
+        if not crumb:
+            out.extend(pieces)
+            continue
+        label = "§ " + " › ".join(crumb)
+        out.extend(p if p.startswith(label) else f"{label}\n\n{p}" for p in pieces)
+    return out
 
 
 def metadata(article: Article, chunk_index: int, tenant: str = "") -> dict:

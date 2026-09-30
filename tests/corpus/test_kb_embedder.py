@@ -231,6 +231,51 @@ class RunTest(unittest.TestCase):
         self.assertTrue(all(len(c) <= ke.TARGET_CHARS for c in cs))
 
 
+class ChunkBySectionTest(unittest.TestCase):
+    """lab-qc, 2026-09-30: a character window held the end of §1.5.1 (EDTA, «antes
+    de 1 hora») and the start of §1.5.2 (Coagulación, citrato), and Nerea fused them
+    into a statement that is in no document. A chunk must never cross a heading."""
+
+    MANUAL = (
+        "# Manual\n\nIntro.\n\n## 1.5 Condiciones\n\n"
+        "#### 1.5.1 Hematología\n\nTubo EDTA: procesar idealmente antes de 1 hora.\n\n"
+        "#### 1.5.2 Coagulación\n\nTubo con citrato de sodio al 3.2%.\n"
+    )
+
+    def test_no_chunk_crosses_a_heading(self):
+        cs = ke.chunk(self.MANUAL)
+        self.assertFalse(any("antes de 1 hora" in c and "citrato" in c for c in cs))
+
+    def test_each_chunk_carries_its_breadcrumb(self):
+        cs = ke.chunk(self.MANUAL)
+        edta = next(c for c in cs if "antes de 1 hora" in c)
+        coag = next(c for c in cs if "citrato" in c)
+        self.assertTrue(edta.startswith("§ Manual › 1.5 Condiciones › 1.5.1 Hematología"))
+        self.assertTrue(coag.startswith("§ Manual › 1.5 Condiciones › 1.5.2 Coagulación"))
+
+    def test_a_heading_with_no_text_of_its_own_yields_no_chunk(self):
+        # «## 1.5 Condiciones» is followed directly by its child: it lives on only
+        # in the breadcrumb, not as a chunk that is just a title.
+        self.assertFalse(any(c.strip().endswith("1.5 Condiciones") for c in ke.chunk(self.MANUAL)))
+
+    def test_hashes_inside_a_code_fence_are_not_headings(self):
+        text = "## A\n\nAntes.\n\n```\n# no es título\n```\n\nDespués.\n"
+        cs = ke.chunk(text)
+        self.assertEqual(len(cs), 1)
+        self.assertIn("# no es título", cs[0])
+        self.assertIn("Después.", cs[0])
+
+    def test_text_without_headings_chunks_exactly_as_before(self):
+        text = ("Una frase. " * 400).strip()
+        self.assertEqual(ke.chunk(text), ke._greedy(text, ke.TARGET_CHARS, ke.OVERLAP_CHARS))
+
+    def test_a_long_section_still_splits_and_every_piece_keeps_the_label(self):
+        text = "## Larga\n\n" + ("Una frase. " * 400)
+        cs = ke.chunk(text)
+        self.assertGreater(len(cs), 1)
+        self.assertTrue(all(c.startswith("§ Larga") for c in cs))
+
+
 class FetchTest(unittest.TestCase):
     def test_only_http_urls_are_fetched(self):
         with self.assertRaises(ValueError):
