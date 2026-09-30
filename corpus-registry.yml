@@ -134,7 +134,11 @@ consumers:
     repo: pharos-ti
     environments: [development]
     audiences: [staff, servicio-al-cliente, ti]
-    mode: planned   # task 3.4: Pháros TI gets its Nerea (D2)
+    # `wait` since 2026-09-29 (task 3.4): Pháros TI adopted the shared embedder and
+    # runs corpus-verify after every dev deploy (pharos-ti#79, merged to develop — its
+    # DEFAULT branch, where kb-updated runs). Both dev gates are on (TI_CHAT_ENABLED,
+    # TI_KB_EMBED_ENABLED). This change is what fires its first real embed.
+    mode: wait
 
 # ── Added 2026-09-28 — German's selection at Checkpoint 1 ────────────
 # Chosen in the «Audiencias de Nerea» mock-up (claude.ai/artifact/AN7P8jWKTX17bwdewjYC8j).
