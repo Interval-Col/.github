@@ -100,9 +100,11 @@ class CorpusTest(unittest.TestCase):
             self.assertFalse(set(spec["audiences"]) & {"ti", "liderazgo", "publico"})
 
     def test_planned_edges_are_not_in_the_corpus(self):
+        # lch-citas (Sol) has only a `planned` edge. It was pharos-ti until its
+        # edge went live on 2026-09-29.
         out = subprocess.run(
             [sys.executable, str(REPO / "scripts/corpus_registry.py"), "corpus",
-             "--app", "pharos-ti"], capture_output=True, text=True, check=True).stdout
+             "--app", "lch-citas"], capture_output=True, text=True, check=True).stdout
         self.assertEqual(json.loads(out), {})
 
     def test_an_environment_gets_only_its_own_edges(self):
