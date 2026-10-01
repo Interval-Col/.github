@@ -276,6 +276,33 @@ class WorkflowShapeTest(unittest.TestCase):
         self.assertIn("wait_for:", self.wf)
         self.assertIn("docker wait $WAIT_FOR", self.wf)
 
+    def _run_wait_step(self, ssh_stdout: str, ssh_exit: int, wf: str | None = None) -> int:
+        """Run the real «Wait for the embed» shell with a fake `ssh` on PATH."""
+        import os
+        import subprocess
+        import tempfile
+        import textwrap
+
+        step = (wf or self.wf).split("- name: Wait for the embed to finish", 1)[1]
+        script = textwrap.dedent(step.split("run: |\n", 1)[1].split("\n\n      - name:", 1)[0])
+        with tempfile.TemporaryDirectory() as tmp:
+            fake = Path(tmp) / "ssh"
+            fake.write_text(f"#!/bin/sh\nprintf '%s' '{ssh_stdout}'\nexit {ssh_exit}\n")
+            fake.chmod(0o755)
+            env = {**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}",
+                   "TARGET": "u@h", "WAIT_FOR": "app-embed-kb"}
+            return subprocess.run(["bash", "-c", script], env=env,
+                                  capture_output=True, text=True).returncode
+
+    def test_an_embed_that_never_ran_is_red(self):
+        # No such container (a failed pull after the old one-shot was removed), a
+        # timeout, or no host: V1–V3 would pass on the OLD corpus (Fable, 2026-10-01).
+        self.assertEqual(self._run_wait_step("", 1), 1)
+
+    def test_a_finished_embed_goes_on_whatever_its_exit_code(self):
+        self.assertEqual(self._run_wait_step("0", 0), 0)
+        self.assertEqual(self._run_wait_step("1", 0), 0)
+
     def test_planned_edges_are_not_granted(self):
         self.assertIn('g["mode"] != "planned"', self.wf)
 
