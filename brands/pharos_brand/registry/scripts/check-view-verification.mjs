@@ -229,7 +229,8 @@ for (const e of entries) {
 // ── 6 · caducidad — el chequeo que evita que esto se vuelva mobiliario ────────
 // Una marca sin fecha de revisión sobrevive a su propia verdad. El arreglo cuando
 // esto falla NO es alargar la fecha por reflejo: es mirar si la vista ya se liberó
-// (⇒ borrar la entrada) o si sigue en verificación (⇒ Calidad mueve la fecha en un PR).
+// (⇒ `estado: 'liberada'`, que no vence, o borrar la entrada) o si sigue en verificación
+// (⇒ Calidad mueve la fecha en un PR).
 //
 // `liberada` NO vence (German, Dirección Médica, 2026-10-01). No dibuja nada (regla 1
 // de `lib/verification.ts`): la entrada que queda es un REGISTRO de quién la liberó y
@@ -251,7 +252,7 @@ for (const e of entries) {
   } else if (e.revisarAntes < TODAY) {
     errors.push(
       `${e.path}: \`revisarAntes\` venció el ${e.revisarAntes} (hoy ${TODAY}).\n` +
-      `      ¿La vista ya se liberó? Borra la entrada. ¿Sigue en verificación? Calidad mueve la fecha.`,
+      `      ¿La vista ya se liberó? Pon \`estado: 'liberada'\` (no vence, queda como registro) o borra la entrada. ¿Sigue en verificación? Calidad mueve la fecha.`,
     )
   }
 }
