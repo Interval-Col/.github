@@ -230,8 +230,20 @@ for (const e of entries) {
 // Una marca sin fecha de revisión sobrevive a su propia verdad. El arreglo cuando
 // esto falla NO es alargar la fecha por reflejo: es mirar si la vista ya se liberó
 // (⇒ borrar la entrada) o si sigue en verificación (⇒ Calidad mueve la fecha en un PR).
+//
+// `liberada` NO vence (German, Dirección Médica, 2026-10-01). No dibuja nada (regla 1
+// de `lib/verification.ts`): la entrada que queda es un REGISTRO de quién la liberó y
+// cuándo, no una afirmación que pueda caducar. Exigirle fecha obligó a lab-qc a
+// mover la de `/liberacion` —liberada el 2026-09-22— sólo para que no bloqueara.
+// Si trae fecha, igual se valida el formato.
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/
 for (const e of entries) {
+  if (e.estado === 'liberada') {
+    if (e.revisarAntes && !ISO_RE.test(e.revisarAntes)) {
+      errors.push(`${e.path}: \`revisarAntes\` = "${e.revisarAntes}" no es YYYY-MM-DD.`)
+    }
+    continue
+  }
   if (!e.revisarAntes) {
     errors.push(`${e.path}: falta \`revisarAntes\` (YYYY-MM-DD). Una marca sin caducidad se vuelve mobiliario.`)
   } else if (!ISO_RE.test(e.revisarAntes)) {
