@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 import urllib.error
 from pathlib import Path
@@ -108,14 +109,31 @@ class CorpusTest(unittest.TestCase):
         self.assertEqual(json.loads(out), {})
 
     def test_an_environment_gets_only_its_own_edges(self):
-        # Admisiones' edges are dev-only: a prod deploy must be handed nothing.
-        def corpus(env):
-            return json.loads(subprocess.run(
-                [sys.executable, str(REPO / "scripts/corpus_registry.py"), "corpus",
-                 "--app", "admission-patient", "--environment", env],
-                capture_output=True, text=True, check=True).stdout)
-        self.assertIn("biuman-kb", corpus("development"))
-        self.assertEqual(corpus("production"), {})
+        # A dev-only edge: a prod deploy must be handed nothing. Its own registry, so
+        # the test does not break when a live app is promoted to production (task 4.1).
+        live = (REPO / "corpus-registry.yml").read_text(encoding="utf-8")
+        head = live.split("\nconsumers:")[0]
+        registry = head + """
+consumers:
+  - kb: biuman-kb
+    app: solo-dev
+    repo: solo-dev
+    environments: [development]
+    audiences: [staff]
+    mode: wait
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "corpus-registry.yml"
+            path.write_text(registry, encoding="utf-8")
+
+            def corpus(env):
+                return json.loads(subprocess.run(
+                    [sys.executable, str(REPO / "scripts/corpus_registry.py"),
+                     "--registry", str(path), "corpus",
+                     "--app", "solo-dev", "--environment", env],
+                    capture_output=True, text=True, check=True).stdout)
+            self.assertIn("biuman-kb", corpus("development"))
+            self.assertEqual(corpus("production"), {})
 
 
 class RetryTest(unittest.TestCase):
