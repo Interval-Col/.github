@@ -99,7 +99,7 @@ consumers:
   - kb: biuman-kb
     app: admission-patient
     repo: admission-patient
-    environments: [development]
+    environments: [development, production]   # production: step 1 of task 4.1 (prepared 2026-10-01; inert while the prod embed is forced 'false')
     audiences: [staff, servicio-al-cliente]
     mode: wait
 
@@ -134,7 +134,7 @@ consumers:
   - kb: lch-admin-kb
     app: admission-patient
     repo: admission-patient
-    environments: [development]
+    environments: [development, production]   # production: step 1 of task 4.1 (prepared 2026-10-01; inert while the prod embed is forced 'false')
     audiences: [staff, servicio-al-cliente]
     mode: wait      # live since 2026-09-28 (admission-patient#535): Nerea answers the portal guide in dev
 
