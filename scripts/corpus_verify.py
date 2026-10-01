@@ -29,7 +29,11 @@ For each KB the app is granted (corpus-registry.yml), against that KB's v5 index
   cite `debe_citar` (one slug, or ANY of a list — twin guides) and contain
   `debe_decir` — the exact phrase or every one of its
   words, accent- and case-insensitive. It asserts citation and key facts, never
-  wording, and retries once: a flaky check that gets muted is worse than none.
+  wording, and gives each question up to three attempts: a flaky check that gets
+  muted is worse than none. A pass after the first attempt SAYS so, and a fail shows
+  the start of the last reply — the instability is reported, never hidden
+  (2026-10-01: Pháros TI failed one question twice in a row and passed on a re-run,
+  and the summary only said what was missing).
 
 The embedder's side of the contract: every row carries `metadata.kb` (the KB id)
 and `metadata.content_hash` (the index's hash of the article it came from), and
@@ -178,6 +182,12 @@ def same_word(a: str, b: str) -> bool:
     return len(short) >= 4 and long_.startswith(short) and len(long_) - len(short) <= 2
 
 
+def _snippet(reply: str, limit: int = 200) -> str:
+    """One line, a few words — enough to tell a variation from a wrong guide."""
+    one = " ".join(reply.split()).replace("|", "/")
+    return one if len(one) <= limit else one[:limit].rsplit(" ", 1)[0] + " …"
+
+
 def check_answer(item: dict, reply: str, sources: list) -> tuple[bool, str]:
     problems = []
     if not cites(sources, item["debe_citar"]):
@@ -297,15 +307,21 @@ def verify(cfg: dict) -> list[tuple[str, str, str]]:
                                     "— the app must expose one (chat-contract H11)"))
     else:
         for kb, slug, q in questions:
-            ok, detail = False, ""
-            for _ in range(1 + int(cfg.get("retries", 1))):
+            ok, detail, reply = False, "", ""
+            attempts = 1 + int(cfg.get("retries", 2))
+            for n in range(1, attempts + 1):
                 try:
                     reply, sources = _ask(cfg["ask_module"], q["pregunta"], union)
                     ok, detail = check_answer(q, reply, sources)
                 except Exception as exc:  # noqa: BLE001
-                    ok, detail = False, str(exc)
+                    ok, detail, reply = False, str(exc), ""
                 if ok:
+                    if n > 1:
+                        detail += f" — on attempt {n} of {attempts} (unstable)"
                     break
+            if not ok and reply:
+                # KB prose answering an invented question: no PHI can be in it.
+                detail += f" — last reply: «{_snippet(reply)}»"
             results.append(("V4", PASS if ok else FAIL, f"«{q['pregunta']}» ({kb}:{slug}): "
                                                          f"{detail}"))
     return results

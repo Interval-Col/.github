@@ -200,9 +200,8 @@ class VerifyTest(unittest.TestCase):
         good = self.run_verify(rows, index, [("Dura 5 minutos.", ["kb-a:guias/a"])])
         self.assertTrue(all(s == "PASS" for _, s, _ in good), good)
 
-        # A question the corpus cannot answer: two tries, both wrong → red.
-        bad = self.run_verify(rows, index, [("No está en mi material.", []),
-                                            ("No está en mi material.", [])])
+        # A question the corpus cannot answer: three tries, all wrong → red.
+        bad = self.run_verify(rows, index, [("No está en mi material.", [])] * 3)
         self.assertEqual([s for c, s, _ in bad if c == "V4"], ["FAIL"])
 
     def test_retry_absorbs_one_flaky_answer(self):
@@ -211,6 +210,27 @@ class VerifyTest(unittest.TestCase):
         rows = [("kb-a", "guias/a", "sha256:guias/a", 3)]
         r = self.run_verify(rows, index, [("x", []), ("y", ["guias/a"])])
         self.assertEqual([s for c, s, _ in r if c == "V4"], ["PASS"])
+
+    def test_a_pass_after_a_retry_says_so(self):
+        q = {"pregunta": "p", "debe_citar": "guias/a", "debe_decir": ""}
+        index = {"version": 5, "articles": [art("guias/a", questions=[q])]}
+        rows = [("kb-a", "guias/a", "sha256:guias/a", 3)]
+        r = self.run_verify(rows, index, [("x", []), ("y", ["guias/a"])])
+        (detail,) = [d for c, s, d in r if c == "V4" and s == "PASS"]
+        self.assertIn("on attempt 2 of 3", detail)
+
+    def test_three_attempts_before_a_fail_and_the_reply_is_shown(self):
+        # 2026-10-01: one question failed twice in a row, then passed on a re-run.
+        q = {"pregunta": "p", "debe_citar": "guias/a", "debe_decir": "escala"}
+        index = {"version": 5, "articles": [art("guias/a", questions=[q])]}
+        rows = [("kb-a", "guias/a", "sha256:guias/a", 3)]
+        wrong = ("Revisa la conexión | y vuelve a intentar. " * 20, ["guias/a"])
+        r = self.run_verify(rows, index, [wrong, wrong, ("Debes escalar ya.", ["guias/a"])])
+        self.assertEqual([s for c, s, _ in r if c == "V4"], ["PASS"])
+        r = self.run_verify(rows, index, [wrong, wrong, wrong])
+        (detail,) = [d for c, s, d in r if c == "V4" and s == "FAIL"]
+        self.assertIn("last reply: «Revisa la conexión / y vuelve", detail)
+        self.assertLess(len(detail), 400)   # one line in the summary table, not the reply
 
     def test_unattributed_chunks_fail(self):
         index = {"version": 5, "articles": [art("guias/a")]}
