@@ -173,6 +173,15 @@ jobs:
         run: |
           set -uo pipefail
           code=$(ssh -i ~/.ssh/corpus_verify -o BatchMode=yes "$TARGET" "timeout 1500 docker wait $WAIT_FOR" || echo "?")
+          # No exit code at all means the embed never ran here: the one-shot does not
+          # exist (a deploy removes the old one before `pull`, so a failed pull leaves
+          # none), the wait timed out, or the host was unreachable. V1–V3 would then
+          # compare the OLD corpus against the OLD index and pass — a green check on an
+          # embed that did not happen (Fable, 2026-10-01). Only a real exit code goes on.
+          if ! [[ "$code" =~ ^[0-9]+$ ]]; then
+            echo "::error::$WAIT_FOR gave no exit code (absent, timed out after 25 min, or host unreachable) — the embed this check waits for did not run, so a pass would prove nothing"
+            exit 1
+          fi
           echo "$WAIT_FOR exited with ${code} — verifying what it left, whatever the outcome"
 
       - name: corpus-verify (V1–V4)
