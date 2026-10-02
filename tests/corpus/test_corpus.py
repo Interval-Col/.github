@@ -187,6 +187,17 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(idx["guias/a"]["audience"], "staff")
         self.assertEqual(idx["comercial/b"]["audience"], "liderazgo")
 
+    def test_an_inferred_audience_the_kb_does_not_allow_fails(self):
+        # plataforma-llm allows only `ti`: an article that forgets `audience` must
+        # break the build, not become a `staff` article nothing grants (.github#273).
+        kb = _kb(MINIMAL.replace("audiences: [publico, staff, ti, liderazgo]",
+                                 "audiences: [ti]"))
+        self.write("guias/a.md", "title: A\n")
+        with self.assertRaisesRegex(kb_index.KbError, "declare `audience:`"):
+            self.build(kb)
+        self.write("guias/a.md", "title: A\naudience: ti\n")
+        self.assertEqual(self.by_slug(self.build(kb))["guias/a"]["audience"], "ti")
+
     def test_ti_and_servicio_al_cliente_survive(self):
         kb = _kb(MINIMAL.replace("audiences: [publico, staff, ti, liderazgo]",
                                  "audiences: [staff, servicio-al-cliente, ti]"))

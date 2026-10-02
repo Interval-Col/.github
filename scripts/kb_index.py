@@ -149,9 +149,25 @@ def audience_of(meta: dict, area: str, kb: dict, status: str, slug: str, warn) -
         if declared == "publico" and status != STATUS_PUBLICABLE:
             warn(f"{slug}: «audience: publico» on a «{status}» article — served as `staff` "
                  f"until it is {STATUS_PUBLICABLE}.")
-            return "staff"
+            return _allowed_default("staff", kb, "«audience: publico» on a draft falls back to")
         return declared
-    return "liderazgo" if area in kb["liderazgo_areas"] else "staff"
+    default = "liderazgo" if area in kb["liderazgo_areas"] else "staff"
+    return _allowed_default(default, kb, "declares no audience, so it defaults to")
+
+
+def _allowed_default(audience: str, kb: dict, why: str) -> str:
+    """An INFERRED audience must be one this KB allows, like a declared one.
+
+    Otherwise the build stays green and the article is silently served to no one: in
+    `plataforma-llm` (audiences [ti]) an article without `audience` became `staff`,
+    which nothing grants (Codex on .github#273). Fail and say what to declare.
+    """
+    if audience not in kb["audiences"]:
+        raise KbError(
+            f"{why} «{audience}», which {kb['id']} does not allow "
+            f"(corpus-registry.yml allows {kb['audiences']}) — declare `audience:`"
+        )
+    return audience
 
 
 def verificacion_of(meta: dict, slug: str) -> list[dict]:
