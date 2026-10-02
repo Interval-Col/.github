@@ -216,11 +216,12 @@ consumers:
 
 # ── Added 2026-10-02 — the platform's own documentation (German) ─────
 # Nerea in Pháros TI answers the IT team about how the proxy, Nerea and Sol work.
-# `planned` until pharos-ti carries the `plataforma-llm-site` sidecar and lists it
-# in corpus-verify `sources:`; flips to `wait` in that same follow-up.
+# `wait` since pharos-ti#92 wired the `plataforma-llm-site` sidecar and listed it
+# in corpus-verify `sources:`. This change is what fires its first embed. Dev only
+# for now; production is a separate step (add it here, then redeploy prod).
   - kb: plataforma-llm
     app: pharos-ti
     repo: pharos-ti
     environments: [development]
     audiences: [ti]
-    mode: planned
+    mode: wait
