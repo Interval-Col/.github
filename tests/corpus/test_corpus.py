@@ -76,7 +76,7 @@ class ParseYamlTest(unittest.TestCase):
 class RegistryTest(unittest.TestCase):
     def test_the_real_registry_is_valid(self):
         reg = load_registry(REAL_REGISTRY)
-        self.assertEqual(set(reg["kbs"]), {"biuman-kb", "lch-kb", "lch-admin-kb"})
+        self.assertEqual(set(reg["kbs"]), {"biuman-kb", "lch-kb", "lch-admin-kb", "plataforma-llm"})
 
     def test_d1_is_the_real_registrys_vocabulary(self):
         self.assertEqual(tuple(parse_yaml(REAL_REGISTRY)["audiences"]), corpus_lib.AUDIENCES)
@@ -186,6 +186,17 @@ class BuildTest(unittest.TestCase):
         idx = self.by_slug(self.build())
         self.assertEqual(idx["guias/a"]["audience"], "staff")
         self.assertEqual(idx["comercial/b"]["audience"], "liderazgo")
+
+    def test_an_inferred_audience_the_kb_does_not_allow_fails(self):
+        # plataforma-llm allows only `ti`: an article that forgets `audience` must
+        # break the build, not become a `staff` article nothing grants (.github#273).
+        kb = _kb(MINIMAL.replace("audiences: [publico, staff, ti, liderazgo]",
+                                 "audiences: [ti]"))
+        self.write("guias/a.md", "title: A\n")
+        with self.assertRaisesRegex(kb_index.KbError, "declare `audience:`"):
+            self.build(kb)
+        self.write("guias/a.md", "title: A\naudience: ti\n")
+        self.assertEqual(self.by_slug(self.build(kb))["guias/a"]["audience"], "ti")
 
     def test_ti_and_servicio_al_cliente_survive(self):
         kb = _kb(MINIMAL.replace("audiences: [publico, staff, ti, liderazgo]",

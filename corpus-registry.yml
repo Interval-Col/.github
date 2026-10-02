@@ -76,6 +76,22 @@ kbs:
     liderazgo_areas: []
     audiences: [staff, servicio-al-cliente, ti, liderazgo]
 
+  # The technical documentation of pharos-llm-proxy, Nerea and Sol — how they
+  # really work (German, 2026-10-02: «para mí es un poco una caja negra»). A docs
+  # folder INSIDE a code repo, not a KB repo: the doc is reviewed in the same PR
+  # as the code it describes. Only `docs/*.md` is indexed; `docs/hojas/` holds the
+  # visual explainers (annotated sources + HTML) and is left out by recursive: false.
+  - id: plataforma-llm
+    repo: pharos-llm-proxy
+    image: plataforma-llm-site
+    roots: [docs]
+    recursive: false
+    skip: []
+    url: github
+    default_status: borrador
+    liderazgo_areas: []
+    audiences: [ti]
+
 # ── Consumers ────────────────────────────────────────────────────────
 # One row per KB → app edge.
 #   app           the app (and its Nerea) that loads this KB
@@ -197,3 +213,14 @@ consumers:
     environments: [development]
     audiences: [staff, servicio-al-cliente, liderazgo]
     mode: planned   # finance-lch keeps its own docs too; its manifest moves off `corpus_app: none` when wired
+
+# ── Added 2026-10-02 — the platform's own documentation (German) ─────
+# Nerea in Pháros TI answers the IT team about how the proxy, Nerea and Sol work.
+# `planned` until pharos-ti carries the `plataforma-llm-site` sidecar and lists it
+# in corpus-verify `sources:`; flips to `wait` in that same follow-up.
+  - kb: plataforma-llm
+    app: pharos-ti
+    repo: pharos-ti
+    environments: [development]
+    audiences: [ti]
+    mode: planned
