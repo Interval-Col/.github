@@ -76,7 +76,7 @@ class ParseYamlTest(unittest.TestCase):
 class RegistryTest(unittest.TestCase):
     def test_the_real_registry_is_valid(self):
         reg = load_registry(REAL_REGISTRY)
-        self.assertEqual(set(reg["kbs"]), {"biuman-kb", "lch-kb", "lch-admin-kb"})
+        self.assertEqual(set(reg["kbs"]), {"biuman-kb", "lch-kb", "lch-admin-kb", "plataforma-llm"})
 
     def test_d1_is_the_real_registrys_vocabulary(self):
         self.assertEqual(tuple(parse_yaml(REAL_REGISTRY)["audiences"]), corpus_lib.AUDIENCES)
