@@ -17,12 +17,24 @@ single cross-tenant service holding provider SDKs/keys, PHI guards, quotas, the
 kill switch, and hash-only audit — RFC 0017 Phase 2). The chat feature never
 talks to a provider; it talks to the proxy.
 
-Current chat apps: finance-lch («chatbot-ayuda» — source, the reference this
-contract is drawn from; dormant in prod, fin#140, revived in RFC 0017 Phase 5).
-Planned adopters (no chat feature yet): biuman-lis (KB chat over «Conocimiento
-Biuman», Phase 5). Unlike the auth modules — which started non-conformant by
-construction (RFC 0016) — chat has exactly one prior implementation, so the
-contract is a **forward** baseline: new chats comply from day one.
+Current chat apps (measured 2026-10-02; each repo's `.chat-contract.yml` is the
+authority, this list only points at it):
+
+| App | Assistant | Manifest | State |
+|---|---|---|---|
+| pharos-ti | Nerea | `.chat-contract.yml` | prod since 2026-09-30 |
+| pharos-lis (`lab-qc`) | Nerea | `.chat-contract.yml` | prod since 2026-10-01 |
+| biuman-lis | Nerea | `.chat-contract.yml` | prod since 2026-09-30 |
+| admission-patient | Nerea | `.chat-contract.yml` | dev only — the prod KB load is still forced off (admission-patient#554) |
+| finance-lch | Nerea | `.chat-contract.yml` | live in dev and prod (`CHAT_ENABLED=true` per environment since 2026-07; the code default is `false`) — answers from its own app corpus, no KB |
+| public-web (`apps/lch-citas`) | Sol | `apps/lch-citas/.chat-contract.yml` (`surface: public`) | live for the public since 2026-10-01 |
+
+Source: `pharos-llm-proxy/plans/archive/nerea-con-conocimiento-plan.md` (wave-1
+close-out) and `public-web/apps/lch-citas/plans/archive/sol-sale-a-produccion-plan.md`.
+finance-lch («chatbot-ayuda») is still the reference this contract was drawn
+from. Unlike the auth modules — which started non-conformant by construction
+(RFC 0016) — chat started from one prior implementation, so the contract is a
+**forward** baseline: every chat complies from day one.
 
 ---
 
