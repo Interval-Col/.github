@@ -397,6 +397,42 @@ lists only green ticks hides exactly the part a reader needs.
 
 ---
 
+## 🔗 An integration between two services is not done until a real call crosses it
+
+> **Resumen (ES).** Una integración entre dos servicios no está terminada hasta que una
+> llamada **real** la cruza en dev. Cada lado probando contra un simulacro del otro deja
+> pasar justo los fallos de la costura.
+
+In October 2026 the chain Pháros LIS → v3 `/entrega/report.pdf` failed three times in a row
+in dev, and **all three passed both CI suites green** (`public-web#1322`, `pharos-lis#615`,
+`pharos-lis#616`, `admission-patient#573`):
+
+| Tumble | What each side believed | What was true |
+|---|---|---|
+| 1 | The gate publishes on `10.10.1.8:8443` | That port belonged to `public-proxy` |
+| 2 | The field `documento` takes the national ID | v3's subject is the LIS patient **code** (`Patient.id`) |
+| 3 | A patient code looks like `PT-TEST-002` | The real code is 12 chars built from name fragments and **carries internal spaces**; v3 validated it with an ID-number pattern → 422 |
+
+Each repo tested against an **invented version of the other**, prettier than reality. So:
+
+1. **The consumer tests against the provider's published contract.** Keep a snapshot of the
+   provider's request schema (from its OpenAPI) in the consumer's tests, and validate the body
+   the *real* client builds against it. Regenerate the snapshot in the same change that adapts
+   the client. Model: `pharos-lis` `lab-qc/backend/tests/test_results_portal_contract.py`.
+2. **Synthetic fixtures carry the MEASURED shape of real identifiers** — length, character
+   classes, internal spaces, padding — never a tidy placeholder. Measure the shape as a mask
+   (`9`/`A`), never the value, and use the repo's synthetic markers so the PHI gate stays green.
+3. **One real call in dev before it is called done.** The plan task that wires two services
+   has a Done-when that names the call, the environment and the status it returned. Green CI
+   on both sides is not that evidence.
+4. **A field is named for what it carries.** `documento` that carries a code is a trap for the
+   next caller, person or agent. Rename it (accept the old name as an alias while callers move).
+5. **Errors at the seam stay distinguishable.** "Not found", "not allowed", "malformed" and
+   "the upstream is down" must not collapse into one status or one message on either side —
+   otherwise the next failure gets diagnosed as the previous one.
+
+---
+
 ## 🔬 Marking a view as «en verificación» (Pháros apps)
 
 A Pháros view that is **deployed but not yet released** under `PROT-SW-001` looks

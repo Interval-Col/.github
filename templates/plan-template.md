@@ -307,6 +307,12 @@ exit. Not on every phase.>
   where "the FE wasn't checked" failure modes live.
 - The *core-loop* phase (the user's end-to-end happy path) warrants a
   🚦 Checkpoint — the seam between layers is where bugs hide.
+- A phase that **wires two services together** warrants a 🚦 Checkpoint
+  whose Done-when names **one real call in dev** — environment, endpoint
+  and the status it returned — plus a consumer-side contract test against
+  the provider's published schema. Green CI on both sides is not that
+  evidence (`ENGINEERING_STANDARDS.md` § «An integration between two
+  services is not done until a real call crosses it»).
 - The *exit* phase warrants a 🚦 Checkpoint — and its Done-when blocks
   archiving the plan until every earlier checkpoint has been walked.
 
