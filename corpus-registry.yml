@@ -55,7 +55,7 @@ kbs:
   - id: lch-kb
     repo: lch-kb
     image: lch-kb-site
-    roots: [fase-0]
+    roots: [fase-0, fase-1]   # fase-1: manuales por área, en borrador (RFC 0020 Fase 0 cumplida, 2026-10-03)
     recursive: false
     skip: [guion-presentacion, derrotero-taller-canario, brief-documentacion-viva]
     url: github
