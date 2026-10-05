@@ -423,17 +423,25 @@ Each repo tested against an **invented version of the other**, prettier than rea
    classes, internal spaces, padding — never a tidy placeholder. Measure the shape as a mask
    (`9`/`A`), never the value, and use the repo's synthetic markers so the PHI gate stays green.
 3. **One real call in dev before it is called done.** The plan task that wires two services
-   has a Done-when that names the call, the environment and the status it returned. Green CI
-   on both sides is not that evidence.
+   has a Done-when that **declares, before running it, the expected result** of a real call
+   in dev (the status and the observable behavior, e.g. «200 and a PDF that opens with its
+   key»), then records the call, the environment and what actually came back. An error
+   response does not satisfy it: a `422` recorded faithfully is a finding, not the evidence.
+   Green CI on both sides is not that evidence either.
    **When:** after the merge to `develop` (that is what deploys to dev) and **before the
    promote to `main`**. `develop` reaches no patient; the promote is the gate this rule
    guards. To try something before merging, a lane that allows it can deploy a branch to dev
    by hand, but it overwrites dev for everyone, so announce it and redeploy `develop` after.
 4. **A field is named for what it carries.** `documento` that carries a code is a trap for the
    next caller, person or agent. Rename it (accept the old name as an alias while callers move).
-5. **Errors at the seam stay distinguishable.** "Not found", "not allowed", "malformed" and
-   "the upstream is down" must not collapse into one status or one message on either side —
-   otherwise the next failure gets diagnosed as the previous one.
+5. **Errors at the seam stay distinguishable — to the people who diagnose them.** "Not
+   found", "not allowed", "malformed" and "the upstream is down" must be told apart in the
+   **logs, internal error codes or traces** of each side, so the next failure is not
+   diagnosed as the previous one. The **wire response may stay identical** where security
+   requires it: an authorization-gated resource that answers the same opaque `404` for
+   "missing" and "not yours" is doing its job (lab-qc's Histórico does exactly that, on
+   purpose, to prevent enumeration). Distinguish where you diagnose, not where an attacker
+   reads.
 
 ---
 
