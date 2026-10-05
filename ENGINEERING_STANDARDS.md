@@ -425,6 +425,10 @@ Each repo tested against an **invented version of the other**, prettier than rea
 3. **One real call in dev before it is called done.** The plan task that wires two services
    has a Done-when that names the call, the environment and the status it returned. Green CI
    on both sides is not that evidence.
+   **When:** after the merge to `develop` (that is what deploys to dev) and **before the
+   promote to `main`**. `develop` reaches no patient; the promote is the gate this rule
+   guards. To try something before merging, a lane that allows it can deploy a branch to dev
+   by hand, but it overwrites dev for everyone, so announce it and redeploy `develop` after.
 4. **A field is named for what it carries.** `documento` that carries a code is a trap for the
    next caller, person or agent. Rename it (accept the old name as an alias while callers move).
 5. **Errors at the seam stay distinguishable.** "Not found", "not allowed", "malformed" and
