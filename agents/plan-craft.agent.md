@@ -160,7 +160,11 @@ operator-profile registry as it matures.)*
   evidence to bring, plus **2–3 understanding-check questions**.
   Questions phrased as *they test the plan*, not the person. Place
   checkpoints at: (a) end of foundational/bootstrap phase, (b) end of
-  first real UI phase, (c) end of the core-loop phase, (d) MVP exit.
+  first real UI phase, (c) end of the core-loop phase, (d) MVP exit,
+  and (e) any phase that **wires two services together**: its Done-when
+  declares beforehand the expected result of one real call in dev and
+  records what came back (`ENGINEERING_STANDARDS.md` § «An integration
+  between two services is not done until a real call crosses it»).
   Not on every phase. **A 🚦 is a MANDATORY stop, including for an
   executing agent running in auto mode** — see Working rules below.
 
