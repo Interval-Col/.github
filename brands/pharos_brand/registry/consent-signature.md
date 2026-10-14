@@ -36,6 +36,8 @@ se queda en los fronts viejos.
 **Tokens:** sólo contrato de tokens (`--border`, `--card`, `--primary`,
 `--destructive`, `--muted-foreground`, …) — sin hex, re-acenta limpio bajo
 cualquier `.theme-*`. El trazo usa `currentColor` del canvas (`text-foreground`).
+⚠️ Eso es sólo en pantalla: `toPngBase64()` repinta la tinta en **negro**. En modo
+oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el PDF.
 
 ## Per-app config
 
