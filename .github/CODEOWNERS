@@ -2,18 +2,27 @@
 #
 # This is the org's meta-repo: the branching/deploy policy, engineering
 # standards, agent instructions, shared templates, the Pháros design system,
-# and the rollout tracker live here. Changes to these set the rules the rest of
-# the org follows.
+# and the rollout tracker live here.
 #
-# Gatekeeper model: @gczuluaga is the SOLE code owner for this repo.
-# Combined with branch protection (require code-owner review · 1 approval ·
-# admins not enforced), this means EVERY PR — including @SKuger01's and any
-# other contributor's — must be approved by @gczuluaga before it can merge,
-# while @gczuluaga lands their own PRs via admin (GitHub forbids approving
-# your own PR). @gczuluaga is gatekeeper + admin here.
+# Governance model (RFC 0039 D7, decided 2026-10-14):
+# - Only the agent-harness paths keep an owner: what every teammate's agent
+#   loads. There is no `*` line on purpose: the rest of the repo merges
+#   without waiting for an owner.
+# - Every line lists BOTH owners, @gczuluaga and @SKuger01. GitHub forbids
+#   approving your own PR, so an owner listed alone could not merge their
+#   own change without the bypass.
+# - Merge authority stays with the org owner: the branch ruleset requires an
+#   owner's approval on these paths, and its only bypass is the organization
+#   admin (@gczuluaga), in pull-request mode. The required checks sit in a
+#   separate ruleset that nobody can bypass.
 #
 # (CODEOWNERS is per-repo — it is NOT inherited org-wide the way the
 # default PR template is. This file governs PRs to THIS repo only.)
 
-# Everything in this repo is gatekept by @gczuluaga.
-*                               @gczuluaga
+# Agent harness (RFC 0039).
+KNOWLEDGE-MANAGEMENT.md         @gczuluaga @SKuger01
+agents/                         @gczuluaga @SKuger01
+commands/                       @gczuluaga @SKuger01
+
+# This file.
+.github/CODEOWNERS              @gczuluaga @SKuger01
