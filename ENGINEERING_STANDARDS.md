@@ -445,6 +445,43 @@ Each repo tested against an **invented version of the other**, prettier than rea
 
 ---
 
+## 📐 An accepted RFC that constrains code ships with its conformance gate
+
+An accepted RFC that says "code must (not) do X" is enforced by **two** things:
+
+1. **The rule in the repo's agent file**, so whoever edits (a person or an agent) sees it
+   before writing. See RFC 0039, §D4.
+2. **A gate in the repo's lint**, so what slips through is caught.
+
+Neither one alone is enough.
+
+**Why (measured 2026-10-17, admission-patient):**
+- RFC 0013 (BFF: the browser only talks to its own backend and the SSO) was decided on
+  2026-07-02. It lived only in one person's notes: the repo's `CLAUDE.md` never mentioned it.
+- On 2026-07-24 an agent-assisted commit **revived** a browser → lab-test-api call, and
+  several authors kept adding direct calls after that.
+- When it was measured there were **77** violating uses (#153, #605, #606).
+
+**The convention:**
+
+| | |
+|---|---|
+| **Name** | `scripts/check-rfc-<NNNN>-<what>.<ext>`, one script per rule, with the RFC number in the name so `ls scripts/` shows what is enforced. |
+| **Grandfathered sites** | A **shrink-only baseline** next to it (`scripts/check-rfc-<NNNN>-<what>.baseline.json`). The gate fails when a count goes **up**. It also fails when a count goes **down** until the baseline is lowered, or the freed slot is open for a new violation. Its `--update` must refuse to raise anything; raising is a hand edit, visible in review. |
+| **Where it runs** | Inside the repo's existing lint (`lint-check` / pre-commit), so it rides a **required** check. A gate nobody invokes reports nothing (RFC 0029). |
+| **Its error** | Cites the RFC by number and link, says what to do instead, and points to the rule in the agent file. |
+| **Its header** | States what it counts, what it does NOT see (a lexical gate has blind spots: say which), and the measurement it was built on. |
+
+**Before merging it,** run one adversarial pass whose job is to get a new violation past it
+with a green result. The first such pass on #606 found two blocking bypasses: a relative path
+to another service on the same domain, and an alias of the config key.
+
+Reference implementation: `admission-patient/scripts/check-rfc-0013-llamadas-directas.mjs`.
+
+Gates live **per repo**, because they read each repo's code. What is shared is this shape.
+
+---
+
 ## 🔬 Marking a view as «en verificación» (Pháros apps)
 
 A Pháros view that is **deployed but not yet released** under `PROT-SW-001` looks
