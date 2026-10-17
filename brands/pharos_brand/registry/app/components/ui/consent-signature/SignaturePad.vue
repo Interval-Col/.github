@@ -99,11 +99,28 @@ function clear() {
   emit('change', false)
 }
 
-/** PNG base64 without the `data:image/png;base64,` prefix; `null` when empty. */
+/** Color de la tinta en la firma EXPORTADA. En pantalla el trazo sigue el tema
+ *  (`text-foreground`) para que se vea sobre un pad oscuro; pero el PNG cae en un
+ *  PDF blanco, donde el trazo del modo oscuro (casi blanco) casi no se ve. */
+const EXPORT_INK = 'black'
+
+/** PNG base64 without the `data:image/png;base64,` prefix; `null` when empty.
+ *  La tinta se repinta en `EXPORT_INK`, sea cual sea el tema con que se firmó. */
 function toPngBase64(): string | null {
   const el = canvas.value
   if (!el || !hasInk.value) return null
-  return el.toDataURL('image/png').replace(/^data:image\/png;base64,/, '')
+  const out = document.createElement('canvas')
+  out.width = el.width
+  out.height = el.height
+  const outCtx = out.getContext('2d')
+  if (!outCtx) return el.toDataURL('image/png').replace(/^data:image\/png;base64,/, '')
+  outCtx.drawImage(el, 0, 0)
+  // `source-in` conserva el alfa de cada píxel (el trazo y su suavizado) y
+  // cambia sólo el color.
+  outCtx.globalCompositeOperation = 'source-in'
+  outCtx.fillStyle = EXPORT_INK
+  outCtx.fillRect(0, 0, out.width, out.height)
+  return out.toDataURL('image/png').replace(/^data:image\/png;base64,/, '')
 }
 
 function isEmpty(): boolean {
