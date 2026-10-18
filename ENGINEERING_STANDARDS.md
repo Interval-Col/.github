@@ -467,8 +467,8 @@ Neither one alone is enough.
 | | |
 |---|---|
 | **Name** | `scripts/check-rfc-<NNNN>-<what>.<ext>`, one script per rule, with the RFC number in the name so `ls scripts/` shows what is enforced. |
-| **Grandfathered sites** | A **shrink-only baseline** next to it (`scripts/check-rfc-<NNNN>-<what>.baseline.json`). The gate fails when a count goes **up**. It also fails when a count goes **down** until the baseline is lowered, or the freed slot is open for a new violation. Its `--update` must refuse to raise anything; raising is a hand edit, visible in review. |
-| **Where it runs** | Inside the repo's existing lint (`lint-check` / pre-commit), so it rides a **required** check. A gate nobody invokes reports nothing (RFC 0029). |
+| **Grandfathered sites** | A **shrink-only baseline** next to it (`scripts/check-rfc-<NNNN>-<what>.baseline.json`) that records **each site**: at least per file and key, never one total per key. Compare each entry, not a sum. Otherwise removing an old violation in one file and adding a new one in another leaves the total unchanged and the gate green: that trades old debt for new. The gate fails when any entry goes **up** or a new one appears. It also fails when an entry goes **down** until the baseline is lowered, or the freed slot is open for a new violation. Its `--update` must refuse to raise anything; raising is a hand edit, visible in review. A swap inside the same file is still a blind spot of per-file counts: say so in the header, or key the sites by a stable signature (path + normalized line). |
+| **Where it runs** | Inside the lint that **CI runs as a required check** (`lint-check` in the CI job). Pre-commit may call it too, but only as an extra: hooks are optional to install and `--no-verify` skips them, so a pre-commit-only gate leaves GitHub with no verdict. A gate nobody invokes reports nothing (RFC 0029). |
 | **Its error** | Cites the RFC by number and link, says what to do instead, and points to the rule in the agent file. |
 | **Its header** | States what it counts, what it does NOT see (a lexical gate has blind spots: say which), and the measurement it was built on. |
 
@@ -477,6 +477,8 @@ with a green result. The first such pass on #606 found two blocking bypasses: a 
 to another service on the same domain, and an alias of the config key.
 
 Reference implementation: `admission-patient/scripts/check-rfc-0013-llamadas-directas.mjs`.
+⚠️ It still compares one total per key, the trade this convention forbids: `admission-patient#612`.
+Copy its shape, not its baseline comparison, until that issue closes.
 
 Gates live **per repo**, because they read each repo's code. What is shared is this shape.
 
