@@ -68,7 +68,9 @@ kbs:
     image: lch-admin-kb-site
     # publicaciones-obligatorias/ holds PDFs and their manifest; proyectos/ is
     # work in flight. Neither is guidance a Nerea should serve.
-    roots: [servicio-al-cliente, mesa-de-ayuda-ti, lexico]
+    # administrativo/ (2026-10-18, lch-admin-kb#20): the coordination and admin
+    # twin of each customer-service guide, audience `staff`.
+    roots: [servicio-al-cliente, mesa-de-ayuda-ti, administrativo, lexico]
     recursive: true
     skip: []
     url: github
