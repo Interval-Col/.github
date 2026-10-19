@@ -147,6 +147,23 @@ class AnswerTest(unittest.TestCase):
             ok, _ = cv.check_answer(q, reply, ["guias/a"])
             self.assertTrue(ok, reply)
 
+    def test_another_tense_of_the_same_verb_says_it(self):
+        # Pháros TI, 2026-10-19: guide «no se entregó», Nerea «el PDF no se
+        # entrega». Same stem, other ending; neither word is a prefix of the other.
+        q = dict(self.Q, debe_decir="no se entregó")
+        for reply in ("Si no se anota, el PDF no se entrega.", "No se puede entregar.",
+                      "El PDF no se entregó."):
+            ok, _ = cv.check_answer(q, reply, ["guias/a"])
+            self.assertTrue(ok, reply)
+        self.assertTrue(cv.same_word("imprime", "imprima"))
+
+    def test_a_shared_short_stem_is_not_the_same_word(self):
+        # «permite» / «permiso» share 5 letters and mean different things.
+        self.assertFalse(cv.same_word("permite", "permiso"))
+        # More than 2 letters past the stem stays out: «entrega» / «entregaron».
+        self.assertFalse(cv.same_word("entrega", "entregaron"))
+        self.assertFalse(cv.same_word("imprimio", "impresion"))
+
     def test_singular_and_plural_are_the_same_word(self):
         q = dict(self.Q, debe_decir="5 minutos")
         self.assertTrue(cv.check_answer(q, "Queda bloqueada 5 minuto más.", ["guias/a"])[0])
