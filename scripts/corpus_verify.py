@@ -175,11 +175,21 @@ def same_word(a: str, b: str) -> bool:
     German: «no podemos estar ajustando el lenguaje a que trabaje bien con el AI»
     — so the check learns the inflection, not the KB its wording. Deliberately
     narrow: «hora» does NOT match «horario» (3 letters apart), and numbers never
-    go through here — they stay exact (`_NUMBER`)."""
+    go through here — they stay exact (`_NUMBER`).
+
+    Also the same STEM with another ending: a shared start of ≥ 6 letters and
+    each word ≤ 2 letters past it — «entregó» / «entrega» / «entregar».
+    Measured on Pháros TI (2026-10-19): the guide's fact «no se entregó», Nerea
+    «el PDF no se entrega» — right, and V4 failed, because neither word is a
+    prefix of the other. 6 and not 5, on purpose: «permite» / «permiso» share
+    5 letters and are different words."""
     if a == b:
         return True
     short, long_ = (a, b) if len(a) <= len(b) else (b, a)
-    return len(short) >= 4 and long_.startswith(short) and len(long_) - len(short) <= 2
+    if len(short) >= 4 and long_.startswith(short) and len(long_) - len(short) <= 2:
+        return True
+    stem = len(os.path.commonprefix([a, b]))
+    return stem >= 6 and len(a) - stem <= 2 and len(b) - stem <= 2
 
 
 def _snippet(reply: str, limit: int = 200) -> str:
