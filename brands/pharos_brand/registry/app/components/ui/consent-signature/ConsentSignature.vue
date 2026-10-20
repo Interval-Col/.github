@@ -193,6 +193,11 @@ function clearPad() {
   pad.value?.clear()
 }
 
+// Los textos libres que el PDF imprime van en MAYÚSCULAS, como el resto del
+// documento. En pantalla se ven así desde que se escriben (clase `uppercase`), y
+// acá se convierten de verdad: la clase sólo cambia cómo se ve, no el valor.
+const enMayusculas = (value: string): string => value.trim().toLocaleUpperCase('es-CO')
+
 function submit() {
   const image = pad.value?.toPngBase64()
   if (!image || !canSign.value) return
@@ -203,16 +208,16 @@ function submit() {
     // When the representative signs, the service prints THEIR stroke as the
     // signature and keeps a copy in the representative slot (legacy contract).
     signature_image: image,
-    identification_expedition_city: expeditionCity.value.trim() || null,
-    legal_representative_name: representative ? representativeName.value.trim() : null,
+    identification_expedition_city: enMayusculas(expeditionCity.value) || null,
+    legal_representative_name: representative ? enMayusculas(representativeName.value) : null,
     legal_representative_identification: representative ? representativeIdNumber.value.trim() : null,
     legal_representative_identification_type: representative ? representativeIdType.value : null,
     patient_identification_expedition_place: props.form.requiresPatientExpeditionCity
-      ? effectivePatientCity.value.trim() || null
+      ? enMayusculas(effectivePatientCity.value) || null
       : (props.subject.expeditionPlace ?? null),
     order_number: props.orderNumber ?? null,
     entity_served: props.form.requiresEntityServed
-      ? entidadEscrita.value.trim() || props.entityServed || null
+      ? enMayusculas(entidadEscrita.value) || props.entityServed || null
       : (props.entityServed ?? null),
     authorize_conservation_of_biological_samples: props.form.hasSampleConservationChoice
       ? conserveSamples.value
@@ -316,7 +321,7 @@ function submit() {
       <div v-if="representativeSigns" class="grid gap-3 sm:grid-cols-3">
         <div class="flex flex-col gap-1.5 sm:col-span-3">
           <Label for="consent-rep-name">Nombre del representante</Label>
-          <Input id="consent-rep-name" v-model="representativeName" autocomplete="off" :disabled="submitting" />
+          <Input id="consent-rep-name" v-model="representativeName" class="uppercase" autocomplete="off" :disabled="submitting" />
         </div>
         <div class="flex flex-col gap-1.5">
           <Label for="consent-rep-id-type">Tipo de documento</Label>
@@ -354,7 +359,7 @@ function submit() {
         <Label for="consent-expedition">
           {{ representativeSigns ? 'Ciudad de expedición del documento del representante' : 'Ciudad de expedición del documento' }}
         </Label>
-        <Input id="consent-expedition" v-model="expeditionCity" autocomplete="off" :disabled="submitting" />
+        <Input id="consent-expedition" v-model="expeditionCity" class="uppercase" autocomplete="off" :disabled="submitting" />
       </div>
       <div
         v-if="form.requiresPatientExpeditionCity && representativeSigns"
@@ -364,13 +369,14 @@ function submit() {
         <Input
           id="consent-patient-expedition"
           v-model="patientExpeditionCity"
+          class="uppercase"
           autocomplete="off"
           :disabled="submitting"
         />
       </div>
       <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
         <Label for="consent-entity">Entidad</Label>
-        <Input id="consent-entity" v-model="entidadEscrita" autocomplete="off" :disabled="submitting" />
+        <Input id="consent-entity" v-model="entidadEscrita" class="uppercase" autocomplete="off" :disabled="submitting" />
       </div>
     </div>
 
