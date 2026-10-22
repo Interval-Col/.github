@@ -59,9 +59,9 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 | `title` | `string` | `'Firma del consentimiento'` | encabezado |
 | `density` | `'escritorio' \| 'tablet'` | `'escritorio'` | **a qué distancia se mira la superficie.** `escritorio` = un empleado sentado, con ratón, dentro de una app con barra lateral (lab-qc, Admisiones). `tablet` = un dispositivo que se le **entrega** a un paciente: de pie, con el dedo, a veces con una sola mano (consent-kiosk) |
 
-| `layout` | `'continuo' \| 'pasos'` | `'continuo'` | **cómo se recorre.** `continuo` = todo en una pantalla. `pasos` = un paso por pantalla: leer el documento → quién firma → datos y autorizaciones → firma. Ver abajo |
+| `layout` | `'continuous' \| 'steps'` | `'continuous'` | **cómo se recorre.** `continuous` = todo en una pantalla. `steps` = un paso por pantalla: leer el documento → quién firma → datos y autorizaciones → firma. Ver abajo |
 
-### `layout: 'pasos'` — una cosa a la vez, a pantalla completa
+### `layout: 'steps'` — una cosa a la vez, a pantalla completa
 
 - Los pasos que el formulario no tiene **se saltan solos** (sin representante no hay
   «¿Quién firma?»; sin ciudades, entidad ni declaraciones no hay «Datos»). La lista se

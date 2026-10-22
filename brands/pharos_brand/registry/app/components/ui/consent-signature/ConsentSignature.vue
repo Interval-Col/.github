@@ -80,16 +80,16 @@ const props = withDefaults(defineProps<{
   /**
    * CÓMO SE RECORRE.
    *
-   * `continuo` (por omisión) — todo en una sola pantalla: documento, quién
+   * `continuous` (por omisión) — todo en una sola pantalla: documento, quién
    * firma, datos y firma, uno debajo del otro.
    *
-   * `pasos` — un paso por pantalla, para una tablet que se le entrega al
+   * `steps` — un paso por pantalla, para una tablet que se le entrega al
    * paciente: leer el documento → quién firma → datos y declaraciones → firmar.
    * Cada paso ocupa todo el alto que la app le dé, y no se avanza sin
    * responder lo que el paso pide. Los pasos que el formulario no tiene se
    * saltan solos. La app le da al widget el alto de la pantalla.
    */
-  layout?: 'continuo' | 'pasos'
+  layout?: 'continuous' | 'steps'
 }>(), {
   documentError: null,
   orderNumber: null,
@@ -103,7 +103,7 @@ const props = withDefaults(defineProps<{
   title: 'Firma del consentimiento',
   density: 'escritorio',
   documentPages: null,
-  layout: 'continuo',
+  layout: 'continuous',
 })
 
 const esTablet = computed(() => props.density === 'tablet')
@@ -213,19 +213,19 @@ const canSign = computed(() =>
   && !missingRequiredText.value,
 )
 
-// ── Paso a paso (`layout: 'pasos'`) ─────────────────────────────────────────
-type Paso = 'documento' | 'firmante' | 'datos' | 'firma'
+// ── Paso a paso (`layout: 'steps'`) ─────────────────────────────────────────
+type Step = 'document' | 'signer' | 'details' | 'signature'
 
-const PASO_TITULO: Record<Paso, string> = {
-  documento: 'Lea el documento',
-  firmante: '¿Quién firma?',
-  datos: 'Datos y autorizaciones',
-  firma: 'Firma',
+const STEP_TITLE: Record<Step, string> = {
+  document: 'Lea el documento',
+  signer: '¿Quién firma?',
+  details: 'Datos y autorizaciones',
+  signature: 'Firma',
 }
 
-const enPasos = computed(() => props.layout === 'pasos')
+const isStepped = computed(() => props.layout === 'steps')
 
-const tieneDatos = computed(() =>
+const hasDetails = computed(() =>
   props.form.requiresExpeditionCity
   || props.form.requiresEntityServed
   || (props.form.requiresPatientExpeditionCity && representativeSigns.value)
@@ -235,47 +235,47 @@ const tieneDatos = computed(() =>
 
 // Sólo los pasos que este formulario tiene. La lista puede cambiar en vivo:
 // elegir «representante» puede agregar el paso de datos (la ciudad del paciente).
-const pasos = computed<Paso[]>(() => {
-  const lista: Paso[] = ['documento']
-  if (props.form.allowsLegalRepresentative) lista.push('firmante')
-  if (tieneDatos.value) lista.push('datos')
-  lista.push('firma')
-  return lista
+const steps = computed<Step[]>(() => {
+  const list: Step[] = ['document']
+  if (props.form.allowsLegalRepresentative) list.push('signer')
+  if (hasDetails.value) list.push('details')
+  list.push('signature')
+  return list
 })
 
-const indicePaso = ref(0)
-const pasoActual = computed<Paso>(() => pasos.value[Math.min(indicePaso.value, pasos.value.length - 1)]!)
-const esUltimoPaso = computed(() => pasoActual.value === 'firma')
+const stepIndex = ref(0)
+const currentStep = computed<Step>(() => steps.value[Math.min(stepIndex.value, steps.value.length - 1)]!)
+const isLastStep = computed(() => currentStep.value === 'signature')
 
-/** En `continuo` se ve todo; en `pasos`, sólo el paso actual. */
-const mostrar = (paso: Paso): boolean => !enPasos.value || pasoActual.value === paso
+/** En `continuous` se ve todo; en `steps`, sólo el paso actual. */
+const isShown = (step: Step): boolean => !isStepped.value || currentStep.value === step
 
 // No se avanza sin responder lo que el paso pide: es la misma regla que bloquea
 // «Guardar firma», adelantada al paso donde se responde.
-const puedeAvanzar = computed(() => {
-  switch (pasoActual.value) {
-    case 'documento': return documentReady.value
-    case 'firmante': return !quienFirmaSinResponder.value && !representativeIncomplete.value
-    case 'datos': return !missingRequiredText.value
+const canAdvance = computed(() => {
+  switch (currentStep.value) {
+    case 'document': return documentReady.value
+    case 'signer': return !quienFirmaSinResponder.value && !representativeIncomplete.value
+    case 'details': return !missingRequiredText.value
     default: return false
   }
 })
 
-function avanzar() {
-  if (puedeAvanzar.value && !esUltimoPaso.value) indicePaso.value += 1
+function advance() {
+  if (canAdvance.value && !isLastStep.value) stepIndex.value += 1
 }
 
-function retroceder() {
-  if (indicePaso.value > 0) indicePaso.value -= 1
+function goBack() {
+  if (stepIndex.value > 0) stepIndex.value -= 1
 }
 
-// En `pasos` la firma tiene toda la pantalla para ella: el área crece con el alto
+// En `steps` la firma tiene toda la pantalla para ella: el área crece con el alto
 // de la ventana en vez de quedarse en 260 px.
-const alturaFirmaPasos = ref(320)
+const steppedSignatureHeight = ref(320)
 onMounted(() => {
-  alturaFirmaPasos.value = Math.max(260, Math.round(window.innerHeight * 0.5))
+  steppedSignatureHeight.value = Math.max(260, Math.round(window.innerHeight * 0.5))
 })
-const alturaFirma = computed(() => (enPasos.value ? alturaFirmaPasos.value : esTablet.value ? 260 : 200))
+const signatureHeight = computed(() => (isStepped.value ? steppedSignatureHeight.value : esTablet.value ? 260 : 200))
 
 function onInk(value: boolean) {
   hasInk.value = value
@@ -331,7 +331,7 @@ function submit() {
     class="flex flex-col"
     :class="[
       esTablet ? 'min-h-0 flex-1 gap-5' : 'gap-4 rounded-lg border border-border bg-card p-4',
-      enPasos && 'h-full',
+      isStepped && 'h-full',
     ]"
     :aria-busy="submitting"
   >
@@ -357,29 +357,29 @@ function submit() {
       </dl>
     </header>
 
-    <!-- En `pasos`: dónde va, para que el paciente sepa cuánto falta. -->
-    <div v-if="enPasos" class="flex flex-wrap items-center justify-between gap-2" aria-live="polite">
+    <!-- En `steps`: dónde va, para que el paciente sepa cuánto falta. -->
+    <div v-if="isStepped" class="flex flex-wrap items-center justify-between gap-2" aria-live="polite">
       <p class="text-base text-muted-foreground">
-        Paso {{ pasos.indexOf(pasoActual) + 1 }} de {{ pasos.length }} ·
-        <span class="font-medium text-foreground">{{ PASO_TITULO[pasoActual] }}</span>
+        Paso {{ steps.indexOf(currentStep) + 1 }} de {{ steps.length }} ·
+        <span class="font-medium text-foreground">{{ STEP_TITLE[currentStep] }}</span>
       </p>
       <div class="flex gap-1.5" aria-hidden="true">
         <span
-          v-for="paso in pasos"
-          :key="paso"
+          v-for="step in steps"
+          :key="step"
           class="h-2 w-8 rounded-full"
-          :class="pasos.indexOf(paso) <= pasos.indexOf(pasoActual) ? 'bg-primary' : 'bg-muted'"
+          :class="steps.indexOf(step) <= steps.indexOf(currentStep) ? 'bg-primary' : 'bg-muted'"
         />
       </div>
     </div>
 
     <!-- The document: read before signing -->
     <div
-      v-show="mostrar('documento')"
+      v-show="isShown('document')"
       class="overflow-hidden rounded-md border border-border bg-background"
       :class="[
-        esTablet && !enPasos && 'flex min-h-0 flex-[3]',
-        enPasos && 'min-h-0 flex-1',
+        esTablet && !isStepped && 'flex min-h-0 flex-[3]',
+        isStepped && 'min-h-0 flex-1',
         documentPages?.length && 'overflow-y-auto',
       ]"
     >
@@ -387,9 +387,9 @@ function submit() {
            el dedo. Fondo blanco fijo: es papel, también en modo oscuro. -->
       <div v-if="documentPages?.length" class="flex flex-col gap-3 bg-muted p-3">
         <img
-          v-for="(pagina, i) in documentPages"
+          v-for="(page, i) in documentPages"
           :key="i"
-          :src="pagina"
+          :src="page"
           :alt="`Página ${i + 1} de ${documentPages.length} del documento`"
           class="w-full rounded-sm bg-white shadow-sm"
         >
@@ -416,7 +416,7 @@ function submit() {
          Pregunta con dos opciones y SIN opción marcada, calcada de la app vieja:
          mientras no se responda, el botón de firmar está deshabilitado. Un
          checkbox desmarcado —lo que había antes— es una respuesta que nadie dio. -->
-    <div v-if="form.allowsLegalRepresentative" v-show="mostrar('firmante')" class="flex flex-col gap-3">
+    <div v-if="form.allowsLegalRepresentative" v-show="isShown('signer')" class="flex flex-col gap-3">
       <fieldset class="flex flex-col gap-2">
         <legend class="text-sm font-medium text-foreground">
           ¿Quién firma este consentimiento?
@@ -481,7 +481,7 @@ function submit() {
          representante: hay formularios sin representante que igual piden ciudad. -->
     <div
       v-if="form.requiresExpeditionCity || form.requiresPatientExpeditionCity || form.requiresEntityServed"
-      v-show="mostrar('datos')"
+      v-show="isShown('details')"
       class="flex flex-col gap-3"
     >
       <div v-if="form.requiresExpeditionCity" class="flex flex-col gap-1.5 sm:max-w-xs">
@@ -512,7 +512,7 @@ function submit() {
     <!-- Declarations some forms print -->
     <div
       v-if="form.hasSampleConservationChoice || form.hasMicroscopicImagesChoice"
-      v-show="mostrar('datos')"
+      v-show="isShown('details')"
       class="flex flex-col gap-2"
     >
       <div v-if="form.hasSampleConservationChoice" class="flex items-center gap-2">
@@ -538,9 +538,9 @@ function submit() {
     <!-- The pad -->
     <!-- v-show y no v-if: al volver atrás y adelante el trazo sigue ahí. -->
     <div
-      v-show="mostrar('firma')"
+      v-show="isShown('signature')"
       class="flex flex-col gap-2"
-      :class="esTablet && !enPasos && 'min-h-[180px] flex-[2]'"
+      :class="esTablet && !isStepped && 'min-h-[180px] flex-[2]'"
     >
       <div class="flex items-center justify-between">
         <Label :class="esTablet && 'text-lg'">
@@ -560,7 +560,7 @@ function submit() {
       <SignaturePad
         ref="pad"
         :disabled="submitting"
-        :height="alturaFirma"
+        :height="signatureHeight"
         @change="onInk"
       />
       <p v-if="form.requiresBacteriologist && bacteriologist" class="text-xs text-muted-foreground">
@@ -572,17 +572,17 @@ function submit() {
       <AlertCircle class="size-4 shrink-0" aria-hidden="true" />
       <span>{{ error }}</span>
     </p>
-    <p v-else-if="representativeIncomplete && mostrar('firmante')" class="text-xs text-muted-foreground">
+    <p v-else-if="representativeIncomplete && isShown('signer')" class="text-xs text-muted-foreground">
       Completa el nombre y el documento del representante para poder firmar.
     </p>
 
-    <footer class="flex flex-wrap items-center justify-end gap-3" :class="enPasos && 'mt-auto'">
+    <footer class="flex flex-wrap items-center justify-end gap-3" :class="isStepped && 'mt-auto'">
       <Button
-        v-if="enPasos && pasos.indexOf(pasoActual) > 0"
+        v-if="isStepped && steps.indexOf(currentStep) > 0"
         variant="outline"
         class="mr-auto h-14 px-6 text-lg"
         :disabled="submitting"
-        @click="retroceder"
+        @click="goBack"
       >
         <ArrowLeft class="mr-1 size-5" aria-hidden="true" />
         Atrás
@@ -597,12 +597,12 @@ function submit() {
         No firma
       </Button>
       <Button
-        v-if="enPasos && !esUltimoPaso"
+        v-if="isStepped && !isLastStep"
         class="h-14 px-8 text-lg"
-        :disabled="!puedeAvanzar"
-        @click="avanzar"
+        :disabled="!canAdvance"
+        @click="advance"
       >
-        {{ pasoActual === 'documento' ? 'Ya lo leí' : 'Siguiente' }}
+        {{ currentStep === 'document' ? 'Ya lo leí' : 'Siguiente' }}
         <ArrowRight class="ml-1 size-5" aria-hidden="true" />
       </Button>
       <Button v-else :class="esTablet && 'h-14 px-8 text-lg'" :disabled="!canSign" @click="submit">
