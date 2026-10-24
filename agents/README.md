@@ -40,3 +40,5 @@ guide, a brief, a PR comment), never in the instruction file. Rationale and the 
 ## Adding an agent
 
 Name it `<slug>.agent.md`, add the frontmatter above, write the system prompt in the body, and list it here. If you're adding a template/example/doc instead, use a plain `.md` and file it under "Data artifacts."
+
+<!-- probe: code-owner review on agents/ (operations#769, Checkpoint 1) — do not merge -->
