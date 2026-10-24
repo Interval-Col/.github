@@ -381,6 +381,13 @@ migration or a `workflow_dispatch` job.
   change. It does not turn person-managed data into a job's input.
 - **If the screen does not exist yet,** build the screen. Do not seed the data while
   waiting for it.
+- **What this does NOT forbid: the defaults an app needs to boot.** The auth contract
+  requires the default role→capability mapping to be seeded by an idempotent deploy-step
+  one-shot (**[C5](auth-contract.md)**), and that stays: it seeds only a role with zero
+  rows, so it never overwrites what an admin changed. Seeding a system default once, so
+  the app can start and someone can log in to manage it, is fine. What is not fine is
+  using a deploy or a job as the **way records keep entering**: the people on a roster,
+  the entries of a business catalog, any list whose next row will come from a person.
 
 *(German, 2026-10-24 — admission-patient#656 had added a job to load the lab
 professionals; it never ran and was retired in favour of the Profesionales screen,
