@@ -364,6 +364,28 @@ lookup is allowed to use costs minutes and catches exactly this class.
 
 ---
 
+## 👤 Data a person manages enters through the app — never seeded by a deploy or a job
+
+Some data has an **owner who is a person**: the lab's professionals, a clinic's schedule
+templates, a catalog that customer service maintains. That data enters **through the app's
+own screen**, on demand, by whoever administers it — never as a list loaded by a deploy, a
+migration or a `workflow_dispatch` job.
+
+- **Why.** A list seeded by a deploy has no owner after the deploy. The next professional
+  who joins needs an engineer, a secret and a job run, while the screen that already does
+  it sits unused. And the app only proves it can manage its own data if that is the only
+  way the data gets in.
+- **The org rule is not the reason to write a job.** «Production data changes only through
+  a reviewed deploy step or CI job, never by hand» is about **derived or structural
+  corrections**: a backfill, a recomputed column, a data migration that follows a schema
+  change. It does not turn person-managed data into a job's input.
+- **If the screen does not exist yet,** build the screen. Do not seed the data while
+  waiting for it.
+
+*(German, 2026-10-24 — admission-patient#656 had added a job to load the lab
+professionals; it never ran and was retired in favour of the Profesionales screen,
+admission-patient#668.)*
+
 ## 🟢 A green signal has to be ASSERTED — never inferred from the absence of a red one
 
 Three defects landed in one week in September 2026, in three unrelated parts of the estate.
