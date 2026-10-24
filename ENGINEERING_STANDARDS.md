@@ -386,6 +386,26 @@ migration or a `workflow_dispatch` job.
 professionals; it never ran and was retired in favour of the Profesionales screen,
 admission-patient#668.)*
 
+## 🧊 Cache only where the measured volume asks for it
+
+A cache is **state that can go stale**, so it has to pay for itself. Read reference data
+(a catalog of document types, a list of offices) from its owner **on every use**, and add
+an in-process cache only where the call sits on a **hot path**: a list endpoint, a
+per-row lookup, something that runs on every request.
+
+- **The same rule can give two different answers, and that is not an inconsistency.**
+  In 2026-10, biuman-lis caches the users-api document-type catalog because the same list
+  feeds every order listing. Admisiones does not, because it reads that catalog only to
+  check a home visit, a few times a day. What **must** be identical between apps is the
+  *behaviour* (how a value is translated and compared), not whether they cache.
+- **When you add one:** cache only good responses (never an empty list or an error), and
+  after a failure wait a bounded time before retrying, so an outage does not make every
+  call pay the timeout.
+- **Write down why** next to the cache or next to its absence. Otherwise the next person
+  «harmonises» the two apps and undoes a correct decision.
+
+*(German, 2026-10-24 — admission-patient#659 and biuman-lis#560.)*
+
 ## 🟢 A green signal has to be ASSERTED — never inferred from the absence of a red one
 
 Three defects landed in one week in September 2026, in three unrelated parts of the estate.
