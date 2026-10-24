@@ -364,6 +364,55 @@ lookup is allowed to use costs minutes and catches exactly this class.
 
 ---
 
+## 👤 Data a person manages enters through the app — never seeded by a deploy or a job
+
+Some data has an **owner who is a person**: the lab's professionals, a clinic's schedule
+templates, a catalog that customer service maintains. That data enters **through the app's
+own screen**, on demand, by whoever administers it — never as a list loaded by a deploy, a
+migration or a `workflow_dispatch` job.
+
+- **Why.** A list seeded by a deploy has no owner after the deploy. The next professional
+  who joins needs an engineer, a secret and a job run, while the screen that already does
+  it sits unused. And the app only proves it can manage its own data if that is the only
+  way the data gets in.
+- **The org rule is not the reason to write a job.** «Production data changes only through
+  a reviewed deploy step or CI job, never by hand» is about **derived or structural
+  corrections**: a backfill, a recomputed column, a data migration that follows a schema
+  change. It does not turn person-managed data into a job's input.
+- **If the screen does not exist yet,** build the screen. Do not seed the data while
+  waiting for it.
+- **What this does NOT forbid: the defaults an app needs to boot.** The auth contract
+  requires the default role→capability mapping to be seeded by an idempotent deploy-step
+  one-shot (**[C5](auth-contract.md)**), and that stays: it seeds only a role with zero
+  rows, so it never overwrites what an admin changed. Seeding a system default once, so
+  the app can start and someone can log in to manage it, is fine. What is not fine is
+  using a deploy or a job as the **way records keep entering**: the people on a roster,
+  the entries of a business catalog, any list whose next row will come from a person.
+
+*(German, 2026-10-24 — admission-patient#656 had added a job to load the lab
+professionals; it never ran and was retired in favour of the Profesionales screen,
+admission-patient#668.)*
+
+## 🧊 Cache only where the measured volume asks for it
+
+A cache is **state that can go stale**, so it has to pay for itself. Read reference data
+(a catalog of document types, a list of offices) from its owner **on every use**, and add
+an in-process cache only where the call sits on a **hot path**: a list endpoint, a
+per-row lookup, something that runs on every request.
+
+- **The same rule can give two different answers, and that is not an inconsistency.**
+  In 2026-10, biuman-lis caches the users-api document-type catalog because the same list
+  feeds every order listing. Admisiones does not, because it reads that catalog only to
+  check a home visit, a few times a day. What **must** be identical between apps is the
+  *behaviour* (how a value is translated and compared), not whether they cache.
+- **When you add one:** cache only good responses (never an empty list or an error), and
+  after a failure wait a bounded time before retrying, so an outage does not make every
+  call pay the timeout.
+- **Write down why** next to the cache or next to its absence. Otherwise the next person
+  «harmonises» the two apps and undoes a correct decision.
+
+*(German, 2026-10-24 — admission-patient#659 and biuman-lis#560.)*
+
 ## 🟢 A green signal has to be ASSERTED — never inferred from the absence of a red one
 
 Three defects landed in one week in September 2026, in three unrelated parts of the estate.
