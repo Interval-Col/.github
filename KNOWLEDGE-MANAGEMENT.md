@@ -100,9 +100,11 @@ in `rfcs/`, summarize and link back to the originating ADR, and update the ADR's
 
 ## How to add knowledge
 
-Two slash-commands do the filing for you. Their canonical source lives in
-[`.github/commands/`](commands/) and is **installed (copied) into each repo's
-`.claude/commands/`** so the whole team has them locally.
+Two slash-commands do the filing for you. Once the **`core` plugin** of `agent-harness`
+ships (RFC 0039 Phase 2, in progress since 2026-10-24), it delivers them to every session
+(`/plugin install core@interval-col`), and repos **stop keeping a copy** in
+`.claude/commands/` — the last hand copies go in task 2.8 of the rollout plan. Until your
+machine has the plugin, their source is [`.github/commands/`](commands/).
 
 | Command | What it scaffolds |
 |---|---|
@@ -143,7 +145,7 @@ owner — do not correct it locally and leave the owner lying.
 
 | Fact class | Owner | Read it there because |
 |---|---|---|
-| Repo inventory & navigation | `operations/WORKSPACE-MAP.md` | Symlinked as `~/dev/CLAUDE.md`; loaded into every session |
+| Repo inventory & navigation | `operations/WORKSPACE-MAP.md` | A **read-only copy** of its `origin/main`, regenerated at `~/dev/CLAUDE.md` by the SessionStart hook `refresh-workspace-map.sh`, loads into every session. Edit the source by PR, never the copy |
 | Repo disposition (archived / folded / deleted) | `rfcs/0009-disposition-tracker.md` | The per-repo ruling, with dates |
 | Runtime topology (what runs where, behind which route) | `proxy/templates.d/*.conf.template` | Config, not prose — it cannot drift from itself |
 | Host roster (hostname, IP, environment, role) | `infrastructure/inventory/` | The inventory is what Ansible actually reads |
@@ -164,7 +166,7 @@ owner — do not correct it locally and leave the owner lying.
 | Team roster & operating model | `operations/ops/shared/` | Private by design |
 | **What an agent knows how to do** (`SKILL.md`) | `agent-harness` | The catalog — org skills under `*/propias/`, vendored upstream under `*/instaladas/`. A skill is an *instruction*, and it belongs where the catalog's gates can see it |
 | **The machinery that produces a recurring deliverable** | `operations/ops/<entregable>/` | Scripts, runbooks and editorial live next to the thing they emit: `weekly/`, `eod/`, `estate/`, `board/`, `arbol/`. Deterministic here, judgment in the session that runs it |
-| **Operational facts a session must not miss, per repo** | that repo's **`CLAUDE.md`** | ⚠️ It is the **only** vector that reaches another person's agent — see below |
+| **Operational facts a session must not miss, per repo** | that repo's **`AGENTS.md`**, imported by a one-line **`CLAUDE.md`** shim (`@AGENTS.md`) — RFC 0039 D4. A repo that has not migrated yet (Phase 3) keeps them in its `CLAUDE.md` | ⚠️ It is the **only** vector that reaches another person's agent — see below |
 | Knowledge-management conventions | this file | |
 
 ### ⚠️ The vector that reaches other people's agents is a committed file
@@ -177,7 +179,8 @@ two do not conflict, nothing fails, and the stale copy is the one that wins.
 
 **What does:** a file **committed in the repo they are working in** — that repo's
 `CLAUDE.md` above all, because it loads automatically into every session opened
-anywhere inside it.
+anywhere inside it. (Under RFC 0039 D4 the facts move to `AGENTS.md` and the `CLAUDE.md`
+becomes a shim that imports it; the shim is still what loads.)
 
 > 🔴 **Measured, 2026-08.** The cobolql forge cutover was executed **and documented**
 > in RFC 0009 on 2026-08-20. But `cobolql/CLAUDE.md` kept saying *"externalUse
@@ -209,7 +212,11 @@ pointer. A wrong copy is worse than no copy, because it looks like an answer.
 Three repos hold agent-adjacent material and the line between them is not obvious,
 so it gets asked again every few weeks:
 
-- **`agent-harness`** — *what an agent knows how to do*. `SKILL.md` files, nothing else.
+- **`agent-harness`** — *what an agent knows how to do, and how it reaches every session*:
+  the `SKILL.md` files **and** the adapters that deliver them — the `interval-col`
+  marketplace, the `core` plugin and the kit plugins, with their hooks and manifests
+  (RFC 0039 D3, layer L2). Renamed from `claude-skills` on 2026-10-24; until then its charter
+  was "`SKILL.md` and nothing else".
 - **`operations/ops/`** — *what the organization produces on a schedule*. The scripts,
   runbooks and data behind the weekly brief, the EOD bitácora, the estate audit, the
   Árbol de Frentes.
