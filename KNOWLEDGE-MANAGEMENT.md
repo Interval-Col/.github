@@ -192,7 +192,7 @@ becomes a shim that imports it; the shim is still what loads.)
 **So, when closing a cutover or an incident**, the question is not *"did I write it
 down?"* but *"where will the next person read it?"*:
 
-1. The **`CLAUDE.md` of every repo touched.** If a repo has none, that is the finding.
+1. The **agent file of every repo touched**: its `AGENTS.md` if it has migrated (RFC 0039 D4 — never the one-line `CLAUDE.md` shim), otherwise its `CLAUDE.md`. If a repo has neither, that is the finding.
 2. The long document (`operations/docs/`, a runbook), **pointed at** from step 1.
 3. The **RFC**, if the decision is durable — but an RFC does **not** load into a
    session on its own, so it never replaces step 1.
