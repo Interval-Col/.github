@@ -1,0 +1,21 @@
+# Caller del check del contrato (agents-md-check) para ESTE repo, más las pruebas del
+# script. Repo público ⇒ ubuntu-latest (ver la nota de runner en agents-md-check.yml).
+name: agents-md
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 scripts/test_agents_md_check.py
+  agents-md-check:
+    uses: ./.github/workflows/agents-md-check.yml
+    with:
+      runner: '["ubuntu-latest"]'
