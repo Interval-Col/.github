@@ -1,0 +1,54 @@
+# Reusable: el contrato de cada repo — AGENTS.md en la raíz + CLAUDE.md que lo importa
+# (RFC 0039 D4; plan del arnés, tarea 3.2).
+#
+# Por qué existe: las sesiones arrancan en ~/dev, y ~/dev/CLAUDE.md (el mapa) apaga la
+# lectura nativa de AGENTS.md para todos los repos de abajo. Sin la línea `@AGENTS.md`
+# en el CLAUDE.md del repo, su conocimiento nunca carga. Y un AGENTS.md de 1.500 líneas
+# (biuman-lis) se paga en cada sesión que lo toca: el presupuesto es 200.
+#
+# Reporta missing / over-budget / conformant. Nace en MODO AVISO con fecha de
+# promoción (RFC 0029): hasta el 2026-11-10 solo anota en el PR; desde esa fecha cada
+# caller pasa `enforce: true` y el check se marca obligatorio (tarea 3.9).
+#
+# Runner: como plans-check, los repos privados usan el pool self-hosted (por defecto);
+# un caller PÚBLICO tiene que pasar runner '["ubuntu-latest"]' o se queda en cola.
+
+name: agents-md-check
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check when the repo does not conform (required-check mode)
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  agents-md-check:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - uses: actions/checkout@v7
+      # Dentro del propio .github el script se toma del checkout del PR: tomado de
+      # `main`, el PR que lo introduce (o lo cambia) se mediría con la versión vieja.
+      - uses: actions/checkout@v7
+        if: github.repository != 'Interval-Col/.github'
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .agents-md-org
+      - name: AGENTS.md + shim
+        env:
+          ENFORCE: ${{ inputs.enforce }}
+        run: |
+          S=.agents-md-org/scripts/agents_md_check.py
+          [ "$GITHUB_REPOSITORY" = "Interval-Col/.github" ] && S=scripts/agents_md_check.py
+          python3 "$S" . $([ "$ENFORCE" = "true" ] && echo --enforce)

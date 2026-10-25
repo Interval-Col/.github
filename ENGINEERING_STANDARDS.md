@@ -706,6 +706,7 @@ Reference plans worth reading as exemplars: `admission-patient/plans/`,
 - [ ] **CI must run all tests, lint, and builds**
 - [ ] Branch protection enabled on `main`
 - [ ] Case-collision check installed (pre-commit `check-case-conflict` everywhere; CI step in code repos) — see "Cross-platform path safety"
+- [ ] **`AGENTS.md` in the root (≤ 200 lines) plus a `CLAUDE.md` whose only content is the line `@AGENTS.md`** — copy both from [`templates/`](templates/AGENTS.md), keep its two required sections (**Trunk and branches**, naming the trunk — `develop` wherever the repo has one — and **Rules that bind this repo**, one line per accepted RFC that names the repo), and add the thin caller of `agents-md-check.yml` (RFC 0039 D4: sessions start in `~/dev`, whose map turns off native `AGENTS.md` reading, so without the shim the repo's knowledge never loads)
 - [ ] Secret scanning (gitleaks) installed — pre-commit hook **and** required CI check named `gitleaks` (every repo, incl. docs-only) — see [`BRANCHING-AND-DEPLOY.md` §"Hooks"](BRANCHING-AND-DEPLOY.md#hooks)
 
 ---
