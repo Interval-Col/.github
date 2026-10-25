@@ -18,8 +18,18 @@ migración, legado). Si es parte de un producto o RFC, el puntero.
 
 ## Tronco y ramas
 
-- Tronco: `develop` | `main`. Cómo se promueve (`develop → main`), si aplica.
+- Tronco: `develop`. Toda rama sale de `origin/develop` y todo PR se abre con
+  `gh pr create --base develop`; a `main` solo llegan promotes `develop → main`.
+  (Un repo sin `develop` escribe `main`. El check lo compara con el remoto.)
 - Merge siempre con merge commit (`--merge`), nunca `--squash`.
+
+## Reglas que obligan a este repo
+
+Una línea por cada RFC aceptada cuyo `target-repos` nombra este repo, escrita como
+instrucción y con su número (RFC 0039 D4). Si la regla restringe código, se acompaña con su
+portón `scripts/check-rfc-<NNNN>-<qué>`.
+
+- RFC NNNN — <la regla, como instrucción>.
 
 ## Correr y probar
 

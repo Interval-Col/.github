@@ -37,7 +37,10 @@ jobs:
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7
+      # Dentro del propio .github el script se toma del checkout del PR: tomado de
+      # `main`, el PR que lo introduce (o lo cambia) se mediría con la versión vieja.
       - uses: actions/checkout@v7
+        if: github.repository != 'Interval-Col/.github'
         with:
           repository: Interval-Col/.github
           ref: main
@@ -46,4 +49,6 @@ jobs:
         env:
           ENFORCE: ${{ inputs.enforce }}
         run: |
-          python3 .agents-md-org/scripts/agents_md_check.py . $([ "$ENFORCE" = "true" ] && echo --enforce)
+          S=.agents-md-org/scripts/agents_md_check.py
+          [ "$GITHUB_REPOSITORY" = "Interval-Col/.github" ] && S=scripts/agents_md_check.py
+          python3 "$S" . $([ "$ENFORCE" = "true" ] && echo --enforce)
