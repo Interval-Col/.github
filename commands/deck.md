@@ -2,6 +2,11 @@
 description: Build a house deck (didactic or executive-brand) following the guides in operations/guides/decks.md — audience-first, brand-canonical, animated, stored as a regenerable recipe. Content language follows the audience (usually Spanish).
 ---
 
+> 🧊 **Frozen on 2026-10-25 — do not edit here.** This command now lives in the `core`
+> plugin: `Interval-Col/agent-harness` → `plugins/core/skills/deck/SKILL.md`, invoked as
+> `/core:deck`. A change made here never reaches the plugin. This copy is removed by
+> `verify-harness.sh --migrate` (agent-harness rollout plan, task 2.6).
+
 # /deck — construir un deck de la casa
 
 You are building a presentation following the house deck methodology.

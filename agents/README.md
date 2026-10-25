@@ -2,6 +2,13 @@
 
 This directory holds two kinds of file, distinguished by extension + content.
 
+> 🔌 **How Claude Code reaches them (since 2026-10-25).** The `core` plugin of
+> `agent-harness` ships one thin agent per invokable file here (`plugins/core/agents/<name>.md`)
+> whose only instruction is to read this file and follow it. **This file stays the single
+> source** — the plan hook, the plans gate and ~50 documents point at it — so edit it here,
+> never in the plugin. The `tools: [read, edit, search]` frontmatter is the old Copilot format;
+> the team no longer uses Copilot, and the plugin's agent declares Claude Code tools.
+
 ## The contract
 
 | Pattern | Meaning |

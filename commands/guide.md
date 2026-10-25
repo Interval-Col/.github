@@ -2,6 +2,11 @@
 description: Scaffold a Spanish operator/team guide in operations/guides/ from the relevant code or flow, fill its app/repo frontmatter, index it, and commit. Output is Spanish (neutral Colombian).
 ---
 
+> 🧊 **Frozen on 2026-10-25 — do not edit here.** This command now lives in the `core`
+> plugin: `Interval-Col/agent-harness` → `plugins/core/skills/guide/SKILL.md`, invoked as
+> `/core:guide`. A change made here never reaches the plugin. This copy is removed by
+> `verify-harness.sh --migrate` (agent-harness rollout plan, task 2.6).
+
 # /guide — capture an operator / team guide
 
 You are writing a **user-facing guide** for operators or teammates and

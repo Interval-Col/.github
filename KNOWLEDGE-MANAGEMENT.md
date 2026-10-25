@@ -104,7 +104,9 @@ Two slash-commands do the filing for you. Once the **`core` plugin** of `agent-h
 ships (RFC 0039 Phase 2, in progress since 2026-10-24), it delivers them to every session
 (`/plugin install core@interval-col`), and repos **stop keeping a copy** in
 `.claude/commands/` — the last hand copies go in task 2.8 of the rollout plan. Until your
-machine has the plugin, their source is [`.github/commands/`](commands/).
+machine has the plugin, they are installed from [`.github/commands/`](commands/) — but those
+copies are **frozen since 2026-10-25**: the source is `agent-harness/plugins/core/skills/`, and an
+edit made in `.github/commands/` never reaches the plugin.
 
 | Command | What it scaffolds |
 |---|---|
