@@ -162,7 +162,7 @@ owner — do not correct it locally and leave the owner lying.
 | Schema / data-platform decisions | `nucleus-db/docs/decisions/` (single-repo) → `rfcs/` (cross-repo) | See *RFC vs. ADR* above |
 | PHI & security policy | `operations/policies/` | |
 | Team roster & operating model | `operations/ops/shared/` | Private by design |
-| **What an agent knows how to do** (`SKILL.md`) | `claude-skills` | The catalog — org skills under `*/propias/`, vendored upstream under `*/instaladas/`. A skill is an *instruction*, and it belongs where the catalog's gates can see it |
+| **What an agent knows how to do** (`SKILL.md`) | `agent-harness` | The catalog — org skills under `*/propias/`, vendored upstream under `*/instaladas/`. A skill is an *instruction*, and it belongs where the catalog's gates can see it |
 | **The machinery that produces a recurring deliverable** | `operations/ops/<entregable>/` | Scripts, runbooks and editorial live next to the thing they emit: `weekly/`, `eod/`, `estate/`, `board/`, `arbol/`. Deterministic here, judgment in the session that runs it |
 | **Operational facts a session must not miss, per repo** | that repo's **`CLAUDE.md`** | ⚠️ It is the **only** vector that reaches another person's agent — see below |
 | Knowledge-management conventions | this file | |
@@ -209,7 +209,7 @@ pointer. A wrong copy is worse than no copy, because it looks like an answer.
 Three repos hold agent-adjacent material and the line between them is not obvious,
 so it gets asked again every few weeks:
 
-- **`claude-skills`** — *what an agent knows how to do*. `SKILL.md` files, nothing else.
+- **`agent-harness`** — *what an agent knows how to do*. `SKILL.md` files, nothing else.
 - **`operations/ops/`** — *what the organization produces on a schedule*. The scripts,
   runbooks and data behind the weekly brief, the EOD bitácora, the estate audit, the
   Árbol de Frentes.
@@ -217,7 +217,7 @@ so it gets asked again every few weeks:
 
 They compose rather than compete: a recurring deliverable's machinery goes to
 `operations/ops/<name>/`, and if it also deserves a slash-command, the `SKILL.md` goes to
-`claude-skills` and **points at** the pipeline. Skills were removed from `operations` on
+`agent-harness` and **points at** the pipeline. Skills were removed from `operations` on
 purpose (operations#660) — that move was about the instructions, not the pipelines, which
 stayed.
 
@@ -241,7 +241,7 @@ Three reasons, in order of how much they cost when ignored:
 2. **They sit next to English standards.** Every file in this repo, every ADR and every
    RFC is English (see the five buckets above). A catalog half in each language is one
    more thing to remember rather than one rule to follow.
-3. **Upstream skills are English.** `claude-skills` vendors ~180 of them under
+3. **Upstream skills are English.** `agent-harness` vendors ~180 of them under
    `*/instaladas/`. Ours reading differently makes the catalog scan as two products.
 
 Existing Spanish-named skills are **not** being renamed en masse — a rename breaks
