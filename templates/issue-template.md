@@ -43,7 +43,9 @@ issue.)*
 ## Talla (RFC 0040)
 
 **<S · M · L>** — <why: how much the change alters what the person does, not the
-size of the code>. *(ES: en M y L la ficha de entendimiento abre el plan.)*
+size of the code>. *(ES: en M y L la ficha de entendimiento abre el plan. En S
+la ficha va aquí, en pocas líneas por capa, y el plan —si el trabajo lo amerita—
+no la repite.)*
 
 ## Scope · Alcance
 

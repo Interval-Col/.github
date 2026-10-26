@@ -62,7 +62,8 @@ Then `language` (the bilingual contract). Blessed-optional keys you MAY add:
   rfc, parent, supersedes, superseded-by, related, talla.
   talla   — RFC 0040 change size: S · M · L, by how much the change alters what
             the person does (NOT `effort`, which sizes the work). Copy it from
-            the issue. A `talla: S` change gets no plan: it lives in the issue.
+            the issue. In S, the ficha lives in the issue and the plan
+            (if the work earns one) skips the Understanding section.
 Do NOT use `completed:` (use `status: done` + `updated:`) or `tracking-issue:`
 (use `issue:`). Devops/deploy/ops plans use `ops-plan-template.md` instead.
 

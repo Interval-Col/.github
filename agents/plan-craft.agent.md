@@ -338,8 +338,11 @@ When you are asked to write or rebuild a plan:
 
 1. Read the goal + phases from the lead, and the change's `talla` (RFC 0040)
    from its issue.
-   - **`talla: S` gets no plan.** The ficha (a few lines per layer), what gets
-     done, Done-when and the measure go in the issue body. Say so and stop.
+   - **`talla: S` needs no plan for RFC 0040's sake.** Its ficha (a few lines
+     per layer), what gets done, Done-when and the measure go in the issue
+     body. If the work earns a plan anyway (the granularity rule, below:
+     a large migration nobody notices is S and still multi-phase), the plan
+     skips the Understanding section and links the issue's ficha.
    - **M and L** get the `## Understanding · Entendimiento` section first
      (structure item 5). Without a ficha validated by the person, the plan
      is a draft and says so.

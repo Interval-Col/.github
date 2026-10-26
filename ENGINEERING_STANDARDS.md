@@ -650,7 +650,7 @@ that is always met. The rest is orientation, graded by the change's **talla**.
 - **`talla` S · M · L** measures how much the change alters what the person does,
   not the size of the code. It is not the plan's `effort`. It is estimated when the
   issue opens (`.github/ISSUE_TEMPLATE/task.md`).
-- **S** lives in the issue body. **M and L** get a plan whose first section is the
+- **S** keeps its ficha in the issue body. **M and L** get a plan whose first section is the
   ficha (§ Plan craft), and their delivery uses the `/change-guides` skill.
 - **The record is the closing note.** It is the issue's last comment, under the fixed
   heading `## Nota de cierre (RFC 0040)`, so a search can collect them all. It
