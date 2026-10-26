@@ -90,6 +90,51 @@ def annotate(level, path, msg):
     print(f"::{level} file={path},line=1::{msg}")
 
 
+# RFC 0040 — the change's `talla` (S · M · L) is not `effort`. For M and L the plan
+# opens with the ficha (`## Understanding · Entendimiento`) and ends with the delivery
+# and stabilization phase. These are NOTICES, never counted against `--strict`: the
+# RFC itself says neither the size nor the mode has an automatic control, and the
+# standard must not turn rigid. A plan without `talla` is not
+# looked at — the key is optional, and old plans predate it.
+TALLAS = {"S", "M", "L"}
+# Headings vary across the estate: `##` or `###`, an optional number or emoji before the
+# word (`## 1. Fase 0`, `## 🚦 Phase 3`, `## 4 · Fase 1`), English or Spanish first.
+_PREFIX = r"^#{2,3}\s+(?:\d+\s*[.·)]\s*)?(?:[^\w\s]+\s*)?"
+UNDERSTANDING_RE = re.compile(_PREFIX + r"(?:Understanding|Entendimiento)\b(?!\s+the\b)", re.M | re.I)
+PHASE_RE = re.compile(_PREFIX + r"(?:Phase|Fase)\s+\S+\s*[—–:·-]?\s*(.*)$", re.M | re.I)
+DELIVERY_RE = re.compile(r"entrega|deliver|estabiliz|stabiliz|hypercare|handover|release|"
+                         r"cutover|corte|producci[oó]n|production|revisit|revisita|cierre|exit|salida", re.I)
+FENCE_RE = re.compile(r"^(```|~~~).*?^\1[^\n]*$", re.M | re.S)
+
+
+def lint_talla(path, fm, text):
+    """Notices for RFC 0040. Returns how many it emitted (they never fail a check)."""
+    raw = fm.get("talla")
+    if raw is None:
+        return 0
+    talla = raw.split("#")[0].strip().strip("\"'").split()
+    talla = talla[0].upper() if talla else ""
+    if talla not in TALLAS:
+        annotate("notice", path, f"RFC 0040: `talla: {raw}` — the sizes are S · M · L (how much the "
+                 f"change alters what the person does); `effort` is the separate key for the work")
+        return 1
+    if talla == "S":
+        return 0
+    body = FENCE_RE.sub("", text)  # a heading inside a code fence is not a heading
+    n = 0
+    if not UNDERSTANDING_RE.search(body):
+        annotate("notice", path, f"RFC 0040: `talla: {talla}` plan with no `## Understanding · "
+                 f"Entendimiento` — for M and L the ficha is the plan's first section, or the plan "
+                 f"links it (see plan-template.md)")
+        n += 1
+    fases = PHASE_RE.findall(body)
+    if fases and not DELIVERY_RE.search(fases[-1]):
+        annotate("notice", path, f"RFC 0040: `talla: {talla}` plan whose last phase is not delivery "
+                 f"and stabilization — its Done-when is the issue's `## Nota de cierre (RFC 0040)`")
+        n += 1
+    return n
+
+
 def lint_file(path):
     """Lint one plan.
 
@@ -148,6 +193,7 @@ def lint_file(path):
     if not re.search(r">\s*\*\*Resumen", text):
         annotate(lvl, path, "no top-level `> **Resumen (ES).**` blockquote found")
         prose += 1
+    lint_talla(path, fm, text)  # notices only — never added to hard or prose
     return hard, prose, exception
 
 
