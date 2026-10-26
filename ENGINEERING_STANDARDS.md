@@ -634,6 +634,35 @@ Rules:
 - What `lch-kb` holds stays unchanged: protocol and blank templates only. A filled
   expediente is a *record* and never lands there.
 
+## 🔁 Every development goes through five phases — understanding first
+
+Ratified in **RFC 0040** (private `rfcs` repo). Each phase has a small **floor**
+that is always met. The rest is orientation, graded by the change's **talla**.
+
+| Phase | Floor |
+|---|---|
+| 1 · Understanding | Talk with whoever does the work, about concrete cases. The **ficha** keeps four layers apart: what they say, what they do, what we infer, what we propose. The person validates it with a real case of theirs |
+| 2 · Planning | The plan comes out of the ficha and fixes the measure, or says why nothing is measured |
+| 3 · Development | The standards in this file |
+| 4 · Delivery | The person knows about the change before running into it. A clinical screen is declared in the app's `verification.manifest.ts` (§ «Marking a view as en verificación») |
+| 5 · Stabilization | Someone asks the person how it went, and what they report gets fixed or becomes an issue |
+
+- **`talla` S · M · L** measures how much the change alters what the person does,
+  not the size of the code. It is not the plan's `effort`. It is estimated when the
+  issue opens (`.github/ISSUE_TEMPLATE/task.md`).
+- **S** keeps its ficha in the issue body. **M and L** get a plan whose first section is the
+  ficha (§ Plan craft), and their delivery uses the `/change-guides` skill.
+- **The record is the closing note.** It is the issue's last comment, under the fixed
+  heading `## Nota de cierre (RFC 0040)`, so a search can collect them all. It
+  carries:
+  - the estimated and the final talla;
+  - the understanding mode, and why;
+  - the measure before and after, or why nothing was measured;
+  - what came up in stabilization, and how much rework there was;
+  - if the change is clinical, the screen's state.
+
+---
+
 ## 📄 Project Documentation
 
 - Root `README.md` must document:
@@ -667,6 +696,9 @@ junior, Spanish-native, AI-agent-assisted dev team. It standardises:
   "execute the whole plan unattended").
 - **Non-condescending tone** — gaps are framed as the *plan's* fault,
   not the reader's; seniority is never mentioned.
+- **The ficha comes first** — in a plan of `talla` M or L (RFC 0040), the
+  understanding section opens the plan, and the last phase is delivery and
+  stabilization.
 
 Authoritative artefacts (canonical sources of truth):
 

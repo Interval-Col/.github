@@ -24,7 +24,14 @@ FRONTMATTER SCHEMA v2.1 — see plan-template.md / plan-craft.agent.md. The eigh
 required keys + `effort` (XS·S·M·L·XL) populate the GitHub project board. `status` enum (= board
 columns): proposed → active → in-progress → blocked → done; terminal:
 superseded | abandoned. `issue` is the board item + entry point — every plan
-gets one unless `issue: none — <reason>`.
+gets one unless `issue: none — <reason>`. Optional `talla: S · M · L` (RFC 0040:
+how much the change alters what a person does — not `effort`).
+
+RFC 0040 IN OPS PLANS: most ops work is `talla: S` (nobody has to learn anything
+new), and then the plan carries no Understanding section. When an ops change does
+alter someone's work (M or L: a new login step, a moved tool, a changed procedure),
+add the plan-template's `## Understanding · Entendimiento` section after the context
+paragraph, and end with a delivery-and-stabilization phase (see plan-craft).
 
 Delete this comment when you start filling in.
 -->
