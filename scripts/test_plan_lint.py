@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 
+sys.dont_write_bytecode = True  # no __pycache__ in the repo
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import plan_lint  # noqa: E402
 
@@ -86,6 +87,38 @@ class TallaRfc0040(unittest.TestCase):
     def test_avisos_no_cuentan_como_hallazgos(self):
         _, out = correr("talla: L", FASES_SIN_ENTREGA)
         self.assertIn("0 finding(s)", out)
+
+    def test_encabezados_reales_del_estado(self):
+        cuerpo = ("## Entendimiento · Understanding\n\nx\n\n### Phase 1 — Build\n\n"
+                  "## 🚦 Fase 2 — Entrega y estabilización\n")
+        _, out = correr("talla: M", cuerpo)
+        self.assertNotIn("::notice", out)
+
+    def test_fase_numerada_sin_entrega_avisa(self):
+        _, out = correr("talla: L", FICHA + "## 1. Fase 0 — Base\n\n## 2. Fase 1 — Pulido\n")
+        self.assertIn("last phase is not delivery", out)
+
+    def test_cierre_con_otro_nombre_cuenta(self):
+        _, out = correr("talla: M", FICHA + "## Phase 3 — Hypercare and handover\n")
+        self.assertNotIn("::notice", out)
+
+    def test_valor_entre_comillas(self):
+        _, out = correr('talla: "M"', FICHA + FASES_OK)
+        self.assertNotIn("::notice", out)
+
+    def test_fase_dentro_de_un_bloque_de_codigo_no_cuenta(self):
+        cuerpo = FICHA + FASES_OK + "\n```\n## Phase 9 — Example\n```\n"
+        _, out = correr("talla: M", cuerpo)
+        self.assertNotIn("::notice", out)
+
+    def test_understanding_the_no_es_la_ficha(self):
+        _, out = correr("talla: M", "## Understanding the legacy flow\n\n" + FASES_OK)
+        self.assertIn("no `## Understanding", out)
+
+    def test_excepcion_no_vuelve_hallazgo_el_aviso(self):
+        code, out = correr("talla: L\nstandard-exception: framing doc in Spanish", FASES_SIN_ENTREGA, strict=True)
+        self.assertIn("::notice", out)
+        self.assertEqual(code, 0, out)
 
 
 if __name__ == "__main__":
