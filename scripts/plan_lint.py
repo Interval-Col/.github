@@ -90,6 +90,43 @@ def annotate(level, path, msg):
     print(f"::{level} file={path},line=1::{msg}")
 
 
+# RFC 0040 — the change's `talla` (S · M · L) is not `effort`. For M and L the plan
+# opens with the ficha (`## Understanding · Entendimiento`) and ends with the delivery
+# and stabilization phase. These are NOTICES, never counted against `--strict`: the
+# RFC itself says neither the size nor the mode has an automatic control, and the
+# standard must not turn rigid. A plan without `talla` is not
+# looked at — the key is optional, and old plans predate it.
+TALLAS = {"S", "M", "L"}
+UNDERSTANDING_RE = re.compile(r"^##\s+Understanding\b", re.M | re.I)
+PHASE_RE = re.compile(r"^##\s+(?:Phase|Fase)\s+\S+\s*[—–:-]?\s*(.*)$", re.M | re.I)
+DELIVERY_RE = re.compile(r"entrega|delivery|estabiliz|stabiliz", re.I)
+
+
+def lint_talla(path, fm, text):
+    """Notices for RFC 0040. Returns how many it emitted (they never fail a check)."""
+    raw = fm.get("talla")
+    if raw is None:
+        return 0
+    talla = raw.split()[0].strip().upper() if raw.strip() else ""
+    if talla not in TALLAS:
+        annotate("notice", path, f"`talla: {raw}` — RFC 0040 sizes are S · M · L (how much the "
+                 f"change alters what the person does); `effort` is the separate key for the work")
+        return 1
+    if talla == "S":
+        return 0
+    n = 0
+    if not UNDERSTANDING_RE.search(text):
+        annotate("notice", path, f"`talla: {talla}` plan with no `## Understanding · Entendimiento` — "
+                 f"for M and L the ficha opens the plan (RFC 0040; see plan-template.md)")
+        n += 1
+    fases = PHASE_RE.findall(text)
+    if fases and not DELIVERY_RE.search(fases[-1]):
+        annotate("notice", path, f"`talla: {talla}` plan whose last phase is not delivery and "
+                 f"stabilization (RFC 0040) — its Done-when is the issue's `## Nota de cierre (RFC 0040)`")
+        n += 1
+    return n
+
+
 def lint_file(path):
     """Lint one plan.
 
@@ -148,6 +185,7 @@ def lint_file(path):
     if not re.search(r">\s*\*\*Resumen", text):
         annotate(lvl, path, "no top-level `> **Resumen (ES).**` blockquote found")
         prose += 1
+    lint_talla(path, fm, text)  # notices only — never added to hard or prose
     return hard, prose, exception
 
 
