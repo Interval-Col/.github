@@ -18,5 +18,16 @@ labels: []
 ## Hecho cuando (done-when)
 - [ ] …
 
+## Talla (RFC 0040)
+<!--
+  S · M · L, y por qué. Mide cuánto cambia lo que la persona hace, no el tamaño del
+  código. En caso de duda, la mayor.
+  - S: la persona no aprende nada nuevo. La ficha va aquí, en pocas líneas por capa
+    (lo que dice · lo que hace · por qué creemos que pasa · qué proponemos), con la
+    medida o «no se mide» y por qué.
+  - M y L: la ficha va en el plan.
+  Al cerrar, el último comentario es `## Nota de cierre (RFC 0040)`.
+-->
+
 ## Contexto
 <!-- Fase, RFC/ADR, branch, dependencias, links. -->

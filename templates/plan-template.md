@@ -59,7 +59,10 @@ you contort a plan's dates to fix something on the board: the plan is not the in
             refine as scope firms; populates board sizing. Scope it per track on
             a multi-track plan (e.g. "Track A = L; Track B = XL").
 Then `language` (the bilingual contract). Blessed-optional keys you MAY add:
-  rfc, parent, supersedes, superseded-by, related.
+  rfc, parent, supersedes, superseded-by, related, talla.
+  talla   — RFC 0040 change size: S · M · L, by how much the change alters what
+            the person does (NOT `effort`, which sizes the work). Copy it from
+            the issue. A `talla: S` change gets no plan: it lives in the issue.
 Do NOT use `completed:` (use `status: done` + `updated:`) or `tracking-issue:`
 (use `issue:`). Devops/deploy/ops plans use `ops-plan-template.md` instead.
 
@@ -86,6 +89,26 @@ language: English body; Spanish "Resumen" + decision/criteria glosses.
 
 <One short English paragraph: what the project is, why it exists,
 urgency if any. Two or three sentences, not a wall of text.>
+
+---
+
+## Understanding · Entendimiento
+
+> **Resumen (ES).** La ficha de entendimiento (RFC 0040). El resto del plan
+> sale de aquí. Las capas 1 y 2 salen de hablar con la persona, nunca del
+> código. Sin datos de pacientes.
+
+1. **Lo que dice** — <the request and the story, in the person's words>
+2. **Lo que hace** — <the steps as they happen, with repetitions and detours>
+3. **Por qué creemos que pasa** — <our reading, marked as inference>
+4. **Qué proponemos** — <the improvements>
+
+- **Quién lo usa:** <role · area · site — never patients' names>
+- **Sistema de trabajo** (when it applies): <person · tasks · tools · environment · organization>
+- **Lo que cuesta hoy:** <time, errors, rework>
+- **La medida:** <a countable event of the process + today's value · or «no se mide» and why>
+- **Modo y talla:** <anamnesis | inmersión, and why · S/M/L, and why>
+- **Validada por:** <who walked through it with a real case of theirs · YYYY-MM-DD>
 
 ---
 
@@ -315,6 +338,15 @@ exit. Not on every phase.>
   services is not done until a real call crosses it»).
 - The *exit* phase warrants a 🚦 Checkpoint — and its Done-when blocks
   archiving the plan until every earlier checkpoint has been walked.
+- The **last** phase is *delivery and stabilization* (RFC 0040). Its tasks:
+  - the person knows about the change before running into it: a demo or a
+    meeting on the test environment, and `/change-guides`;
+  - a clinical screen is declared in the app's `verification.manifest.ts`;
+  - a delivery note goes on the issue;
+  - the revisit happens 1–2 weeks after the deploy, with the measure read
+    against today's value.
+
+  Its Done-when is the issue's `## Nota de cierre (RFC 0040)` comment.
 
 ---
 
