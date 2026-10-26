@@ -42,6 +42,28 @@ private operations repo). In short:
   Conventional Commits with a scope.
 - `CODEOWNERS` routes every path to the harness owners.
 
+## Reglas que obligan a este repo
+
+Una línea por cada RFC aceptada que nombra este repo en `target-repos` (RFC 0039 D4); el detalle y sus excepciones están en la RFC, en `Interval-Col/rfcs`.
+
+- RFC 0004 — Nombra las apps «Pháros <Nombre>» en UI y docs, pero `pharos-*` en minúscula sin tilde en código y repos; no crees apps aparte para Caja, CRM ni QC; en apps multi-tenant toda fila lleva `tenant_id`.
+- RFC 0005 — Tu app es dueña de su schema y sus migraciones, pero todo PR de migración lo revisa nucleus-db (CODEOWNERS): PK UUID, `tenant_id`, dinero `NUMERIC(18,2)`, sin DDL ni FK entre schemas.
+- RFC 0006 — Todo dato que entre desde COBOL pasa por la ETL de `cobol-migration/services/etl/` y actualiza su fila del coverage tracker (§7) en el mismo PR; un dominio no corta sin el protocolo de corte (§4).
+- RFC 0008 — Usa los tokens semánticos y las 4 familias tipográficas compartidas (sin fuentes por app), trae componentes del registry por copy-in (nunca paquete npm ni `cp`), un solo `<Icon>` (Lucide, con Material Symbols Outlined como único fallback gobernado) y pasa los 4 design gates.
+- RFC 0009 — Antes de empujar un repo migrado corre `gitleaks` sobre el mirror y quita PHI/secretos con `git-filter-repo`; un repo retirado solo se marca hecho con repo Y runtime (proxy, contenedores, ECR, SSO, DNS, secretos) dispuestos.
+- RFC 0010 — Deja el `status:` de cada plan en un solo valor del enum que valida `plan-lint` (`scripts/plan_lint.py`), sin glosa en prosa.
+- RFC 0011 — Un plan solo si es un outcome con contexto multi-fase; una fase es `## Phase N` dentro del plan (no otro plan), la tarea suelta es un issue con `parent` al epic, y lo terminado se archiva en `plans/archive/`.
+- RFC 0012 — Ningún job de CI guarda una credencial fija del SSO: el registro de permisos lo dispara una persona con su propio token.
+- RFC 0013 — El navegador solo habla con tu propio backend (same-origin, `/<app>/api`) y con la sesión del SSO; users-api, cobolql y demás los consume tu backend con service account; el `apiBase` central va relativo.
+- RFC 0014 — Toda superficie web para pacientes o público va en `public-web` (monorepo pnpm, Nuxt layers) con la fundación Pháros por copy-in y la piel de clínica en `packages/brands/*`; apps con nombre `lch-*`, nunca «Portal Pacientes».
+- RFC 0015 — Cumple `db-tenant-contract.md` (`.db-tenant.yml`, check `db-tenant-check`): migra como paso de deploy, jamás DDL/DML al arrancar, TLS `verify-full` en prod, DSN codificado, y, en cambios rompientes, expand/contract con `lock_timeout` (Fase 5, todavía por ratificar).
+- RFC 0016 — Declara `.auth-contract.yml` y pasa `auth-contract-check`: `require_capability` contra el catálogo, los 7 endpoints `/auth/admin/*`, seed de roles como paso de deploy (nunca al arrancar) y autorización local, sin `is_authorized`.
+- RFC 0017 — Toda llamada a un LLM va por `pharos-llm-proxy` (sin SDK ni llave de proveedor en tu app); tu chat cumple `chat-contract.md` con `.chat-contract.yml` y usa el widget `PharosHelpChat` del registry.
+- RFC 0023 — La política de divulgación del Decreto 780 se escribe una sola vez en `lch-results/backend/app/disclosure/`, protegida por CODEOWNERS: nunca la copies ni agregues métodos de escritura a `ResultsProvider`.
+- RFC 0029 — La conformidad se mide, no se declara: un manifest nunca hace pasar un check, un gate sin cablear no cuenta, todo aviso lleva `enforce_by` y todo perfil rebajado `review_by`.
+- RFC 0030 — Firma el consentimiento informado solo con el widget `ConsentSignature` del registry contra `api-document-signature`; no reimplementes la pantalla ni llames `POST /pdf_form/fill` por tu cuenta, y pedir la firma nunca tumba el acto clínico.
+- RFC 0039 — Mantén `AGENTS.md` (≤200 líneas) como fuente canónica y `CLAUDE.md` como shim `@AGENTS.md`; la sección «Reglas que obligan a este repo» lleva una línea por RFC aceptada, y cada regla de código trae su `scripts/check-rfc-<NNNN>-<qué>`.
+
 ## Run and test
 
 ```bash
