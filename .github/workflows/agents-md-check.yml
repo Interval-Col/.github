@@ -9,7 +9,9 @@
 # Reporta missing / over-budget / conformant. Nació en MODO AVISO con fecha de
 # promoción (RFC 0029) y desde el 2026-11-10 es OBLIGATORIO (tarea 3.9): `enforce`
 # vale `true` por defecto, así que ningún caller tiene que cambiar. Un caller que
-# necesite volver a aviso pasa `enforce: false`, y eso se nota en su revisión.
+# necesite volver a aviso pasa `enforce: false` **con** `review_by: AAAA-MM-DD`
+# (RFC 0029: todo perfil rebajado lleva fecha de revisión). Sin fecha, o con la fecha
+# vencida, el check falla: una rebaja no puede quedarse para siempre sin que nadie la mire.
 #
 # Runner: como plans-check, los repos privados usan el pool self-hosted (por defecto);
 # un caller PÚBLICO tiene que pasar runner '["ubuntu-latest"]' o se queda en cola.
@@ -29,6 +31,11 @@ on:
         type: boolean
         required: false
         default: true
+      review_by:
+        description: with enforce=false, the date (YYYY-MM-DD) the downgrade must be reviewed by (RFC 0029)
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -46,6 +53,18 @@ jobs:
           repository: Interval-Col/.github
           ref: main
           path: .agents-md-org
+      - name: La rebaja lleva fecha de revisión (RFC 0029)
+        if: ${{ !inputs.enforce }}
+        env:
+          REVIEW_BY: ${{ inputs.review_by }}
+        run: |
+          if ! [[ "$REVIEW_BY" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error title=agents-md-check::enforce: false necesita review_by: AAAA-MM-DD (RFC 0029)"; exit 1
+          fi
+          if [[ "$REVIEW_BY" < "$(date -u +%F)" ]]; then
+            echo "::error title=agents-md-check::la rebaja a aviso venció el $REVIEW_BY: revísala (RFC 0029)"; exit 1
+          fi
+          echo "rebaja a aviso hasta el $REVIEW_BY"
       - name: AGENTS.md + shim
         env:
           ENFORCE: ${{ inputs.enforce }}
