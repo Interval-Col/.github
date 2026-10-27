@@ -19,9 +19,9 @@ Si AGENTS.md declara `main`/`master` como tronco y el remoto tiene una rama
 (2026-08-10 → 2026-10-24, 34 PRs directo a `main`). Sin acceso al remoto, esa
 comprobación se salta.
 
-Nace en modo aviso, con fecha de promoción (RFC 0029): hasta FECHA_PROMOCION solo
-anota; desde ahí, cada repo que llama al check pasa `enforce: true` y el check se
-marca obligatorio (tarea 3.9 del plan del arnés).
+Nació en modo aviso, con fecha de promoción (RFC 0029): hasta FECHA_PROMOCION solo
+anotaba. Desde esa fecha el workflow reutilizable pasa `--enforce` por defecto y el
+check es obligatorio (tarea 3.9 del plan del arnés).
 
 Uso: agents_md_check.py [raíz] [--enforce]   → sale 1 solo con --enforce y sin conformar.
 """
