@@ -121,11 +121,12 @@ class Modos(unittest.TestCase):
             codigo = c.main([str(raiz), *flags], remoto=SIN_DEVELOP)
         return codigo, out.getvalue()
 
-    def test_aviso_nunca_falla_y_dice_la_fecha(self):
+    def test_aviso_nunca_falla_y_dice_por_que(self):
+        # Desde la promoción, el aviso solo existe porque el caller pasó `enforce: false`.
         with tempfile.TemporaryDirectory() as t:
             codigo, out = self.correr(repo(t))
             self.assertEqual(codigo, 0)
-            self.assertIn(c.FECHA_PROMOCION, out)
+            self.assertIn("enforce: false", out)
             self.assertIn("::warning", out)
 
     def test_obligatorio_falla_si_no_conforma(self):

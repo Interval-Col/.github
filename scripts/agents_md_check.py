@@ -104,7 +104,7 @@ def main(argv, remoto=tiene_develop):
     enforce = "--enforce" in argv
     args = [a for a in argv if not a.startswith("--")]
     estado, motivos = revisar(args[0] if args else ".", remoto)
-    modo = "obligatorio" if enforce else f"aviso (se vuelve obligatorio el {FECHA_PROMOCION})"
+    modo = "obligatorio" if enforce else "aviso (el caller pasa `enforce: false`)"
     print(f"agents-md-check: {estado} · modo {modo}")
     for m in motivos:
         nivel = "error" if enforce else "warning"
