@@ -63,7 +63,7 @@ Una línea por cada RFC aceptada que nombra este repo en `target-repos` (RFC 003
 - RFC 0029 — La conformidad se mide, no se declara: un manifest nunca hace pasar un check, un gate sin cablear no cuenta, todo aviso lleva `enforce_by` y todo perfil rebajado `review_by`.
 - RFC 0030 — Firma el consentimiento informado solo con el widget `ConsentSignature` del registry contra `api-document-signature`; no reimplementes la pantalla ni llames `POST /pdf_form/fill` por tu cuenta, y pedir la firma nunca tumba el acto clínico.
 - RFC 0039 — Mantén `AGENTS.md` (≤200 líneas) como fuente canónica y `CLAUDE.md` como shim `@AGENTS.md`; la sección «Reglas que obligan a este repo» lleva una línea por RFC aceptada, y cada regla de código trae su `scripts/check-rfc-<NNNN>-<qué>`.
-- RFC 0040 — Todo cambio recorre las cinco fases con su piso: ficha de entendimiento validada, plan con medida, nota de entrega y, al cerrar el issue, el comentario final `## Nota de cierre (RFC 0040)`.
+- RFC 0040 — Todo cambio recorre las cinco fases con su piso: ficha de entendimiento validada, medida y Done-when (en talla S van en el issue, sin plan; en M y L, el plan abre con la ficha), nota de entrega y, al cerrar el issue, el comentario `## Nota de cierre (RFC 0040)`.
 
 ## Run and test
 
