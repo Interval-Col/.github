@@ -339,7 +339,8 @@ exit. Not on every phase.>
   services is not done until a real call crosses it»).
 - The *exit* phase warrants a 🚦 Checkpoint — and its Done-when blocks
   archiving the plan until every earlier checkpoint has been walked.
-- The **last** phase is *delivery and stabilization* (RFC 0040). Its tasks:
+- The exit phase **is** the last phase, *delivery and stabilization*
+  (RFC 0040) — one phase, not two. Its tasks:
   - the person knows about the change before running into it: a demo or a
     meeting on the test environment, and `/change-guides`;
   - a clinical screen is declared in the app's `verification.manifest.ts`;
