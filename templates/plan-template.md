@@ -339,8 +339,9 @@ exit. Not on every phase.>
   services is not done until a real call crosses it»).
 - The *exit* phase warrants a 🚦 Checkpoint — and its Done-when blocks
   archiving the plan until every earlier checkpoint has been walked.
-- The exit phase **is** the last phase, *delivery and stabilization*
-  (RFC 0040) — one phase, not two. Its tasks:
+- The plan's exit phase **is** its last phase, *delivery and stabilization*
+  (RFC 0040) — one phase, not two. (An MVP exit inside a staged plan is a
+  checkpoint, not the plan's exit.) Its tasks:
   - the person knows about the change before running into it: a demo or a
     meeting on the test environment, and `/change-guides`;
   - a clinical screen is declared in the app's `verification.manifest.ts`;
