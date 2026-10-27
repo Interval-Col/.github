@@ -36,7 +36,9 @@ function pointOf(ev: PointerEvent): { x: number, y: number } {
 
 function resize() {
   const el = canvas.value
-  if (!el) return
+  // Oculto (`v-show`, un paso que no está a la vista) mide 0 de ancho. Redimensionar
+  // ahí repintaría el trazo en un lienzo de 1 px y, al volver, la firma se perdería.
+  if (!el || el.clientWidth === 0) return
   const ratio = window.devicePixelRatio || 1
   const width = el.clientWidth
   // Keep the ink across a resize: re-paint the previous bitmap scaled.
