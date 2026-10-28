@@ -279,6 +279,18 @@
   --sidebar-primary: #7FB0E6;  --sidebar-primary-foreground: #06121F;  --sidebar-ring: #7FB0E6;
 }
 
+/* Documentos · Bitácora — violeta #5B3F8C / #B79CE8 (pharos-documentacion, nombre de
+ * German 2026-10-28, design-studio#100). Acento aprobado por German en el Astillero el
+ * mismo día: el único hueco de tono que quedaba en la familia. Contraste 8,3:1 / 8,2:1. */
+.theme-documentos {
+  --primary: #5B3F8C;  --primary-foreground: #FFFFFF;  --ring: #5B3F8C;
+  --sidebar-primary: #5B3F8C;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #5B3F8C;
+}
+.dark.theme-documentos {
+  --primary: #B79CE8;  --primary-foreground: #120A1F;  --ring: #B79CE8;
+  --sidebar-primary: #B79CE8;  --sidebar-primary-foreground: #120A1F;  --sidebar-ring: #B79CE8;
+}
+
 /* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).
  * Utilities like bg-primary, text-status-success, bg-status-warning-bg,
  * border-border, font-data resolve here. */
