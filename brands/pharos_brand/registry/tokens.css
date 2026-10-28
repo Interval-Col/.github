@@ -280,8 +280,8 @@
 }
 
 /* Documentos · Bitácora — violeta #5B3F8C / #B79CE8 (pharos-documentacion, nombre de
- * German 2026-10-28, design-studio#100). Acento PROVISIONAL: el único hueco de tono que
- * quedaba en la familia; se confirma en el Astillero. Contraste 8,3:1 / 8,2:1. */
+ * German 2026-10-28, design-studio#100). Acento aprobado por German en el Astillero el
+ * mismo día: el único hueco de tono que quedaba en la familia. Contraste 8,3:1 / 8,2:1. */
 .theme-documentos {
   --primary: #5B3F8C;  --primary-foreground: #FFFFFF;  --ring: #5B3F8C;
   --sidebar-primary: #5B3F8C;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #5B3F8C;
