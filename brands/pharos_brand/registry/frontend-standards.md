@@ -159,6 +159,7 @@ utilidades, nunca hex sueltos:
   | Pacientes (Admisiones) | admisiones | `.theme-recepcion` | rosa funcional `#ff3d63` / `#ff6b85` (pastel `#FFE0E6` = solo `--brand-wash`) |
   | Clientes (CRM) | crm | `.theme-clientes` | ámbar funcional `#e37600` / `#f59e3c` (pastel `#FFB86B` = solo `--brand-wash`) |
   | Tecnología (TI · plataforma — nombre provisional, RFC 0004 rev.) | pharos-ti | `.theme-ti` | navy profundo `#002A52` / `#7FB0E6` |
+  | Documentos (control documental — acento provisional, design-studio#100) | pharos-documentacion | `.theme-documentos` | violeta `#5B3F8C` / `#B79CE8` |
 
   > El **ERP (Números)** pasó de navy a **ámbar `#7A5D00`** (RFC 0008 Q6); el navy
   > queda superado como acento de ERP.
