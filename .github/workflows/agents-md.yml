@@ -17,6 +17,8 @@ jobs:
       - run: python3 scripts/test_agents_md_check.py
       - if: always()
         run: python3 scripts/test_plan_lint.py
+      - if: always()
+        run: python3 scripts/test_npm_version_tags_check.py
   agents-md-check:
     uses: ./.github/workflows/agents-md-check.yml
     with:
