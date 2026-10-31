@@ -52,6 +52,22 @@ This document defines the official engineering standards for all primary project
   and `pharos-lis/lab-qc/frontend/nuxt.config.ts` (single route).
 - Vue 3, Vite, Pinia, Tailwind v4, TypeScript
 - Pin Node version in `package.json` and/or `.nvmrc`
+- **Dependencies declare a version range, never a dist-tag.** `"vue": "^3.5.35"`, not
+  `"vue": "latest"` (nor `next`, `*` or `x`). A dist-tag is not a version: the lockfile
+  holds it only until someone runs `pnpm add` or the lockfile is rewritten, and then the
+  package manager resolves «the newest one today», a new **major** included, with nobody
+  having asked for it. The Nuxt starter template ships `"vue": "latest"` and
+  `"vue-router": "latest"`, so every app born from it inherits the trap.
+  - To fix it, write `^<the version the lockfile already installs>` and update the
+    lockfile's `specifier` to match. Nothing installed changes.
+  - CI installs with `pnpm install --frozen-lockfile`, so a `package.json` and a lockfile
+    that disagree fail the build instead of installing something else.
+  - Upgrading is a deliberate PR («sube Vue a …»), never a side effect of adding another
+    package.
+  - Measured by the reusable `npm-version-tags-check` (`scripts/npm_version_tags_check.py`).
+    It runs in warning mode until **2026-11-30**; from that date each caller passes
+    `enforce: true` and it becomes a required check. `peerDependencies` are exempt, because
+    a library may accept `*`.
 - `.env.example` in `frontend/`
 - Directory structure:
   ```
