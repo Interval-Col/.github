@@ -58,5 +58,14 @@ caso("un enlace <a href> externo no es un recurso",
 caso("docs/ queda fuera por defecto (una presentación no es la app)",
      {**NUXT, "apps/x/docs/slides.html": '<script src="https://cdn.example.org/lib.js"></script>\n'}, 0)
 
+BACK = {"backend/app/main.py": "app = None\n"}
+caso("frontend/ + backend/ en la raíz: conforme", {**NUXT, **BACK}, 0)
+caso("frontend/ + backend/ dentro de un monorepo: conforme",
+     {"x/frontend/nuxt.config.ts": "", "x/backend/app/main.py": ""}, 0)
+caso("otra carpeta para el frontend: un hallazgo", {"web/nuxt.config.ts": "", **BACK}, 1)
+caso("otra carpeta para el backend: un hallazgo", {**NUXT, "api/app/main.py": ""}, 1)
+caso("Nuxt en la raíz: un hallazgo", {"nuxt.config.ts": ""}, 1)
+caso("repo solo de frontend, sin backend: conforme", dict(NUXT), 0)
+
 print(f"fallas={fallas}")
 sys.exit(1 if fallas else 0)

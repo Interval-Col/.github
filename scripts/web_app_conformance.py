@@ -2,7 +2,7 @@
 """Minimal conformance of a deployable web app with the org frontend standard.
 
 A repo that calls the `web-app-conformance` workflow declares itself a deployable web app.
-Two things are measured, both from ENGINEERING_STANDARDS.md § Frontend:
+Three things are measured, from ENGINEERING_STANDARDS.md:
 
 1. **The frontend is Nuxt.** At least one tracked `nuxt.config.ts` (or `.js`/`.mjs`) exists.
    A hand-written HTML page served as the app is not the standard, however small.
@@ -10,6 +10,10 @@ Two things are measured, both from ENGINEERING_STANDARDS.md § Frontend:
    script, stylesheet or font from an absolute `http(s)://` URL. Assets come from the app's own
    origin (bundled by the build, or served by its own backend). A third-party CDN at runtime
    is a supply-chain dependency that no lockfile pins and no review sees.
+3. **The layout is `frontend/` + `backend/`.** Each `nuxt.config.*` sits in a folder named
+   `frontend` and each FastAPI entrypoint (`app/main.py`) under one named `backend`, at the root
+   or nested in a monorepo (`<app>/frontend`). Names that vary per repo break every tool and
+   document that assumes them.
 
 Why it exists: until it, nothing measured the frontend standard, so a green CI said nothing about
 it — a repo born after the standards were written inherits none of them by itself.
@@ -41,6 +45,7 @@ EXTERNO = re.compile(
     re.IGNORECASE,
 )
 PERMISO = "conformance-allow:"
+ENTRADA_BACKEND = re.compile(r"(^|/)app/main\.py$")
 # Documentation is not served as the app (slides, guides): skipped by default.
 IGNORADOS_POR_DEFECTO = ("docs/*", "*/docs/*")
 
@@ -67,6 +72,11 @@ def revisar(raiz: pathlib.Path, ignorar: list[str]) -> list[str]:
             "::sin-nuxt:: no tracked nuxt.config.* — a deployable web app is Nuxt "
             "(ENGINEERING_STANDARDS.md § Frontend)"
         )
+    for n in nombres:
+        if NUXT_CONFIG.search(n) and pathlib.PurePosixPath(n).parent.name != "frontend":
+            hallazgos.append(f"{n}:1: the frontend lives in a folder named frontend/ (ENGINEERING_STANDARDS.md)")
+        if ENTRADA_BACKEND.search(n) and pathlib.PurePosixPath(n).parent.parent.name != "backend":
+            hallazgos.append(f"{n}:1: the backend lives in a folder named backend/ (ENGINEERING_STANDARDS.md)")
     for n in nombres:
         if not MIRADOS.search(n):
             continue
@@ -107,7 +117,7 @@ def main(argv: list[str]) -> int:
             linea, _, msg = resto_h.partition(":")
             print(f"::{nivel} file={ruta},line={linea},title=web-app-conformance::{msg.strip()}")
     if not hallazgos:
-        print("Conforme: frontend en Nuxt y sin recursos de terceros en tiempo de ejecución.")
+        print("Conforme: frontend en Nuxt, estructura frontend/ + backend/ y sin recursos de terceros en tiempo de ejecución.")
         return 0
     print(f"{len(hallazgos)} hallazgo(s) de conformidad del frontend.")
     return 1 if enforce else 0

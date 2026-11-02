@@ -63,7 +63,9 @@ jobs:
           # revés: una app que corre el gate BLOQUEANTE de frescura sin fila aquí no
           # tiene bot que le abra el PR de re-sync, y el siguiente cambio del registry
           # le pone el CI en rojo sin nada que lo arregle.
-          - { name: pharos-ti,         repo: Interval-Col/pharos-ti,         slug: pharos-ti,         fe: shell,           root: ".", base: develop }
+          - { name: pharos-ti,         repo: Interval-Col/pharos-ti,         slug: pharos-ti,         fe: frontend,        root: ".", base: develop }
+          - { name: pharos-documentacion, repo: Interval-Col/pharos-documentacion, slug: pharos-documentacion, fe: frontend,        root: ".", base: develop }
+          - { name: pharos-analitica,  repo: Interval-Col/pharos-analitica,  slug: pharos-analitica,  fe: frontend,        root: ".", base: develop }
     steps:
       - name: Only this app on manual single-app dispatch
         id: gate
