@@ -21,7 +21,7 @@ de los tokens, y **siempre** trae una tabla con las mismas cifras.
 Adopción: `scripts/sync-pharos-registry.sh <app-fe-dir> --add components/ui/mapa-base/MapaBase.vue`
 trae también sus compañeros (tipos, barrel, `lib/mapa.ts`, `Button`, `Icon`).
 
-**Deps (por app, versión fijada, nunca `latest`):**
+**Deps (por app, con rango de versión y lockfile, nunca `latest`):**
 
 ```bash
 pnpm add maplibre-gl@^6.16.0 pmtiles@^4.5.0 @protomaps/basemaps@^5.7.2
@@ -55,10 +55,17 @@ sale de `properties.id` (o del `id` de la feature).
 - **Colores de los tokens.** `--background` → `--chart-2` para la rampa y el calor, `--border` para
   los bordes, `--primary` para los puntos, `--foreground` para los rótulos. Se leen en tiempo de
   ejecución y se re-aplican cuando cambia la clase de `<html>` (`.dark`, `.theme-*`).
-- **La tabla R4 nunca falta.** Está en el DOM con las mismas cifras; mientras se ve el mapa queda
-  oculta a la vista (`sr-only`), no a los lectores de pantalla.
-- **Una sola parada de tabulación**: el canvas de MapLibre (flechas desplazan, `+`/`-` acercan),
-  con el nombre de `etiqueta`.
+- **La tabla R4 nunca falta.** Está en el DOM con las mismas cifras de las coropletas; mientras se
+  ve el mapa queda oculta a la vista (`sr-only`), no a los lectores de pantalla. Una zona sin cifra
+  sale transparente en el mapa y con «—» en la tabla: las dos leen el mismo valor limpio
+  (`normalizarCoropletas`). `calor` y `puntos` no tienen fila propia: si una app muestra cifras solo
+  por ahí, le debe a la persona su alternativa en texto.
+- **Una sola parada de tabulación en el mapa**: el canvas de MapLibre (flechas desplazan, `+`/`-`
+  acercan), con el nombre de `etiqueta`, y los botones de zoom. Las filas de la tabla solo entran al
+  orden de tabulación cuando la tabla está a la vista.
+- **El guardia de origen** decide con el parser de URL, el mismo con el que pide el navegador: una
+  ruta con barras invertidas (que el navegador lee como `/`) también cuenta como externa. El mapa
+  base compartido que describe la RFC 0043 R2 pasa si sale por el mismo dominio de la app.
 
 ## Trampas ya pagadas
 

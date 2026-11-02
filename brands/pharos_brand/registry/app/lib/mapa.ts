@@ -7,7 +7,9 @@
 // 1. NOTHING EXTERNAL BY DEFAULT. The style references no tile, glyph or sprite URL unless the
 //    caller passes one, and the caller passes its OWN origin (RFC 0043 R1/R2). Without a basemap
 //    the map is the background token plus the data layers; without glyphs there are no text
-//    labels on the canvas — the table companion carries every figure anyway (R4).
+//    labels on the canvas — the table companion carries every choropleth figure (R4). Heat and
+//    points have no row of their own: a consumer showing figures only through them owes its own
+//    text alternative.
 // 2. COLOUR COMES FROM TOKENS. The ramp is mixed from the CSS custom properties the app already
 //    ships (`--background` → `--chart-2`), read at runtime, so it follows `.dark` and any
 //    `.theme-*` with no hex in the component.
@@ -37,6 +39,26 @@ export function valorDe(f: MapaFeature, propiedad: string): number | null {
   const v = f.properties?.[propiedad]
   const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN
   return Number.isFinite(n) ? n : null
+}
+
+/** The cleaned value and id `normalizarCoropletas` writes, for the map's paint and click. */
+export const PROP_VALOR = '__valor'
+export const PROP_ID = '__id'
+
+/**
+ * The choropleth's data as the map paints it: each feature carries the SAME value and id the table
+ * shows (`valorDe`, and `filasTabla`'s id rule). Without this the two disagree: MapLibre's
+ * `to-number` reads `""` as 0 and paints a suppressed zone as «low» while the table says «—», and
+ * a top-level `id` with no `properties.id` selects from its row but not from the map.
+ */
+export function normalizarCoropletas(fc: MapaFeatureCollection, valor: string): MapaFeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: fc.features.map((f, i) => ({
+      ...f,
+      properties: { ...f.properties, [PROP_VALOR]: valorDe(f, valor), [PROP_ID]: String(f.id ?? f.properties?.id ?? i) },
+    })),
+  }
 }
 
 /**
@@ -114,17 +136,20 @@ export interface MapaBaseOrigen {
 }
 
 /**
- * True when a URL leaves the page's origin. A relative path never does; an absolute or
- * scheme-relative URL does unless it starts with `origenApp` (the page's own origin, e.g.
- * `location.origin`). Without `origenApp`, every absolute URL counts as external.
+ * True when a URL leaves the page's origin. Decided by the URL parser, the same one the browser
+ * fetches with, and never by a pattern: the parser reads a backslash as a slash in http(s), so
+ * `https:\\\\host/x` and `/\\host/x` leave the origin while looking relative to a regex. Without
+ * `origenApp` (the page's `location.origin`), only what resolves against the page counts as its own.
+ * A URL that cannot be parsed counts as external.
  */
 export function esExterna(url: string | undefined, origenApp?: string): boolean {
   if (!url) return false
-  const u = url.trim()
-  if (!/^(https?:)?\/\//i.test(u)) return false
-  if (!origenApp) return true
-  const propio = origenApp.replace(/\/+$/, '')
-  return !(u === propio || u.startsWith(`${propio}/`))
+  const base = (origenApp || 'https://origen-propio.invalid').replace(/\/+$/, '')
+  try {
+    return new URL(url.trim(), `${base}/`).origin !== new URL(base).origin
+  } catch {
+    return true
+  }
 }
 
 /**

@@ -30,7 +30,7 @@ import urlTrabajador from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
-import { conAlfa, cortes, estilo, expresionRelleno, filasTabla, rampa, valorDe } from '@/lib/mapa'
+import { PROP_ID, PROP_VALOR, conAlfa, cortes, estilo, expresionRelleno, filasTabla, normalizarCoropletas, rampa, valorDe } from '@/lib/mapa'
 import type { CapaCalor, CapaCoropletas, CapaPuntos, Lonlat, MapaBaseOrigen } from './types'
 
 const props = withDefaults(defineProps<{
@@ -67,6 +67,10 @@ const vista = ref<'mapa' | 'tabla'>('mapa')
 const error = ref<string | null>(null)
 const mapa = shallowRef<import('maplibre-gl').Map | null>(null)
 let observador: MutationObserver | null = null
+// The mount awaits three chunks: leaving meanwhile must not build a map nobody will ever remove.
+let desmontado = false
+// Two restyles can overlap (each awaits): only the newest may reach the map.
+let ultimoEstilo = 0
 let protocoloPmtiles = false
 
 const filas = computed(() =>
@@ -138,9 +142,9 @@ function pintarDatos() {
     const pasos = c.pasos ?? 5
     const cortesV = cortes(c.datos.features.map((f) => valorDe(f, c.valor)), pasos)
     const colores = rampa(fondo, serie, cortesV.length + 1)
-    m.addSource('coropletas', { type: 'geojson', data: c.datos as never, promoteId: 'id' })
+    m.addSource('coropletas', { type: 'geojson', data: normalizarCoropletas(c.datos, c.valor) as never, promoteId: PROP_ID })
     m.addLayer({ id: 'coropletas-relleno', type: 'fill', source: 'coropletas',
-      paint: { 'fill-color': expresionRelleno(c.valor, cortesV, colores) as never, 'fill-opacity': 0.85 } })  // lint-allow-token: MapLibre paint/layout key, not a CSS class
+      paint: { 'fill-color': expresionRelleno(PROP_VALOR, cortesV, colores) as never, 'fill-opacity': 0.85 } })  // lint-allow-token: MapLibre paint/layout key, not a CSS class
     m.addLayer({ id: 'coropletas-borde', type: 'line', source: 'coropletas',
       paint: { 'line-color': borde, 'line-width': 0.6 } })
   }
@@ -171,10 +175,12 @@ async function aplicarEstilo() {
   const m = mapa.value
   if (!m) return
   try {
+    const n = ++ultimoEstilo
+    const s = await construirEstilo()
+    if (n !== ultimoEstilo || mapa.value !== m) return
     // diff: false — a diffed setStyle may not emit `style.load`, and the data layers (added by
     // pintarDatos, not part of the style object) would silently vanish (measured in the browser).
-    m.once('style.load', pintarDatos)
-    m.setStyle((await construirEstilo()) as never, { diff: false })
+    m.setStyle(s as never, { diff: false })
   } catch (e) {
     error.value = (e as Error).message
   }
@@ -190,9 +196,12 @@ onMounted(async () => {
       maplibre.addProtocol('pmtiles', new Protocol().tile)
       protocoloPmtiles = true
     }
+    const s = await construirEstilo()
+    if (desmontado || !contenedor.value) return
     const m = new maplibre.Map({
       container: contenedor.value,
-      style: (await construirEstilo()) as never,
+      style: s as never,
+      locale: { 'NavigationControl.ZoomIn': 'Acercar', 'NavigationControl.ZoomOut': 'Alejar' },
       center: props.centro,
       zoom: props.zoom,
       attributionControl: props.origen ? { compact: true, customAttribution: '© OpenStreetMap' } : false,
@@ -202,10 +211,12 @@ onMounted(async () => {
     // its default name is the English «Map».
     m.keyboard.enable()
     m.getCanvas().setAttribute('aria-label', props.etiqueta)
-    m.on('load', pintarDatos)
+    // On every style, the first one included. A listener per restyle (`once`) loses the layers
+    // when two restyles overlap; pintarDatos is idempotent, so firing more than once is harmless.
+    m.on('style.load', pintarDatos)
     m.on('click', 'coropletas-relleno', (ev) => {
       const f = ev.features?.[0]
-      const id = f?.properties?.id ?? f?.id
+      const id = f?.properties?.[PROP_ID]
       if (id !== undefined && id !== null) emit('seleccionar', String(id))
     })
     mapa.value = m
@@ -219,6 +230,7 @@ onMounted(async () => {
 watch(() => [props.coropletas, props.calor, props.puntos, props.origen], () => aplicarEstilo())
 
 onBeforeUnmount(() => {
+  desmontado = true
   sonda?.remove()
   sonda = null
   observador?.disconnect()
@@ -263,7 +275,9 @@ onBeforeUnmount(() => {
         <tbody>
           <tr v-for="f in filas" :key="f.id" class="border-b border-border last:border-0">
             <th scope="row" class="px-3 py-1.5 text-left font-normal">
-              <button type="button" class="text-left hover:underline focus-visible:underline" @click="emit('seleccionar', f.id)">
+              <!-- Out of the tab order while the table is visually hidden: a focus nobody can see. Not
+                   `inert`: screen readers still read the table in browse mode (R4). -->
+              <button type="button" class="text-left hover:underline focus-visible:underline" :tabindex="vista === 'tabla' ? 0 : -1" @click="emit('seleccionar', f.id)">
                 {{ f.etiqueta }}
               </button>
             </th>

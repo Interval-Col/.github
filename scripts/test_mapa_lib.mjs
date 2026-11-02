@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  conAlfa, cortes, esExterna, estilo, expresionRelleno, filasTabla, rampa, rgb, valorDe,
+  PROP_ID, PROP_VALOR, conAlfa, cortes, esExterna, estilo, expresionRelleno, filasTabla, normalizarCoropletas, rampa, rgb, valorDe,
 } from '../brands/pharos_brand/registry/app/lib/mapa.ts'
 
 const f = (id, props) => ({ type: 'Feature', id, properties: props, geometry: null })
@@ -55,6 +55,31 @@ test('esExterna: relative and same-origin pass, anything else is external', () =
   assert.equal(esExterna('http://app.example.test/mapa.pmtiles', 'http://app.example.test'), false)
   assert.equal(esExterna('http://app.example.test.evil.example/x', 'http://app.example.test'), true)
   assert.equal(esExterna(undefined), false)
+})
+
+test('esExterna: the browser reads a backslash as a slash, so the guard must too', () => {
+  const app = 'https://app.example.test'
+  for (const u of ['https:\\\\evil.example/x.pmtiles', '/\\evil.example/x.pmtiles', '\\\\evil.example/x', ' //evil.example/x', 'ftp://evil.example/x', 'data:text/plain,x']) {
+    assert.equal(esExterna(u, app), true, u)
+    assert.equal(esExterna(u), true, u)
+  }
+  assert.equal(esExterna('https://app.example.test:8443/x', app), true)  // another port is another origin
+  assert.equal(esExterna('https://app.example.test/x/y.pmtiles', app), false)
+  assert.equal(esExterna('mapa/base.pmtiles', app), false)
+  assert.equal(esExterna('/glyphs/{fontstack}/{range}.pbf', app), false)
+})
+
+test('normalizarCoropletas: the map paints and selects what the table shows', () => {
+  const fc = { type: 'FeatureCollection', features: [
+    { type: 'Feature', id: 'zona-a', properties: { n: 10 }, geometry: null },
+    { type: 'Feature', properties: { id: 'zona-b', n: '' }, geometry: null },
+    { type: 'Feature', properties: { n: 'abc' }, geometry: null },
+  ] }
+  const f = normalizarCoropletas(fc, 'n').features
+  assert.deepEqual(f.map((x) => x.properties[PROP_VALOR]), [10, null, null])  // "" is suppressed, never 0
+  assert.deepEqual(f.map((x) => x.properties[PROP_ID]), ['zona-a', 'zona-b', '2'])
+  assert.deepEqual(filasTabla(fc, 'n', 'n').map((x) => x.id).sort(), ['2', 'zona-a', 'zona-b'])  // same ids as the table
+  assert.equal(fc.features[0].properties[PROP_VALOR], undefined)  // the caller's data stays untouched
 })
 
 test('estilo: nothing external by default, and an external URL throws', () => {

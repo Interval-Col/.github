@@ -45,6 +45,8 @@ on:
     branches: [main]
     paths:
       - "brands/pharos_brand/registry/**"
+      - ".github/workflows/pharos-registry-lint.yml"
+      - "scripts/test_mapa_lib.mjs"
 
 permissions:
   contents: read
