@@ -68,6 +68,20 @@ This document defines the official engineering standards for all primary project
     It runs in warning mode until **2026-11-30**; from that date each caller passes
     `enforce: true` and it becomes a required check. `peerDependencies` are exempt, because
     a library may accept `*`.
+- **A deployable web app is Nuxt, and loads nothing from a third party at runtime.** A
+  hand-written HTML page served as the app is not the standard, however small: it skips the
+  registry tokens, the shared components and the build that pins every dependency. Scripts,
+  stylesheets and fonts come from the app's own origin (bundled by the build or served by its
+  own backend), never from a CDN URL that no lockfile pins and no review sees.
+  - Measured by the reusable `web-app-conformance` (`scripts/web_app_conformance.py`): a
+    tracked `nuxt.config.*` exists, and no `.html`, `.vue` or `nuxt.config.*` references an
+    absolute `http(s)://` script, stylesheet or font. `docs/` is skipped; a line with
+    `conformance-allow: <reason>` is skipped; a caller passes `ignore` for paths that are not
+    served. Warning mode until **2026-12-31**; from that date each caller passes
+    `enforce: true` and it becomes a required check.
+  - The rules that bind a Pháros app come from what the app *is*, not only from the RFCs
+    whose `target-repos` happen to name its repo: a repo born after those RFCs inherits none
+    of them unless its `AGENTS.md` lists them.
 - `.env.example` in `frontend/`
 - Directory structure:
   ```
