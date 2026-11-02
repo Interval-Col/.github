@@ -73,8 +73,34 @@ const filas = computed(() =>
   props.coropletas ? filasTabla(props.coropletas.datos, props.coropletas.valor, props.coropletas.etiqueta) : [],
 )
 
+// A token's RAW value can be any CSS colour syntax (`color-mix(in oklab, …)`, `oklch(…)`), and
+// MapLibre only parses hex/rgb/hsl/named (measured: a production theme broke the border layer).
+// So the token is resolved the way the browser paints it: applied to a probe element, painted
+// into one canvas pixel, and read back as RGB. (Reading `fillStyle` back is NOT enough: Chrome
+// answers `oklab(…)` for an oklab input — measured in a production build.)
+let sonda: HTMLSpanElement | null = null
+let lienzo: CanvasRenderingContext2D | null = null
 function token(nombre: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim()
+  if (!sonda) {
+    sonda = document.createElement('span')
+    sonda.style.display = 'none'
+    document.body.appendChild(sonda)
+  }
+  sonda.style.color = ''
+  sonda.style.color = `var(${nombre})`
+  const calculado = getComputedStyle(sonda).color
+  if (!lienzo) {
+    const c = document.createElement('canvas')
+    c.width = 1
+    c.height = 1
+    lienzo = c.getContext('2d', { willReadFrequently: true })
+  }
+  if (!lienzo || !calculado) return calculado
+  lienzo.clearRect(0, 0, 1, 1)
+  lienzo.fillStyle = calculado
+  lienzo.fillRect(0, 0, 1, 1)
+  const [r, g, b, a] = lienzo.getImageData(0, 0, 1, 1).data
+  return a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${(a! / 255).toFixed(3)})`
 }
 
 function oscuro(): boolean {
@@ -92,9 +118,15 @@ async function construirEstilo() {
   return estilo({ fondo: token('--background') || 'white', origen: props.origen, capasBase, origenApp: location.origin })
 }
 
+const CAPAS = ['coropletas-relleno', 'coropletas-borde', 'calor', 'puntos', 'puntos-texto']
+const FUENTES = ['coropletas', 'calor', 'puntos']
+
 function pintarDatos() {
   const m = mapa.value
   if (!m) return
+  // Idempotent: `load` and a style reload can both land here; adding a source twice throws.
+  for (const id of CAPAS) if (m.getLayer(id)) m.removeLayer(id)
+  for (const id of FUENTES) if (m.getSource(id)) m.removeSource(id)
   const borde = token('--border')
   const serie = token('--chart-2')
   const primario = token('--primary')
@@ -187,6 +219,8 @@ onMounted(async () => {
 watch(() => [props.coropletas, props.calor, props.puntos, props.origen], () => aplicarEstilo())
 
 onBeforeUnmount(() => {
+  sonda?.remove()
+  sonda = null
   observador?.disconnect()
   mapa.value?.remove()
   mapa.value = null

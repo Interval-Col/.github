@@ -68,6 +68,12 @@ sale de `properties.id` (o del `id` de la feature).
   su configuración de Vite.
 - 🪤 **`setStyle` con diff puede no emitir `style.load`**: las capas de datos (que no son parte del
   objeto de estilo) desaparecerían al cambiar una prop o el tema. El componente usa `diff: false`.
+- 🪤 **Un token puede no ser un color que MapLibre entienda** (`color-mix(…)`, `oklch(…)`): el
+  componente lo resuelve pintándolo en un píxel y leyéndolo como RGB. Leer `fillStyle` no basta,
+  porque Chrome devuelve `oklab(…)`.
+- 🪤 **El servidor que entrega el `.pmtiles` tiene que atender `Range`** (206 con
+  `Content-Length`). El servidor de producción de Nitro, por ejemplo, no lo hace con los archivos de
+  `public/`, y el mapa base no carga («HTTP Byte Serving»). El BFF de la app es quien lo sirve.
 - 🪤 **Un WebGL en una pestaña de fondo pinta negro.** Para revisar el mapa, míralo en la pestaña
   activa antes de darlo por roto.
 - 🪤 El portón `check-token-usage` confunde las claves de pintura de MapLibre (`text-color`,
