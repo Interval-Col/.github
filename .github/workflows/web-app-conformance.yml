@@ -1,7 +1,8 @@
 # Reusable: conformidad mínima de una app web desplegable con el estándar de frontend.
 #
-# Quien lo llama se declara app web desplegable. Mide dos cosas de ENGINEERING_STANDARDS.md
-# § Frontend: que el frontend sea Nuxt (hay un `nuxt.config.*` versionado) y que ninguna página
+# Quien lo llama se declara app web desplegable. Mide tres cosas de ENGINEERING_STANDARDS.md:
+# que el frontend sea Nuxt (hay un `nuxt.config.*` versionado), que las carpetas sean
+# `frontend/` + `backend/` y que ninguna página
 # cargue scripts, hojas de estilo ni fuentes desde una URL de terceros en tiempo de ejecución.
 # Antes de esto nada medía el estándar de frontend, así que una CI en verde no decía nada de él.
 #
