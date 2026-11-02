@@ -40,6 +40,7 @@ on:
     paths:
       - "brands/pharos_brand/registry/**"
       - ".github/workflows/pharos-registry-lint.yml"
+      - "scripts/test_mapa_lib.mjs"
   push:
     branches: [main]
     paths:
@@ -68,6 +69,10 @@ jobs:
       # dice en su propia línea de salida. Hoy el registry no referencia ninguna
       # variable de tema de Tailwind, así que no cambia el veredicto; si algún día
       # lo hace, el gate lo va a reportar como huérfano y la salida explica por qué.
+      # The pure half of MapaBase (lib/mapa.ts), with real tests: a map canvas is unassertable,
+      # the breaks, the ramp, the R4 table and the «nothing external» guard are not.
+      - name: Pruebas de lib/mapa.ts (MapaBase)
+        run: node --experimental-strip-types --test scripts/test_mapa_lib.mjs
       - name: Correr los gates sobre el registry
         working-directory: brands/pharos_brand/registry
         run: |
