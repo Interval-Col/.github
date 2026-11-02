@@ -160,6 +160,7 @@ utilidades, nunca hex sueltos:
   | Clientes (CRM) | crm | `.theme-clientes` | ámbar funcional `#e37600` / `#f59e3c` (pastel `#FFB86B` = solo `--brand-wash`) |
   | Tecnología (TI · plataforma — nombre provisional, RFC 0004 rev.) | pharos-ti | `.theme-ti` | navy profundo `#002A52` / `#7FB0E6` |
   | Documentos (control documental — aprobado 2026-10-28, design-studio#100) | pharos-documentacion | `.theme-documentos` | violeta `#5B3F8C` / `#B79CE8` |
+  | Analítica (inteligencia de negocio — elegido 2026-11-02, RFC 0042) | pharos-analitica | `.theme-analitica` | oliva `#3F5212` / `#B5CF6B` |
 
   > El **ERP (Números)** pasó de navy a **ámbar `#7A5D00`** (RFC 0008 Q6); el navy
   > queda superado como acento de ERP.

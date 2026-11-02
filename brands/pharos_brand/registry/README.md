@@ -154,6 +154,7 @@ salida impresa/PDF.
 | **Clientes** | commercial-lch | `.theme-clientes` | `#e37600` / `#f59e3c` (ámbar funcional — pastel `#FFB86B` solo como `--brand-wash`) |
 | **Tecnología** (provisional, RFC 0004 rev. 2026-07-03) | pharos-ti (TI · plataforma) | `.theme-ti` | `#002A52` / `#7FB0E6` (navy profundo) |
 | **Documentos** (aprobado 2026-10-28, design-studio#100) | pharos-documentacion (control documental) | `.theme-documentos` | `#5B3F8C` / `#B79CE8` (violeta) |
+| **Analítica** (elegido 2026-11-02, RFC 0042) | pharos-analitica (inteligencia de negocio) | `.theme-analitica` | `#3F5212` / `#B5CF6B` (oliva) |
 
   Default/neutral (no class) = LCH Navy `#003A70` (the family-neutral / Archivo).
 
