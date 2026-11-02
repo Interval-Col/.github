@@ -47,8 +47,8 @@ export const PROP_ID = '__id'
 
 /**
  * The choropleth's data as the map paints it: each feature carries the SAME value and id the table
- * shows (`valorDe`, and `filasTabla`'s id rule). Without this the two disagree: MapLibre's
- * `to-number` reads `""` as 0 and paints a suppressed zone as «low» while the table says «—», and
+ * shows (`valorDe`, and `filasTabla`'s id rule). Without this the two disagree: MapLibre's numeric
+ * coercion reads `""` as 0 and paints a suppressed zone as «low» while the table says «—», and
  * a top-level `id` with no `properties.id` selects from its row but not from the map.
  */
 export function normalizarCoropletas(fc: MapaFeatureCollection, valor: string): MapaFeatureCollection {
