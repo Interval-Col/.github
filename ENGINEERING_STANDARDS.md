@@ -74,8 +74,9 @@ This document defines the official engineering standards for all primary project
   stylesheets and fonts come from the app's own origin (bundled by the build or served by its
   own backend), never from a CDN URL that no lockfile pins and no review sees.
   - Measured by the reusable `web-app-conformance` (`scripts/web_app_conformance.py`): a
-    tracked `nuxt.config.*` exists, and no `.html`, `.vue` or `nuxt.config.*` references an
-    absolute `http(s)://` script, stylesheet or font. `docs/` is skipped; a line with
+    tracked `nuxt.config.*` exists in a folder named `frontend`, each `app/main.py` sits under a
+    folder named `backend` (at the root or nested in a monorepo), and no `.html`, `.vue` or
+    `nuxt.config.*` references an absolute `http(s)://` script, stylesheet or font. `docs/` is skipped; a line with
     `conformance-allow: <reason>` is skipped; a caller passes `ignore` for paths that are not
     served. Warning mode until **2026-12-31**; from that date each caller passes
     `enforce: true` and it becomes a required check.
