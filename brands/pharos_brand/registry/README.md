@@ -25,6 +25,7 @@ package (RFC 0008 Q3).
 | `scripts/check-no-hex-colors.mjs` | CI gate: no hardcoded hex literals outside `app/assets/css/`. Escape hatch: `lint-allow-hex` comment or per-file ALLOWLIST. |
 | `scripts/check-no-palette-colors.mjs` | CI gate: no raw Tailwind palette utilities (`text-green-600`, `bg-amber-100`, etc.) outside `app/components/ui/`. Escape hatch: `lint-allow-palette`. |
 | `app/components/ViewVerification.vue` + `ViewVerificationMark.vue` + `app/lib/verification.ts` | La marca de **«vista en verificación»** (`PROT-SW-001`). Ver la sección propia abajo. |
+| `app/components/ui/mapa-base/` + `app/lib/mapa.ts` | **MapaBase**, el único renderizador de mapas (RFC 0043 R1): MapLibre 6 por npm, nada de terceros, coropletas/calor/puntos desde tokens y la tabla R4 siempre presente. Ver [`mapa-base.md`](mapa-base.md). |
 | `app/verification.manifest.ts` | **Semilla del manifiesto por app** — lleva `pharos-registry:keep`, así que aterriza una vez y después es de la app. |
 | `scripts/check-view-verification.mjs` | CI gate: manifiesto y pantalla no pueden separarse. 8 chequeos; el 6 (caducidad) rompe el build. |
 | `scripts/check-token-drift.mjs` | CI gate (Layer-D): synced `pharos-tokens.css` matches the registry SHA256 — catches stale copy-ins. |
