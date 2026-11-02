@@ -291,6 +291,18 @@
   --sidebar-primary: #B79CE8;  --sidebar-primary-foreground: #120A1F;  --sidebar-ring: #B79CE8;
 }
 
+/* Analítica · Carta — oliva #3F5212 / #B5CF6B (pharos-analitica, RFC 0042; nombre y acento
+ * elegidos por German 2026-11-02). El oliva (78°) cae en el hueco de tono entre el ámbar de
+ * Números (46°) y el teal de Laboratorio (167°). Contraste 8,7:1 / 10,3:1. */
+.theme-analitica {
+  --primary: #3F5212;  --primary-foreground: #FFFFFF;  --ring: #3F5212;
+  --sidebar-primary: #3F5212;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #3F5212;
+}
+.dark.theme-analitica {
+  --primary: #B5CF6B;  --primary-foreground: #141A05;  --ring: #B5CF6B;
+  --sidebar-primary: #B5CF6B;  --sidebar-primary-foreground: #141A05;  --sidebar-ring: #B5CF6B;
+}
+
 /* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).
  * Utilities like bg-primary, text-status-success, bg-status-warning-bg,
  * border-border, font-data resolve here. */
