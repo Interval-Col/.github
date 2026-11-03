@@ -150,17 +150,22 @@ onMounted(load)
          algo» es el peor tipo de dato equivocado — el que suena tranquilizador.
          Pháros TI es justo ese caso (RFC 0016: sin rol por defecto, por
          decisión). -->
-    <p class="text-muted-foreground mb-6 text-sm shrink-0">
-      Asigna roles a usuarios del SSO.
-      <template v-if="defaultRole">
-        Los usuarios sin fila asignada caen automáticamente en el rol por
-        defecto.
-      </template>
-      <template v-else>
-        Un usuario sin fila asignada no recibe ningún rol: no verá nada hasta
-        que se le asigne uno aquí.
-      </template>
-    </p>
+    <!-- `intro` exists for apps where a user without a row falls back to something
+         other than a role here (an allowlist file, say), so neither sentence below
+         is true for them. Replace the paragraph rather than patching a copy. -->
+    <slot name="intro">
+      <p class="text-muted-foreground mb-6 text-sm shrink-0">
+        Asigna roles a usuarios del SSO.
+        <template v-if="defaultRole">
+          Los usuarios sin fila asignada caen automáticamente en el rol por
+          defecto.
+        </template>
+        <template v-else>
+          Un usuario sin fila asignada no recibe ningún rol: no verá nada hasta
+          que se le asigne uno aquí.
+        </template>
+      </p>
+    </slot>
 
     <section class="bg-card rounded-md p-6 shadow-sm mb-6 shrink-0">
       <h2 class="text-lg font-semibold text-foreground mb-4">Agregar usuario</h2>
@@ -197,7 +202,7 @@ onMounted(load)
       <div v-if="loading" class="px-4 py-3 rounded-md mb-4 text-sm">Cargando…</div>
       <div v-else-if="rows.length === 0" class="px-4 py-3 rounded-md mb-4 text-sm">Sin usuarios registrados.</div>
       <div v-else class="min-h-0 overflow-auto rounded-lg border border-border bg-card [&>div]:overflow-visible [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 [&_thead_th]:bg-card">
-        <Table class="text-sm">
+        <Table class="w-full text-sm">
           <TableHeader>
             <TableRow class="bg-background border-b-2 border-b-primary hover:bg-transparent">
               <TableHead class="px-4 py-3 text-xs font-semibold text-foreground uppercase tracking-wide">Usuario</TableHead>
