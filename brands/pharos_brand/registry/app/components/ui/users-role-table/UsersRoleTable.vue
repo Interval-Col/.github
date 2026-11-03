@@ -205,10 +205,10 @@ onMounted(load)
         <Table class="w-full text-sm">
           <TableHeader>
             <TableRow class="bg-background border-b-2 border-b-primary hover:bg-transparent">
-              <TableHead class="px-4 py-3 text-xs font-semibold text-foreground uppercase tracking-wide">Usuario</TableHead>
-              <TableHead class="px-4 py-3 text-xs font-semibold text-foreground uppercase tracking-wide">Rol</TableHead>
-              <TableHead class="px-4 py-3 text-xs font-semibold text-foreground uppercase tracking-wide">Notas</TableHead>
-              <TableHead class="px-4 py-3 text-xs font-semibold text-foreground uppercase tracking-wide">Actualizado</TableHead>
+              <TableHead class="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wide">Usuario</TableHead>
+              <TableHead class="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wide">Rol</TableHead>
+              <TableHead class="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wide">Notas</TableHead>
+              <TableHead class="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wide">Actualizado</TableHead>
               <TableHead class="w-px whitespace-nowrap text-right px-4 py-3"/>
             </TableRow>
           </TableHeader>
@@ -230,7 +230,7 @@ onMounted(load)
                   @update:model-value="(v) => changeRole(row, v as string)"
                 >
                   <SelectTrigger
-                    class="min-w-[140px]"
+                    class="w-auto min-w-[180px]"
                     :title="row.username === myUsername ? 'No puedes cambiar tu propio rol' : ''"
                   >
                     <SelectValue />
