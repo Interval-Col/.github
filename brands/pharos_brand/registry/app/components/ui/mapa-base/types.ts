@@ -1,6 +1,6 @@
-import type { MapaBaseOrigen, MapaFeatureCollection, Lonlat } from '@/lib/mapa'
+import type { Limites, MapaBaseOrigen, MapaFeatureCollection, Lonlat } from '@/lib/mapa'
 
-export type { MapaBaseOrigen, MapaFeatureCollection, Lonlat }
+export type { Limites, MapaBaseOrigen, MapaFeatureCollection, Lonlat }
 
 /** Polygons coloured by a numeric property (aggregates only — RFC 0043 R4). */
 export interface CapaCoropletas {

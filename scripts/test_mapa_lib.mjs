@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  PROP_ID, PROP_VALOR, conAlfa, cortes, esExterna, estilo, expresionRelleno, filasTabla, normalizarCoropletas, rampa, rgb, valorDe,
+  PROP_ID, PROP_VALOR, conAlfa, cortes, esExterna, estilo, expresionRelleno, filasTabla, limitesDe, normalizarCoropletas, rampa, rgb, valorDe,
 } from '../brands/pharos_brand/registry/app/lib/mapa.ts'
 
 const f = (id, props) => ({ type: 'Feature', id, properties: props, geometry: null })
@@ -100,4 +100,23 @@ test('expresionRelleno: null values are transparent, steps follow the breaks', (
   assert.equal(e[0], 'case')
   assert.equal(e[2], 'rgba(0,0,0,0)')
   assert.deepEqual(e[3].slice(2), ['c0', 10, 'c1', 20, 'c2'])
+})
+
+test('expresionRelleno: without breaks it is one colour, never a step with no stops', () => {
+  const e = expresionRelleno('v', [], ['c0'])
+  assert.equal(e[0], 'case')
+  assert.equal(e[2], 'rgba(0,0,0,0)')
+  assert.equal(e[3], 'c0')
+})
+
+test('limitesDe: the bounds of any geometry, null when there is nothing to fit', () => {
+  const poligono = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[1, 2], [3, -4], [0, 5], [1, 2]]] } }
+  const multi = { type: 'Feature', properties: {}, geometry: { type: 'MultiPolygon', coordinates: [[[[7, 0], [8, 1], [7, 1], [7, 0]]]] } }
+  const punto = { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [-1, 9] } }
+  const fc = (features) => ({ type: 'FeatureCollection', features })
+  assert.deepEqual(limitesDe(fc([poligono])), [[0, -4], [3, 5]])
+  assert.deepEqual(limitesDe(fc([poligono, multi, punto])), [[-1, -4], [8, 9]])
+  assert.equal(limitesDe(fc([])), null)
+  assert.equal(limitesDe(fc([f(1, {})])), null)
+  assert.equal(limitesDe(null), null)
 })

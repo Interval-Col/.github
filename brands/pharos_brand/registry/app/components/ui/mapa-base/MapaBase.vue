@@ -31,7 +31,7 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vu
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import { PROP_ID, PROP_VALOR, conAlfa, cortes, estilo, expresionRelleno, filasTabla, normalizarCoropletas, rampa, valorDe } from '@/lib/mapa'
-import type { CapaCalor, CapaCoropletas, CapaPuntos, Lonlat, MapaBaseOrigen } from './types'
+import type { CapaCalor, CapaCoropletas, CapaPuntos, Limites, Lonlat, MapaBaseOrigen } from './types'
 
 const props = withDefaults(defineProps<{
   /** Accessible name of the map (required: a map without a name is a blank box to a screen reader). */
@@ -45,6 +45,10 @@ const props = withDefaults(defineProps<{
   coropletas?: CapaCoropletas | null
   calor?: CapaCalor | null
   puntos?: CapaPuntos | null
+  /** The view to fit. From bounds back to null, the map returns to `centro` and `zoom`. */
+  encuadre?: Limites | null
+  /** The id of the zone to outline. */
+  resaltado?: string | null
   /** Header of the value column in the table companion. */
   nombreValor?: string
   formato?: (v: number) => string
@@ -56,6 +60,8 @@ const props = withDefaults(defineProps<{
   coropletas: null,
   calor: null,
   puntos: null,
+  encuadre: null,
+  resaltado: null,
   nombreValor: 'Valor',
   formato: (v: number) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 }).format(v),
 })
@@ -72,6 +78,8 @@ let desmontado = false
 // Two restyles can overlap (each awaits): only the newest may reach the map.
 let ultimoEstilo = 0
 let protocoloPmtiles = false
+// Layers can only change between a style's `style.load` and the next setStyle.
+let estiloListo = false
 
 const filas = computed(() =>
   props.coropletas ? filasTabla(props.coropletas.datos, props.coropletas.valor, props.coropletas.etiqueta) : [],
@@ -122,8 +130,10 @@ async function construirEstilo() {
   return estilo({ fondo: token('--background') || 'white', origen: props.origen, capasBase, origenApp: location.origin })
 }
 
-const CAPAS = ['coropletas-relleno', 'coropletas-borde', 'calor', 'puntos', 'puntos-texto']
+const CAPAS = ['coropletas-relleno', 'coropletas-borde', 'coropletas-resaltado', 'calor', 'puntos', 'puntos-texto']
 const FUENTES = ['coropletas', 'calor', 'puntos']
+
+const filtroResaltado = () => ['==', ['get', PROP_ID], props.resaltado ?? ''] as never
 
 function pintarDatos() {
   const m = mapa.value
@@ -147,6 +157,8 @@ function pintarDatos() {
       paint: { 'fill-color': expresionRelleno(PROP_VALOR, cortesV, colores) as never, 'fill-opacity': 0.85 } })  // lint-allow-token: MapLibre paint/layout key, not a CSS class
     m.addLayer({ id: 'coropletas-borde', type: 'line', source: 'coropletas',
       paint: { 'line-color': borde, 'line-width': 0.6 } })
+    m.addLayer({ id: 'coropletas-resaltado', type: 'line', source: 'coropletas', filter: filtroResaltado(),
+      paint: { 'line-color': texto, 'line-width': 2.5 } })
   }
   if (props.calor) {
     const p = props.calor.peso
@@ -178,6 +190,7 @@ async function aplicarEstilo() {
     const n = ++ultimoEstilo
     const s = await construirEstilo()
     if (n !== ultimoEstilo || mapa.value !== m) return
+    estiloListo = false
     // diff: false — a diffed setStyle may not emit `style.load`, and the data layers (added by
     // pintarDatos, not part of the style object) would silently vanish (measured in the browser).
     m.setStyle(s as never, { diff: false })
@@ -213,13 +226,17 @@ onMounted(async () => {
     m.getCanvas().setAttribute('aria-label', props.etiqueta)
     // On every style, the first one included. A listener per restyle (`once`) loses the layers
     // when two restyles overlap; pintarDatos is idempotent, so firing more than once is harmless.
-    m.on('style.load', pintarDatos)
+    m.on('style.load', () => {
+      estiloListo = true
+      pintarDatos()
+    })
     m.on('click', 'coropletas-relleno', (ev) => {
       const f = ev.features?.[0]
       const id = f?.properties?.[PROP_ID]
       if (id !== undefined && id !== null) emit('seleccionar', String(id))
     })
     mapa.value = m
+    encuadrar(false)
     observador = new MutationObserver(() => aplicarEstilo())
     observador.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   } catch (e) {
@@ -227,7 +244,24 @@ onMounted(async () => {
   }
 })
 
-watch(() => [props.coropletas, props.calor, props.puntos, props.origen], () => aplicarEstilo())
+// New data repaints only the data layers: a full setStyle would reparse the basemap on every filter
+// change. If a restyle is under way, its `style.load` paints the latest props anyway.
+watch(() => [props.coropletas, props.calor, props.puntos], () => {
+  if (estiloListo) pintarDatos()
+})
+watch(() => props.origen, () => aplicarEstilo())
+
+watch(() => props.resaltado, () => {
+  if (mapa.value?.getLayer('coropletas-resaltado')) mapa.value.setFilter('coropletas-resaltado', filtroResaltado())
+})
+
+function encuadrar(animar = true) {
+  const m = mapa.value
+  if (!m) return
+  if (props.encuadre) m.fitBounds(props.encuadre, { padding: 40, maxZoom: 15, animate: animar })
+  else if (animar) m.easeTo({ center: props.centro, zoom: props.zoom })
+}
+watch(() => props.encuadre, () => encuadrar())
 
 onBeforeUnmount(() => {
   desmontado = true
