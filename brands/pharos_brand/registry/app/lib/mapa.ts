@@ -183,7 +183,31 @@ export function estilo(opts: {
 
 /** MapLibre `step` expression for a choropleth fill, from breaks and colours. Null values → transparent. */
 export function expresionRelleno(propiedad: string, cortesV: number[], colores: string[]): unknown[] {
+  const nulo = ['==', ['typeof', ['get', propiedad]], 'null']
+  // Without breaks (no values, or all at zero) a `step` with no stops is invalid, and MapLibre rejects the layer.
+  if (!cortesV.length) return ['case', nulo, 'rgba(0,0,0,0)', colores[0]]
   const paso: unknown[] = ['step', ['to-number', ['get', propiedad], 0], colores[0]]  // lint-allow-token: MapLibre paint/layout key, not a CSS class
   cortesV.forEach((c, i) => paso.push(c, colores[Math.min(i + 1, colores.length - 1)]))
-  return ['case', ['==', ['typeof', ['get', propiedad]], 'null'], 'rgba(0,0,0,0)', paso]
+  return ['case', nulo, 'rgba(0,0,0,0)', paso]
+}
+
+/** A map view's bounds, `[[west, south], [east, north]]`. */
+export type Limites = [Lonlat, Lonlat]
+
+/** The bounds of a collection's geometry, for `encuadre`. Null when it has no coordinates to fit. */
+export function limitesDe(fc: MapaFeatureCollection | null | undefined): Limites | null {
+  let [oeste, sur, este, norte] = [Infinity, Infinity, -Infinity, -Infinity]
+  const visitar = (c: unknown): void => {
+    if (!Array.isArray(c)) return
+    if (typeof c[0] === 'number' && typeof c[1] === 'number') {
+      oeste = Math.min(oeste, c[0])
+      este = Math.max(este, c[0])
+      sur = Math.min(sur, c[1])
+      norte = Math.max(norte, c[1])
+      return
+    }
+    c.forEach(visitar)
+  }
+  for (const f of fc?.features ?? []) visitar((f.geometry as { coordinates?: unknown } | null)?.coordinates)
+  return oeste === Infinity ? null : [[oeste, sur], [este, norte]]
 }

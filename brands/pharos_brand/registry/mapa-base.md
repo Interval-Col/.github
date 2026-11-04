@@ -41,6 +41,8 @@ pnpm add maplibre-gl@^6.16.0 pmtiles@^4.5.0 @protomaps/basemaps@^5.7.2
 | `coropletas` | `CapaCoropletas \| null` | `null` | polígonos coloreados por `valor`; `etiqueta` da la primera columna de la tabla; `pasos` (5) clases en escala raíz cuadrada |
 | `calor` | `CapaCalor \| null` | `null` | puntos con `peso` opcional |
 | `puntos` | `CapaPuntos \| null` | `null` | lugares marcados; rotulados solo si hay `glyphs` |
+| `encuadre` | `Limites \| null` | `null` | `[[oeste, sur], [este, norte]]` a encuadrar; `limitesDe(colección)` lo calcula. Al volver a `null`, regresa a `centro` y `zoom` |
+| `resaltado` | `string \| null` | `null` | id de la zona a contornear |
 | `nombreValor` | `string` | `'Valor'` | encabezado de la columna de cifras |
 | `formato` | `(v) => string` | `es-CO`, 1 decimal | texto de cada cifra en la tabla |
 
@@ -75,6 +77,11 @@ sale de `properties.id` (o del `id` de la feature).
   su configuración de Vite.
 - 🪤 **`setStyle` con diff puede no emitir `style.load`**: las capas de datos (que no son parte del
   objeto de estilo) desaparecerían al cambiar una prop o el tema. El componente usa `diff: false`.
+- 🪤 **Cambiar datos no reconstruye el estilo.** Solo se repintan las capas de datos, porque un
+  `setStyle` volvería a procesar el mapa base en cada filtro. El estilo completo se rehace al cambiar
+  `origen` o el tema.
+- 🪤 **Una coropleta sin valores o toda en cero no tiene cortes**, y un `step` sin paradas es inválido:
+  `expresionRelleno` devuelve entonces un solo color.
 - 🪤 **Un token puede no ser un color que MapLibre entienda** (`color-mix(…)`, `oklch(…)`): el
   componente lo resuelve pintándolo en un píxel y leyéndolo como RGB. Leer `fillStyle` no basta,
   porque Chrome devuelve `oklab(…)`.
