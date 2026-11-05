@@ -186,7 +186,7 @@ export const CLAVES_ROTULO = ['city_label', 'subplace_label', 'state_label', 'co
 
 /**
  * The flavour with its labels in the app's text colour and their halo in the background colour. The
- * stock light flavour writes neighbourhoods in light grey (`#8f8f8f`), unreadable over a choropleth;
+ * stock light flavour writes neighbourhoods in a light grey, unreadable over a choropleth;
  * with the tokens the labels follow the theme: near black in light, near white in dark.
  */
 export function rotulosLegibles<T extends object>(sabor: T, texto: string, halo: string): T {
