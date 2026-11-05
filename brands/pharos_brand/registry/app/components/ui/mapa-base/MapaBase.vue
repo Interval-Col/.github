@@ -30,7 +30,7 @@ import urlTrabajador from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
-import { PROP_ID, PROP_VALOR, conAlfa, cortes, estilo, expresionRelleno, filasTabla, normalizarCoropletas, rampa, valorDe } from '@/lib/mapa'
+import { PROP_ID, PROP_VALOR, conAlfa, cortes, estilo, expresionRelleno, filasTabla, normalizarCoropletas, primeraEtiqueta, rampa, valorDe } from '@/lib/mapa'
 import type { CapaCalor, CapaCoropletas, CapaPuntos, Limites, Lonlat, MapaBaseOrigen } from './types'
 
 const props = withDefaults(defineProps<{
@@ -146,6 +146,8 @@ function pintarDatos() {
   const primario = token('--primary')
   const fondo = token('--background')
   const texto = token('--foreground')
+  // Areas go under the basemap's labels; the sites and their names stay on top of everything.
+  const bajo = primeraEtiqueta(m.getStyle().layers ?? [], CAPAS)
 
   if (props.coropletas) {
     const c = props.coropletas
@@ -154,11 +156,11 @@ function pintarDatos() {
     const colores = rampa(fondo, serie, cortesV.length + 1)
     m.addSource('coropletas', { type: 'geojson', data: normalizarCoropletas(c.datos, c.valor) as never, promoteId: PROP_ID })
     m.addLayer({ id: 'coropletas-relleno', type: 'fill', source: 'coropletas',
-      paint: { 'fill-color': expresionRelleno(PROP_VALOR, cortesV, colores) as never, 'fill-opacity': 0.85 } })  // lint-allow-token: MapLibre paint/layout key, not a CSS class
+      paint: { 'fill-color': expresionRelleno(PROP_VALOR, cortesV, colores) as never, 'fill-opacity': 0.85 } }, bajo)  // lint-allow-token: MapLibre paint/layout key, not a CSS class
     m.addLayer({ id: 'coropletas-borde', type: 'line', source: 'coropletas',
-      paint: { 'line-color': borde, 'line-width': 0.6 } })
+      paint: { 'line-color': borde, 'line-width': 0.6 } }, bajo)
     m.addLayer({ id: 'coropletas-resaltado', type: 'line', source: 'coropletas', filter: filtroResaltado(),
-      paint: { 'line-color': texto, 'line-width': 2.5 } })
+      paint: { 'line-color': texto, 'line-width': 2.5 } }, bajo)
   }
   if (props.calor) {
     const p = props.calor.peso
@@ -168,7 +170,7 @@ function pintarDatos() {
       'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
         0, conAlfa(serie, 0), 0.3, conAlfa(serie, 0.35), 1, serie] as never,
       'heatmap-radius': ['interpolate', ['exponential', 2], ['zoom'], 9, 12, 14, 60] as never,
-    } })
+    } }, bajo)
   }
   if (props.puntos) {
     m.addSource('puntos', { type: 'geojson', data: props.puntos.datos as never })

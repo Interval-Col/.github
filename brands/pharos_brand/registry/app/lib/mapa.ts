@@ -181,6 +181,15 @@ export function estilo(opts: {
   return s
 }
 
+/**
+ * The first label layer of the basemap: the data layers that paint areas go BELOW it, so the
+ * street and neighbourhood names stay readable over a choropleth or a heatmap. Undefined when the
+ * basemap brings no labels (no glyphs), and then the layers simply go on top, as before.
+ */
+export function primeraEtiqueta(capas: readonly { id: string; type?: string }[], propias: readonly string[]): string | undefined {
+  return capas.find((c) => c.type === 'symbol' && !propias.includes(c.id))?.id
+}
+
 /** MapLibre `step` expression for a choropleth fill, from breaks and colours. Null values → transparent. */
 export function expresionRelleno(propiedad: string, cortesV: number[], colores: string[]): unknown[] {
   const nulo = ['==', ['typeof', ['get', propiedad]], 'null']
