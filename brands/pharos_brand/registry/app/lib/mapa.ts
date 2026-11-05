@@ -181,6 +181,24 @@ export function estilo(opts: {
   return s
 }
 
+/** The basemap flavour's label colour keys: place, street and address names. POIs keep their own colours. */
+export const CLAVES_ROTULO = ['city_label', 'subplace_label', 'state_label', 'country_label', 'roads_label_major', 'roads_label_minor', 'address_label'] as const
+
+/**
+ * The flavour with its labels in the app's text colour and their halo in the background colour. The
+ * stock light flavour writes neighbourhoods in a light grey, unreadable over a choropleth;
+ * with the tokens the labels follow the theme: near black in light, near white in dark.
+ */
+export function rotulosLegibles<T extends object>(sabor: T, texto: string, halo: string): T {
+  const s: Record<string, unknown> = { ...sabor }
+  for (const k of CLAVES_ROTULO) {
+    s[k] = texto
+    // `country_label` has no halo key of its own (the flavour reuses `earth`): never invent one.
+    if (`${k}_halo` in s) s[`${k}_halo`] = halo
+  }
+  return s as T
+}
+
 /**
  * The first label layer of the basemap: the data layers that paint areas go BELOW it, so the
  * street and neighbourhood names stay readable over a choropleth or a heatmap. Undefined when the

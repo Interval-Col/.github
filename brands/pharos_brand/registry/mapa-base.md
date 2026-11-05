@@ -77,6 +77,9 @@ sale de `properties.id` (o del `id` de la feature).
   su configuración de Vite.
 - 🪤 **`setStyle` con diff puede no emitir `style.load`**: las capas de datos (que no son parte del
   objeto de estilo) desaparecerían al cambiar una prop o el tema. El componente usa `diff: false`.
+- **Los rótulos del mapa base usan los tokens.** Nombres de lugares, calles y direcciones van en
+  `--foreground` con contorno `--background`, así que siguen el tema. El estilo de origen los dejaba
+  en gris claro, ilegibles sobre una coropleta. Los POI y los nombres de agua conservan sus colores.
 - **Las zonas van debajo de los rótulos del mapa base.** Coropletas y calor se insertan antes de la
   primera capa de texto del mapa base, para que los nombres de calles y barrios se lean encima del
   color. Las sedes y su nombre quedan arriba de todo. Sin `glyphs` no hay rótulos y todo va encima.

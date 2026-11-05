@@ -30,7 +30,7 @@ import urlTrabajador from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
-import { PROP_ID, PROP_VALOR, conAlfa, cortes, estilo, expresionRelleno, filasTabla, normalizarCoropletas, primeraEtiqueta, rampa, valorDe } from '@/lib/mapa'
+import { PROP_ID, PROP_VALOR, conAlfa, cortes, estilo, expresionRelleno, filasTabla, normalizarCoropletas, primeraEtiqueta, rampa, rotulosLegibles, valorDe } from '@/lib/mapa'
 import type { CapaCalor, CapaCoropletas, CapaPuntos, Limites, Lonlat, MapaBaseOrigen } from './types'
 
 const props = withDefaults(defineProps<{
@@ -124,7 +124,8 @@ async function construirEstilo() {
   if (props.origen) {
     const { layers, namedFlavor } = await import('@protomaps/basemaps')
     // Without self-served glyphs the symbol layers would ask for fonts nobody serves: drop them.
-    capasBase = layers('base', namedFlavor(oscuro() ? 'dark' : 'light'), { lang: 'es' })
+    const sabor = rotulosLegibles(namedFlavor(oscuro() ? 'dark' : 'light'), token('--foreground') || (oscuro() ? 'white' : 'black'), token('--background') || (oscuro() ? 'black' : 'white'))
+    capasBase = layers('base', sabor, { lang: 'es' })
       .filter((c: { type?: string }) => props.origen?.glyphs || c.type !== 'symbol')
   }
   return estilo({ fondo: token('--background') || 'white', origen: props.origen, capasBase, origenApp: location.origin })
