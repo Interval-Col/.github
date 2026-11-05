@@ -193,7 +193,8 @@ export function rotulosLegibles<T extends object>(sabor: T, texto: string, halo:
   const s: Record<string, unknown> = { ...sabor }
   for (const k of CLAVES_ROTULO) {
     s[k] = texto
-    s[`${k}_halo`] = halo
+    // `country_label` has no halo key of its own (the flavour reuses `earth`): never invent one.
+    if (`${k}_halo` in s) s[`${k}_halo`] = halo
   }
   return s as T
 }

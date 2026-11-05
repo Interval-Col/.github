@@ -124,7 +124,7 @@ async function construirEstilo() {
   if (props.origen) {
     const { layers, namedFlavor } = await import('@protomaps/basemaps')
     // Without self-served glyphs the symbol layers would ask for fonts nobody serves: drop them.
-    const sabor = rotulosLegibles(namedFlavor(oscuro() ? 'dark' : 'light'), token('--foreground') || 'black', token('--background') || 'white')
+    const sabor = rotulosLegibles(namedFlavor(oscuro() ? 'dark' : 'light'), token('--foreground') || (oscuro() ? 'white' : 'black'), token('--background') || (oscuro() ? 'black' : 'white'))
     capasBase = layers('base', sabor, { lang: 'es' })
       .filter((c: { type?: string }) => props.origen?.glyphs || c.type !== 'symbol')
   }
