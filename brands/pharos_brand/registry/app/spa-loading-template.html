@@ -29,8 +29,10 @@
 
   Rules: self-contained. The app's CSS `<link>` is in `<head>`, so the mark tokens
   (`--pharos-burgundy`, `--pharos-red`, `--primary`) are already defined; fallbacks
-  are the same brand values. The `.dark` / `.theme-*` classes are set by JS that has
-  not run yet, so light/dark follows the OS (`color-scheme` + system colors).
+  are the same brand values. Light/dark follows the OS (`color-scheme` + system
+  colors), NOT the app's `.dark`: most apps set it from JS that has not run yet. Do not
+  rely on either class being absent, though — an app may put `.theme-*` in the server
+  HTML (`app.head.htmlAttrs`), and then `--primary`, and so the sea, is its accent.
   Copied VERBATIM by `sync-pharos-registry.sh`: change it here, never in the app.
 -->
 <style>
@@ -348,7 +350,7 @@
     #__nuxt-loader .pharos-splash__boat { display: none; }
   }
 </style>
-<div class="pharos-splash" role="status" aria-live="polite" data-sea="on">
+<div class="pharos-splash" data-sea="on">
   <div class="pharos-splash__inner">
     <div class="pharos-splash__mark">
       <span class="pharos-splash__stage" aria-hidden="true">
@@ -372,7 +374,9 @@
       </span>
     </div>
     <p class="pharos-splash__sub" data-pharos-splash="sub"></p>
-    <p class="pharos-splash__msg" data-pharos-splash="msg">Cargando…</p>
+    <!-- The live region is ONLY the message: a status region holds text, not the mark or a
+         control, so the 10 s change announces the new sentence and nothing else. -->
+    <p class="pharos-splash__msg" data-pharos-splash="msg" role="status" aria-live="polite">Cargando…</p>
     <button type="button" class="pharos-splash__retry" data-pharos-splash="retry" hidden>Reintentar</button>
   </div>
   <!-- SystemOcean (registry/app/components/SystemOcean.vue), full width. -->
