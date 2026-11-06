@@ -14,25 +14,45 @@
   page for a spinner that never ends. If the app has not arrived after
   `PHAROS_SPLASH_SLOW_MS`, it says so and offers «Reintentar».
 
-  The mark is the real horizontal logo (`pharos-horizontal-*.svg`, BRAND.md §2): the
-  «Pháros» wordmark plus the pilot light above the P, at the logo's own coordinates
-  in AppLogo's navbar proportions (viewBox cropped to the ink so the mark centres
-  over the sublabel).
-  The pilot light is the only thing that moves: it pulses and casts a lighthouse
-  beam that sweeps side to side. Each time the beam points at the viewer, the light
-  flashes. Everything stops under `prefers-reduced-motion`.
+  The mark is the real logo: the «Pháros» wordmark plus the pilot light above the P,
+  in AppLogo's NAVBAR proportions — the logo every app shows in its sidebar (BRAND.md
+  §2). The viewBox is cropped to the ink so the mark centres over the sublabel.
+
+  The lighthouse: the pilot light casts a beam that TURNS in 3D around it, with
+  perspective, always the same way, like a real lantern. Each turn it goes behind
+  (dim, foreshortened), comes round the side, and faces the viewer: there it blooms
+  and the light flashes. The beam is a cone of six sheets fanned around its axis, each
+  a wide haze plus a bright core with blurred edges, and a slight irregular flicker, so it reads as light in air,
+  not as a flat plane. At the foot, the family's sea (`SystemOcean`) with its boat
+  already crossing; `data-sea="off"` removes it.
+  Everything stops under `prefers-reduced-motion`.
 
   Rules: self-contained. The app's CSS `<link>` is in `<head>`, so the mark tokens
-  (`--pharos-burgundy`, `--pharos-red`) are already defined; their fallbacks are the
-  same brand values. The `.dark` / `.theme-*` classes are set by JS that has not run
-  yet, so light/dark follows the OS (`color-scheme` + system colors).
+  (`--pharos-burgundy`, `--pharos-red`, `--primary`) are already defined; fallbacks
+  are the same brand values. The `.dark` / `.theme-*` classes are set by JS that has
+  not run yet, so light/dark follows the OS (`color-scheme` + system colors).
   Copied VERBATIM by `sync-pharos-registry.sh`: change it here, never in the app.
 -->
 <style>
   #__nuxt-loader .pharos-splash {
-    --ps-red: var(--pharos-red, rgb(228 0 43));
+    /* Tunables — the defaults are the brand's; an app (or the design bench) can override.
+       --ps-light          pilot light, bloom and halos
+       --ps-beam           the beam's colour            --ps-beam-strength  its brightness at the light
+       --ps-turn           one full turn of the lantern = one flash
+       --ps-depth          perspective: lower = stronger 3D
+       --ps-soft           blur of the beam's edges
+       --ps-sea            the sea's line-art tint (the sub-brand accent in the apps) */
+    --ps-light: var(--pharos-red, rgb(228 0 43));
+    --ps-beam: var(--ps-light);
+    --ps-beam-strength: 55%;
+    --ps-turn: 8.5s;
+    --ps-depth: 1400px;
+    --ps-soft: 10px;
+    --ps-sea: var(--primary, CanvasText);
     --ps-wordmark: var(--pharos-burgundy, rgb(120 47 64));
     --ps-w: min(16rem, 64vw);
+    --ps-dot: calc(var(--ps-w) * 12.4 / 204);
+    --ps-beam-len: min(40vw, 40rem);
     position: fixed;
     inset: 0;
     z-index: 2147483000;
@@ -45,10 +65,13 @@
     font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   @media (prefers-color-scheme: dark) {
-    /* pharos-horizontal-dark.svg: the wordmark goes white on dark surfaces. */
-    #__nuxt-loader .pharos-splash { --ps-wordmark: CanvasText; }
+    /* pharos-horizontal-dark.svg: the wordmark goes white on dark surfaces; the sea
+       goes to line-art in the text colour (the `.dark` accent isn't applied yet). */
+    #__nuxt-loader .pharos-splash { --ps-wordmark: CanvasText; --ps-sea: CanvasText; }
   }
   #__nuxt-loader .pharos-splash__inner {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -57,7 +80,7 @@
     text-align: center;
   }
 
-  /* ── The mark: wordmark SVG + the pilot light at the SVG's coordinates ─────── */
+  /* ── The mark: wordmark SVG + the lantern at the logo's coordinates ─────────── */
   #__nuxt-loader .pharos-splash__mark {
     position: relative;
     width: var(--ps-w);
@@ -78,61 +101,120 @@
     letter-spacing: -0.01em;
     fill: var(--ps-wordmark);
   }
-  /* Pilot light: AppLogo's NAVBAR proportions (cx=22 cy=9.5 r=3.5 at 36px), the logo
-     every app shows in its sidebar, scaled to this 64px wordmark → cx=35.3 cy=16.7
-     r=6.2. ⚠️ Not the .svg files' cy=24.7: those seat the light lower, and the eye
-     that knows the apps reads it as misplaced. viewBox cropped to the ink:
-     "10 8 204 90". */
-  #__nuxt-loader .pharos-splash__beacon {
+  /* Pilot light: AppLogo's NAVBAR proportions (cx=22 cy=9.5 r=3.5 at 36px), scaled to
+     this 64px wordmark → cx=35.3 cy=16.7 r=6.2. ⚠️ Not the .svg files' cy=24.7: those
+     seat the light lower, and the eye that knows the apps reads it as misplaced.
+     viewBox cropped to the ink: "10 8 204 90". Two anchors at the same point: the
+     beam stage BEHIND the wordmark (z 0) and the lamp IN FRONT of it (z 2). They
+     can't share one box — `perspective` makes a stacking context. */
+  #__nuxt-loader .pharos-splash__stage,
+  #__nuxt-loader .pharos-splash__lamp {
     position: absolute;
     left: calc((35.3 - 10) / 204 * 100%);
     top: calc((16.7 - 8) / 90 * 100%);
     width: 0;
     height: 0;
   }
-  #__nuxt-loader .pharos-splash__light,
-  #__nuxt-loader .pharos-splash__halo {
+  #__nuxt-loader .pharos-splash__stage {
+    z-index: 0;
+    perspective: var(--ps-depth);
+    perspective-origin: 0 0;
+  }
+  #__nuxt-loader .pharos-splash__lamp { z-index: 2; }
+
+  /* The beam: rotateY around the light. In CSS, rotateY(270deg) brings the far end to
+     +z — straight at the viewer — so that is where it blooms and the light flashes
+     (75% of the turn). At 90deg it is behind the lantern, hence the dimming.
+     A single sheet collapses to a line when it faces you, so the beam is a CONE made of
+     six sheets fanned around its own axis (rotateX every 30deg, like orange segments):
+     from the side they overlap into a volume that is densest at the centre; head-on
+     they open into a radial burst that the blur turns into the cone's round mouth.
+     ⚠️ No opacity, filter or overflow on `.turn`: any of them flattens its children
+     into one plane and the cone goes flat again. The dimming lives on each ray. */
+  #__nuxt-loader .pharos-splash__turn {
     position: absolute;
     left: 0;
     top: 0;
-    width: calc(var(--ps-w) * 12.4 / 204);
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    animation: pharos-splash-turn var(--ps-turn) linear infinite;
+  }
+  #__nuxt-loader .pharos-splash__ray {
+    --ps-ray-h: calc(var(--ps-w) * 1.4);
+    position: absolute;
+    left: 0;
+    top: calc(var(--ps-ray-h) / -2);
+    width: var(--ps-beam-len);
+    height: var(--ps-ray-h);
+    transform-origin: 0 50%;
+    transform: rotateX(calc(var(--k) * 30deg));
+    filter: blur(var(--ps-soft));
+    animation: pharos-splash-dim var(--ps-turn) linear infinite;
+  }
+  #__nuxt-loader .pharos-splash__haze,
+  #__nuxt-loader .pharos-splash__core {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    animation: pharos-splash-flicker 4.3s ease-in-out infinite;
+  }
+  /* Six sheets overlap, so each carries a share of the strength. */
+  #__nuxt-loader .pharos-splash__haze {
+    top: 0;
+    height: 100%;
+    clip-path: polygon(0 48%, 100% 0, 100% 100%, 0 52%);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--ps-beam) calc(var(--ps-beam-strength) * 0.22), transparent) 0%,
+      color-mix(in oklab, var(--ps-beam) calc(var(--ps-beam-strength) * 0.08), transparent) 40%,
+      transparent 92%
+    );
+  }
+  #__nuxt-loader .pharos-splash__core {
+    top: 30%;
+    height: 40%;
+    clip-path: polygon(0 49%, 100% 0, 100% 100%, 0 51%);
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--ps-beam) calc(var(--ps-beam-strength) * 0.4), transparent) 0%,
+      color-mix(in oklab, var(--ps-beam) calc(var(--ps-beam-strength) * 0.13), transparent) 35%,
+      transparent 78%
+    );
+  }
+
+  /* The lamp: a soft bloom, two halos and the light itself — all peak at 75%. */
+  #__nuxt-loader .pharos-splash__bloom,
+  #__nuxt-loader .pharos-splash__halo,
+  #__nuxt-loader .pharos-splash__light {
+    position: absolute;
+    left: 0;
+    top: 0;
     aspect-ratio: 1;
     border-radius: 9999px;
     translate: -50% -50%;
   }
-  #__nuxt-loader .pharos-splash__light {
-    z-index: 3;
-    background: var(--ps-red);
-    animation: pharos-splash-flash 3s ease-out infinite;
+  #__nuxt-loader .pharos-splash__bloom {
+    width: calc(var(--ps-dot) * 7);
+    background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--ps-light) 50%, transparent) 0%,
+      color-mix(in oklab, var(--ps-light) 16%, transparent) 35%,
+      transparent 70%
+    );
+    animation: pharos-splash-bloom var(--ps-turn) ease-in-out infinite;
   }
   #__nuxt-loader .pharos-splash__halo {
-    z-index: 2;
-    border: 2px solid var(--ps-red);
+    width: var(--ps-dot);
+    border: 2px solid var(--ps-light);
     opacity: 0;
-    animation: pharos-splash-halo 3s ease-out infinite;
+    animation: pharos-splash-halo var(--ps-turn) ease-out infinite;
   }
-  #__nuxt-loader .pharos-splash__halo--late { animation-delay: 0.9s; }
-
-  /* The beam: a cone from the light, sweeping side to side like a turning lantern.
-     scaleX 1 → -1 → 1; it crosses 0 (pointing at the viewer) every 3 s, on the beat
-     of the flash. Behind the wordmark (z-index 0) so the name stays legible. */
-  #__nuxt-loader .pharos-splash__beam {
-    position: absolute;
-    z-index: 0;
-    left: 0;
-    top: 0;
-    width: 60vw;
-    height: calc(var(--ps-w) * 1.2);
-    translate: 0 -50%;
-    transform-origin: 0 50%;
-    clip-path: polygon(0 48%, 100% 0, 100% 100%, 0 52%);
-    background: linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--ps-red) 55%, transparent) 0%,
-      color-mix(in oklab, var(--ps-red) 18%, transparent) 45%,
-      transparent 100%
-    );
-    animation: pharos-splash-sweep 6s ease-in-out -1.5s infinite;
+  #__nuxt-loader .pharos-splash__halo--late { animation-delay: calc(var(--ps-turn) * 0.06); }
+  #__nuxt-loader .pharos-splash__light {
+    width: var(--ps-dot);
+    background: var(--ps-light);
+    animation: pharos-splash-flash var(--ps-turn) ease-in-out infinite;
   }
 
   #__nuxt-loader .pharos-splash__sub {
@@ -170,51 +252,148 @@
   }
   #__nuxt-loader .pharos-splash__retry[hidden] { display: none; }
 
-  @keyframes pharos-splash-flash {
-    0% {
-      scale: 1.6;
-      box-shadow:
-        0 0 calc(var(--ps-w) * 0.08) calc(var(--ps-w) * 0.03) color-mix(in oklab, var(--ps-red) 70%, transparent),
-        0 0 calc(var(--ps-w) * 0.22) calc(var(--ps-w) * 0.08) color-mix(in oklab, var(--ps-red) 35%, transparent);
-    }
-    45%, 100% {
-      scale: 1;
-      box-shadow:
-        0 0 calc(var(--ps-w) * 0.025) 0 color-mix(in oklab, var(--ps-red) 45%, transparent),
-        0 0 0 0 transparent;
-    }
+  /* ── The sea (optional): SystemOcean's layers, full width ─────────────────────── */
+  #__nuxt-loader .pharos-splash__sea {
+    display: none;
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 7rem;
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--ps-sea);
+  }
+  #__nuxt-loader .pharos-splash[data-sea="on"] .pharos-splash__sea { display: block; }
+  #__nuxt-loader .pharos-splash__sea svg.ps-layer {
+    position: absolute;
+    inset: 0;
+    width: 200%;
+    height: 100%;
+  }
+  #__nuxt-loader .pharos-splash__sea .ps-back  { animation: pharos-splash-drift 38s linear infinite; }
+  #__nuxt-loader .pharos-splash__sea .ps-front { animation: pharos-splash-drift 24s linear infinite; }
+  #__nuxt-loader .pharos-splash__sea .ps-foam  { animation: pharos-splash-drift 16s linear infinite; }
+  /* The boat enters already mid-crossing (negative delay): in the sidebar it waits
+     off-screen for a long while, and a splash lasts seconds. */
+  #__nuxt-loader .pharos-splash__boat {
+    position: absolute;
+    top: 30%;
+    animation: pharos-splash-boat 60s linear -22s infinite;
+  }
+  #__nuxt-loader .pharos-splash__boat svg {
+    display: block;
+    width: 2.25rem;
+    height: auto;
+    animation: pharos-splash-bob 3.4s ease-in-out infinite;
+  }
+
+  @keyframes pharos-splash-turn {
+    from { transform: rotateY(0deg); }
+    to   { transform: rotateY(360deg); }
+  }
+  @keyframes pharos-splash-dim {
+    0%, 100% { opacity: 0.75; }
+    25% { opacity: 0.12; }
+    50% { opacity: 0.75; }
+    75% { opacity: 1; }
+  }
+  @keyframes pharos-splash-flicker {
+    0%, 100% { opacity: 1; }
+    17% { opacity: 0.86; }
+    31% { opacity: 0.97; }
+    46% { opacity: 0.89; }
+    63% { opacity: 1; }
+    81% { opacity: 0.91; }
+  }
+  @keyframes pharos-splash-bloom {
+    0%, 52%, 98%, 100% { scale: 0.8; opacity: 0.4; }
+    75% { scale: 1.8; opacity: 1; }
   }
   @keyframes pharos-splash-halo {
-    0% { scale: 1; opacity: 0.7; }
+    0%, 74% { scale: 1; opacity: 0; }
+    75% { scale: 1; opacity: 0.75; }
     100% { scale: 7; opacity: 0; }
   }
-  @keyframes pharos-splash-sweep {
-    0%, 100% { transform: scaleX(1); }
-    50% { transform: scaleX(-1); }
+  @keyframes pharos-splash-flash {
+    0%, 58%, 94%, 100% {
+      scale: 1;
+      box-shadow: 0 0 calc(var(--ps-w) * 0.025) 0 color-mix(in oklab, var(--ps-light) 45%, transparent);
+    }
+    75% {
+      scale: 1.5;
+      box-shadow:
+        0 0 calc(var(--ps-w) * 0.08) calc(var(--ps-w) * 0.03) color-mix(in oklab, var(--ps-light) 70%, transparent),
+        0 0 calc(var(--ps-w) * 0.22) calc(var(--ps-w) * 0.08) color-mix(in oklab, var(--ps-light) 35%, transparent);
+    }
+  }
+  @keyframes pharos-splash-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes pharos-splash-boat {
+    0%   { left: 104%; opacity: 0; }
+    5%   { opacity: 0.9; }
+    92%  { opacity: 0.9; }
+    100% { left: -8%; opacity: 0; }
+  }
+  @keyframes pharos-splash-bob {
+    0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+    50%      { transform: translateY(2px) rotate(1.2deg); }
   }
   @media (prefers-reduced-motion: reduce) {
-    #__nuxt-loader .pharos-splash__light,
+    #__nuxt-loader .pharos-splash__turn { animation: none; transform: rotateY(-35deg); }
+    #__nuxt-loader .pharos-splash__ray { animation: none; opacity: 0.6; }
+    #__nuxt-loader .pharos-splash__haze,
+    #__nuxt-loader .pharos-splash__core,
+    #__nuxt-loader .pharos-splash__bloom,
     #__nuxt-loader .pharos-splash__halo,
-    #__nuxt-loader .pharos-splash__beam { animation: none; }
-    #__nuxt-loader .pharos-splash__beam { opacity: 0.5; }
+    #__nuxt-loader .pharos-splash__light,
+    #__nuxt-loader .pharos-splash__sea svg.ps-layer { animation: none; }
+    #__nuxt-loader .pharos-splash__boat { display: none; }
   }
 </style>
-<div class="pharos-splash" role="status" aria-live="polite">
+<div class="pharos-splash" role="status" aria-live="polite" data-sea="on">
   <div class="pharos-splash__inner">
     <div class="pharos-splash__mark">
-      <span class="pharos-splash__beacon" aria-hidden="true">
-        <span class="pharos-splash__beam"></span>
-        <span class="pharos-splash__halo"></span>
-        <span class="pharos-splash__halo pharos-splash__halo--late"></span>
-        <span class="pharos-splash__light"></span>
+      <span class="pharos-splash__stage" aria-hidden="true">
+        <span class="pharos-splash__turn">
+          <span class="pharos-splash__ray" style="--k: 0"><span class="pharos-splash__haze"></span><span class="pharos-splash__core"></span></span>
+          <span class="pharos-splash__ray" style="--k: 1"><span class="pharos-splash__haze"></span><span class="pharos-splash__core"></span></span>
+          <span class="pharos-splash__ray" style="--k: 2"><span class="pharos-splash__haze"></span><span class="pharos-splash__core"></span></span>
+          <span class="pharos-splash__ray" style="--k: 3"><span class="pharos-splash__haze"></span><span class="pharos-splash__core"></span></span>
+          <span class="pharos-splash__ray" style="--k: 4"><span class="pharos-splash__haze"></span><span class="pharos-splash__core"></span></span>
+          <span class="pharos-splash__ray" style="--k: 5"><span class="pharos-splash__haze"></span><span class="pharos-splash__core"></span></span>
+        </span>
       </span>
       <svg class="pharos-splash__wordmark" viewBox="10 8 204 90" role="img" aria-label="Pháros">
         <text x="14" y="78">Pháros</text>
       </svg>
+      <span class="pharos-splash__lamp" aria-hidden="true">
+        <span class="pharos-splash__bloom"></span>
+        <span class="pharos-splash__halo"></span>
+        <span class="pharos-splash__halo pharos-splash__halo--late"></span>
+        <span class="pharos-splash__light"></span>
+      </span>
     </div>
     <p class="pharos-splash__sub" data-pharos-splash="sub"></p>
     <p class="pharos-splash__msg" data-pharos-splash="msg">Cargando…</p>
     <button type="button" class="pharos-splash__retry" data-pharos-splash="retry" hidden>Reintentar</button>
+  </div>
+  <!-- SystemOcean (registry/app/components/SystemOcean.vue), full width. -->
+  <div class="pharos-splash__sea" aria-hidden="true">
+    <svg class="ps-layer ps-back" preserveAspectRatio="none" viewBox="0 0 240 40" fill="currentColor">
+      <path d="M0 27 q30 -5 60 0 t60 0 t60 0 t60 0 L240 40 L0 40 Z" opacity="0.06" />
+    </svg>
+    <div class="pharos-splash__boat">
+      <svg width="22" height="16" viewBox="0 0 22 16" fill="currentColor">
+        <path d="M2 9 Q11 14 20 9 L18 12 Q11 15 4 12 Z" opacity="0.5" />
+        <path d="M11 9 L11 2 L5.5 8 Z" opacity="0.5" />
+        <line x1="11" y1="9" x2="11" y2="1.5" stroke="currentColor" stroke-width="0.8" opacity="0.5" />
+      </svg>
+    </div>
+    <svg class="ps-layer ps-front" preserveAspectRatio="none" viewBox="0 0 240 40" fill="none">
+      <path d="M0 21 q30 -9 60 0 t60 0 t60 0 t60 0 L240 40 L0 40 Z" fill="currentColor" opacity="0.09" />
+      <path d="M0 21 q30 -9 60 0 t60 0 t60 0 t60 0" stroke="currentColor" stroke-width="0.7" opacity="0.32" />
+    </svg>
+    <svg class="ps-layer ps-foam" preserveAspectRatio="none" viewBox="0 0 240 40" fill="currentColor">
+      <path d="M0 18 q15 -5 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 L240 40 L0 40 Z" opacity="0.13" />
+    </svg>
   </div>
 </div>
 <script>
