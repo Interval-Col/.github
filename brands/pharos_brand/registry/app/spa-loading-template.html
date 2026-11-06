@@ -1,0 +1,125 @@
+<!--
+  Pháros splash — registry/app/spa-loading-template.html
+
+  Nuxt 4 inlines this file into the HTML of every `ssr:false` app, inside
+  `<div id="__nuxt-loader">`, and removes that node on `app:suspense:resolve`.
+  So it paints BEFORE any JS loads and goes away on its own once the app is ready.
+  No per-app code is needed: having the file in `app/` is enough.
+
+  Why it exists: a Pháros app resolves the session (an identity call) before its
+  first paint. Until that answers, a SPA has nothing to show, and the person sees a
+  white page with no explanation.
+
+  🔴 The WATCHDOG is not decoration. A splash without it would only swap the white
+  page for a spinner that never ends. If the app has not arrived after
+  `PHAROS_SPLASH_SLOW_MS`, it says so and offers «Reintentar».
+
+  Rules: self-contained (the brand CSS may not be applied yet, and the `.dark` /
+  `.theme-*` classes are set by JS that has not run yet). Colors come from system
+  colors plus `color-scheme`, so it follows the OS theme with no hex values.
+  Copied VERBATIM by `sync-pharos-registry.sh`: change it here, never in the app.
+-->
+<style>
+  #__nuxt-loader .pharos-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: grid;
+    place-items: center;
+    color-scheme: light dark;
+    background: Canvas;
+    color: CanvasText;
+    font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  #__nuxt-loader .pharos-splash__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+  }
+  /* Pilot light: the family's motif — a small, steady light that breathes. */
+  #__nuxt-loader .pharos-splash__light {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+    background: var(--primary, currentColor);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary, currentColor) 45%, transparent);
+    animation: pharos-splash-breathe 1.8s ease-in-out infinite;
+  }
+  #__nuxt-loader .pharos-splash__name {
+    margin: 0.25rem 0 0;
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-size: 1.375rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  #__nuxt-loader .pharos-splash__msg {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.65;
+    max-width: 22rem;
+  }
+  #__nuxt-loader .pharos-splash__retry {
+    margin-top: 0.25rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid color-mix(in oklab, CanvasText 25%, transparent);
+    border-radius: 0.5rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  #__nuxt-loader .pharos-splash__retry:hover {
+    background: color-mix(in oklab, CanvasText 8%, transparent);
+  }
+  #__nuxt-loader .pharos-splash__retry:focus-visible {
+    outline: 2px solid var(--ring, Highlight);
+    outline-offset: 2px;
+  }
+  #__nuxt-loader .pharos-splash__retry[hidden] {
+    display: none;
+  }
+  @keyframes pharos-splash-breathe {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary, currentColor) 45%, transparent); opacity: 0.85; }
+    50% { box-shadow: 0 0 0 0.6rem color-mix(in oklab, var(--primary, currentColor) 0%, transparent); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #__nuxt-loader .pharos-splash__light { animation: none; }
+  }
+</style>
+<div class="pharos-splash" role="status" aria-live="polite">
+  <div class="pharos-splash__inner">
+    <span class="pharos-splash__light" aria-hidden="true"></span>
+    <p class="pharos-splash__name" data-pharos-splash="name">Pháros</p>
+    <p class="pharos-splash__msg" data-pharos-splash="msg">Cargando…</p>
+    <button type="button" class="pharos-splash__retry" data-pharos-splash="retry" hidden>Reintentar</button>
+  </div>
+</div>
+<script>
+  (function () {
+    var PHAROS_SPLASH_SLOW_MS = 10000;
+    var loader = document.getElementById("__nuxt-loader");
+    if (!loader) return;
+    var pick = function (k) { return loader.querySelector('[data-pharos-splash="' + k + '"]'); };
+
+    // The app's <title> is already in <head> ("Pháros — Laboratorio"), so the splash
+    // names the app without each app having to configure it.
+    if (document.title) pick("name").textContent = document.title;
+
+    var retry = pick("retry");
+    retry.addEventListener("click", function () { window.location.reload(); });
+
+    window.setTimeout(function () {
+      // Nuxt removes #__nuxt-loader when the app is ready; if it is still in the
+      // document, the app did not arrive in time.
+      if (!document.body.contains(loader)) return;
+      pick("msg").textContent = "Esto está tardando más de lo normal.";
+      retry.hidden = false;
+      // Breadcrumb for diagnosis: timing only, no session data.
+      console.warn("[pharos-splash] la app no terminó de cargar en " + PHAROS_SPLASH_SLOW_MS / 1000 + " s");
+    }, PHAROS_SPLASH_SLOW_MS);
+  })();
+</script>
