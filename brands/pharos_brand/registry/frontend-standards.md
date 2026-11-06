@@ -16,7 +16,7 @@ applyTo: "**/*.vue,**/*.ts"
 > package (RFC 0008 Q3). LCH and Biuman are **tenants** of this contract, not parents.
 
 ## Stack
-- **Framework:** Nuxt 4 — `srcDir: app/` (the Nuxt 4 default); SSR por defecto (ver "Modo de renderizado")
+- **Framework:** Nuxt 4 — `srcDir: app/` (the Nuxt 4 default); una app Pháros interna es SPA (ver "Modo de renderizado")
 - **UI:** Vue 3 Composition API (`<script setup lang="ts">`)
 - **Estilos:** Tailwind v4 — configuración via CSS (`@theme` / `@theme inline` en `tokens.css`), no `tailwind.config.js`
 - **Estado:** Pinia (`defineStore`)
@@ -92,15 +92,21 @@ function handleClick() { ... }
 
 ## Modo de renderizado (SSR / CSR)
 
-- **SSR por defecto.** Nunca pongas `ssr: false` global en
-  `nuxt.config.ts`.
-- Una página individual puede optar por CSR con
-  `definePageMeta({ ssr: false })` **solo** cuando: está detrás de
-  autenticación (sin valor SEO) **y** carga todos sus datos en
-  `onMounted` vía `apiFetch` cliente — el render del servidor
-  produciría únicamente un esqueleto vacío. Acompaña el
-  `definePageMeta` con un comentario de una línea explicando el
-  motivo.
+- **Una app Pháros interna** (personal, detrás del SSO, sin SEO) **es SPA
+  completa**: `routeRules: { '/**': { ssr: false } }` en `nuxt.config.ts`.
+  Sus páginas están detrás de autenticación y cargan sus datos en el
+  cliente, así que el render del servidor sólo produciría un esqueleto
+  vacío. La regla y su porqué viven en `ENGINEERING_STANDARDS.md`
+  §Frontend.
+- **Y adopta el splash de carga** (`app/spa-loading-template.html` de este
+  registry, con `sync-pharos-registry.sh --add spa-loading-template.html`):
+  Nuxt lo pinta antes de cargar el JS y lo quita al montar. **Sólo
+  funciona en una SPA**; bajo SSR Nuxt lo ignora sin avisar.
+- Las superficies públicas o de pacientes (`public-web`) siguen **SSR por
+  defecto**, y una ruta suelta opta por CSR con `routeRules`.
+- ⚠️ `definePageMeta({ ssr: false })` **no hace nada en Nuxt 4**: `ssr` no
+  es una llave de `definePageMeta`, y la página se sigue renderizando en el
+  servidor.
 - **Código compartido SSR-safe** (stores, composables, plugins): no
   uses `typeof window` / `typeof localStorage` para detectar el
   servidor — Node 22+ expone un global `localStorage` y ese chequeo
