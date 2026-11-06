@@ -16,7 +16,8 @@
 
   The mark is the real horizontal logo (`pharos-horizontal-*.svg`, BRAND.md §2): the
   «Pháros» wordmark plus the pilot light above the P, at the logo's own coordinates
-  (viewBox cropped to the ink so the mark centres over the sublabel).
+  in AppLogo's navbar proportions (viewBox cropped to the ink so the mark centres
+  over the sublabel).
   The pilot light is the only thing that moves: it pulses and casts a lighthouse
   beam that sweeps side to side. Each time the beam points at the viewer, the light
   flashes. Everything stops under `prefers-reduced-motion`.
@@ -60,7 +61,7 @@
   #__nuxt-loader .pharos-splash__mark {
     position: relative;
     width: var(--ps-w);
-    aspect-ratio: 204 / 86;
+    aspect-ratio: 204 / 90;
   }
   #__nuxt-loader .pharos-splash__wordmark {
     position: relative;
@@ -77,12 +78,15 @@
     letter-spacing: -0.01em;
     fill: var(--ps-wordmark);
   }
-  /* Pilot light centre: circle cx=35.3 cy=24.7 r=6.2 (logo coordinates), inside the
-     viewBox cropped to the wordmark's ink: "10 12 204 86". */
+  /* Pilot light: AppLogo's NAVBAR proportions (cx=22 cy=9.5 r=3.5 at 36px), the logo
+     every app shows in its sidebar, scaled to this 64px wordmark → cx=35.3 cy=16.7
+     r=6.2. ⚠️ Not the .svg files' cy=24.7: those seat the light lower, and the eye
+     that knows the apps reads it as misplaced. viewBox cropped to the ink:
+     "10 8 204 90". */
   #__nuxt-loader .pharos-splash__beacon {
     position: absolute;
     left: calc((35.3 - 10) / 204 * 100%);
-    top: calc((24.7 - 12) / 86 * 100%);
+    top: calc((16.7 - 8) / 90 * 100%);
     width: 0;
     height: 0;
   }
@@ -99,18 +103,18 @@
   #__nuxt-loader .pharos-splash__light {
     z-index: 3;
     background: var(--ps-red);
-    animation: pharos-splash-flash 2s ease-out infinite;
+    animation: pharos-splash-flash 3s ease-out infinite;
   }
   #__nuxt-loader .pharos-splash__halo {
     z-index: 2;
     border: 2px solid var(--ps-red);
     opacity: 0;
-    animation: pharos-splash-halo 2s ease-out infinite;
+    animation: pharos-splash-halo 3s ease-out infinite;
   }
-  #__nuxt-loader .pharos-splash__halo--late { animation-delay: 0.6s; }
+  #__nuxt-loader .pharos-splash__halo--late { animation-delay: 0.9s; }
 
   /* The beam: a cone from the light, sweeping side to side like a turning lantern.
-     scaleX 1 → -1 → 1; it crosses 0 (pointing at the viewer) every 2 s, on the beat
+     scaleX 1 → -1 → 1; it crosses 0 (pointing at the viewer) every 3 s, on the beat
      of the flash. Behind the wordmark (z-index 0) so the name stays legible. */
   #__nuxt-loader .pharos-splash__beam {
     position: absolute;
@@ -128,7 +132,7 @@
       color-mix(in oklab, var(--ps-red) 18%, transparent) 45%,
       transparent 100%
     );
-    animation: pharos-splash-sweep 4s ease-in-out -1s infinite;
+    animation: pharos-splash-sweep 6s ease-in-out -1.5s infinite;
   }
 
   #__nuxt-loader .pharos-splash__sub {
@@ -204,7 +208,7 @@
         <span class="pharos-splash__halo pharos-splash__halo--late"></span>
         <span class="pharos-splash__light"></span>
       </span>
-      <svg class="pharos-splash__wordmark" viewBox="10 12 204 86" role="img" aria-label="Pháros">
+      <svg class="pharos-splash__wordmark" viewBox="10 8 204 90" role="img" aria-label="Pháros">
         <text x="14" y="78">Pháros</text>
       </svg>
     </div>
