@@ -84,8 +84,11 @@
   :root.dark #__nuxt-loader .pharos-splash {
     color-scheme: dark;
     --ps-wordmark: CanvasText;
-    --ps-sea: var(--ps-sea-dark);
   }
+  /* Each tunable is DECLARED once (the design bench rewrites the declarations and
+     refuses a template where one appears twice), so dark switches the sea's colour,
+     not the variable. */
+  :root.dark #__nuxt-loader .pharos-splash__sea { color: var(--ps-sea-dark); }
   #__nuxt-loader .pharos-splash.is-leaving {
     animation: pharos-splash-leave 280ms ease-in both;
     pointer-events: none;
