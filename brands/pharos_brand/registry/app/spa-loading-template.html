@@ -27,12 +27,21 @@
   already crossing; `data-sea="off"` removes it.
   Everything stops under `prefers-reduced-motion`.
 
+  Timing: the splash fades in only after 300 ms, so an app that is ready
+  sooner never shows it — no flicker. Once it has shown, it stays at least
+  `MIN_VISIBLE_MS` (1.5 s): the node answers Nuxt's `remove()` itself, waits out the
+  minimum and then fades. A splash that blinks for 200 ms reads as a
+  glitch, not as loading.
+
   Rules: self-contained. The app's CSS `<link>` is in `<head>`, so the mark tokens
   (`--pharos-burgundy`, `--pharos-red`, `--primary`) are already defined; fallbacks
-  are the same brand values. Light/dark follows the OS (`color-scheme` + system
-  colors), NOT the app's `.dark`: most apps set it from JS that has not run yet. Do not
-  rely on either class being absent, though — an app may put `.theme-*` in the server
-  HTML (`app.head.htmlAttrs`), and then `--primary`, and so the sea, is its accent.
+  are the same brand values. Light/dark follows the APP's theme: dark when `<html>`
+  carries `.dark`, light otherwise. Every Pháros app sets that class from a `<head>`
+  script before the body is parsed (`@nuxtjs/color-mode`, or an inline script that
+  reads the saved preference and falls back to the OS), so the class is already there
+  when the splash paints and says exactly what the app is about to show. An app may
+  also put `.theme-*` in the server HTML (`app.head.htmlAttrs`); then `--primary`, and
+  so the sea, is its accent.
   Copied VERBATIM by `sync-pharos-registry.sh`: change it here, never in the app.
 -->
 <style>
@@ -43,7 +52,8 @@
        --ps-turn           one full turn of the lantern = one flash
        --ps-depth          perspective: lower = stronger 3D
        --ps-soft           blur of the beam's edges
-       --ps-sea            the sea's line-art tint (the sub-brand accent in the apps) */
+       --ps-sea            the sea's line-art tint on light (the sub-brand accent in the apps)
+       --ps-sea-dark       the same, on dark */
     --ps-light: var(--pharos-red, rgb(228 0 43));
     --ps-beam: var(--ps-light);
     --ps-beam-strength: 55%;
@@ -51,6 +61,7 @@
     --ps-depth: 1400px;
     --ps-soft: 10px;
     --ps-sea: var(--primary, CanvasText);
+    --ps-sea-dark: CanvasText;
     --ps-wordmark: var(--pharos-burgundy, rgb(120 47 64));
     --ps-w: min(16rem, 64vw);
     --ps-dot: calc(var(--ps-w) * 12.4 / 204);
@@ -61,15 +72,23 @@
     display: grid;
     place-items: center;
     overflow: hidden;
-    color-scheme: light dark;
+    color-scheme: light;
     background: Canvas;
     color: CanvasText;
     font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* Appears only after 300 ms; the script times the minimum from this fade-in's start. */
+    animation: pharos-splash-appear 220ms ease-out 300ms both;
   }
-  @media (prefers-color-scheme: dark) {
-    /* pharos-horizontal-dark.svg: the wordmark goes white on dark surfaces; the sea
-       goes to line-art in the text colour (the `.dark` accent isn't applied yet). */
-    #__nuxt-loader .pharos-splash { --ps-wordmark: CanvasText; --ps-sea: CanvasText; }
+  /* The app's theme, set on <html> before the body is parsed (see the header).
+     pharos-horizontal-dark.svg: the wordmark goes white on dark surfaces. */
+  :root.dark #__nuxt-loader .pharos-splash {
+    color-scheme: dark;
+    --ps-wordmark: CanvasText;
+    --ps-sea: var(--ps-sea-dark);
+  }
+  #__nuxt-loader .pharos-splash.is-leaving {
+    animation: pharos-splash-leave 280ms ease-in both;
+    pointer-events: none;
   }
   #__nuxt-loader .pharos-splash__inner {
     position: relative;
@@ -334,6 +353,8 @@
     92%  { opacity: 0.9; }
     100% { left: -8%; opacity: 0; }
   }
+  @keyframes pharos-splash-appear { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pharos-splash-leave  { from { opacity: 1; } to { opacity: 0; } }
   @keyframes pharos-splash-bob {
     0%, 100% { transform: translateY(0) rotate(-1.2deg); }
     50%      { transform: translateY(2px) rotate(1.2deg); }
@@ -348,6 +369,9 @@
     #__nuxt-loader .pharos-splash__light,
     #__nuxt-loader .pharos-splash__sea svg.ps-layer { animation: none; }
     #__nuxt-loader .pharos-splash__boat { display: none; }
+    /* No fades: it simply appears after the same delay, and leaves at once. */
+    #__nuxt-loader .pharos-splash,
+    #__nuxt-loader .pharos-splash.is-leaving { animation-duration: 1ms; }
   }
 </style>
 <div class="pharos-splash" data-sea="on">
@@ -403,8 +427,25 @@
 <script>
   (function () {
     var PHAROS_SPLASH_SLOW_MS = 10000;
+    // The appear delay (300 ms) lives in CSS only: the script reads when it really fired.
+    var MIN_VISIBLE_MS = 1500;
+    var LEAVE_MS = 280;         // = the leave animation above
     var loader = document.getElementById("__nuxt-loader");
     if (!loader) return;
+    var splashEl = loader.querySelector(".pharos-splash");
+    var shownAt = null;         // when the splash REALLY became visible, not when this ran
+    var settled = false;
+    // The fade-in starts after its CSS delay, counted from the first style resolution —
+    // which waits for the app's render-blocking stylesheets. A timer begun when this
+    // script runs would count time nobody saw; `animationstart` fires when the fade-in
+    // actually begins.
+    if (splashEl) {
+      splashEl.addEventListener("animationstart", function (e) {
+        if (e.target === splashEl && e.animationName === "pharos-splash-appear" && shownAt === null) {
+          shownAt = performance.now();
+        }
+      });
+    }
     var pick = function (k) { return loader.querySelector('[data-pharos-splash="' + k + '"]'); };
 
     // The app's <title> is already in <head> ("Pháros — Laboratorio", "Pháros · Tecnología").
@@ -415,10 +456,28 @@
     var retry = pick("retry");
     retry.addEventListener("click", function () { window.location.reload(); });
 
+    // Minimum visible time. Nuxt removes the splash with
+    // `document.getElementById("__nuxt-loader")?.remove()` on `app:suspense:resolve`.
+    // This node answers that call itself: if the splash never appeared (no fade-in yet),
+    // it goes at once — nobody saw it; if it did, it stays until it has been visible
+    // MIN_VISIBLE_MS and then fades out. It is never taken out and put back: re-inserting
+    // a node restarts every CSS animation, so the splash would blink and the beam jump.
+    var nativeRemove = Element.prototype.remove;
+    loader.remove = function () {
+      if (settled) return;
+      settled = true;
+      if (shownAt === null || !splashEl) return nativeRemove.call(loader);   // never seen
+      loader.setAttribute("aria-hidden", "true");   // the app is ready; say nothing more
+      window.setTimeout(function () {
+        splashEl.classList.add("is-leaving");
+        window.setTimeout(function () { nativeRemove.call(loader); }, LEAVE_MS);
+      }, Math.max(0, MIN_VISIBLE_MS - (performance.now() - shownAt)));
+    };
+
     window.setTimeout(function () {
       // Nuxt removes #__nuxt-loader when the app is ready; if it is still in the
       // document, the app did not arrive in time.
-      if (!document.body.contains(loader)) return;
+      if (settled || !document.body.contains(loader)) return;
       pick("msg").textContent = "Esto está tardando más de lo normal.";
       retry.hidden = false;
       // Breadcrumb for diagnosis: timing only, no session data.
