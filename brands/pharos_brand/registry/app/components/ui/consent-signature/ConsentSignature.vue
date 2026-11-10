@@ -7,8 +7,8 @@
 // the PHI reveal policy and maps errors to a sentence with an owner — the same
 // cut as `QueueWaitingList` / `PharosHelpChat`. The widget never fetches and
 // never writes.
-import { computed, ref, watch } from 'vue'
-import { AlertCircle, Eraser, FileSignature, Loader2 } from 'lucide-vue-next'
+import { computed, onMounted, ref, watch } from 'vue'
+import { AlertCircle, ArrowLeft, ArrowRight, Eraser, FileSignature, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,16 @@ const props = withDefaults(defineProps<{
   /** Blank PDF of the form, as a URL the browser can render (blob/object URL
    *  the app built from `GET /pdf_form/view/{name}`). `null` = still loading. */
   documentUrl: string | null
+  /**
+   * Las páginas del documento como IMÁGENES (data o blob URLs), en orden. Si
+   * vienen, se muestran en lugar del `<iframe>`.
+   *
+   * Existe por la tablet: Chrome de Android no pinta un PDF dentro de un
+   * `<iframe>` (sale en blanco o lo descarga) y el iPad sólo muestra bien la
+   * primera página. Una imagen por página se ve igual en todos. La app las pide
+   * al servicio (`GET /pdf_form/view/{name}/pages`); el widget no las pinta.
+   */
+  documentPages?: string[] | null
   /** A sentence with an owner when the document could not be loaded. */
   documentError?: string | null
   orderNumber?: number | null
@@ -67,6 +77,19 @@ const props = withDefaults(defineProps<{
    * El widget no decide cuál es: la app lo sabe y lo dice.
    */
   density?: 'escritorio' | 'tablet'
+  /**
+   * CÓMO SE RECORRE.
+   *
+   * `continuous` (por omisión) — todo en una sola pantalla: documento, quién
+   * firma, datos y firma, uno debajo del otro.
+   *
+   * `steps` — un paso por pantalla, para una tablet que se le entrega al
+   * paciente: leer el documento → quién firma → datos y declaraciones → firmar.
+   * Cada paso ocupa todo el alto que la app le dé, y no se avanza sin
+   * responder lo que el paso pide. Los pasos que el formulario no tiene se
+   * saltan solos. La app le da al widget el alto de la pantalla.
+   */
+  layout?: 'continuous' | 'steps'
 }>(), {
   documentError: null,
   orderNumber: null,
@@ -79,6 +102,8 @@ const props = withDefaults(defineProps<{
   declinable: true,
   title: 'Firma del consentimiento',
   density: 'escritorio',
+  documentPages: null,
+  layout: 'continuous',
 })
 
 const esTablet = computed(() => props.density === 'tablet')
@@ -176,14 +201,81 @@ const quienFirmaSinResponder = computed(
   () => props.form.allowsLegalRepresentative && quienFirma.value === null,
 )
 
+// El documento está listo si llegó como PDF o como páginas.
+const documentReady = computed(() => !!props.documentUrl || (props.documentPages?.length ?? 0) > 0)
+
 const canSign = computed(() =>
   hasInk.value
   && !props.submitting
-  && !!props.documentUrl
+  && documentReady.value
   && !quienFirmaSinResponder.value
   && !representativeIncomplete.value
   && !missingRequiredText.value,
 )
+
+// ── Paso a paso (`layout: 'steps'`) ─────────────────────────────────────────
+type Step = 'document' | 'signer' | 'details' | 'signature'
+
+const STEP_TITLE: Record<Step, string> = {
+  document: 'Lea el documento',
+  signer: '¿Quién firma?',
+  details: 'Datos y autorizaciones',
+  signature: 'Firma',
+}
+
+const isStepped = computed(() => props.layout === 'steps')
+
+const hasDetails = computed(() =>
+  props.form.requiresExpeditionCity
+  || props.form.requiresEntityServed
+  || (props.form.requiresPatientExpeditionCity && representativeSigns.value)
+  || props.form.hasSampleConservationChoice
+  || props.form.hasMicroscopicImagesChoice,
+)
+
+// Sólo los pasos que este formulario tiene. La lista puede cambiar en vivo:
+// elegir «representante» puede agregar el paso de datos (la ciudad del paciente).
+const steps = computed<Step[]>(() => {
+  const list: Step[] = ['document']
+  if (props.form.allowsLegalRepresentative) list.push('signer')
+  if (hasDetails.value) list.push('details')
+  list.push('signature')
+  return list
+})
+
+const stepIndex = ref(0)
+const currentStep = computed<Step>(() => steps.value[Math.min(stepIndex.value, steps.value.length - 1)]!)
+const isLastStep = computed(() => currentStep.value === 'signature')
+
+/** En `continuous` se ve todo; en `steps`, sólo el paso actual. */
+const isShown = (step: Step): boolean => !isStepped.value || currentStep.value === step
+
+// No se avanza sin responder lo que el paso pide: es la misma regla que bloquea
+// «Guardar firma», adelantada al paso donde se responde.
+const canAdvance = computed(() => {
+  switch (currentStep.value) {
+    case 'document': return documentReady.value
+    case 'signer': return !quienFirmaSinResponder.value && !representativeIncomplete.value
+    case 'details': return !missingRequiredText.value
+    default: return false
+  }
+})
+
+function advance() {
+  if (canAdvance.value && !isLastStep.value) stepIndex.value += 1
+}
+
+function goBack() {
+  if (stepIndex.value > 0) stepIndex.value -= 1
+}
+
+// En `steps` la firma tiene toda la pantalla para ella: el área crece con el alto
+// de la ventana en vez de quedarse en 260 px.
+const steppedSignatureHeight = ref(320)
+onMounted(() => {
+  steppedSignatureHeight.value = Math.max(260, Math.round(window.innerHeight * 0.5))
+})
+const signatureHeight = computed(() => (isStepped.value ? steppedSignatureHeight.value : esTablet.value ? 260 : 200))
 
 function onInk(value: boolean) {
   hasInk.value = value
@@ -237,9 +329,10 @@ function submit() {
 <template>
   <section
     class="flex flex-col"
-    :class="esTablet
-      ? 'min-h-0 flex-1 gap-5'
-      : 'gap-4 rounded-lg border border-border bg-card p-4'"
+    :class="[
+      esTablet ? 'min-h-0 flex-1 gap-5' : 'gap-4 rounded-lg border border-border bg-card p-4',
+      isStepped && 'h-full',
+    ]"
     :aria-busy="submitting"
   >
     <!-- Header: what is being signed, by whom -->
@@ -264,13 +357,45 @@ function submit() {
       </dl>
     </header>
 
+    <!-- En `steps`: dónde va, para que el paciente sepa cuánto falta. -->
+    <div v-if="isStepped" class="flex flex-wrap items-center justify-between gap-2" aria-live="polite">
+      <p class="text-base text-muted-foreground">
+        Paso {{ steps.indexOf(currentStep) + 1 }} de {{ steps.length }} ·
+        <span class="font-medium text-foreground">{{ STEP_TITLE[currentStep] }}</span>
+      </p>
+      <div class="flex gap-1.5" aria-hidden="true">
+        <span
+          v-for="step in steps"
+          :key="step"
+          class="h-2 w-8 rounded-full"
+          :class="steps.indexOf(step) <= steps.indexOf(currentStep) ? 'bg-primary' : 'bg-muted'"
+        />
+      </div>
+    </div>
+
     <!-- The document: read before signing -->
     <div
+      v-show="isShown('document')"
       class="overflow-hidden rounded-md border border-border bg-background"
-      :class="esTablet && 'flex min-h-0 flex-[3]'"
+      :class="[
+        esTablet && !isStepped && 'flex min-h-0 flex-[3]',
+        isStepped && 'min-h-0 flex-1',
+        documentPages?.length && 'overflow-y-auto',
+      ]"
     >
+      <!-- Las páginas como imágenes: se ven en cualquier tablet y se recorren con
+           el dedo. Fondo blanco fijo: es papel, también en modo oscuro. -->
+      <div v-if="documentPages?.length" class="flex flex-col gap-3 bg-muted p-3">
+        <img
+          v-for="(page, i) in documentPages"
+          :key="i"
+          :src="page"
+          :alt="`Página ${i + 1} de ${documentPages.length} del documento`"
+          class="w-full rounded-sm bg-white shadow-sm"
+        >
+      </div>
       <iframe
-        v-if="documentUrl"
+        v-else-if="documentUrl"
         :src="documentUrl"
         title="Documento de consentimiento"
         class="w-full"
@@ -291,7 +416,7 @@ function submit() {
          Pregunta con dos opciones y SIN opción marcada, calcada de la app vieja:
          mientras no se responda, el botón de firmar está deshabilitado. Un
          checkbox desmarcado —lo que había antes— es una respuesta que nadie dio. -->
-    <div v-if="form.allowsLegalRepresentative" class="flex flex-col gap-3">
+    <div v-if="form.allowsLegalRepresentative" v-show="isShown('signer')" class="flex flex-col gap-3">
       <fieldset class="flex flex-col gap-2">
         <legend class="text-sm font-medium text-foreground">
           ¿Quién firma este consentimiento?
@@ -305,10 +430,13 @@ function submit() {
             type="button"
             :disabled="submitting"
             :aria-pressed="quienFirma === opcion.value"
-            class="min-h-11 rounded-md border px-4 py-2 text-sm transition-colors disabled:opacity-50"
-            :class="quienFirma === opcion.value
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-input bg-background text-foreground hover:bg-accent'"
+            class="rounded-md border px-4 py-2 transition-colors disabled:opacity-50"
+            :class="[
+              esTablet ? 'min-h-14 px-6 text-lg' : 'min-h-11 text-sm',
+              quienFirma === opcion.value
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-input bg-background text-foreground hover:bg-accent',
+            ]"
             @click="quienFirma = opcion.value"
           >
             {{ opcion.label }}
@@ -321,7 +449,7 @@ function submit() {
       <div v-if="representativeSigns" class="grid gap-3 sm:grid-cols-3">
         <div class="flex flex-col gap-1.5 sm:col-span-3">
           <Label for="consent-rep-name">Nombre del representante</Label>
-          <Input id="consent-rep-name" v-model="representativeName" class="uppercase" autocomplete="off" :disabled="submitting" />
+          <Input id="consent-rep-name" v-model="representativeName" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
         </div>
         <div class="flex flex-col gap-1.5">
           <Label for="consent-rep-id-type">Tipo de documento</Label>
@@ -340,7 +468,7 @@ function submit() {
           <Label for="consent-rep-id">Número de documento</Label>
           <Input
             id="consent-rep-id"
-            v-model="representativeIdNumber"
+            v-model="representativeIdNumber" :class="esTablet && 'h-12 text-lg'"
             inputmode="numeric"
             autocomplete="off"
             :disabled="submitting"
@@ -353,13 +481,14 @@ function submit() {
          representante: hay formularios sin representante que igual piden ciudad. -->
     <div
       v-if="form.requiresExpeditionCity || form.requiresPatientExpeditionCity || form.requiresEntityServed"
+      v-show="isShown('details')"
       class="flex flex-col gap-3"
     >
       <div v-if="form.requiresExpeditionCity" class="flex flex-col gap-1.5 sm:max-w-xs">
         <Label for="consent-expedition">
           {{ representativeSigns ? 'Ciudad de expedición del documento del representante' : 'Ciudad de expedición del documento' }}
         </Label>
-        <Input id="consent-expedition" v-model="expeditionCity" class="uppercase" autocomplete="off" :disabled="submitting" />
+        <Input id="consent-expedition" v-model="expeditionCity" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
       </div>
       <div
         v-if="form.requiresPatientExpeditionCity && representativeSigns"
@@ -368,7 +497,7 @@ function submit() {
         <Label for="consent-patient-expedition">Ciudad de expedición del documento del paciente</Label>
         <Input
           id="consent-patient-expedition"
-          v-model="patientExpeditionCity"
+          v-model="patientExpeditionCity" :class="esTablet && 'h-12 text-lg'"
           class="uppercase"
           autocomplete="off"
           :disabled="submitting"
@@ -376,18 +505,22 @@ function submit() {
       </div>
       <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
         <Label for="consent-entity">Entidad</Label>
-        <Input id="consent-entity" v-model="entidadEscrita" class="uppercase" autocomplete="off" :disabled="submitting" />
+        <Input id="consent-entity" v-model="entidadEscrita" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
       </div>
     </div>
 
     <!-- Declarations some forms print -->
-    <div v-if="form.hasSampleConservationChoice || form.hasMicroscopicImagesChoice" class="flex flex-col gap-2">
+    <div
+      v-if="form.hasSampleConservationChoice || form.hasMicroscopicImagesChoice"
+      v-show="isShown('details')"
+      class="flex flex-col gap-2"
+    >
       <div v-if="form.hasSampleConservationChoice" class="flex items-center gap-2">
         <Checkbox
           id="consent-conserve"
           v-model="conserveSamples"
           :disabled="submitting"
-          
+
         />
         <Label for="consent-conserve">Autorizo la conservación de mis muestras biológicas</Label>
       </div>
@@ -396,14 +529,19 @@ function submit() {
           id="consent-images"
           v-model="microscopicImages"
           :disabled="submitting"
-          
+
         />
         <Label for="consent-images">Autorizo el uso de imágenes microscópicas con fines académicos</Label>
       </div>
     </div>
 
     <!-- The pad -->
-    <div class="flex flex-col gap-2" :class="esTablet && 'min-h-[180px] flex-[2]'">
+    <!-- v-show y no v-if: al volver atrás y adelante el trazo sigue ahí. -->
+    <div
+      v-show="isShown('signature')"
+      class="flex flex-col gap-2"
+      :class="esTablet && !isStepped && 'min-h-[180px] flex-[2]'"
+    >
       <div class="flex items-center justify-between">
         <Label :class="esTablet && 'text-lg'">
           Firma {{ representativeSigns ? 'del representante legal' : 'del paciente' }}
@@ -422,7 +560,7 @@ function submit() {
       <SignaturePad
         ref="pad"
         :disabled="submitting"
-        :height="esTablet ? 260 : 200"
+        :height="signatureHeight"
         @change="onInk"
       />
       <p v-if="form.requiresBacteriologist && bacteriologist" class="text-xs text-muted-foreground">
@@ -434,11 +572,21 @@ function submit() {
       <AlertCircle class="size-4 shrink-0" aria-hidden="true" />
       <span>{{ error }}</span>
     </p>
-    <p v-else-if="representativeIncomplete" class="text-xs text-muted-foreground">
+    <p v-else-if="representativeIncomplete && isShown('signer')" class="text-xs text-muted-foreground">
       Completa el nombre y el documento del representante para poder firmar.
     </p>
 
-    <footer class="flex flex-wrap items-center justify-end gap-3">
+    <footer class="flex flex-wrap items-center justify-end gap-3" :class="isStepped && 'mt-auto'">
+      <Button
+        v-if="isStepped && steps.indexOf(currentStep) > 0"
+        variant="outline"
+        class="mr-auto h-14 px-6 text-lg"
+        :disabled="submitting"
+        @click="goBack"
+      >
+        <ArrowLeft class="mr-1 size-5" aria-hidden="true" />
+        Atrás
+      </Button>
       <Button
         v-if="declinable"
         variant="outline"
@@ -448,7 +596,16 @@ function submit() {
       >
         No firma
       </Button>
-      <Button :class="esTablet && 'h-14 px-8 text-lg'" :disabled="!canSign" @click="submit">
+      <Button
+        v-if="isStepped && !isLastStep"
+        class="h-14 px-8 text-lg"
+        :disabled="!canAdvance"
+        @click="advance"
+      >
+        {{ currentStep === 'document' ? 'Ya lo leí' : 'Siguiente' }}
+        <ArrowRight class="ml-1 size-5" aria-hidden="true" />
+      </Button>
+      <Button v-else :class="esTablet && 'h-14 px-8 text-lg'" :disabled="!canSign" @click="submit">
         <Loader2 v-if="submitting" class="mr-1 size-4 animate-spin" aria-hidden="true" />
         {{ submitting ? 'Guardando…' : 'Guardar firma' }}
       </Button>

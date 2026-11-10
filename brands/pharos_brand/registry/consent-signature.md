@@ -46,6 +46,7 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 | `form` | `ConsentFormDescriptor` | — | **required**; la app lo resuelve del catálogo del servicio (`/pdf_forms`, `/pdf_forms/by_order`). Decide qué controles aparecen: representante legal (los 13 formularios de banco), bacteriólogo, declaraciones |
 | `subject` | `ConsentSubject` | — | **required**; tipo y número de documento (PHI — se enmascaran según `revealed`), nombre y ciudad de expedición si la app los tiene |
 | `documentUrl` | `string \| null` | — | **required**; el PDF en blanco como URL que el navegador pueda pintar (blob/object URL que la app construyó desde `GET /pdf_form/view/{name}`). `null` = cargando: no se puede firmar lo que no se ha leído |
+| `documentPages` | `string[] \| null` | `null` | las páginas del documento como **imágenes** (data o blob URLs). Si vienen, se muestran en lugar del `<iframe>`. Existe por la tablet: Chrome de Android no pinta un PDF dentro de la página y el iPad sólo muestra bien la primera. La app las pide a `GET /pdf_form/view/{name}/pages` (PNG en grises, base64) |
 | `documentError` | `string \| null` | `null` | UNA frase con dueño si el documento no cargó |
 | `orderNumber` | `number \| null` | `null` | la orden del episodio (banco); viaja como `order_number` |
 | `entityServed` | `string \| null` | `null` | pre-llena `entity_served` |
@@ -57,6 +58,21 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 | `declinable` | `boolean` | `true` | muestra «No firma»; la app responde el emit registrando el `declined` |
 | `title` | `string` | `'Firma del consentimiento'` | encabezado |
 | `density` | `'escritorio' \| 'tablet'` | `'escritorio'` | **a qué distancia se mira la superficie.** `escritorio` = un empleado sentado, con ratón, dentro de una app con barra lateral (lab-qc, Admisiones). `tablet` = un dispositivo que se le **entrega** a un paciente: de pie, con el dedo, a veces con una sola mano (consent-kiosk) |
+
+| `layout` | `'continuous' \| 'steps'` | `'continuous'` | **cómo se recorre.** `continuous` = todo en una pantalla. `steps` = un paso por pantalla: leer el documento → quién firma → datos y autorizaciones → firma. Ver abajo |
+
+### `layout: 'steps'` — una cosa a la vez, a pantalla completa
+
+- Los pasos que el formulario no tiene **se saltan solos** (sin representante no hay
+  «¿Quién firma?»; sin ciudades, entidad ni declaraciones no hay «Datos»). La lista se
+  recalcula en vivo: elegir «representante» puede agregar el paso de datos.
+- **No se avanza sin responder** lo que el paso pide: es la misma regla que bloquea
+  «Guardar firma», adelantada al paso donde se responde.
+- El área de firma crece con la pantalla (la mitad del alto de la ventana, piso 260 px).
+- Los pasos se ocultan con `v-show`, no con `v-if`: al volver atrás y adelante **el
+  trazo sigue ahí**. Por eso `SignaturePad` no se redimensiona mientras mide 0 de ancho.
+- La app le da el alto: el widget llena el contenedor (`h-full`). En lab-qc va dentro
+  de un diálogo a pantalla completa.
 
 ### `density: 'tablet'` — qué cambia, y por qué no es cosmético
 
