@@ -1,0 +1,53 @@
+# Reusable: ninguna dependencia de npm se declara con una etiqueta («latest», «next», «*»).
+#
+# Por qué existe: una etiqueta no es una versión. El lockfile la sostiene hasta que alguien
+# corre `pnpm add` o lo reescribe; ahí el gestor resuelve «la más nueva de hoy» y puede
+# subir una versión MAYOR sin que nadie lo pida. La plantilla inicial de Nuxt trae
+# `"vue": "latest"` y `"vue-router": "latest"`, así que toda app que nace de ella hereda la
+# trampa. La regla y el porqué: ENGINEERING_STANDARDS.md § Frontend.
+#
+# Nace en MODO AVISO con fecha de promoción (RFC 0029): hasta el 2026-11-30 solo anota en
+# el PR; desde esa fecha cada caller pasa `enforce: true` y el check se marca obligatorio.
+#
+# Runner: los repos privados usan el pool self-hosted (por defecto); un caller PÚBLICO tiene
+# que pasar runner '["ubuntu-latest"]' o se queda en cola.
+
+name: npm-version-tags-check
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check when a dependency uses a dist-tag (required-check mode)
+        type: boolean
+        required: false
+        default: false
+
+# Sin bloque `permissions:` a propósito (trampa del AGENTS.md de este repo): solo necesita
+# `contents: read`, que concede el caller en su job.
+
+jobs:
+  npm-version-tags-check:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - uses: actions/checkout@v7
+      # Dentro del propio .github el script se toma del checkout del PR: tomado de `main`,
+      # el PR que lo introduce (o lo cambia) se mediría con la versión vieja.
+      - uses: actions/checkout@v7
+        if: github.repository != 'Interval-Col/.github'
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .npm-tags-org
+      - name: dependencias sin etiquetas
+        env:
+          ENFORCE: ${{ inputs.enforce }}
+        run: |
+          S=.npm-tags-org/scripts/npm_version_tags_check.py
+          [ "$GITHUB_REPOSITORY" = "Interval-Col/.github" ] && S=scripts/npm_version_tags_check.py
+          python3 "$S" . $([ "$ENFORCE" = "true" ] && echo --enforce)

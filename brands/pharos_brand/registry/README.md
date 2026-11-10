@@ -25,6 +25,8 @@ package (RFC 0008 Q3).
 | `scripts/check-no-hex-colors.mjs` | CI gate: no hardcoded hex literals outside `app/assets/css/`. Escape hatch: `lint-allow-hex` comment or per-file ALLOWLIST. |
 | `scripts/check-no-palette-colors.mjs` | CI gate: no raw Tailwind palette utilities (`text-green-600`, `bg-amber-100`, etc.) outside `app/components/ui/`. Escape hatch: `lint-allow-palette`. |
 | `app/components/ViewVerification.vue` + `ViewVerificationMark.vue` + `app/lib/verification.ts` | La marca de **«vista en verificación»** (`PROT-SW-001`). Ver la sección propia abajo. |
+| `app/components/ui/mapa-base/` + `app/lib/mapa.ts` | **MapaBase**, el único renderizador de mapas (RFC 0043 R1): MapLibre 6 por npm, nada de terceros, coropletas/calor/puntos desde tokens y la tabla R4 siempre presente. Ver [`mapa-base.md`](mapa-base.md). |
+| `app/spa-loading-template.html` | El **splash de carga** de toda app `ssr:false`: Nuxt 4 lo pinta en el HTML antes de que cargue cualquier JS y lo quita solo cuando la app está lista. El logo real (proporciones de `AppLogo` navbar) con la luz piloto como **faro**: un cono de luz que gira en 3D y destella cuando te enfrenta, y abajo el mar de `SystemOcean` con su barquito. Trae un **vigilante**: si a los 10 s la app no llegó, lo dice y ofrece «Reintentar». Autocontenido (tokens de marca + colores de sistema, sin hex), así que no depende de las clases `.dark` / `.theme-*`. Ajustable por variables `--ps-*` (vuelta, profundidad, suavidad, colores; `data-sea="off"` quita el mar). Se adopta con `sync-pharos-registry.sh --add spa-loading-template.html`; a partir de ahí viaja **verbatim**. |
 | `app/verification.manifest.ts` | **Semilla del manifiesto por app** — lleva `pharos-registry:keep`, así que aterriza una vez y después es de la app. |
 | `scripts/check-view-verification.mjs` | CI gate: manifiesto y pantalla no pueden separarse. 8 chequeos; el 6 (caducidad) rompe el build. |
 | `scripts/check-token-drift.mjs` | CI gate (Layer-D): synced `pharos-tokens.css` matches the registry SHA256 — catches stale copy-ins. |
@@ -153,6 +155,8 @@ salida impresa/PDF.
 | **Pacientes** | admission-patient | `.theme-recepcion` | `#ff3d63` / `#ff6b85` (rosa funcional — pastel `#FFE0E6` solo como `--brand-wash`) |
 | **Clientes** | commercial-lch | `.theme-clientes` | `#e37600` / `#f59e3c` (ámbar funcional — pastel `#FFB86B` solo como `--brand-wash`) |
 | **Tecnología** (provisional, RFC 0004 rev. 2026-07-03) | pharos-ti (TI · plataforma) | `.theme-ti` | `#002A52` / `#7FB0E6` (navy profundo) |
+| **Documentos** (aprobado 2026-10-28, design-studio#100) | pharos-documentacion (control documental) | `.theme-documentos` | `#5B3F8C` / `#B79CE8` (violeta) |
+| **Analítica** (elegido 2026-11-02, RFC 0042) | pharos-analitica (inteligencia de negocio) | `.theme-analitica` | `#3F5212` / `#B5CF6B` (oliva) |
 
   Default/neutral (no class) = LCH Navy `#003A70` (the family-neutral / Archivo).
 

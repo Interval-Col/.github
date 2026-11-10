@@ -32,26 +32,68 @@ This document defines the official engineering standards for all primary project
 - Apps with a self-serve roles/capabilities module follow the **[auth contract](auth-contract.md)** (RFC 0016): local authz (IAM = identity only), the `require_capability` gate, the seven `/auth/admin/*` endpoints, deploy-step seeding (never on startup), a runtime role registry, and FE↔BE capability sync — machine-checked by the reusable `auth-contract-check` workflow.
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
-- Nuxt 4 as framework — **SSR by default**. Opt a route out with
-  **`routeRules`**, not `definePageMeta`:
+- Nuxt 4 as framework. **The rendering mode depends on who the app is for:**
+  - **Internal Pháros apps** (staff-only, behind the SSO, no SEO surface) **render
+    client-side as a whole** — a SPA:
 
-  ```ts
-  routeRules: { '/etiquetas': { ssr: false } }
-  ```
+    ```ts
+    routeRules: { '/**': { ssr: false } }
+    ```
+
+    Their pages are auth-gated and load their data client-side, so SSR would only
+    render an empty skeleton, add hydration risk, and leave nothing to show while
+    the session resolves. A SPA can: it **adopts the registry's loading splash**
+    (`brands/pharos_brand/registry/app/spa-loading-template.html`, synced with
+    `sync-pharos-registry.sh --add spa-loading-template.html`), which Nuxt paints
+    before any JS loads and removes on mount. Nuxt only uses that template when
+    the app is client-rendered — under SSR it is silently ignored.
+    Reference implementation: `finance-lch/frontend/nuxt.config.ts`.
+  - **Public and patient-facing surfaces** (`public-web`, RFC 0014) keep **SSR by
+    default**. Opt a single route out with `routeRules`:
+
+    ```ts
+    routeRules: { '/etiquetas': { ssr: false } }
+    ```
 
   ⚠️ **`definePageMeta({ ssr: false })` does nothing in Nuxt 4** — `ssr` is not
   a `definePageMeta` key. A page "opted out" that way still renders on the
-  server. `routeRules` is the Nuxt-native per-route mechanism and the one both
-  live apps use.
+  server. `routeRules` is the Nuxt-native mechanism, per route or for `/**`.
 
-  Opt out when the route is auth-gated **and** loads its data client-side, so
-  SSR would only render an empty skeleton and add hydration risk. A whole app
-  may render client-side when it is internal-only with no SEO surface —
-  finance-lch does exactly that (`'/**': { ssr: false }`), deliberately.
-  Reference implementations: `finance-lch/frontend/nuxt.config.ts` (whole app)
-  and `pharos-lis/lab-qc/frontend/nuxt.config.ts` (single route).
+  Either way, shared code stays SSR-safe (`import.meta.client` /
+  `import.meta.server`, never `typeof window`): a SPA's server still runs Nitro.
 - Vue 3, Vite, Pinia, Tailwind v4, TypeScript
 - Pin Node version in `package.json` and/or `.nvmrc`
+- **Dependencies declare a version range, never a dist-tag.** `"vue": "^3.5.35"`, not
+  `"vue": "latest"` (nor `next`, `*` or `x`). A dist-tag is not a version: the lockfile
+  holds it only until someone runs `pnpm add` or the lockfile is rewritten, and then the
+  package manager resolves «the newest one today», a new **major** included, with nobody
+  having asked for it. The Nuxt starter template ships `"vue": "latest"` and
+  `"vue-router": "latest"`, so every app born from it inherits the trap.
+  - To fix it, write `^<the version the lockfile already installs>` and update the
+    lockfile's `specifier` to match. Nothing installed changes.
+  - CI installs with `pnpm install --frozen-lockfile`, so a `package.json` and a lockfile
+    that disagree fail the build instead of installing something else.
+  - Upgrading is a deliberate PR («sube Vue a …»), never a side effect of adding another
+    package.
+  - Measured by the reusable `npm-version-tags-check` (`scripts/npm_version_tags_check.py`).
+    It runs in warning mode until **2026-11-30**; from that date each caller passes
+    `enforce: true` and it becomes a required check. `peerDependencies` are exempt, because
+    a library may accept `*`.
+- **A deployable web app is Nuxt, and loads nothing from a third party at runtime.** A
+  hand-written HTML page served as the app is not the standard, however small: it skips the
+  registry tokens, the shared components and the build that pins every dependency. Scripts,
+  stylesheets and fonts come from the app's own origin (bundled by the build or served by its
+  own backend), never from a CDN URL that no lockfile pins and no review sees.
+  - Measured by the reusable `web-app-conformance` (`scripts/web_app_conformance.py`): a
+    tracked `nuxt.config.*` exists in a folder named `frontend`, each `app/main.py` sits under a
+    folder named `backend` (at the root or nested in a monorepo), and no `.html`, `.vue` or
+    `nuxt.config.*` references an absolute `http(s)://` script, stylesheet or font. `docs/` is skipped; a line with
+    `conformance-allow: <reason>` is skipped; a caller passes `ignore` for paths that are not
+    served. Warning mode until **2026-12-31**; from that date each caller passes
+    `enforce: true` and it becomes a required check.
+  - The rules that bind a Pháros app come from what the app *is*, not only from the RFCs
+    whose `target-repos` happen to name its repo: a repo born after those RFCs inherits none
+    of them unless its `AGENTS.md` lists them.
 - `.env.example` in `frontend/`
 - Directory structure:
   ```
