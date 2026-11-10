@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Escanear el texto y avisar
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             // Las reglas viven acá y NO en el .gitleaks.toml a propósito: gitleaks
