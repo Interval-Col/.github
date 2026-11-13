@@ -411,6 +411,18 @@ export function trendSummary(input: {
    * has no business parsing domain prose.
    */
   labelSuffix?: string
+  /**
+   * How many readings the points STAND FOR, when the caller condensed them
+   * before passing them in (pharos-lis, issue 292).
+   *
+   * Condensing to fit a narrow cell is a decision about pixels: 14 weekly
+   * periods drawn as 7 marks. Counted from the points alone, the sentence then
+   * says «7 mediciones» — and a screen-reader user, who has no axis or tooltip
+   * to correct it, is told half the data. Only the caller knows the real count,
+   * so it passes it here and the sentence says both. Ignored unless it is MORE
+   * than the readings drawn; omit it when the points are not condensed.
+   */
+  readings?: number | null
 }): string {
   const { label, bounds, unit } = input
   const fmt = input.formatValue ?? String
@@ -437,7 +449,10 @@ export function trendSummary(input: {
   // readings over six months and six over six years are different clinical
   // pictures; naming the span is what keeps the sentence from implying the
   // wrong one.
-  const count = n === 1 ? '1 medición' : `${n} mediciones`
+  const marks = n === 1 ? '1 marca' : `${n} marcas`
+  const count = input.readings != null && input.readings > n
+    ? `${input.readings} mediciones, agrupadas en ${marks}`
+    : n === 1 ? '1 medición' : `${n} mediciones`
   const spanText = n > 1 ? ` a lo largo de ${elapsedText(first.at, last.at)}` : ''
 
   const latest = last.censoring
