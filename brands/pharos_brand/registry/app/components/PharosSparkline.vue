@@ -107,6 +107,10 @@ const props = withDefaults(defineProps<{
   /** App-owned facts appended to the spoken label — what the standard cannot
    *  know it drew. See `trendSummary`. */
   labelSuffix?: string
+  /** The real number of readings, when the app condensed `points` before
+   *  passing them (14 periods drawn as 7 marks). Without it the spoken label
+   *  counts the marks, not the data. See `trendSummary`. */
+  readings?: number | null
 }>(), {
   points: () => [],
   bounds: null,
@@ -121,6 +125,7 @@ const props = withDefaults(defineProps<{
   interactive: false,
   formatValue: undefined,
   labelSuffix: '',
+  readings: null,
 })
 
 const emit = defineEmits<{ select: [] }>()
@@ -161,6 +166,7 @@ const summary = computed(() =>
     unit: props.unit,
     formatValue: props.formatValue,
     labelSuffix: props.labelSuffix,
+    readings: props.readings,
   }),
 )
 
