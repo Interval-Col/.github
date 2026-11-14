@@ -6,7 +6,7 @@ muestras (bacteriólogo + paciente, por orden) y el kiosco de tablet
 (`consent-kiosk`, `document-signing/kiosk/`). Muestra el documento, captura la
 firma —del paciente o de su **representante legal**, con sus datos— y las
 declaraciones que el formulario imprime (conservación de muestras, imágenes
-microscópicas), y **emite el cuerpo canónico de 13 campos** de
+microscópicas, y las preguntas sí/no que dicta el catálogo), y **emite el cuerpo canónico (13 campos + `declarations`)** de
 `POST /pdf_form/fill/{id}` del servicio compartido `api-document-signature`.
 Nació de las dos implementaciones vivas (`informed-consent-nuxt`, 6 campos;
 `sample-take-nuxt`, 13) tomando de cada una lo que la otra no tenía, para que
@@ -25,7 +25,7 @@ produjeron consentimientos sin episodio).
 |---|---|---|
 | `ConsentSignature` | `app/components/ui/consent-signature/ConsentSignature.vue` | encabezado (formulario, paciente, orden), documento en `<iframe>`, firmante (paciente / representante legal con nombre, tipo y número de documento; ciudad de expedición), declaraciones por formulario, pad, nota del bacteriólogo, estados cargando / error / enviando, «No firma» |
 | `SignaturePad` | `app/components/ui/consent-signature/SignaturePad.vue` | `<canvas>` con pointer events, DPR-aware; `clear()`, `isEmpty()`, `toPngBase64()` (**sin prefijo data-URL** — el servicio hace `b64decode` tal cual) |
-| tipos | `app/components/ui/consent-signature/types.ts` | `ConsentFormDescriptor`, `ConsentSubject`, `ConsentBacteriologist`, **`ConsentSignaturePayload`** (los 13 campos), `IDENTIFICATION_TYPES` |
+| tipos | `app/components/ui/consent-signature/types.ts` | `ConsentFormDescriptor`, `ConsentDeclaration`, `ConsentSubject`, `ConsentBacteriologist`, **`ConsentSignaturePayload`** (13 campos + `declarations`), `IDENTIFICATION_TYPES` |
 | barrel | `app/components/ui/consent-signature/index.ts` | exporta componentes + tipos |
 
 **Deps (per adopting app):** ninguna nueva — `lucide-vue-next` y los primitivos
@@ -58,6 +58,20 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 | `title` | `string` | `'Firma del consentimiento'` | encabezado |
 | `density` | `'escritorio' \| 'tablet'` | `'escritorio'` | **a qué distancia se mira la superficie.** `escritorio` = un empleado sentado, con ratón, dentro de una app con barra lateral (lab-qc, Admisiones). `tablet` = un dispositivo que se le **entrega** a un paciente: de pie, con el dedo, a veces con una sola mano (consent-kiosk) |
 
+### Declaraciones dictadas por el catálogo (`form.declarations`)
+
+Un formulario puede traer `declarations: { key, label }[]`: preguntas **sí/no
+genéricas** cuyo texto lo escribe el dueño del catálogo, no el widget — **el
+widget no carga redacción legal**. Cada una se pinta como un par **Sí / No sin
+opción marcada**, y mientras alguna siga sin respuesta el botón de firmar está
+deshabilitado (un «No» por omisión sería una respuesta que nadie dio). Las
+respuestas viajan en `declarations: Record<string, boolean>` por llave; sin
+declaraciones el campo va `null`. Es **opcional y aditivo**: un descriptor sin
+`declarations` se comporta como antes, y las dos casillas fijas
+(`hasSampleConservationChoice`, `hasMicroscopicImagesChoice`) siguen igual.
+La app resuelve `declarations` del catálogo del servicio y reenvía el campo en
+el `fill`.
+
 ### `density: 'tablet'` — qué cambia, y por qué no es cosmético
 
 - **El área de firma manda sobre el documento** (`flex-[2]` con piso de 180 px,
@@ -80,7 +94,7 @@ El widget no adivina cuál es: la app lo sabe y lo declara.
 | `sign` | `ConsentSignaturePayload` | `POST /pdf_form/fill/{form.id}` con el token de la persona (+ `signing_request_id` si viene de una solicitud); el servicio guarda el PDF, registra el `signing_event` (SHA-256) y cierra la solicitud |
 | `decline` | — | `POST /signing_requests/{id}/decline`: un rechazo es un resultado de primera clase, no una ausencia |
 
-**El cuerpo emitido es el ÚNICO contrato.** Trece campos, `snake_case`, tal como
+**El cuerpo emitido es el ÚNICO contrato.** Los trece campos de siempre más `declarations` (opcional, `null` si el formulario no declara ninguna), `snake_case`, tal como
 `PDFFormDataSchema` del servicio; `signature_image` y
 `legal_representative_signature` en PNG base64 sin prefijo. Cuando firma el
 representante, el mismo trazo va en ambos campos (contrato heredado de
