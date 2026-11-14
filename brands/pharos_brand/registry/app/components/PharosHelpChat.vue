@@ -113,9 +113,9 @@ const props = withDefaults(defineProps<{
   privacyTitle?: string
   /** Cuerpo del aviso. Por defecto, el de siempre.
    *
-   *  🔑 Es un prop y no una constante porque **el trato cambia por superficie**: Nerea
-   *  trata de usted (`NEREA.md` §3) y Sol tutea (`SOL.md` §6, fallo del 2026-09-08). Un
-   *  texto cableado obliga a una de las dos a hablar como la otra. Y «cómo funciona la
+   *  🔑 Es un prop y no una constante porque **el encuadre cambia por superficie**: Nerea
+   *  y Sol tutean las dos (`NEREA.md` §3, `SOL.md` §6), pero no le hablan a la misma
+   *  persona ni de lo mismo. Y «cómo funciona la
    *  aplicación» es vocabulario de personal: en `lch.co` no hay ninguna aplicación, hay
    *  un laboratorio, y quien pregunta ES el paciente. */
   privacyBody?: string
@@ -140,8 +140,8 @@ const props = withDefaults(defineProps<{
    *  Se mezcla con los de abajo: lo que no se pase, se queda como está.
    *
    *  🔴 **Existe porque el trato NO es una preferencia de estilo: es canon de la
-   *  asistente.** Nerea trata de usted (`NEREA.md` §3) y Sol tutea (`SOL.md` §6). Estos
-   *  seis textos estaban cableados en usted, así que en `lch.co` un paciente leía «Intente
+   *  asistente.** Nerea y Sol tutean (`NEREA.md` §3, `SOL.md` §6). Estos seis textos
+   *  estaban cableados en usted, así que en `lch.co` un paciente leía «Intente
    *  más tarde» y «Solicítelo a su administrador» — que además es vocabulario de personal:
    *  un paciente no tiene administrador.
    *
@@ -149,15 +149,16 @@ const props = withDefaults(defineProps<{
    *  (`code >= 400 && code < 500`), y el camino más probable de una asistente apagada o
    *  con el proxy caído es **503** — justo donde no hay nada que pise el texto cableado.
    *
-   *  ⚠️ Es ADITIVO: sin el prop, los seis textos son byte por byte los de antes, así que
-   *  Nerea y Admisiones no se enteran. */
+   *  ⚠️ Es ADITIVO: lo que no se pase queda en el texto por defecto, que desde el
+   *  2026-11-13 también tutea (decisión de German). El prop sigue sirviendo para el
+   *  vocabulario de cada superficie: un paciente no tiene «administrador». */
   errorCopy?: Partial<Record<ClaveDeError, string>>
 }>(), {
   brandName: 'Pháros',
   title: 'Asistente de ayuda',
   starters: () => [],
   storageKey: 'pharos-help-chat-history',
-  placeholder: 'Escriba su pregunta…',
+  placeholder: 'Escribe tu pregunta…',
   trigger: 'floating',
   form: 'corner',
   assistantName: '',
@@ -168,7 +169,7 @@ const props = withDefaults(defineProps<{
   citations: true,
   assistantRole: '',
   privacyTitle: 'Sin datos de pacientes.',
-  privacyBody: 'No escriba nombres, documentos ni resultados. Pregunte por cómo funciona la aplicación.',
+  privacyBody: 'No escribas nombres, documentos ni resultados. Pregunta por cómo funciona la aplicación.',
   greeting: '',
   errorCopy: () => ({}),
 })
@@ -187,16 +188,16 @@ const isModal = computed(() => formMode.value === 'sheet')
 /** Panel heading: the assistant's name when it has one, else the generic title. */
 const heading = computed(() => props.assistantName || props.title)
 /** Greeting: the canonical micro-copy (NEREA.md §7) when named, else the brand fallback. */
-/** Los textos de error por defecto. En USTED a propósito: el consumidor histórico del
- *  registry es Nerea, que trata de usted. Una app cuya asistente tutea los sobreescribe
- *  con `errorCopy` — ver el docblock del prop. */
+/** Los textos de error por defecto. En «tú» desde el 2026-11-13 (decisión de German):
+ *  Nerea y Sol tutean, así que el respaldo también. Una app que necesite otro vocabulario
+ *  los sobreescribe con `errorCopy` — ver el docblock del prop. */
 const ERROR_POR_DEFECTO = {
-  limite: 'Ha alcanzado el límite de consultas. Intente más tarde.',
-  sesion: 'Su sesión expiró. Vuelva a iniciar sesión.',
-  permiso: 'No tiene permiso para usar el asistente. Solicítelo a su administrador.',
-  invalido: 'No pude procesar ese mensaje. Intente reformularlo.',
-  fallo: 'El asistente falló al responder. Intente más tarde.',
-  caido: 'Asistente no disponible. Intente más tarde.',
+  limite: 'Has alcanzado el límite de consultas. Intenta más tarde.',
+  sesion: 'Tu sesión expiró. Vuelve a iniciar sesión.',
+  permiso: 'No tienes permiso para usar el asistente. Solicítalo a tu administrador.',
+  invalido: 'No pude procesar ese mensaje. Intenta reformularlo.',
+  fallo: 'El asistente falló al responder. Intenta más tarde.',
+  caido: 'Asistente no disponible. Intenta más tarde.',
 } as const
 
 /** Un texto de error: el de la app si lo pasó, si no el del canon.
