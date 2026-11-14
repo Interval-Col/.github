@@ -23,6 +23,19 @@ export interface ConsentFormDescriptor {
   /** Extra declarations some forms print as checkboxes. */
   hasSampleConservationChoice: boolean
   hasMicroscopicImagesChoice: boolean
+  /** Yes/no questions the CATALOG dictates for this form (RFC 0030). The widget
+   *  renders whatever arrives, in order, and never carries legal wording of its
+   *  own: the labels are the catalog's. Absent or empty = none (the two fixed
+   *  choices above keep working as before). */
+  declarations?: ConsentDeclaration[]
+}
+
+/** One yes/no question declared by the catalog for a form. */
+export interface ConsentDeclaration {
+  /** Stable key; it is the key of the answer in `ConsentSignaturePayload.declarations`. */
+  key: string
+  /** The sentence the signer answers, written by the catalog's owner. */
+  label: string
 }
 
 /** Who is signing, already resolved by the app. PHI — mask via `revealed`. */
@@ -67,6 +80,12 @@ export interface ConsentSignaturePayload {
    *  un dato se volvía la afirmación «firmó el paciente». `null` sólo es válido
    *  en los formularios sin recuadro de representante. */
   signed_by: 'patient' | 'legal_representative' | null
+  /** Answers to the catalog-declared questions (`form.declarations`), by key.
+   *  Every declaration carries an EXPLICIT yes or no: there is no default, and
+   *  the widget does not let the signer continue while one is unanswered.
+   *  `null` (or absent) when the form declares none. Optional on purpose, so
+   *  older consumers of the 13-field body keep working. */
+  declarations?: Record<string, boolean> | null
 }
 
 export interface IdentificationTypeOption {
