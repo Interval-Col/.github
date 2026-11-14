@@ -241,7 +241,11 @@ function submit() {
     legal_representative_signature: representative ? image : '',
     // La respuesta viaja tal cual: en los formularios sin representante no hay
     // pregunta y va `null`, que es lo único que el servicio acepta ahí.
-    signed_by: props.form.allowsLegalRepresentative ? quienFirma.value : null,
+    // El servicio acepta 'patient' | 'legal_representative' (Literal): la opción
+    // interna 'representative' se traduce acá, o el representante daba 422.
+    signed_by: props.form.allowsLegalRepresentative
+      ? (quienFirma.value === 'representative' ? 'legal_representative' : quienFirma.value)
+      : null,
     // Un formulario sin declaraciones manda `null`; con ellas, una respuesta
     // explícita por llave (canSign ya garantiza que ninguna falta).
     declarations: declaraciones.value.length > 0
