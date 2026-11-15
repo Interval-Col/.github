@@ -51,6 +51,16 @@ const IGNORE_PATH_FRAGMENTS = [
 // Per-file allowlist — app-specific exceptions go here
 const ALLOWLIST = new Set([
   // app-specific exceptions go here
+  //
+  // Pháros LIS (lab-qc): a GENERATED fixture whose hex values are DATA, not design —
+  // the cap colours the public LCH test catalogue already publishes for each specimen
+  // container. They are not brand tokens and must not move to `main.css`: when the
+  // catalogue changes, the data changes and the file is regenerated
+  // (`scripts/generar-recipientes-descompuestos.py`). The allowlist covers the fixture,
+  // NOT the screens: a hand-written hex in a `.vue` is still an error.
+  // ⚠️ It lives HERE, not in the app's copy of this script: gate scripts are re-synced
+  // verbatim, so an exception added in the app is silently overwritten.
+  'app/lib/recipientes/descompuesto.ts',
 ])
 
 const SCAN_EXTS = new Set(['.vue', '.ts', '.js', '.mjs', '.css'])

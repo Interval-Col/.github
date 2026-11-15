@@ -99,28 +99,63 @@ operator-profile registry as it matures.)*
    - `start`/`target` feed the board's Start/Target date fields; `created`/
      `updated` are *doc* dates (written/edited), kept distinct from the schedule.
    - Blessed-optional keys: `rfc`, `parent`, `supersedes`, `superseded-by`,
-     `related`. **Retired:** `completed:` (use `status: done` + `updated:`)
+     `related`, `talla`.
+   - `talla` is the **change size of RFC 0040**: `S · M · L`, by how much the
+     change alters **what the person does**, not by how much code moves. It is
+     **not** `effort`, which sizes the work. A one-line change that reorders a
+     reception step is `talla: M` and `effort: XS`; a large migration nobody
+     notices is `talla: S` and `effort: XL`. Take it from the issue, where it is
+     estimated; if it changed while planning, say so in the plan. **Retired:** `completed:` (use `status: done` + `updated:`)
      and `tracking-issue:` (use `issue:`).
 2. Title, bilingual: `# <project name> · <Spanish equivalent>`.
 3. A top-level `> **Resumen (ES).** …` blockquote — 3–6 lines, the
    whole project in Spanish so a monolingual reader is oriented before
    the English.
 4. One short English context paragraph: what, why, urgency if any.
-5. `## How to use this plan · Cómo usar este plan` — **canonical text,
+5. `## Understanding · Entendimiento` — **the ficha of RFC 0040**, in plans
+   for a change of `talla` M or L. It goes **first**, before the canonical
+   blocks, because the rest of the plan comes out of it. When the change is
+   one phase of a larger outcome plan (RFC 0011), it goes at the top of that
+   phase. Four layers, **never mixed**:
+   1. **What the person says**: the request and the story, in their words.
+   2. **What the person does**: the steps as they happen, with the
+      repetitions, detours and back-tracking.
+   3. **Why we think it happens**: our reading, marked as inference.
+   4. **What we propose**: the improvements.
+
+   Then:
+   - who uses it: role, area and site. Staff names may appear, but **never
+     patients' names**;
+   - when it applies, their work system as a checklist: person, tasks,
+     tools (paper and shortcuts included), physical environment,
+     organization;
+   - what it costs today (time, errors, rework);
+   - **the measure**: a countable event of the process, with today's
+     value, or «no se mide» and why. It is fixed **before** building;
+   - the mode used (anamnesis or immersion) and why, the `talla` and its
+     reason, the date, and who validated the ficha.
+
+   🛑 **Layers 1 and 2 come from talking with the person, never from you.**
+   If the lead has not done that yet, leave the layers as placeholders,
+   say the plan is not ready to execute, and stop there. Never write what a
+   person «says» or «does» from the code or from a guess. No patient data,
+   ever: describe a screen, never paste one.
+
+6. `## How to use this plan · Cómo usar este plan` — **canonical text,
    copy verbatim from the template**. EN block + ES block. Includes the
    "English-blocks-you, ask your agent in Spanish" line.
-6. `## Conventions · Convenciones` — canonical markers table (verbatim).
-7. `## Working rules · Reglas de trabajo` — canonical block (verbatim,
+7. `## Conventions · Convenciones` — canonical markers table (verbatim).
+8. `## Working rules · Reglas de trabajo` — canonical block (verbatim,
    adjust only the language about commit-message-scope examples).
-8. `## Glossary · Glosario` — a small bilingual table of the
+9. `## Glossary · Glosario` — a small bilingual table of the
    English technical terms that recur throughout the plan and the
    Spanish equivalent + a one-line meaning. 5–12 entries, no more.
    Pick terms a Spanish-native reader will hit over and over and could
    plausibly stumble on (e.g. `compat shim`, `payload`, `Done-when`,
    `commit + push`, `slice`, `rollout`). Skip universal terms (`URL`,
    `JSON`, `git`).
-9. `## Out of scope · Fuera de alcance` — short ES intro + bullets.
-10. `## Phase N — <name>` — one heading per phase. Inside each phase:
+10. `## Out of scope · Fuera de alcance` — short ES intro + bullets.
+11. `## Phase N — <name>` — one heading per phase. Inside each phase:
     - `> **Resumen (ES).** …` blockquote. Two parts: (a) a 1–2 line
       Spanish statement of what the phase achieves, then (b) a
       numbered list with **one Spanish line per task** in the phase
@@ -138,10 +173,10 @@ operator-profile registry as it matures.)*
       criteria; bilingual gloss)
     - `🚦 **Checkpoint N.**` block on meaningful phase boundaries (not
       every phase; see "Checkpoints" below)
-11. `## Decisions · Decisiones` — collected `🛑 HUMAN DECISION` items
+12. `## Decisions · Decisiones` — collected `🛑 HUMAN DECISION` items
     still open; resolved decisions logged below them with date.
-12. `## Risks · Riesgos` — bulleted; bilingual *Resumen* heading.
-13. `## References` — links to counterpart plans, RFCs, related files.
+13. `## Risks · Riesgos` — bulleted; bilingual *Resumen* heading.
+14. `## References` — links to counterpart plans, RFCs, related files.
 
 ### Marker vocabulary (semantics are strict)
 
@@ -210,10 +245,10 @@ bullets:
    feature.
 4. AI tooling: Sonnet by default, Opus when hard or stuck, Copilot for
    keystrokes.
-5. You can tell your agent to skip the Why boxes — we won't stop you.
+6. You can tell your agent to skip the Why boxes — we won't stop you.
    But the 🚦 checkpoint questions are asked by a person and that you
    cannot outsource.
-6. **Auto mode is slice-bounded.** Auto mode is allowed for the
+7. **Auto mode is slice-bounded.** Auto mode is allowed for the
    duration of one slice — a single numbered task, or one phase when
    tasks are grouped. At the end of every slice the agent **STOPS**,
    surfaces what landed (Done-when items, files touched, what's next)
@@ -301,7 +336,31 @@ is recorded after resolution. Resolved 🛑 items move to the
 
 When you are asked to write or rebuild a plan:
 
-1. Read the goal + phases from the lead.
+1. Read the goal + phases from the lead, and the change's `talla` (RFC 0040)
+   from its issue.
+   - **`talla: S` needs no plan for RFC 0040's sake.** Its ficha (a few lines
+     per layer), what gets done, Done-when and the measure go in the issue
+     body. If the work earns a plan anyway (the granularity rule, below:
+     a large migration nobody notices is S and still multi-phase), the plan
+     skips the Understanding section and links the issue's ficha.
+   - **M and L** get the `## Understanding · Entendimiento` section first
+     (structure item 5). Without a ficha validated by the person, the plan
+     is a draft and says so.
+   - **A second pair of eyes.** In L, the plan is written with the principal
+     architect or a delegate. In M, it is the planner's call; suggest
+     it when the change removes a step or touches a clinical flow.
+   - **The last phase covers delivery and stabilization**, with these tasks:
+     - the person learns about the change before running into it. In M and L
+       that means a demo or a meeting on the test environment and the guides
+       of `/change-guides`;
+     - if the change is clinical, the screen is declared in the app's
+       `verification.manifest.ts`;
+     - a delivery note goes on the issue;
+     - the revisit happens 1–2 weeks after the deploy;
+     - the closing note goes on the issue under the fixed heading
+       `## Nota de cierre (RFC 0040)`.
+
+     Its Done-when is that closing note, posted.
 2. Copy `.github/templates/plan-template.md` into the right `plans/` per
    "Where the plan lives" above — the **app repo's** `plans/` for product
    plans, **`operations/plans/`** for devops/deploy/ops plans — with a

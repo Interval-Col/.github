@@ -40,6 +40,13 @@ checkpoints. Execute against the plan, not against this issue.
 *(ES: la verdad está en el plan — ejecuta contra el plan, no contra esta
 issue.)*
 
+## Talla (RFC 0040)
+
+**<S · M · L>** — <why: how much the change alters what the person does, not the
+size of the code>. *(ES: en M y L la ficha de entendimiento abre el plan. En S
+la ficha va aquí, en pocas líneas por capa, y el plan —si el trabajo lo amerita—
+no la repite.)*
+
 ## Scope · Alcance
 
 - **In scope:** <one line — the slice this issue tracks. If the plan has
@@ -57,6 +64,7 @@ y los `🚦` en alcance se recorrieron con quien los revisa.)*
 - [ ] All in-scope phases complete and pushed
 - [ ] Frontend verified in the browser (if UI is touched — a `200` is not a feature)
 - [ ] `🚦` checkpoint(s) walked with the checkpoint owner
+- [ ] Last comment: `## Nota de cierre (RFC 0040)`, with the estimated and final `talla`
 
 ## People · Personas
 

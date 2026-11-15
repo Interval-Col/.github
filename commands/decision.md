@@ -2,6 +2,11 @@
 description: Scaffold a per-repo ADR (docs/decisions/) from the session's reasoning, index it, and commit it. English. Warns to use an RFC instead when the decision is cross-cutting.
 ---
 
+> 🧊 **Frozen on 2026-10-25 — do not edit here.** This command now lives in the `core`
+> plugin: `Interval-Col/agent-harness` → `plugins/core/skills/decision/SKILL.md`, invoked as
+> `/core:decision`. A change made here never reaches the plugin. This copy is removed by
+> `verify-harness.sh --migrate` (agent-harness rollout plan, task 2.6).
+
 # /decision — capture an Architecture Decision Record
 
 You are capturing a decision the user has just made (or is about to make)

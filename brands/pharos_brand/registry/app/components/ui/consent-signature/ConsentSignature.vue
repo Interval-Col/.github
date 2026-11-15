@@ -155,6 +155,18 @@ const entidadEscrita = ref('')
 const conserveSamples = ref<boolean>(false)
 const microscopicImages = ref<boolean>(false)
 
+// Declaraciones que dicta el CATÁLOGO (`form.declarations`): preguntas sí/no
+// genéricas, con su texto escrito por el dueño del formulario y nunca por el
+// widget. Igual que «¿quién firma?», `undefined` = nadie respondió, y eso
+// BLOQUEA la firma: un no marcado por omisión sería una respuesta que nadie dio.
+const declaraciones = computed(() => props.form.declarations ?? [])
+const respuestasDeclaraciones = ref<Record<string, boolean | undefined>>({})
+const declaracionesSinResponder = computed(() =>
+  declaraciones.value.some(d => respuestasDeclaraciones.value[d.key] === undefined),
+)
+// Si la app cambia de formulario, las respuestas del anterior no valen.
+watch(() => props.form.id, () => { respuestasDeclaraciones.value = {} })
+
 // Switching who signs empties the pad: a stroke drawn as one person is not
 // evidence of the other.
 watch(representativeSigns, activo => {
@@ -209,6 +221,7 @@ const canSign = computed(() =>
   && !props.submitting
   && documentReady.value
   && !quienFirmaSinResponder.value
+  && !declaracionesSinResponder.value
   && !representativeIncomplete.value
   && !missingRequiredText.value,
 )
@@ -320,7 +333,16 @@ function submit() {
     legal_representative_signature: representative ? image : '',
     // La respuesta viaja tal cual: en los formularios sin representante no hay
     // pregunta y va `null`, que es lo único que el servicio acepta ahí.
-    signed_by: props.form.allowsLegalRepresentative ? quienFirma.value : null,
+    // El servicio acepta 'patient' | 'legal_representative' (Literal): la opción
+    // interna 'representative' se traduce acá, o el representante daba 422.
+    signed_by: props.form.allowsLegalRepresentative
+      ? (quienFirma.value === 'representative' ? 'legal_representative' : quienFirma.value)
+      : null,
+    // Un formulario sin declaraciones manda `null`; con ellas, una respuesta
+    // explícita por llave (canSign ya garantiza que ninguna falta).
+    declarations: declaraciones.value.length > 0
+      ? Object.fromEntries(declaraciones.value.map(d => [d.key, respuestasDeclaraciones.value[d.key] === true]))
+      : null,
   }
   emit('sign', payload)
 }
@@ -533,6 +555,33 @@ function submit() {
         />
         <Label for="consent-images">Autorizo el uso de imágenes microscópicas con fines académicos</Label>
       </div>
+    </div>
+
+    <!-- Declaraciones dictadas por el catálogo: Sí / No explícito, sin valor
+         por defecto. El texto de cada pregunta viene del catálogo. -->
+    <div v-if="declaraciones.length > 0" class="flex flex-col gap-3">
+      <fieldset v-for="d in declaraciones" :key="d.key" class="flex flex-col gap-2">
+        <legend class="text-sm font-medium text-foreground">{{ d.label }}</legend>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="opcion in [{ v: true, t: 'Sí' }, { v: false, t: 'No' }]"
+            :key="String(opcion.v)"
+            type="button"
+            :disabled="submitting"
+            :aria-pressed="respuestasDeclaraciones[d.key] === opcion.v"
+            class="min-h-11 min-w-20 rounded-md border px-4 py-2 text-sm transition-colors disabled:opacity-50"
+            :class="respuestasDeclaraciones[d.key] === opcion.v
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-input bg-background text-foreground hover:bg-accent'"
+            @click="respuestasDeclaraciones[d.key] = opcion.v"
+          >
+            {{ opcion.t }}
+          </button>
+        </div>
+      </fieldset>
+      <p v-if="declaracionesSinResponder" class="text-xs text-muted-foreground">
+        Responde Sí o No en cada pregunta para poder continuar.
+      </p>
     </div>
 
     <!-- The pad -->

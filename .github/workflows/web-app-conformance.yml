@@ -1,0 +1,65 @@
+# Reusable: conformidad mínima de una app web desplegable con el estándar de frontend.
+#
+# Quien lo llama se declara app web desplegable. Mide tres cosas de ENGINEERING_STANDARDS.md:
+# que el frontend sea Nuxt (hay un `nuxt.config.*` versionado), que las carpetas sean
+# `frontend/` + `backend/` y que ninguna página
+# cargue scripts, hojas de estilo ni fuentes desde una URL de terceros en tiempo de ejecución.
+# Antes de esto nada medía el estándar de frontend, así que una CI en verde no decía nada de él.
+#
+# Nace en MODO AVISO con fecha de promoción (RFC 0029): hasta el 2026-12-31 solo anota en el PR;
+# desde esa fecha cada caller pasa `enforce: true` y el check se marca obligatorio.
+#
+# `ignore`: rutas que no se sirven (un prototipo local, fixtures), separadas por espacios.
+# `docs/` queda fuera siempre. Una línea con `conformance-allow: <motivo>` se salta.
+#
+# Runner: los repos privados usan el pool self-hosted (por defecto); un caller PÚBLICO tiene que
+# pasar runner '["ubuntu-latest"]' o se queda en cola.
+
+name: web-app-conformance
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check on a finding (required-check mode)
+        type: boolean
+        required: false
+        default: false
+      ignore:
+        description: space-separated globs of paths that are not served (prototypes, fixtures)
+        type: string
+        required: false
+        default: ""
+
+# Sin bloque `permissions:` a propósito (trampa del AGENTS.md de este repo): solo necesita
+# `contents: read`, que concede el caller en su job.
+
+jobs:
+  web-app-conformance:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - uses: actions/checkout@v7
+      # Dentro del propio .github el script se toma del checkout del PR: tomado de `main`,
+      # el PR que lo introduce (o lo cambia) se mediría con la versión vieja.
+      - uses: actions/checkout@v7
+        if: github.repository != 'Interval-Col/.github'
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .web-conformance-org
+      - name: frontend en Nuxt y sin recursos de terceros
+        env:
+          ENFORCE: ${{ inputs.enforce }}
+          IGNORE: ${{ inputs.ignore }}
+        run: |
+          S=.web-conformance-org/scripts/web_app_conformance.py
+          [ "$GITHUB_REPOSITORY" = "Interval-Col/.github" ] && S=scripts/web_app_conformance.py
+          args=()
+          for g in $IGNORE; do args+=(--ignore "$g"); done
+          args+=(--ignore ".web-conformance-org/*")
+          python3 "$S" . "${args[@]}" $([ "$ENFORCE" = "true" ] && echo --enforce)

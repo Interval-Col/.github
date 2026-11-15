@@ -32,26 +32,68 @@ This document defines the official engineering standards for all primary project
 - Apps with a self-serve roles/capabilities module follow the **[auth contract](auth-contract.md)** (RFC 0016): local authz (IAM = identity only), the `require_capability` gate, the seven `/auth/admin/*` endpoints, deploy-step seeding (never on startup), a runtime role registry, and FE↔BE capability sync — machine-checked by the reusable `auth-contract-check` workflow.
 
 ### **Frontend (Nuxt 4, Vue 3, TypeScript)**
-- Nuxt 4 as framework — **SSR by default**. Opt a route out with
-  **`routeRules`**, not `definePageMeta`:
+- Nuxt 4 as framework. **The rendering mode depends on who the app is for:**
+  - **Internal Pháros apps** (staff-only, behind the SSO, no SEO surface) **render
+    client-side as a whole** — a SPA:
 
-  ```ts
-  routeRules: { '/etiquetas': { ssr: false } }
-  ```
+    ```ts
+    routeRules: { '/**': { ssr: false } }
+    ```
+
+    Their pages are auth-gated and load their data client-side, so SSR would only
+    render an empty skeleton, add hydration risk, and leave nothing to show while
+    the session resolves. A SPA can: it **adopts the registry's loading splash**
+    (`brands/pharos_brand/registry/app/spa-loading-template.html`, synced with
+    `sync-pharos-registry.sh --add spa-loading-template.html`), which Nuxt paints
+    before any JS loads and removes on mount. Nuxt only uses that template when
+    the app is client-rendered — under SSR it is silently ignored.
+    Reference implementation: `finance-lch/frontend/nuxt.config.ts`.
+  - **Public and patient-facing surfaces** (`public-web`, RFC 0014) keep **SSR by
+    default**. Opt a single route out with `routeRules`:
+
+    ```ts
+    routeRules: { '/etiquetas': { ssr: false } }
+    ```
 
   ⚠️ **`definePageMeta({ ssr: false })` does nothing in Nuxt 4** — `ssr` is not
   a `definePageMeta` key. A page "opted out" that way still renders on the
-  server. `routeRules` is the Nuxt-native per-route mechanism and the one both
-  live apps use.
+  server. `routeRules` is the Nuxt-native mechanism, per route or for `/**`.
 
-  Opt out when the route is auth-gated **and** loads its data client-side, so
-  SSR would only render an empty skeleton and add hydration risk. A whole app
-  may render client-side when it is internal-only with no SEO surface —
-  finance-lch does exactly that (`'/**': { ssr: false }`), deliberately.
-  Reference implementations: `finance-lch/frontend/nuxt.config.ts` (whole app)
-  and `pharos-lis/lab-qc/frontend/nuxt.config.ts` (single route).
+  Either way, shared code stays SSR-safe (`import.meta.client` /
+  `import.meta.server`, never `typeof window`): a SPA's server still runs Nitro.
 - Vue 3, Vite, Pinia, Tailwind v4, TypeScript
 - Pin Node version in `package.json` and/or `.nvmrc`
+- **Dependencies declare a version range, never a dist-tag.** `"vue": "^3.5.35"`, not
+  `"vue": "latest"` (nor `next`, `*` or `x`). A dist-tag is not a version: the lockfile
+  holds it only until someone runs `pnpm add` or the lockfile is rewritten, and then the
+  package manager resolves «the newest one today», a new **major** included, with nobody
+  having asked for it. The Nuxt starter template ships `"vue": "latest"` and
+  `"vue-router": "latest"`, so every app born from it inherits the trap.
+  - To fix it, write `^<the version the lockfile already installs>` and update the
+    lockfile's `specifier` to match. Nothing installed changes.
+  - CI installs with `pnpm install --frozen-lockfile`, so a `package.json` and a lockfile
+    that disagree fail the build instead of installing something else.
+  - Upgrading is a deliberate PR («sube Vue a …»), never a side effect of adding another
+    package.
+  - Measured by the reusable `npm-version-tags-check` (`scripts/npm_version_tags_check.py`).
+    It runs in warning mode until **2026-11-30**; from that date each caller passes
+    `enforce: true` and it becomes a required check. `peerDependencies` are exempt, because
+    a library may accept `*`.
+- **A deployable web app is Nuxt, and loads nothing from a third party at runtime.** A
+  hand-written HTML page served as the app is not the standard, however small: it skips the
+  registry tokens, the shared components and the build that pins every dependency. Scripts,
+  stylesheets and fonts come from the app's own origin (bundled by the build or served by its
+  own backend), never from a CDN URL that no lockfile pins and no review sees.
+  - Measured by the reusable `web-app-conformance` (`scripts/web_app_conformance.py`): a
+    tracked `nuxt.config.*` exists in a folder named `frontend`, each `app/main.py` sits under a
+    folder named `backend` (at the root or nested in a monorepo), and no `.html`, `.vue` or
+    `nuxt.config.*` references an absolute `http(s)://` script, stylesheet or font. `docs/` is skipped; a line with
+    `conformance-allow: <reason>` is skipped; a caller passes `ignore` for paths that are not
+    served. Warning mode until **2026-12-31**; from that date each caller passes
+    `enforce: true` and it becomes a required check.
+  - The rules that bind a Pháros app come from what the app *is*, not only from the RFCs
+    whose `target-repos` happen to name its repo: a repo born after those RFCs inherits none
+    of them unless its `AGENTS.md` lists them.
 - `.env.example` in `frontend/`
 - Directory structure:
   ```
@@ -364,6 +406,55 @@ lookup is allowed to use costs minutes and catches exactly this class.
 
 ---
 
+## 👤 Data a person manages enters through the app — never seeded by a deploy or a job
+
+Some data has an **owner who is a person**: the lab's professionals, a clinic's schedule
+templates, a catalog that customer service maintains. That data enters **through the app's
+own screen**, on demand, by whoever administers it — never as a list loaded by a deploy, a
+migration or a `workflow_dispatch` job.
+
+- **Why.** A list seeded by a deploy has no owner after the deploy. The next professional
+  who joins needs an engineer, a secret and a job run, while the screen that already does
+  it sits unused. And the app only proves it can manage its own data if that is the only
+  way the data gets in.
+- **The org rule is not the reason to write a job.** «Production data changes only through
+  a reviewed deploy step or CI job, never by hand» is about **derived or structural
+  corrections**: a backfill, a recomputed column, a data migration that follows a schema
+  change. It does not turn person-managed data into a job's input.
+- **If the screen does not exist yet,** build the screen. Do not seed the data while
+  waiting for it.
+- **What this does NOT forbid: the defaults an app needs to boot.** The auth contract
+  requires the default role→capability mapping to be seeded by an idempotent deploy-step
+  one-shot (**[C5](auth-contract.md)**), and that stays: it seeds only a role with zero
+  rows, so it never overwrites what an admin changed. Seeding a system default once, so
+  the app can start and someone can log in to manage it, is fine. What is not fine is
+  using a deploy or a job as the **way records keep entering**: the people on a roster,
+  the entries of a business catalog, any list whose next row will come from a person.
+
+*(German, 2026-10-24 — admission-patient#656 had added a job to load the lab
+professionals; it never ran and was retired in favour of the Profesionales screen,
+admission-patient#668.)*
+
+## 🧊 Cache only where the measured volume asks for it
+
+A cache is **state that can go stale**, so it has to pay for itself. Read reference data
+(a catalog of document types, a list of offices) from its owner **on every use**, and add
+an in-process cache only where the call sits on a **hot path**: a list endpoint, a
+per-row lookup, something that runs on every request.
+
+- **The same rule can give two different answers, and that is not an inconsistency.**
+  In 2026-10, biuman-lis caches the users-api document-type catalog because the same list
+  feeds every order listing. Admisiones does not, because it reads that catalog only to
+  check a home visit, a few times a day. What **must** be identical between apps is the
+  *behaviour* (how a value is translated and compared), not whether they cache.
+- **When you add one:** cache only good responses (never an empty list or an error), and
+  after a failure wait a bounded time before retrying, so an outage does not make every
+  call pay the timeout.
+- **Write down why** next to the cache or next to its absence. Otherwise the next person
+  «harmonises» the two apps and undoes a correct decision.
+
+*(German, 2026-10-24 — admission-patient#659 and biuman-lis#560.)*
+
 ## 🟢 A green signal has to be ASSERTED — never inferred from the absence of a red one
 
 Three defects landed in one week in September 2026, in three unrelated parts of the estate.
@@ -585,6 +676,35 @@ Rules:
 - What `lch-kb` holds stays unchanged: protocol and blank templates only. A filled
   expediente is a *record* and never lands there.
 
+## 🔁 Every development goes through five phases — understanding first
+
+Ratified in **RFC 0040** (private `rfcs` repo). Each phase has a small **floor**
+that is always met. The rest is orientation, graded by the change's **talla**.
+
+| Phase | Floor |
+|---|---|
+| 1 · Understanding | Talk with whoever does the work, about concrete cases. The **ficha** keeps four layers apart: what they say, what they do, what we infer, what we propose. The person validates it with a real case of theirs |
+| 2 · Planning | The plan comes out of the ficha and fixes the measure, or says why nothing is measured |
+| 3 · Development | The standards in this file |
+| 4 · Delivery | The person knows about the change before running into it. A clinical screen is declared in the app's `verification.manifest.ts` (§ «Marking a view as en verificación») |
+| 5 · Stabilization | Someone asks the person how it went, and what they report gets fixed or becomes an issue |
+
+- **`talla` S · M · L** measures how much the change alters what the person does,
+  not the size of the code. It is not the plan's `effort`. It is estimated when the
+  issue opens (`.github/ISSUE_TEMPLATE/task.md`).
+- **S** keeps its ficha in the issue body. **M and L** get a plan whose first section is the
+  ficha (§ Plan craft), and their delivery uses the `/change-guides` skill.
+- **The record is the closing note.** It is the issue's last comment, under the fixed
+  heading `## Nota de cierre (RFC 0040)`, so a search can collect them all. It
+  carries:
+  - the estimated and the final talla;
+  - the understanding mode, and why;
+  - the measure before and after, or why nothing was measured;
+  - what came up in stabilization, and how much rework there was;
+  - if the change is clinical, the screen's state.
+
+---
+
 ## 📄 Project Documentation
 
 - Root `README.md` must document:
@@ -618,6 +738,9 @@ junior, Spanish-native, AI-agent-assisted dev team. It standardises:
   "execute the whole plan unattended").
 - **Non-condescending tone** — gaps are framed as the *plan's* fault,
   not the reader's; seniority is never mentioned.
+- **The ficha comes first** — in a plan of `talla` M or L (RFC 0040), the
+  understanding section opens the plan, and the last phase is delivery and
+  stabilization.
 
 Authoritative artefacts (canonical sources of truth):
 
@@ -657,6 +780,7 @@ Reference plans worth reading as exemplars: `admission-patient/plans/`,
 - [ ] **CI must run all tests, lint, and builds**
 - [ ] Branch protection enabled on `main`
 - [ ] Case-collision check installed (pre-commit `check-case-conflict` everywhere; CI step in code repos) — see "Cross-platform path safety"
+- [ ] **`AGENTS.md` in the root (≤ 200 lines) plus a `CLAUDE.md` whose only content is the line `@AGENTS.md`** — copy both from [`templates/`](templates/AGENTS.md), keep its two required sections (**Trunk and branches**, naming the trunk — `develop` wherever the repo has one — and **Rules that bind this repo**, one line per accepted RFC that names the repo), and add the thin caller of `agents-md-check.yml` (RFC 0039 D4: sessions start in `~/dev`, whose map turns off native `AGENTS.md` reading, so without the shim the repo's knowledge never loads)
 - [ ] Secret scanning (gitleaks) installed — pre-commit hook **and** required CI check named `gitleaks` (every repo, incl. docs-only) — see [`BRANCHING-AND-DEPLOY.md` §"Hooks"](BRANCHING-AND-DEPLOY.md#hooks)
 
 ---

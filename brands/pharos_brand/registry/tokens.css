@@ -279,6 +279,30 @@
   --sidebar-primary: #7FB0E6;  --sidebar-primary-foreground: #06121F;  --sidebar-ring: #7FB0E6;
 }
 
+/* Documentos · Bitácora — violeta #5B3F8C / #B79CE8 (pharos-documentacion, nombre de
+ * German 2026-10-28, design-studio#100). Acento aprobado por German en el Astillero el
+ * mismo día: el único hueco de tono que quedaba en la familia. Contraste 8,3:1 / 8,2:1. */
+.theme-documentos {
+  --primary: #5B3F8C;  --primary-foreground: #FFFFFF;  --ring: #5B3F8C;
+  --sidebar-primary: #5B3F8C;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #5B3F8C;
+}
+.dark.theme-documentos {
+  --primary: #B79CE8;  --primary-foreground: #120A1F;  --ring: #B79CE8;
+  --sidebar-primary: #B79CE8;  --sidebar-primary-foreground: #120A1F;  --sidebar-ring: #B79CE8;
+}
+
+/* Analítica · Carta — oliva #3F5212 / #B5CF6B (pharos-analitica, RFC 0042; nombre y acento
+ * elegidos por German 2026-11-02). El oliva (78°) cae en el hueco de tono entre el ámbar de
+ * Números (46°) y el teal de Laboratorio (167°). Contraste 8,7:1 / 10,3:1. */
+.theme-analitica {
+  --primary: #3F5212;  --primary-foreground: #FFFFFF;  --ring: #3F5212;
+  --sidebar-primary: #3F5212;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #3F5212;
+}
+.dark.theme-analitica {
+  --primary: #B5CF6B;  --primary-foreground: #141A05;  --ring: #B5CF6B;
+  --sidebar-primary: #B5CF6B;  --sidebar-primary-foreground: #141A05;  --sidebar-ring: #B5CF6B;
+}
+
 /* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).
  * Utilities like bg-primary, text-status-success, bg-status-warning-bg,
  * border-border, font-data resolve here. */

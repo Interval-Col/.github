@@ -13,7 +13,7 @@ slide-up chat panel. ONE definition so it can't drift across apps
 
 | Entry | Path | What it is |
 |---|---|---|
-| `PharosHelpChat` | `app/components/PharosHelpChat.vue` | launcher + panel; sessionStorage history, marked+DOMPurify rendering, es-CO usted copy, graceful outage/rate-limit states, corpus-source chips (CH5) |
+| `PharosHelpChat` | `app/components/PharosHelpChat.vue` | launcher + panel; sessionStorage history, marked+DOMPurify rendering, es-CO «tú» copy (since 2026-11-13), graceful outage/rate-limit states, corpus-source chips (CH5) |
 | `PharosChatAvatar` | `app/components/PharosChatAvatar.vue` | the assistant's mark — 12 glyphs (`sol` for the public assistant, nautical-robot marks + plain nautical marks), all **inline SVG, zero deps** (the playground's copy imports lucide; the registry deliberately does not push an icon library onto adopters) |
 
 **Deps (per adopting app):** `pnpm add marked dompurify` (+ `pnpm add -D @types/dompurify`).
@@ -58,7 +58,7 @@ mount renders exactly what it rendered before.
 | `probe` | `() => Promise<ChatHealth>` | — | — | app-owned readiness probe → `GET {base}/v1/chat/health` (chat-contract **CH8**). Same ownership split as `send` |
 | `assistantRole` | `string` | `''` | — | el PAPEL, bajo el nombre («Asistente virtual»). `''` = no se pinta. ⚠️ Se llama así y no `role` porque `role` es un atributo ARIA |
 | `privacyTitle` | `string` | `'Sin datos de pacientes.'` | — | encabezado del aviso de PHI, en sus dos sitios |
-| `privacyBody` | `string` | (el de siempre, en usted) | — | cuerpo del aviso. **El trato cambia por superficie**: Nerea trata de usted, Sol tutea |
+| `privacyBody` | `string` | (el de siempre, en «tú» desde 2026-11-13) | — | cuerpo del aviso. **El encuadre cambia por superficie**: Nerea y Sol tutean, pero en `lch.co` no hay «aplicación» |
 
 > **Tamaños del avatar, por CSS y no por prop.** `avatarBg` gobierna a la vez el botón flotante y la
 > cabecera del panel. Para separar los dos, la app declara en su CSS cualquiera de estas variables;
@@ -80,6 +80,10 @@ nombres… Pregunte por cómo funciona **la aplicación**». Eso es correcto par
 (`NEREA.md` §3: trata de usted) y equivocado para Sol (`SOL.md` §6: tutea, fallo del
 2026-09-08) — y en `lch.co` no hay ninguna aplicación, hay un laboratorio, y quien pregunta
 **es** el paciente. Un texto cableado obliga a una de las dos a hablar como la otra.
+
+🔁 **2026-11-13 (decisión de German): Nerea también tutea**, así que los textos por defecto
+del widget —placeholder, aviso y los seis errores— pasaron a «tú». Los props siguen para el
+vocabulario de cada superficie, ya no para el trato.
 
 ### El copy de error: gana el servidor (2026-09-20)
 

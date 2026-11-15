@@ -256,6 +256,18 @@ COMPANIONS=(
   "components/ui/multi-select/MultiSelect.vue:components/ui/button/Button.vue"
   "components/ui/multi-select/MultiSelect.vue:components/ui/button/index.ts"
   "components/ui/multi-select/MultiSelect.vue:lib/utils.ts"
+  # MapaBase (RFC 0043 R1): its types and barrel, the pure lib it draws from, and the Button
+  # and Icon of its Mapa/Tabla toggle. The npm deps (maplibre-gl, pmtiles, @protomaps/basemaps)
+  # are the adopting app's own `pnpm add` — see mapa-base.md.
+  "components/ui/mapa-base/MapaBase.vue:components/ui/mapa-base/index.ts"
+  "components/ui/mapa-base/MapaBase.vue:components/ui/mapa-base/types.ts"
+  "components/ui/mapa-base/MapaBase.vue:lib/mapa.ts"
+  "components/ui/mapa-base/MapaBase.vue:components/ui/button/Button.vue"
+  "components/ui/mapa-base/MapaBase.vue:components/ui/button/index.ts"
+  "components/ui/mapa-base/MapaBase.vue:components/ui/icon/Icon.vue"
+  "components/ui/mapa-base/MapaBase.vue:components/ui/icon/icons.ts"
+  "components/ui/mapa-base/MapaBase.vue:components/ui/icon/index.ts"
+  "components/ui/mapa-base/MapaBase.vue:lib/utils.ts"
 )
 is_companion_required() {
   local rel="$1" pair importer companion
@@ -395,7 +407,7 @@ echo "       Fraunces · DM Sans · IBM Plex Mono · JetBrains Mono"
 echo "     See registry/frontend-standards.md for the @nuxt/fonts config."
 echo
 echo "  c) Add the sub-brand theme class to <html> in app.vue / nuxt.config:"
-echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepcion | .theme-clientes | .theme-ti"
+echo "       .theme-numeros | .theme-clinico | .theme-deportivo | .theme-recepcion | .theme-clientes | .theme-ti | .theme-documentos | .theme-analitica"
 echo "     (Default/neutral = no class — LCH Navy.)"
 echo
 echo "  d) Ensure package.json has the lint-check script. Add if missing:"
