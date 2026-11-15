@@ -230,7 +230,7 @@ const canSign = computed(() =>
 type Step = 'document' | 'signer' | 'details' | 'signature'
 
 const STEP_TITLE: Record<Step, string> = {
-  document: 'Lea el documento',
+  document: 'Lee el documento',
   signer: '¿Quién firma?',
   details: 'Datos y autorizaciones',
   signature: 'Firma',
@@ -243,7 +243,8 @@ const hasDetails = computed(() =>
   || props.form.requiresEntityServed
   || (props.form.requiresPatientExpeditionCity && representativeSigns.value)
   || props.form.hasSampleConservationChoice
-  || props.form.hasMicroscopicImagesChoice,
+  || props.form.hasMicroscopicImagesChoice
+  || declaraciones.value.length > 0,
 )
 
 // Sólo los pasos que este formulario tiene. La lista puede cambiar en vivo:
@@ -269,7 +270,7 @@ const canAdvance = computed(() => {
   switch (currentStep.value) {
     case 'document': return documentReady.value
     case 'signer': return !quienFirmaSinResponder.value && !representativeIncomplete.value
-    case 'details': return !missingRequiredText.value
+    case 'details': return !missingRequiredText.value && !declaracionesSinResponder.value
     default: return false
   }
 })
@@ -559,7 +560,7 @@ function submit() {
 
     <!-- Declaraciones dictadas por el catálogo: Sí / No explícito, sin valor
          por defecto. El texto de cada pregunta viene del catálogo. -->
-    <div v-if="declaraciones.length > 0" class="flex flex-col gap-3">
+    <div v-if="declaraciones.length > 0" v-show="isShown('details')" class="flex flex-col gap-3">
       <fieldset v-for="d in declaraciones" :key="d.key" class="flex flex-col gap-2">
         <legend class="text-sm font-medium text-foreground">{{ d.label }}</legend>
         <div class="flex flex-wrap gap-2">
