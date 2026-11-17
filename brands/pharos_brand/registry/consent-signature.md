@@ -68,11 +68,18 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
   recalcula en vivo: elegir «representante» puede agregar el paso de datos.
 - **No se avanza sin responder** lo que el paso pide: es la misma regla que bloquea
   «Guardar firma», adelantada al paso donde se responde.
-- El área de firma crece con la pantalla (la mitad del alto de la ventana, piso 260 px).
+- El área de firma ocupa **el alto que le queda al paso**, medido con un `ResizeObserver`
+  (piso 160 px), y no una fracción fija de la ventana: así el pie con «Guardar firma» siempre
+  se ve, también en una tablet en horizontal con la barra del navegador a la vista. El
+  contenedor que la app le da tiene que tener alto propio y sin scroll (por ejemplo, un
+  diálogo `h-[100dvh]` con `overflow-hidden`); dentro de un contenedor que crece con su
+  contenido, el área se queda en su alto inicial (320 px).
 - Los pasos se ocultan con `v-show`, no con `v-if`: al volver atrás y adelante **el
   trazo sigue ahí**. Por eso `SignaturePad` no se redimensiona mientras mide 0 de ancho.
 - La app le da el alto: el widget llena el contenedor (`h-full`). En lab-qc va dentro
-  de un diálogo a pantalla completa.
+  de un diálogo a pantalla completa. ⚠️ El `DialogContent` de base trae `sm:max-w-lg`: para
+  que ocupe todo el ancho desde 640 px, la app agrega `sm:max-w-none` además de
+  `max-w-none`.
 
 ### Declaraciones dictadas por el catálogo (`form.declarations`)
 

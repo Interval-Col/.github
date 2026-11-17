@@ -7,7 +7,7 @@
 // the PHI reveal policy and maps errors to a sentence with an owner — the same
 // cut as `QueueWaitingList` / `PharosHelpChat`. The widget never fetches and
 // never writes.
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { AlertCircle, ArrowLeft, ArrowRight, Eraser, FileSignature, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -283,12 +283,31 @@ function goBack() {
   if (stepIndex.value > 0) stepIndex.value -= 1
 }
 
-// En `steps` la firma tiene toda la pantalla para ella: el área crece con el alto
-// de la ventana en vez de quedarse en 260 px.
+// En `steps` el área de firma ocupa el alto que de verdad le queda al paso, medido, y
+// no una fracción fija de la ventana: con la tablet en horizontal y la barra del
+// navegador a la vista, un alto fijo empuja «Guardar firma» fuera de la pantalla, y el
+// modal no tiene scroll. Con un mínimo para que siempre haya dónde firmar.
+const STEPPED_PAD_MIN_HEIGHT = 160
 const steppedSignatureHeight = ref(320)
+const padArea = ref<HTMLElement | null>(null)
+let padAreaObserver: ResizeObserver | null = null
+
+function measurePadArea() {
+  const el = padArea.value
+  // Oculto (otro paso a la vista) mide 0: se conserva el último alto medido.
+  if (!el || el.clientHeight === 0) return
+  steppedSignatureHeight.value = Math.max(STEPPED_PAD_MIN_HEIGHT, Math.floor(el.clientHeight))
+}
+
 onMounted(() => {
-  steppedSignatureHeight.value = Math.max(260, Math.round(window.innerHeight * 0.5))
+  if (!isStepped.value) return
+  measurePadArea()
+  if (typeof ResizeObserver !== 'undefined' && padArea.value) {
+    padAreaObserver = new ResizeObserver(() => measurePadArea())
+    padAreaObserver.observe(padArea.value)
+  }
 })
+onBeforeUnmount(() => padAreaObserver?.disconnect())
 const signatureHeight = computed(() => (isStepped.value ? steppedSignatureHeight.value : esTablet.value ? 260 : 200))
 
 function onInk(value: boolean) {
@@ -590,7 +609,7 @@ function submit() {
     <div
       v-show="isShown('signature')"
       class="flex flex-col gap-2"
-      :class="esTablet && !isStepped && 'min-h-[180px] flex-[2]'"
+      :class="[esTablet && !isStepped && 'min-h-[180px] flex-[2]', isStepped && 'min-h-0 flex-1']"
     >
       <div class="flex items-center justify-between">
         <Label :class="esTablet && 'text-lg'">
@@ -607,12 +626,16 @@ function submit() {
           Borrar
         </Button>
       </div>
-      <SignaturePad
-        ref="pad"
-        :disabled="submitting"
-        :height="signatureHeight"
-        @change="onInk"
-      />
+      <!-- En `steps` este contenedor crece hasta el pie y se mide: el alto del lienzo sale
+           de aquí (ver `measurePadArea`), así el pie con «Guardar firma» siempre se ve. -->
+      <div ref="padArea" :class="isStepped && 'min-h-0 flex-1 overflow-hidden'">
+        <SignaturePad
+          ref="pad"
+          :disabled="submitting"
+          :height="signatureHeight"
+          @change="onInk"
+        />
+      </div>
       <p v-if="form.requiresBacteriologist && bacteriologist" class="text-xs text-muted-foreground">
         Firma también {{ masked(bacteriologist.fullName) }} (bacteriólogo/a), con la firma registrada en su perfil.
       </p>
