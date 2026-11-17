@@ -168,7 +168,7 @@ consumers:
     mode: wait
 
 # ── Added 2026-09-28 — German's selection at Checkpoint 1 ────────────
-# Chosen in the «Audiencias de Nerea» mock-up (claude.ai/artifact/AN7P8jWKTX17bwdewjYC8j).
+# Chosen in the «Audiencias de Nerea» mock-up (2026-09-28; retired from claude.ai on 2026-11-16 — the selection is recorded in pharos-llm-proxy/docs/conocimiento-corpus-y-audiencias.md §5.1).
 # All `planned`: no app loads these yet. Each flips to `wait` in the same
 # change that wires the KB into that app, so nothing turns red early.
 # Cross-brand on purpose (German): Biuman LIS serves LCH knowledge, and Sol
