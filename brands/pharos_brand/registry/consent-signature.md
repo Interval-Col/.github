@@ -59,13 +59,14 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 | `title` | `string` | `'Firma del consentimiento'` | encabezado |
 | `density` | `'escritorio' \| 'tablet'` | `'escritorio'` | **a qué distancia se mira la superficie.** `escritorio` = un empleado sentado, con ratón, dentro de una app con barra lateral (lab-qc, Admisiones). `tablet` = un dispositivo que se le **entrega** a un paciente: de pie, con el dedo, a veces con una sola mano (consent-kiosk) |
 
-| `layout` | `'continuous' \| 'steps'` | `'continuous'` | **cómo se recorre.** `continuous` = todo en una pantalla. `steps` = un paso por pantalla: leer el documento → quién firma → datos y autorizaciones → firma. Ver abajo |
+| `layout` | `'continuous' \| 'steps'` | `'continuous'` | **cómo se recorre.** `continuous` = todo en una pantalla. `steps` = un paso por pantalla, tres como mucho: leer el documento → quién firma con sus datos y autorizaciones → firma. Ver abajo |
 
 ### `layout: 'steps'` — una cosa a la vez, a pantalla completa
 
-- Los pasos que el formulario no tiene **se saltan solos** (sin representante no hay
-  «¿Quién firma?»; sin ciudades, entidad ni declaraciones no hay «Datos»). La lista se
-  recalcula en vivo: elegir «representante» puede agregar el paso de datos.
+- Quién firma y los datos van **en el mismo paso**, con scroll propio (pharos-ti#236). Sin
+  representante ni datos, ese paso no existe y quedan dos. La lista sale sólo del formulario:
+  elegir «representante» agrega casillas, no pasos. Antes de la firma se dice «La firma va en
+  el siguiente paso» y el botón dice «Siguiente: firmar».
 - **No se avanza sin responder** lo que el paso pide: es la misma regla que bloquea
   «Guardar firma», adelantada al paso donde se responde.
 - El área de firma ocupa **el alto que le queda al paso**, medido con un `ResizeObserver`
