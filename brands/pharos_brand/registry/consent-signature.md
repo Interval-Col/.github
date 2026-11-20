@@ -60,6 +60,7 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 | `density` | `'escritorio' \| 'tablet'` | `'escritorio'` | **a qué distancia se mira la superficie.** `escritorio` = un empleado sentado, con ratón, dentro de una app con barra lateral (lab-qc, Admisiones). `tablet` = un dispositivo que se le **entrega** a un paciente: de pie, con el dedo, a veces con una sola mano (consent-kiosk) |
 
 | `layout` | `'continuous' \| 'steps'` | `'continuous'` | **cómo se recorre.** `continuous` = todo en una pantalla. `steps` = un paso por pantalla, tres como mucho: leer el documento → quién firma con sus datos y autorizaciones → firma. Ver abajo |
+| `cityShortcuts` | `string[]` | área metropolitana de Medellín (6) | **atajos de ciudad.** Botones bajo cada «ciudad de expedición»; un toque llena la casilla, que se puede seguir escribiendo. `[]` los quita |
 
 ### `layout: 'steps'` — una cosa a la vez, a pantalla completa
 

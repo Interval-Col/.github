@@ -91,6 +91,11 @@ const props = withDefaults(defineProps<{
    * saltan solos. La app le da al widget el alto de la pantalla.
    */
   layout?: 'continuous' | 'steps'
+  /**
+   * Atajos bajo cada «ciudad de expedición»: un toque llena la casilla. Por omisión,
+   * las del área metropolitana donde están las sedes; `[]` los quita.
+   */
+  cityShortcuts?: string[]
 }>(), {
   documentError: null,
   orderNumber: null,
@@ -105,6 +110,7 @@ const props = withDefaults(defineProps<{
   density: 'escritorio',
   documentPages: null,
   layout: 'continuous',
+  cityShortcuts: () => ['MEDELLÍN', 'ENVIGADO', 'BELLO', 'SABANETA', 'ITAGÜÍ', 'LA ESTRELLA'],
 })
 
 const esTablet = computed(() => props.density === 'tablet')
@@ -556,16 +562,35 @@ function submit() {
              formulario que solo pide la del paciente quedaba sin cómo llenarla. -->
         <div
           v-if="form.requiresExpeditionCity || (form.requiresPatientExpeditionCity && !representativeSigns)"
-          class="flex flex-col gap-1.5 sm:max-w-xs"
+          class="flex flex-col gap-1.5 sm:max-w-xl"
         >
           <Label for="consent-expedition">
             {{ representativeSigns ? 'Ciudad de expedición del documento del representante' : 'Ciudad de expedición del documento' }}
           </Label>
           <Input id="consent-expedition" v-model="expeditionCity" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
+          <div v-if="cityShortcuts.length" class="flex flex-wrap gap-2">
+            <button
+              v-for="ciudad in cityShortcuts"
+              :key="ciudad"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="expeditionCity === ciudad"
+              class="rounded-md border px-3 transition-colors disabled:opacity-50"
+              :class="[
+                esTablet ? 'min-h-11 text-base' : 'min-h-9 text-sm',
+                expeditionCity === ciudad
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+              ]"
+              @click="expeditionCity = ciudad"
+            >
+              {{ ciudad }}
+            </button>
+          </div>
         </div>
         <div
           v-if="form.requiresPatientExpeditionCity && representativeSigns"
-          class="flex flex-col gap-1.5 sm:max-w-xs"
+          class="flex flex-col gap-1.5 sm:max-w-xl"
         >
           <Label for="consent-patient-expedition">Ciudad de expedición del documento del paciente</Label>
           <Input
@@ -575,6 +600,25 @@ function submit() {
             autocomplete="off"
             :disabled="submitting"
           />
+          <div v-if="cityShortcuts.length" class="flex flex-wrap gap-2">
+            <button
+              v-for="ciudad in cityShortcuts"
+              :key="ciudad"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="patientExpeditionCity === ciudad"
+              class="rounded-md border px-3 transition-colors disabled:opacity-50"
+              :class="[
+                esTablet ? 'min-h-11 text-base' : 'min-h-9 text-sm',
+                patientExpeditionCity === ciudad
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+              ]"
+              @click="patientExpeditionCity = ciudad"
+            >
+              {{ ciudad }}
+            </button>
+          </div>
         </div>
         <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
           <Label for="consent-entity">Entidad</Label>
