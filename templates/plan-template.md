@@ -270,9 +270,13 @@ Explicitly out of scope — not for this plan:
 <Optional 1–2 line English context — only if the Resumen leaves
 something unclear.>
 
+**Phase issue:** <Interval-Col/repo#NN> — sub-issue of the epic, on the board
+with its Target. Each task below has its own sub-issue of this one (talla M/L;
+see plan-craft, § "The issue tree").
+
 - [ ] **1.1** — <First concrete task. Be specific: file paths,
-      commands, exact endpoint shapes if known.>
-- [ ] **1.2** — <Next task.>
+      commands, exact endpoint shapes if known.> (#NN)
+- [ ] **1.2** — <Next task.> (#NN)
   - **Why:** <One short paragraph on the non-obvious decision behind
     this task. Skip if the task is self-explanatory.>
 - [ ] **1.3** — <Next task.>
