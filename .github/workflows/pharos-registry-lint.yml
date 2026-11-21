@@ -41,12 +41,14 @@ on:
       - "brands/pharos_brand/registry/**"
       - ".github/workflows/pharos-registry-lint.yml"
       - "scripts/test_mapa_lib.mjs"
+      - "scripts/test_eventos_registry.mjs"
   push:
     branches: [main]
     paths:
       - "brands/pharos_brand/registry/**"
       - ".github/workflows/pharos-registry-lint.yml"
       - "scripts/test_mapa_lib.mjs"
+      - "scripts/test_eventos_registry.mjs"
 
 permissions:
   contents: read
@@ -75,6 +77,10 @@ jobs:
       # the breaks, the ramp, the R4 table and the «nothing external» guard are not.
       - name: Pruebas de lib/mapa.ts (MapaBase)
         run: node --experimental-strip-types --test scripts/test_mapa_lib.mjs
+      # Eventos de Organización (2.4): el español es «tú» (nunca «usted» ni «vos»), el repo es
+      # PÚBLICO (nada interno en el componente ni en su README) y la mitad pura del cliente.
+      - name: Pruebas del componente de eventos (copy en «tú», superficie pública, cliente)
+        run: node --test scripts/test_eventos_registry.mjs
       - name: Correr los gates sobre el registry
         working-directory: brands/pharos_brand/registry
         run: |
