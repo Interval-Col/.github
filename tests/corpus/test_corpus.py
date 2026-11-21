@@ -178,6 +178,9 @@ class BuildTest(unittest.TestCase):
         self.write("cumplimiento/sin-estado.md", "title: S\naudience: staff\n")  # defaults to borrador
         self.write("cumplimiento/vigente.md", "title: V\nstatus: vigente\naudience: staff\n")
         self.write("administrativo/borrador.md", "title: A\nstatus: borrador\naudience: staff\n")
+        for r in kb["roots"]:  # every registered root must exist on disk
+            if r not in ("cumplimiento", "administrativo"):
+                self.write(f"{r}/ancla.md", "title: Ancla\nstatus: vigente\naudience: staff\n")
         idx = self.by_slug(self.build(kb))
         self.assertNotIn("cumplimiento/borrador", idx)
         self.assertNotIn("cumplimiento/sin-estado", idx)
