@@ -171,7 +171,7 @@ class BuildTest(unittest.TestCase):
 
     def test_the_real_registry_serves_cumplimiento_only_when_vigente(self):
         # gestion-documental plan 1.3 (W-R): synthetic articles, the REAL registry entry.
-        kb = next(k for k in load_registry(REAL_REGISTRY)["kbs"] if k["id"] == "lch-admin-kb")
+        kb = load_registry(REAL_REGISTRY)["kbs"]["lch-admin-kb"]
         self.assertIn("cumplimiento", kb["roots"])
         self.assertEqual(kb["vigente_only"], ["cumplimiento"])
         self.write("cumplimiento/borrador.md", "title: B\nstatus: borrador\naudience: staff\n")
