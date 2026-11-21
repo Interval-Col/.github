@@ -15,6 +15,12 @@ What v5 adds, and why each piece exists:
   them. A build that stops and says so is the fix.
 - **`publico` is never inferred, and needs `vigente`** (the lch-kb rule): a draft
   marked `publico` drops to `staff`, with a warning, until Quality approves it.
+- **`vigente_only` roots serve only `vigente` articles** (pharos-documentacion,
+  gestion-documental plan 1.3, Decision G8). A KB may mix a root of controlled
+  documents that enter as drafts (`lch-admin-kb/cumplimiento/`) with roots whose
+  drafts are fine to serve. Every consumer serves every status it is given, so the
+  filter lives HERE, once, where every consumer reads: a non-`vigente` article under
+  such a root never enters the index, and the build says how many it left out.
 - **`content_hash`** per article (sha256 of `body_md`). `corpus_verify.py`
   compares it with the hash the embedder stored: an edited article keeps its
   slug, so a slug check passes on stale chunks.
@@ -233,6 +239,8 @@ def build(root: Path, kb: dict, source_commit: str = "local", warn=print) -> dic
     indexed = set(rels)
     problems: list[str] = []
     articles = []
+    solo_vigente = set(kb.get("vigente_only") or [])
+    dejados = 0
     for rel in rels:
         slug = rel[:-3]
         try:
@@ -241,6 +249,11 @@ def build(root: Path, kb: dict, source_commit: str = "local", warn=print) -> dic
             # areas); the folder is the fallback, which is biuman-kb's layout.
             area = _text(meta.get("area")) or rel.split("/", 1)[0]
             status = (_text(meta.get("status")) or kb["default_status"]).lower()
+            # Decided on the ROOT the file sits in, never on its declared area: an
+            # article cannot talk itself out of the filter.
+            if rel.split("/", 1)[0] in solo_vigente and status != STATUS_PUBLICABLE:
+                dejados += 1
+                continue
             body_md = rewrite_links(body, rel, indexed, blob).strip()
             article = {
                 "slug": slug,
@@ -275,6 +288,9 @@ def build(root: Path, kb: dict, source_commit: str = "local", warn=print) -> dic
             articles.append(article)
         except KbError as exc:
             problems.append(f"{rel}: {exc}")
+    if dejados:
+        warn(f"{kb['id']}: {dejados} article(s) left out — not `{STATUS_PUBLICABLE}` under a "
+             f"vigente_only root {sorted(solo_vigente)}")
     if problems:
         raise KbError("\n".join(f"- {p}" for p in problems))
     if not articles:
