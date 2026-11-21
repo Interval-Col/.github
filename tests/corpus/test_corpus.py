@@ -154,6 +154,27 @@ class BuildTest(unittest.TestCase):
         idx = self.by_slug(self.build())
         self.assertEqual({a["status"] for a in idx.values()}, {"borrador"}, idx)
 
+    def test_a_vigente_only_root_never_indexes_a_draft(self):
+        # gestion-documental plan 1.3 (G8): a draft under such a root never reaches a
+        # consumer edge, whatever area or audience it declares.
+        kb = dict(_kb(), vigente_only=["guias"])
+        self.write("guias/borrador.md", "title: B\nstatus: borrador\narea: comercial\naudience: staff\n")
+        self.write("guias/sin-estado.md", "title: S\n")  # kb-a defaults to vigente
+        self.write("guias/vigente.md", "title: V\nstatus: vigente\n")
+        self.write("comercial/borrador.md", "title: C\nstatus: borrador\n")
+        idx = self.by_slug(self.build(kb))
+        self.assertNotIn("guias/borrador", idx)
+        self.assertIn("guias/vigente", idx)
+        self.assertIn("guias/sin-estado", idx)
+        self.assertIn("comercial/borrador", idx)  # other roots keep serving drafts
+        self.assertTrue(any("1 article(s) left out" in w for w in self.warnings), self.warnings)
+
+    def test_a_vigente_only_root_must_be_an_indexed_root(self):
+        bad = MINIMAL.replace("    recursive: true\n", "    recursive: true\n    vigente_only: [otra]\n")
+        self.assertNotEqual(bad, MINIMAL)
+        with self.assertRaisesRegex(RegistryError, "vigente_only names roots it does not index"):
+            load_registry(bad)
+
     def test_unknown_audience_fails_the_build(self):
         self.write("guias/a.md", "title: A\naudience: gerencia\n")
         with self.assertRaisesRegex(kb_index.KbError, "not in D1"):
