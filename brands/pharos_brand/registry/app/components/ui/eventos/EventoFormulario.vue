@@ -13,8 +13,8 @@
 //     se pintan los NOMBRES de las reglas, nunca el texto, y el texto escrito se conserva para que
 //     la persona lo corrija.
 //   • El aviso «no escribas nombres» no se puede quitar ni cerrar.
-//   • El contacto de una queja va en su propia llamada, después de crear el evento, y se borra del
-//     estado del componente apenas se envía.
+//   • El contacto de una queja viaja DENTRO del mismo reporte (nunca en una llamada aparte) y se borra
+//     del estado del componente apenas se envía.
 //
 // Colores y tipografía: solo el contrato de tokens (tokens.css). Spec: ./README.md
 import { computed, reactive, ref, watch } from 'vue'
@@ -26,7 +26,7 @@ import {
   ERRORES, LLEGO_A_ALGUIEN, SEDES, TEXTOS, TIPOS_EVENTO,
 } from './types'
 import type {
-  ContactoEnvio, ErrorDeEventos, EventoReportado, LlegoAAlguien, MedioContacto,
+  ErrorDeEventos, EventoReportado, LlegoAAlguien, MedioContacto,
   ProcesoOpcion, ReporteEnvio, Sede, TipoEvento,
 } from './types'
 
@@ -89,21 +89,38 @@ const f = reactive({
 
 const enviando = ref(false)
 const fallo = ref<ErrorDeEventos | null>(null)
-const exito = ref<{ id: string, consecutivo: string, pendiente: boolean, contactoFallo: boolean } | null>(null)
+const exito = ref<{ id: string, consecutivo: string, pendiente: boolean } | null>(null)
 const intentado = ref(false)
 
 const esQueja = computed(() => f.tipo === 'queja')
 const ordenLimpia = computed(() => (props.ordenSugerida ?? '').trim())
 const hayOrden = computed(() => ordenLimpia.value !== '' && SOLO_DIGITOS.test(ordenLimpia.value))
-// «datetime-local» no acepta fechas futuras con `max`; el servidor igual lo valida.
+// El tope de las fechas es «ahora», y «ahora» cambia: se recalcula al enviar y al enfocar una fecha,
+// no una sola vez al montar (un formulario abierto una hora no puede rechazar lo ocurrido hace un minuto).
 const ahoraLocal = () => {
   const d = new Date()
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
   return d.toISOString().slice(0, 16)
 }
 const maximo = ref(ahoraLocal())
+const refrescarMaximo = () => { maximo.value = ahoraLocal() }
+
+// Una orden sugerida distinta es OTRA orden: la confirmación de la anterior no se hereda.
+watch(() => props.ordenSugerida, () => { f.confirmaOrden = false })
 
 watch(() => f.tipo, () => { fallo.value = null })
+
+// El servidor nombra los campos como en su cuerpo; el formulario los llama distinto.
+const CAMPO_CLIENTE: Record<string, string> = {
+  tipo: 'tipo', proceso_codigo: 'proceso', sede: 'sede', descripcion: 'descripcion',
+  fecha_ocurrencia: 'ocurrencia', fecha_conocimiento: 'conocimiento', llego_a_alguien: 'llego',
+  seguridad_paciente: 'seguridad', orden_servicio: 'orden', contacto: 'quejaContacto',
+}
+const marcadosPorServidor = computed(() => {
+  const m = new Set<string>()
+  for (const c of fallo.value?.campos ?? []) { const k = CAMPO_CLIENTE[c]; if (k) m.add(k) }
+  return m
+})
 
 const errores = computed(() => {
   const e: Record<string, string> = {}
@@ -124,7 +141,18 @@ const errores = computed(() => {
   }
   return e
 })
-const ver = (campo: string) => (intentado.value || fallo.value?.campos?.includes(campo)) ? errores.value[campo] : undefined
+const ver = (campo: string) => {
+  const propio = intentado.value ? errores.value[campo] : undefined
+  if (propio) return propio
+  if (!marcadosPorServidor.value.has(campo)) return undefined
+  // Un mensaje propio del servidor, solo si señaló UN campo; si no, el genérico del campo.
+  const f1 = fallo.value
+  return f1 && f1.causa === 'validacion' && f1.campos?.length === 1 && f1.mensaje !== ERRORES.validacion
+    ? f1.mensaje
+    : TEXTOS.campoRevisar
+}
+/** Une el id de la ayuda fija con el del error visible, para `aria-describedby`. */
+const descrito = (campo: string, fija?: string) => [fija, ver(campo) ? `pg-ev-err-${campo}` : undefined].filter(Boolean).join(' ') || undefined
 
 /** Un instante con zona horaria (el servidor rechaza fechas sin zona). */
 const aInstante = (local: string) => new Date(local).toISOString()
@@ -143,10 +171,19 @@ function construirCuerpo(): ReporteEnvio {
   if (SLUG.test(props.pantalla)) cuerpo.pantalla_origen = props.pantalla
   // 🔑 La orden viaja SOLO si hay una sugerida Y la persona la confirmó.
   if (hayOrden.value && f.confirmaOrden) cuerpo.orden_servicio = ordenLimpia.value
+  if (esQueja.value) {
+    cuerpo.contacto = {
+      nombre: f.quejaNombre.trim(),
+      medio: f.quejaMedio,
+      contacto: f.quejaContacto.trim(),
+      aviso_aceptado: true,
+    }
+  }
   return cuerpo
 }
 
 async function enviar() {
+  refrescarMaximo()
   intentado.value = true
   fallo.value = null
   if (Object.keys(errores.value).length) {
@@ -164,22 +201,7 @@ async function enviar() {
     enviando.value = false
     return
   }
-  let contactoFallo = false
-  if (esQueja.value) {
-    const contacto: ContactoEnvio = {
-      nombre: f.quejaNombre.trim(),
-      medio: f.quejaMedio,
-      contacto: f.quejaContacto.trim(),
-      aviso_aceptado: true,
-    }
-    try {
-      await api.value.guardarContacto(creado.id, contacto)
-    } catch (e) {
-      contactoFallo = true
-      if (e instanceof ErrorEventosApi) emit('error', e.detalle)
-    }
-  }
-  // El contacto es dato personal: sale del estado en cuanto se envía, haya salido bien o no.
+  // El contacto es dato personal: sale del estado en cuanto el reporte quedó guardado.
   f.quejaNombre = ''
   f.quejaContacto = ''
   f.quejaAviso = false
@@ -187,7 +209,6 @@ async function enviar() {
     id: creado.id,
     consecutivo: creado.consecutivo,
     pendiente: creado.pendiente_de_revision === true,
-    contactoFallo,
   }
   enviando.value = false
   emit('reportado', {
@@ -217,9 +238,6 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
       >
         {{ exito.pendiente ? TEXTOS.pendiente(exito.consecutivo) : TEXTOS.reportado(exito.consecutivo) }}
       </div>
-      <p v-if="exito.contactoFallo" role="alert" class="rounded-md border border-status-warning bg-status-warning-bg px-3 py-2" data-pg-evento-contacto-fallo>
-        {{ TEXTOS.contactoNoGuardado }}
-      </p>
       <div class="flex justify-end">
         <Button type="button" size="sm" variant="outline" @click="emit('cancelar')">{{ TEXTOS.cerrar }}</Button>
       </div>
@@ -229,51 +247,51 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="space-y-1">
           <label for="pg-ev-tipo" class="font-medium">{{ TEXTOS.tipo }}</label>
-          <select id="pg-ev-tipo" v-model="f.tipo" :class="campo" :aria-invalid="!!ver('tipo')" aria-describedby="pg-ev-tipo-ayuda" data-pg-campo="tipo">
+          <select id="pg-ev-tipo" v-model="f.tipo" :class="campo" :aria-invalid="!!ver('tipo')" :aria-describedby="descrito('tipo', 'pg-ev-tipo-ayuda')" data-pg-campo="tipo">
             <option value="">{{ TEXTOS.tipoElige }}</option>
             <option v-for="t in TIPOS_EVENTO" :key="t.id" :value="t.id">{{ t.label }}</option>
           </select>
           <p id="pg-ev-tipo-ayuda" class="text-xs text-muted-foreground">{{ TEXTOS.tipoAyuda }}</p>
-          <p v-if="ver('tipo')" class="text-xs text-status-error">{{ ver('tipo') }}</p>
+          <p v-if="ver('tipo')" id="pg-ev-err-tipo" class="text-xs text-status-error">{{ ver('tipo') }}</p>
         </div>
 
         <div class="space-y-1">
           <label for="pg-ev-proceso" class="font-medium">{{ TEXTOS.proceso }}</label>
-          <select id="pg-ev-proceso" v-model="f.proceso" :class="campo" :aria-invalid="!!ver('proceso')" required data-pg-campo="proceso">
+          <select id="pg-ev-proceso" v-model="f.proceso" :class="campo" :aria-invalid="!!ver('proceso')" :aria-describedby="descrito('proceso')" required data-pg-campo="proceso">
             <option value="">{{ TEXTOS.procesoElige }}</option>
             <option v-for="p in procesos" :key="p.codigo" :value="p.codigo">{{ p.codigo }} · {{ p.nombre }}</option>
           </select>
-          <p v-if="ver('proceso')" class="text-xs text-status-error">{{ ver('proceso') }}</p>
+          <p v-if="ver('proceso')" id="pg-ev-err-proceso" class="text-xs text-status-error">{{ ver('proceso') }}</p>
         </div>
 
         <div class="space-y-1">
           <label for="pg-ev-sede" class="font-medium">{{ TEXTOS.sede }}</label>
-          <select id="pg-ev-sede" v-model="f.sede" :class="campo" :aria-invalid="!!ver('sede')" required data-pg-campo="sede">
+          <select id="pg-ev-sede" v-model="f.sede" :class="campo" :aria-invalid="!!ver('sede')" :aria-describedby="descrito('sede')" required data-pg-campo="sede">
             <option value="">{{ TEXTOS.sedeElige }}</option>
             <option v-for="s in SEDES" :key="s.id" :value="s.id">{{ s.label }}</option>
           </select>
-          <p v-if="ver('sede')" class="text-xs text-status-error">{{ ver('sede') }}</p>
+          <p v-if="ver('sede')" id="pg-ev-err-sede" class="text-xs text-status-error">{{ ver('sede') }}</p>
         </div>
 
         <div class="space-y-1">
           <label for="pg-ev-llego" class="font-medium">{{ TEXTOS.llego }}</label>
-          <select id="pg-ev-llego" v-model="f.llego" :class="campo" :aria-invalid="!!ver('llego')" required data-pg-campo="llego">
+          <select id="pg-ev-llego" v-model="f.llego" :class="campo" :aria-invalid="!!ver('llego')" :aria-describedby="descrito('llego')" required data-pg-campo="llego">
             <option value="">{{ TEXTOS.llegoElige }}</option>
             <option v-for="o in LLEGO_A_ALGUIEN" :key="o.id" :value="o.id">{{ o.label }}</option>
           </select>
-          <p v-if="ver('llego')" class="text-xs text-status-error">{{ ver('llego') }}</p>
+          <p v-if="ver('llego')" id="pg-ev-err-llego" class="text-xs text-status-error">{{ ver('llego') }}</p>
         </div>
 
         <div class="space-y-1">
           <label for="pg-ev-ocurrio" class="font-medium">{{ TEXTOS.fechaOcurrencia }}</label>
-          <input id="pg-ev-ocurrio" v-model="f.ocurrencia" type="datetime-local" :max="maximo" :class="campo" :aria-invalid="!!ver('ocurrencia')" required data-pg-campo="ocurrencia">
-          <p v-if="ver('ocurrencia')" class="text-xs text-status-error">{{ ver('ocurrencia') }}</p>
+          <input id="pg-ev-ocurrio" v-model="f.ocurrencia" type="datetime-local" :max="maximo" @focus="refrescarMaximo" :class="campo" :aria-invalid="!!ver('ocurrencia')" :aria-describedby="descrito('ocurrencia')" required data-pg-campo="ocurrencia">
+          <p v-if="ver('ocurrencia')" id="pg-ev-err-ocurrencia" class="text-xs text-status-error">{{ ver('ocurrencia') }}</p>
         </div>
 
         <div class="space-y-1">
           <label for="pg-ev-supo" class="font-medium">{{ TEXTOS.fechaConocimiento }}</label>
-          <input id="pg-ev-supo" v-model="f.conocimiento" type="datetime-local" :max="maximo" :class="campo" :aria-invalid="!!ver('conocimiento')" required data-pg-campo="conocimiento">
-          <p v-if="ver('conocimiento')" class="text-xs text-status-error">{{ ver('conocimiento') }}</p>
+          <input id="pg-ev-supo" v-model="f.conocimiento" type="datetime-local" :max="maximo" @focus="refrescarMaximo" :class="campo" :aria-invalid="!!ver('conocimiento')" :aria-describedby="descrito('conocimiento')" required data-pg-campo="conocimiento">
+          <p v-if="ver('conocimiento')" id="pg-ev-err-conocimiento" class="text-xs text-status-error">{{ ver('conocimiento') }}</p>
         </div>
       </div>
 
@@ -283,7 +301,7 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
           <label class="flex items-center gap-2"><input v-model="f.seguridad" type="radio" name="pg-ev-seguridad" value="si"> {{ TEXTOS.si }}</label>
           <label class="flex items-center gap-2"><input v-model="f.seguridad" type="radio" name="pg-ev-seguridad" value="no"> {{ TEXTOS.no }}</label>
         </div>
-        <p v-if="ver('seguridad')" class="text-xs text-status-error">{{ ver('seguridad') }}</p>
+        <p v-if="ver('seguridad')" id="pg-ev-err-seguridad" class="text-xs text-status-error">{{ ver('seguridad') }}</p>
       </fieldset>
 
       <div class="space-y-1">
@@ -292,14 +310,14 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
           id="pg-ev-que" v-model="f.descripcion" rows="4" maxlength="4000"
           :class="cn('w-full rounded-md border bg-background px-2 py-1.5 text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50', fallo?.causa === 'phi' ? 'border-status-error' : 'border-input')"
           :aria-invalid="!!ver('descripcion') || fallo?.causa === 'phi'"
-          aria-describedby="pg-ev-nombres"
+          :aria-describedby="descrito('descripcion', 'pg-ev-nombres')"
           :placeholder="TEXTOS.quePasoPlaceholder"
           data-pg-campo="descripcion"
         />
         <p id="pg-ev-nombres" class="text-xs" data-pg-aviso-nombres>
           <strong>{{ TEXTOS.avisoNombres }}</strong> {{ TEXTOS.avisoNombresDetalle }}
         </p>
-        <p v-if="ver('descripcion')" class="text-xs text-status-error">{{ ver('descripcion') }}</p>
+        <p v-if="ver('descripcion')" id="pg-ev-err-descripcion" class="text-xs text-status-error">{{ ver('descripcion') }}</p>
       </div>
 
       <!-- La orden sugerida: se muestra, NO se envía hasta que se confirma. -->
@@ -307,9 +325,10 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
         <p class="font-medium">{{ TEXTOS.ordenSugerida }}: <span class="font-mono">{{ ordenLimpia }}</span></p>
         <p class="text-xs text-muted-foreground">{{ TEXTOS.ordenAyuda }}</p>
         <label class="mt-2 flex items-center gap-2">
-          <input v-model="f.confirmaOrden" type="checkbox" data-pg-confirma-orden>
+          <input v-model="f.confirmaOrden" type="checkbox" :aria-invalid="!!ver('orden')" :aria-describedby="descrito('orden')" data-pg-confirma-orden>
           {{ TEXTOS.ordenConfirmar }}
         </label>
+        <p v-if="ver('orden')" id="pg-ev-err-orden" class="mt-1 text-xs text-status-error" role="alert">{{ ver('orden') }}</p>
       </div>
 
       <!-- Queja: el contacto de quien se queja, con su aviso. Va aparte, no en «¿Qué pasó?». -->
@@ -319,8 +338,8 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
         <div class="grid gap-3 sm:grid-cols-2">
           <div class="space-y-1 sm:col-span-2">
             <label for="pg-ev-q-nombre" class="font-medium">{{ TEXTOS.quejaNombre }}</label>
-            <input id="pg-ev-q-nombre" v-model="f.quejaNombre" type="text" maxlength="160" autocomplete="off" :class="campo" :aria-invalid="!!ver('quejaNombre')" data-pg-campo="quejaNombre">
-            <p v-if="ver('quejaNombre')" class="text-xs text-status-error">{{ ver('quejaNombre') }}</p>
+            <input id="pg-ev-q-nombre" v-model="f.quejaNombre" type="text" maxlength="160" autocomplete="off" :class="campo" :aria-invalid="!!ver('quejaNombre')" :aria-describedby="descrito('quejaNombre')" data-pg-campo="quejaNombre">
+            <p v-if="ver('quejaNombre')" id="pg-ev-err-quejaNombre" class="text-xs text-status-error">{{ ver('quejaNombre') }}</p>
           </div>
           <div class="space-y-1">
             <label for="pg-ev-q-medio" class="font-medium">{{ TEXTOS.quejaMedio }}</label>
@@ -331,8 +350,8 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
           </div>
           <div class="space-y-1">
             <label for="pg-ev-q-contacto" class="font-medium">{{ TEXTOS.quejaContacto }}</label>
-            <input id="pg-ev-q-contacto" v-model="f.quejaContacto" :type="f.quejaMedio === 'correo' ? 'email' : 'tel'" maxlength="160" autocomplete="off" :class="campo" :aria-invalid="!!ver('quejaContacto')" data-pg-campo="quejaContacto">
-            <p v-if="ver('quejaContacto')" class="text-xs text-status-error">{{ ver('quejaContacto') }}</p>
+            <input id="pg-ev-q-contacto" v-model="f.quejaContacto" :type="f.quejaMedio === 'correo' ? 'email' : 'tel'" maxlength="160" autocomplete="off" :class="campo" :aria-invalid="!!ver('quejaContacto')" :aria-describedby="descrito('quejaContacto')" data-pg-campo="quejaContacto">
+            <p v-if="ver('quejaContacto')" id="pg-ev-err-quejaContacto" class="text-xs text-status-error">{{ ver('quejaContacto') }}</p>
           </div>
         </div>
         <p class="text-xs" data-pg-aviso-queja>{{ avisoQueja }}</p>
@@ -340,7 +359,7 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
           <input v-model="f.quejaAviso" type="checkbox" data-pg-campo="quejaAviso">
           {{ TEXTOS.quejaAvisoAcepto }}
         </label>
-        <p v-if="ver('quejaAviso')" class="text-xs text-status-error">{{ ver('quejaAviso') }}</p>
+        <p v-if="ver('quejaAviso')" id="pg-ev-err-quejaAviso" class="text-xs text-status-error">{{ ver('quejaAviso') }}</p>
       </fieldset>
 
       <!-- Rechazo del portón de datos de pacientes: nombres de reglas, jamás el texto. -->

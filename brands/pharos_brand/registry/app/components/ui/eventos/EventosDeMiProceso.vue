@@ -103,8 +103,8 @@ const fecha = (iso: string) => iso.slice(0, 10)
           <tr
             v-for="r in ordenadas" :key="r.id"
             :class="cn('cursor-pointer border-t border-border hover:bg-accent/50', r.oculto && 'bg-status-warning-bg')"
-            tabindex="0" :data-pg-evento-fila="r.id"
-            @click="emit('abrir', r.id)" @keydown.enter="emit('abrir', r.id)"
+            role="button" tabindex="0" :data-pg-evento-fila="r.id"
+            @click="emit('abrir', r.id)" @keydown.enter.prevent="emit('abrir', r.id)" @keydown.space.prevent="emit('abrir', r.id)"
           >
             <td class="px-3 py-2">
               <span class="font-mono text-xs">{{ r.consecutivo }}</span>

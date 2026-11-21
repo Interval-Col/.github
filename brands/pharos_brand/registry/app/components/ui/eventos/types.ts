@@ -75,9 +75,11 @@ export interface ReporteEnvio {
   pantalla_origen?: string
   /** SOLO si quien reporta confirmó la sugerencia. Nunca se manda por omisión. */
   orden_servicio?: string
+  /** Solo si `tipo` es `queja`: viaja DENTRO del reporte y el servidor no lo devuelve nunca. */
+  contacto?: ContactoEnvio
 }
 
-/** Cuerpo de `PUT {apiBase}/eventos/{id}/contacto` (solo quejas). */
+/** Contacto de quien se queja (solo quejas). */
 export interface ContactoEnvio {
   nombre: string
   medio: MedioContacto
@@ -165,11 +167,11 @@ export const TEXTOS = {
   cerrar: 'Cerrar',
   reportado: (consecutivo: string) => `Quedó reportado como ${consecutivo}. Gracias: el equipo del proceso lo va a revisar.`,
   pendiente: (consecutivo: string) => `Quedó reportado como ${consecutivo}, pendiente de revisión: no pudimos revisar el texto ahora. Solo Calidad y Cumplimiento lo ven hasta que se revise.`,
-  contactoNoGuardado: 'El evento quedó reportado, pero no pudimos guardar el contacto. Avisa a Calidad para completarlo.',
   rechazoPhi: 'No se guardó: el texto parece incluir datos de una persona.',
   rechazoPhiReglas: 'Reglas que saltaron',
   rechazoPhiPie: 'No mostramos el texto que escribiste. Quita el dato, déjalo general y envía de nuevo.',
   faltanCampos: 'Revisa los campos marcados antes de enviar.',
+  campoRevisar: 'Revisa este campo.',
   campoObligatorio: 'Este campo es obligatorio.',
   ordenInvalida: 'La orden solo lleva dígitos.',
   fechaFutura: 'Esa fecha todavía no ha llegado.',

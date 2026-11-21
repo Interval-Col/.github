@@ -55,27 +55,28 @@ Reglas que el componente sostiene (no son opciones):
 2. **«No escribas nombres ni documentos»** va junto al texto libre y no se puede cerrar.
 3. **El rechazo del portón no devuelve el texto.** Con un 422 de datos de pacientes se pintan los
    **nombres de las reglas** y se conserva lo escrito para que la persona lo corrija.
-4. **El contacto de una queja** va en su propia llamada, después de crear el evento, y sale del estado del componente apenas se envía.
+4. **El contacto de una queja** viaja **dentro del mismo `POST /eventos`** (llave `contacto`, solo si el tipo es queja) y sale del estado del componente apenas el reporte queda guardado. No hay una segunda llamada: quien reporta no tiene permiso de escribir el contacto aparte.
 5. Las fechas viajan **con zona horaria** (instante ISO); el servidor rechaza las que no la traen.
 6. El navegador **solo** llama a `${apiBase}/eventos…`. Nada más.
 
 ## Rutas que el BFF de la app anfitriona debe exponer
 
-Todas bajo `<apiBase>/eventos` (misma ruta de la app; el BFF reenvía a Organización con su
+Solo estas dos, bajo `<apiBase>/eventos` (misma ruta de la app; el BFF reenvía a Organización con su
 secreto de servicio y el token de la persona, y deriva de ahí quién reporta y la app de origen).
 La orden de servicio viaja **solo en el cuerpo** de un reporte: nunca en una URL, un filtro, un log ni un mensaje de error.
 
 | Método | Ruta | Cuerpo | Respuesta | Quién la llama |
 |---|---|---|---|---|
-| `POST` | `/eventos` | `ReporteEnvio` (abajo) | `201` con `{ id, consecutivo, pendiente_de_revision, … }` | formulario |
-| `PUT` | `/eventos/{id}/contacto` | `{ nombre, medio: "correo"\|"telefono", contacto, aviso_aceptado: true }` | `204` sin cuerpo | formulario, solo si el tipo es queja |
+| `POST` | `/eventos` | `ReporteEnvio` (abajo) | `201` con `{ id, consecutivo, pendiente_de_revision, … }`; **no devuelve el contacto** | formulario |
 | `GET` | `/eventos?vista=mis_procesos` | — | `200` con una lista de `ResumenEvento`, sin texto libre | panel |
 
 `ReporteEnvio`: `tipo` · `proceso_codigo` · `sede` · `descripcion` (1–4000) · `fecha_ocurrencia` ·
 `fecha_conocimiento` (ambas con zona) · `llego_a_alguien` (`si`/`no`/`no_se`) · `seguridad_paciente`
-(bool) · `pantalla_origen` (opcional) · `orden_servicio` (opcional, solo confirmada). Cuerpo estricto:
+(bool) · `pantalla_origen` (opcional) · `orden_servicio` (opcional, solo confirmada) · `contacto` (opcional, **solo si `tipo` es `queja`**: `{ nombre, medio: "correo"\|"telefono", contacto, aviso_aceptado: true }`; con otro tipo, 422 sobre el campo `contacto`). Cuerpo estricto:
 una llave desconocida es 422. Valores de `tipo`: `no_conformidad`, `queja`, `oportunidad_mejora`;
 de `sede`: `oviedo`, `viva_palmas`, `domicilios`, `sabaneta`.
+
+El nombre del campo en `loc`/`campo` es el del cuerpo (`proceso_codigo`, `orden_servicio`, `contacto`, …); el formulario lo traduce a su control.
 
 `ResumenEvento`: `id` · `consecutivo` · `tipo` · `estado` · `proceso_codigo` · `sede` · `severidad` ·
 `urgente` · `oculto` · `creado_en`; `plazo` (fecha ISO) es **opcional**: el panel lo pinta si llega.
@@ -88,7 +89,8 @@ de `sede`: `oviedo`, `viva_palmas`, `domicilios`, `sabaneta`.
 | `403` | sin permiso de reportar | «No tienes permiso…» |
 | `404` | el módulo de eventos está apagado en Organización | «Este módulo todavía no está disponible.» |
 | `422` con `detail: { mensaje, reglas: [...] }` | **el portón de datos de pacientes rechazó el texto** | pinta los nombres de las reglas y conserva el texto |
-| `422` con `detail: { errores: [{ codigo, campo, mensaje }] }` | validación de negocio (proceso desconocido, fecha futura, …) | marca los campos señalados y pinta el primer mensaje |
+| `422` con `detail: { errores: [{ codigo, campo, mensaje }] }` | validación de negocio (proceso desconocido, fecha futura, …) | marca los campos señalados y pinta su mensaje |
+| `422` con `detail: [{ loc, msg, type }]` (la forma de FastAPI) | el cuerpo no cumple el esquema (p. ej. una orden que la API rechaza) | marca el campo de `loc`; nunca pinta `msg` ni lo escrito |
 | `503` | **no están las reglas del portón**: no se guardó nada | «Ahora mismo no podemos revisar el texto…» |
 | red caída | — | «No pudimos conectar…» |
 

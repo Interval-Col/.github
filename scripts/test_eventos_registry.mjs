@@ -57,19 +57,26 @@ test('superficie pública (S5): nada interno en el componente ni en su README', 
     [/SECRET/, 'nombre de secreto'],
     [/_KEY/, 'nombre de llave'],
     [/X-Pharos-/i, 'encabezado de servicio'],
-    [/\[0-9\]\{\d+\}|\\d\{\d+\}|\b\d{7}\b/, 'formato o ejemplo de orden de servicio'],
+    // Sin formato de identificadores: ni cuantificadores sobre dígitos ni cadenas hechas solo de dígitos.
+    [/\[0-9\]\{|\\d\{/, 'patrón de dígitos con longitud'],
+    [/(?<![=\w-])(['"`])\d+\1/, 'cadena de solo dígitos', true],
     [/\b(?:\d{1,3}\.){3}\d{1,3}\b/, 'dirección IP'],
     [/https?:\/\//i, 'URL absoluta'],
   ]
   for (const [ruta, t] of Object.entries(texto)) {
-    for (const [re, que] of prohibido) assert.ok(!re.test(t), `${ruta}: ${que} (${re})`)
+    for (const [re, que, soloCodigo] of prohibido) {
+      if (soloCodigo && ruta.endsWith('.md')) continue // en el README los códigos HTTP van entre comillas invertidas
+      assert.ok(!re.test(t), `${ruta}: ${que} (${re})`)
+    }
   }
 })
 
 test('el componente no manda la orden sin confirmar (el cuerpo solo la lleva tras la casilla)', () => {
   const f = texto[join(CARPETA, 'EventoFormulario.vue')]
   assert.match(f, /hayOrden\.value && f\.confirmaOrden/)
-  assert.equal((f.match(/orden_servicio/g) ?? []).length, 2) // el `if` que la agrega y su comentario no la duplican
+  assert.equal((f.match(/cuerpo\.orden_servicio/g) ?? []).length, 1) // una sola vía de entrada
+  assert.match(f, /watch\(\(\) => props\.ordenSugerida, \(\) => \{ f\.confirmaOrden = false \}\)/) // otra orden, otra confirmación
+  assert.match(f, /refrescarMaximo\(\)\n  intentado/) // el tope de fechas se recalcula al enviar
 })
 
 // ── Mitad pura del cliente ───────────────────────────────────────────────────────────────────
@@ -93,6 +100,14 @@ test('interpretarError: el portón de datos devuelve reglas, nunca texto', () =>
   assert.ok(!('texto' in e))
 })
 
+test('interpretarError: el 422 de FastAPI (loc) marca el campo y nunca pinta msg ni lo escrito', () => {
+  const e = interpretarError(422, { detail: [{ loc: ['body', 'orden_servicio'], msg: 'texto escrito por la persona', type: 'x', input: 'dato' }] })
+  assert.equal(e.causa, 'validacion')
+  assert.deepEqual(e.campos, ['orden_servicio'])
+  assert.ok(!JSON.stringify(e).includes('texto escrito'))
+  assert.ok(!JSON.stringify(e).includes('dato'))
+})
+
 test('interpretarError: validación, 503, sesión, permiso y apagado', () => {
   const v = interpretarError(422, { detail: { errores: [{ codigo: 'X', campo: 'proceso_codigo', mensaje: 'Ese proceso no está en el mapa.' }] } })
   assert.equal(v.causa, 'validacion')
@@ -106,23 +121,21 @@ test('interpretarError: validación, 503, sesión, permiso y apagado', () => {
   assert.notEqual(interpretarError(403, { detail: '<html>' }).mensaje, '<html>')
 })
 
-test('crearEventosApi: solo llama a ${apiBase}/eventos…, con la sesión y sin secretos', async () => {
+test('crearEventosApi: solo llama a ${apiBase}/eventos…, con la sesión y sin PUT de contacto', async () => {
   const llamadas = []
   const fetch = async (url, init) => {
     llamadas.push({ url, init })
-    if (init.method === 'PUT') return new Response(null, { status: 204 })
     if (init.method === 'POST') return new Response(JSON.stringify({ id: 'a', consecutivo: 'EV-0', pendiente_de_revision: false }), { status: 201 })
     return new Response('[]', { status: 200 })
   }
   const api = crearEventosApi({ apiBase: '/mi-app/api', fetch, headers: () => ({ 'X-Csrf': 't' }) })
   await api.listar()
-  await api.reportar({ tipo: 'queja' })
-  await api.guardarContacto('id con/barra', { nombre: 'n', medio: 'correo', contacto: 'c@ejemplo.invalid', aviso_aceptado: true })
-  assert.deepEqual(llamadas.map(l => l.url), [
-    '/mi-app/api/eventos?vista=mis_procesos',
-    '/mi-app/api/eventos',
-    '/mi-app/api/eventos/id%20con%2Fbarra/contacto',
+  await api.reportar({ tipo: 'queja', contacto: { nombre: 'n', medio: 'correo', contacto: 'c@ejemplo.invalid', aviso_aceptado: true } })
+  assert.deepEqual(llamadas.map(l => `${l.init.method} ${l.url}`), [
+    'GET /mi-app/api/eventos?vista=mis_procesos',
+    'POST /mi-app/api/eventos',
   ])
+  assert.equal(api.guardarContacto, undefined)
   assert.ok(llamadas.every(l => l.init.credentials === 'same-origin' && l.init.headers['X-Csrf'] === 't'))
 })
 

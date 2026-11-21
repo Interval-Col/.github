@@ -13,7 +13,6 @@
 // trae solo los NOMBRES de las reglas, y aquí tampoco se registra el cuerpo.
 import type {
   CausaDeError,
-  ContactoEnvio,
   ErrorDeEventos,
   EventoReportado,
   ReporteEnvio,
@@ -84,6 +83,17 @@ export function interpretarError(status: number, cuerpo: unknown): ErrorDeEvento
     const propio = mensajePropio(errores.find(e => mensajePropio(e.mensaje))?.mensaje)
     return { causa: 'validacion', mensaje: propio ?? ERRORES.validacion, campos }
   }
+  // 422 de FastAPI sin traducir: [{ loc: ['body', 'campo', …], msg, type }]. Se toma el NOMBRE del campo
+  // y nada más: `msg` e `input` pueden citar lo que se escribió.
+  if (status === 422 && Array.isArray(detail)) {
+    const campos = detail
+      .map((d) => {
+        const loc = (d as { loc?: unknown } | null)?.loc
+        return Array.isArray(loc) ? loc.filter((x): x is string => typeof x === 'string' && x !== 'body')[0] : undefined
+      })
+      .filter((c): c is string => typeof c === 'string')
+    return { causa: 'validacion', mensaje: ERRORES.validacion, campos }
+  }
   const causa = causaDe(status)
   // Solo un 4xx deja pasar el mensaje del servidor; el de un 5xx puede traer una traza.
   const propio = status >= 400 && status < 500 ? mensajePropio(detail) : null
@@ -123,9 +133,6 @@ export function crearEventosApi(opciones: EventosApiOpciones) {
     /** GET /eventos?vista=… → 200 */
     listar: (vista: 'mis_procesos' | 'mis_reportes' = 'mis_procesos') =>
       pedir<ResumenEvento[]>('GET', `?vista=${vista}`),
-    /** PUT /eventos/{id}/contacto → 204 (solo quejas) */
-    guardarContacto: (id: string, cuerpo: ContactoEnvio) =>
-      pedir<void>('PUT', `/${encodeURIComponent(id)}/contacto`, cuerpo),
   }
 }
 

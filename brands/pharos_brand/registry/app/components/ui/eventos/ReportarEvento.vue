@@ -46,7 +46,7 @@ const abierto = ref(false)
         <SheetTitle>{{ TEXTOS.reportarTitulo }}</SheetTitle>
         <SheetDescription>{{ TEXTOS.reportarDescripcion }}</SheetDescription>
       </SheetHeader>
-      <!-- `v-if` en el contenido: al cerrar se desmonta y el formulario vuelve vacío. -->
+      <!-- El contenido del panel se desmonta al cerrarlo (reka-ui no lo deja montado), así que el formulario vuelve vacío. -->
       <EventoFormulario
         v-bind="$props"
         @reportado="emit('reportado', $event)"
