@@ -169,6 +169,21 @@ class BuildTest(unittest.TestCase):
         self.assertIn("comercial/borrador", idx)  # other roots keep serving drafts
         self.assertTrue(any("1 article(s) left out" in w for w in self.warnings), self.warnings)
 
+    def test_the_real_registry_serves_cumplimiento_only_when_vigente(self):
+        # gestion-documental plan 1.3 (W-R): synthetic articles, the REAL registry entry.
+        kb = next(k for k in load_registry(REAL_REGISTRY)["kbs"] if k["id"] == "lch-admin-kb")
+        self.assertIn("cumplimiento", kb["roots"])
+        self.assertEqual(kb["vigente_only"], ["cumplimiento"])
+        self.write("cumplimiento/borrador.md", "title: B\nstatus: borrador\naudience: staff\n")
+        self.write("cumplimiento/sin-estado.md", "title: S\naudience: staff\n")  # defaults to borrador
+        self.write("cumplimiento/vigente.md", "title: V\nstatus: vigente\naudience: staff\n")
+        self.write("administrativo/borrador.md", "title: A\nstatus: borrador\naudience: staff\n")
+        idx = self.by_slug(self.build(kb))
+        self.assertNotIn("cumplimiento/borrador", idx)
+        self.assertNotIn("cumplimiento/sin-estado", idx)
+        self.assertIn("cumplimiento/vigente", idx)
+        self.assertIn("administrativo/borrador", idx)
+
     def test_a_vigente_only_root_must_be_an_indexed_root(self):
         bad = MINIMAL.replace("    recursive: true\n", "    recursive: true\n    vigente_only: [otra]\n")
         self.assertNotEqual(bad, MINIMAL)

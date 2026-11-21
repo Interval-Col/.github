@@ -36,6 +36,7 @@ audiences: [publico, staff, servicio-al-cliente, ti, liderazgo]
 #   default_status  status of an article that declares none
 #   liderazgo_areas areas whose articles default to `liderazgo` when they declare no audience
 #   audiences       what this KB's articles MAY declare (a subset of D1); outside it, the build fails
+#   vigente_only    roots (a subset of `roots`) that serve ONLY `vigente` articles; any other status is left out of the index
 
 kbs:
   - id: biuman-kb
@@ -70,7 +71,11 @@ kbs:
     # work in flight. Neither is guidance a Nerea should serve.
     # administrativo/ (2026-10-18, lch-admin-kb#20): the coordination and admin
     # twin of each customer-service guide, audience `staff`.
-    roots: [servicio-al-cliente, mesa-de-ayuda-ti, administrativo, lexico]
+    # cumplimiento/ (gestion-documental plan 1.3, W-R): controlled documents that
+    # enter as drafts. `vigente_only` keeps every non-`vigente` article out of the
+    # index, so no consumer serves one; the root never exists without the filter.
+    roots: [servicio-al-cliente, mesa-de-ayuda-ti, administrativo, lexico, cumplimiento]
+    vigente_only: [cumplimiento]
     recursive: true
     skip: []
     url: github
