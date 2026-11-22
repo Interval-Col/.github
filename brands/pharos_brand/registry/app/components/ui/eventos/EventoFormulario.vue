@@ -284,13 +284,13 @@ const campo = 'h-9 w-full rounded-md border border-input bg-background px-2 text
 
         <div class="space-y-1">
           <label for="pg-ev-ocurrio" class="font-medium">{{ TEXTOS.fechaOcurrencia }}</label>
-          <input id="pg-ev-ocurrio" v-model="f.ocurrencia" type="datetime-local" :max="maximo" @focus="refrescarMaximo" :class="campo" :aria-invalid="!!ver('ocurrencia')" :aria-describedby="descrito('ocurrencia')" required data-pg-campo="ocurrencia">
+          <input id="pg-ev-ocurrio" v-model="f.ocurrencia" type="datetime-local" :max="maximo" :class="campo" :aria-invalid="!!ver('ocurrencia')" :aria-describedby="descrito('ocurrencia')" required data-pg-campo="ocurrencia" @focus="refrescarMaximo">
           <p v-if="ver('ocurrencia')" id="pg-ev-err-ocurrencia" class="text-xs text-status-error">{{ ver('ocurrencia') }}</p>
         </div>
 
         <div class="space-y-1">
           <label for="pg-ev-supo" class="font-medium">{{ TEXTOS.fechaConocimiento }}</label>
-          <input id="pg-ev-supo" v-model="f.conocimiento" type="datetime-local" :max="maximo" @focus="refrescarMaximo" :class="campo" :aria-invalid="!!ver('conocimiento')" :aria-describedby="descrito('conocimiento')" required data-pg-campo="conocimiento">
+          <input id="pg-ev-supo" v-model="f.conocimiento" type="datetime-local" :max="maximo" :class="campo" :aria-invalid="!!ver('conocimiento')" :aria-describedby="descrito('conocimiento')" required data-pg-campo="conocimiento" @focus="refrescarMaximo">
           <p v-if="ver('conocimiento')" id="pg-ev-err-conocimiento" class="text-xs text-status-error">{{ ver('conocimiento') }}</p>
         </div>
       </div>
