@@ -61,6 +61,7 @@ oscuro `text-foreground` es casi blanco y la firma salía casi invisible en el P
 
 | `layout` | `'continuous' \| 'steps'` | `'continuous'` | **cómo se recorre.** `continuous` = todo en una pantalla. `steps` = un paso por pantalla, tres como mucho: leer el documento → quién firma con sus datos y autorizaciones → firma. Ver abajo |
 | `cityShortcuts` | `string[]` | área metropolitana de Medellín (6) | **atajos de ciudad.** Botones bajo cada «ciudad de expedición»; un toque llena la casilla, que se puede seguir escribiendo. `[]` los quita |
+| `entityShortcuts` | `string[]` | `['PARTICULAR']` | **atajos de entidad.** Botones bajo «Entidad»; la casilla además viene llena con `entityServed` cuando la app la conoce |
 
 ### `layout: 'steps'` — una cosa a la vez, a pantalla completa
 
