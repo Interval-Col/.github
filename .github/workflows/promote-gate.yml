@@ -1,0 +1,70 @@
+# Reutilizable: aviso del promote — dice en el PR develop → main qué se lleva que alguien
+# marcó como no listo para prod. Lo calcula scripts/promote-gate.sh (de este repo, @main).
+#
+# Por defecto SOLO AVISA (enforce: false). El promote se lleva todo develop, así que un
+# check que bloquee frena también a quien sí necesita desplegar. La regla de fondo es otra:
+# lo que no está listo entra apagado detrás de una bandera, y lo enciende quien lo hizo
+# (BRANCHING-AND-DEPLOY.md §Lo que no está listo entra apagado).
+#
+# Caller:
+#
+#   on:
+#     pull_request:
+#       branches: [main]
+#       types: [opened, synchronize, reopened, edited]   # edited: al marcar una casilla
+#   jobs:
+#     promote-gate:
+#       permissions: { contents: read, pull-requests: read }
+#       uses: Interval-Col/.github/.github/workflows/promote-gate.yml@main
+#
+# Sin bloque `permissions:` a propósito: un reutilizable solo puede rebajar el token del
+# caller. Este necesita contents: read (el historial) y pull-requests: read (etiquetas y
+# cuerpo del PR).
+#
+# Self-hosted por el tope de $0 en Actions, como db-tenant-check. Sin secretos.
+
+name: promote-gate
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: JSON array of runner labels
+        type: string
+        required: false
+        default: '["self-hosted"]'
+      enforce:
+        description: fail the check instead of warning (not recommended, see header)
+        type: boolean
+        required: false
+        default: false
+      label:
+        description: label that marks a merged PR as not ready for prod
+        type: string
+        required: false
+        default: bloquea-promote
+
+jobs:
+  promote-gate:
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          repository: Interval-Col/.github
+          ref: main
+          path: .promote-gate-org
+          sparse-checkout: scripts/promote-gate.sh
+          sparse-checkout-cone-mode: false
+      - name: promote-gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          LABEL: ${{ inputs.label }}
+          ENFORCE: ${{ inputs.enforce }}
+        run: bash .promote-gate-org/scripts/promote-gate.sh
