@@ -173,19 +173,24 @@ class BuildTest(unittest.TestCase):
         # gestion-documental plan 1.3 (W-R): synthetic articles, the REAL registry entry.
         kb = load_registry(REAL_REGISTRY)["kbs"]["lch-admin-kb"]
         self.assertIn("cumplimiento", kb["roots"])
-        self.assertEqual(kb["vigente_only"], ["cumplimiento"])
+        # sistema-de-gestion/ (pharos-documentacion crear-documentos 1.9): the same rule.
+        self.assertEqual(kb["vigente_only"], ["cumplimiento", "sistema-de-gestion"])
+        self.write("sistema-de-gestion/borrador.md", "title: M\nstatus: borrador\naudience: staff\n")
+        self.write("sistema-de-gestion/vigente.md", "title: MV\nstatus: vigente\naudience: staff\n")
         self.write("cumplimiento/borrador.md", "title: B\nstatus: borrador\naudience: staff\n")
         self.write("cumplimiento/sin-estado.md", "title: S\naudience: staff\n")  # defaults to borrador
         self.write("cumplimiento/vigente.md", "title: V\nstatus: vigente\naudience: staff\n")
         self.write("administrativo/borrador.md", "title: A\nstatus: borrador\naudience: staff\n")
         for r in kb["roots"]:  # every registered root must exist on disk
-            if r not in ("cumplimiento", "administrativo"):
+            if r not in ("cumplimiento", "administrativo", "sistema-de-gestion"):
                 self.write(f"{r}/ancla.md", "title: Ancla\nstatus: vigente\naudience: staff\n")
         idx = self.by_slug(self.build(kb))
         self.assertNotIn("cumplimiento/borrador", idx)
         self.assertNotIn("cumplimiento/sin-estado", idx)
         self.assertIn("cumplimiento/vigente", idx)
         self.assertIn("administrativo/borrador", idx)
+        self.assertNotIn("sistema-de-gestion/borrador", idx)
+        self.assertIn("sistema-de-gestion/vigente", idx)
 
     def test_a_vigente_only_root_must_be_an_indexed_root(self):
         bad = MINIMAL.replace("    recursive: true\n", "    recursive: true\n    vigente_only: [otra]\n")
