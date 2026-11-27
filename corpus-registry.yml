@@ -36,6 +36,7 @@ audiences: [publico, staff, servicio-al-cliente, ti, liderazgo]
 #   default_status  status of an article that declares none
 #   liderazgo_areas areas whose articles default to `liderazgo` when they declare no audience
 #   audiences       what this KB's articles MAY declare (a subset of D1); outside it, the build fails
+#   vigente_only    roots (a subset of `roots`) that serve ONLY `vigente` articles; any other status is left out of the index
 
 kbs:
   - id: biuman-kb
@@ -70,7 +71,16 @@ kbs:
     # work in flight. Neither is guidance a Nerea should serve.
     # administrativo/ (2026-10-18, lch-admin-kb#20): the coordination and admin
     # twin of each customer-service guide, audience `staff`.
-    roots: [servicio-al-cliente, mesa-de-ayuda-ti, administrativo, lexico]
+    # cumplimiento/ (gestion-documental plan 1.3, W-R): controlled documents that
+    # enter as drafts. `vigente_only` keeps every non-`vigente` article out of the
+    # index, so no consumer serves one; the root never exists without the filter.
+    # sistema-de-gestion/ (pharos-documentacion crear-documentos 1.9, 2026-11-23): the
+    # process map and one characterization per process, born `borrador` through the
+    # app. Same rule as cumplimiento/: `vigente_only`, so no Nerea serves a draft map.
+    # Merge AFTER lch-admin-kb has the folder (its README.md): a missing root fails
+    # kb_index.py's `discover`.
+    roots: [servicio-al-cliente, mesa-de-ayuda-ti, administrativo, lexico, cumplimiento, sistema-de-gestion]
+    vigente_only: [cumplimiento, sistema-de-gestion]
     recursive: true
     skip: []
     url: github

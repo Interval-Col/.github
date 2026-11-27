@@ -183,8 +183,13 @@ def load_registry(text: str, path: str = "corpus-registry.yml") -> dict:
                 problems.append(f"kb `{kid}`: `{req}` is required")
         if kb.get("url") not in (None, "site", "github"):
             problems.append(f"kb `{kid}`: `url` must be `site` or `github`")
-        for field in ("roots", "skip", "liderazgo_areas", "audiences"):
+        for field in ("roots", "skip", "liderazgo_areas", "audiences", "vigente_only"):
             kb[field] = _as_list(kb.get(field))
+        # A root listed here serves ONLY its `vigente` articles: anything else is left
+        # out of the index, so no consumer (Nerea, a Conocimiento view) ever sees it.
+        fuera = [r for r in kb["vigente_only"] if r not in kb["roots"]]
+        if fuera:
+            problems.append(f"kb `{kid}`: vigente_only names roots it does not index: {fuera}")
         bad = [a for a in kb["audiences"] if a not in AUDIENCES]
         if bad:
             problems.append(f"kb `{kid}`: audiences outside D1: {bad}")

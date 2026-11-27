@@ -30,6 +30,7 @@ doc is the detailed reference.
 | Build / promote model | **Build once on `develop`, promote SAME image to prod** — never rebuild per environment (see §"Build-once-promote") |
 | Image tagging | Built with `<commit-sha>`; retagged `v1.2.3` on promote; deploys ideally pin by `sha256` digest |
 | Release tag on `main` | **Semver** (`v1.2.3`) + GitHub Release per deploy |
+| Not ready for prod | Ships to `develop` **behind a flag off in prod**, owned by its author; `promote-gate` warns on the promote PR, never blocks (see §"Lo que no está listo entra apagado") |
 | Hotfix flow | `hotfix/*` off `main` → PR to `main` → merge `main` forward into `develop` |
 | Stale branch policy | Warn @30d (label `stale`) / archive + close @90d (label `stale-archived`) — `actions/stale` re-comments naturally as the close window advances; no separate 60-day ping |
 | CODEOWNERS | Required per repo |
@@ -346,6 +347,38 @@ jobs:
 
 Repos **without** a `develop` branch (docs-only) skip the guard — they have no
 escalator; their rails are `enforce_admins` + `gitleaks` + PR-required.
+
+### Lo que no está listo entra apagado — y el promote avisa
+
+El promote se lleva **todo** `develop` a producción: no hay forma de sacar solo lo de una
+persona. Por eso la responsabilidad de que algo no salga antes de tiempo es de **quien lo
+hizo**, y nunca se resuelve frenando el promote, porque eso frena también a quien sí
+necesita desplegar.
+
+**La regla.** Toda funcionalidad nueva o cambio de comportamiento que todavía no puede
+salir entra a `develop` **detrás de una bandera apagada en producción** y se enciende con
+configuración, no con un promote. Así cualquiera puede promover cuando lo necesita, con
+confianza.
+
+- **No llevan bandera** los arreglos, la documentación, los refactors ni CI. Si no están
+  listos, no se mergean a `develop`.
+- **Las migraciones no se apagan:** solo agregan (expand/contract), para que la imagen
+  anterior siga funcionando con el esquema nuevo.
+- La bandera tiene dueño y fecha. Cuando ya quedó encendida en producción, se retira en un
+  PR propio.
+
+**El aviso.** El check `promote-gate`
+([reutilizable](.github/workflows/promote-gate.yml)) le dice al PR `develop → main` qué se
+lleva que alguien marcó como no listo, y por defecto **no bloquea**:
+
+- un PR mergeado con la etiqueta `bloquea-promote` que está en `develop` y no en `main`;
+- una casilla sin marcar (`- [ ]`) en la sección «Antes de mergear» del cuerpo del PR de
+  promote.
+
+Quien hizo el cambio pone la etiqueta, o quien lo mergea a `develop` si sabe que tiene una
+condición pendiente. Cuando lo marcado ya está apagado detrás de su bandera o ya está listo,
+se quita la etiqueta y se marca la casilla. Si un PR etiquetado se revirtió en `develop`,
+también se le quita la etiqueta.
 
 ---
 

@@ -154,6 +154,50 @@ class BuildTest(unittest.TestCase):
         idx = self.by_slug(self.build())
         self.assertEqual({a["status"] for a in idx.values()}, {"borrador"}, idx)
 
+    def test_a_vigente_only_root_never_indexes_a_draft(self):
+        # gestion-documental plan 1.3 (G8): a draft under such a root never reaches a
+        # consumer edge, whatever area or audience it declares.
+        kb = dict(_kb(), vigente_only=["guias"])
+        self.write("guias/borrador.md", "title: B\nstatus: borrador\narea: comercial\naudience: staff\n")
+        self.write("guias/sin-estado.md", "title: S\n")  # kb-a defaults to vigente
+        self.write("guias/vigente.md", "title: V\nstatus: vigente\n")
+        self.write("comercial/borrador.md", "title: C\nstatus: borrador\n")
+        idx = self.by_slug(self.build(kb))
+        self.assertNotIn("guias/borrador", idx)
+        self.assertIn("guias/vigente", idx)
+        self.assertIn("guias/sin-estado", idx)
+        self.assertIn("comercial/borrador", idx)  # other roots keep serving drafts
+        self.assertTrue(any("1 article(s) left out" in w for w in self.warnings), self.warnings)
+
+    def test_the_real_registry_serves_cumplimiento_only_when_vigente(self):
+        # gestion-documental plan 1.3 (W-R): synthetic articles, the REAL registry entry.
+        kb = load_registry(REAL_REGISTRY)["kbs"]["lch-admin-kb"]
+        self.assertIn("cumplimiento", kb["roots"])
+        # sistema-de-gestion/ (pharos-documentacion crear-documentos 1.9): the same rule.
+        self.assertEqual(kb["vigente_only"], ["cumplimiento", "sistema-de-gestion"])
+        self.write("sistema-de-gestion/borrador.md", "title: M\nstatus: borrador\naudience: staff\n")
+        self.write("sistema-de-gestion/vigente.md", "title: MV\nstatus: vigente\naudience: staff\n")
+        self.write("cumplimiento/borrador.md", "title: B\nstatus: borrador\naudience: staff\n")
+        self.write("cumplimiento/sin-estado.md", "title: S\naudience: staff\n")  # defaults to borrador
+        self.write("cumplimiento/vigente.md", "title: V\nstatus: vigente\naudience: staff\n")
+        self.write("administrativo/borrador.md", "title: A\nstatus: borrador\naudience: staff\n")
+        for r in kb["roots"]:  # every registered root must exist on disk
+            if r not in ("cumplimiento", "administrativo", "sistema-de-gestion"):
+                self.write(f"{r}/ancla.md", "title: Ancla\nstatus: vigente\naudience: staff\n")
+        idx = self.by_slug(self.build(kb))
+        self.assertNotIn("cumplimiento/borrador", idx)
+        self.assertNotIn("cumplimiento/sin-estado", idx)
+        self.assertIn("cumplimiento/vigente", idx)
+        self.assertIn("administrativo/borrador", idx)
+        self.assertNotIn("sistema-de-gestion/borrador", idx)
+        self.assertIn("sistema-de-gestion/vigente", idx)
+
+    def test_a_vigente_only_root_must_be_an_indexed_root(self):
+        bad = MINIMAL.replace("    recursive: true\n", "    recursive: true\n    vigente_only: [otra]\n")
+        self.assertNotEqual(bad, MINIMAL)
+        with self.assertRaisesRegex(RegistryError, "vigente_only names roots it does not index"):
+            load_registry(bad)
+
     def test_unknown_audience_fails_the_build(self):
         self.write("guias/a.md", "title: A\naudience: gerencia\n")
         with self.assertRaisesRegex(kb_index.KbError, "not in D1"):

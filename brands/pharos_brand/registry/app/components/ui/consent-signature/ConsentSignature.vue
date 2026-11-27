@@ -84,12 +84,18 @@ const props = withDefaults(defineProps<{
    * firma, datos y firma, uno debajo del otro.
    *
    * `steps` — un paso por pantalla, para una tablet que se le entrega al
-   * paciente: leer el documento → quién firma → datos y declaraciones → firmar.
+   * paciente: leer el documento → quién firma con sus datos y declaraciones →
+   * firmar (tres pasos como mucho; quién firma y los datos van juntos).
    * Cada paso ocupa todo el alto que la app le dé, y no se avanza sin
    * responder lo que el paso pide. Los pasos que el formulario no tiene se
    * saltan solos. La app le da al widget el alto de la pantalla.
    */
   layout?: 'continuous' | 'steps'
+  /**
+   * Atajos bajo cada «ciudad de expedición»: un toque llena la casilla. Por omisión,
+   * las del área metropolitana donde están las sedes; `[]` los quita.
+   */
+  cityShortcuts?: string[]
 }>(), {
   documentError: null,
   orderNumber: null,
@@ -104,6 +110,7 @@ const props = withDefaults(defineProps<{
   density: 'escritorio',
   documentPages: null,
   layout: 'continuous',
+  cityShortcuts: () => ['MEDELLÍN', 'ENVIGADO', 'BELLO', 'SABANETA', 'ITAGÜÍ', 'LA ESTRELLA'],
 })
 
 const esTablet = computed(() => props.density === 'tablet')
@@ -227,32 +234,36 @@ const canSign = computed(() =>
 )
 
 // ── Paso a paso (`layout: 'steps'`) ─────────────────────────────────────────
-type Step = 'document' | 'signer' | 'details' | 'signature'
-
-const STEP_TITLE: Record<Step, string> = {
-  document: 'Lee el documento',
-  signer: '¿Quién firma?',
-  details: 'Datos y autorizaciones',
-  signature: 'Firma',
-}
+// Tres pasos como mucho: quién firma y los datos van en la MISMA pantalla. Cada uno
+// solo dejaba una pantalla casi vacía, y en la prueba de dev del 20-nov la
+// bacterióloga eligió «El paciente» e intentó firmar ahí (pharos-ti#236).
+type Step = 'document' | 'details' | 'signature'
 
 const isStepped = computed(() => props.layout === 'steps')
 
-const hasDetails = computed(() =>
-  props.form.requiresExpeditionCity
-  || props.form.requiresEntityServed
-  || (props.form.requiresPatientExpeditionCity && representativeSigns.value)
-  || props.form.hasSampleConservationChoice
-  || props.form.hasMicroscopicImagesChoice
+// Sale SOLO del formulario, no de quién firma: así ni el título ni la lista de
+// pasos cambian al tocar «representante».
+const hasFormDetails = computed(() =>
+  !!props.form.requiresExpeditionCity
+  || !!props.form.requiresEntityServed
+  || !!props.form.requiresPatientExpeditionCity
+  || !!props.form.hasSampleConservationChoice
+  || !!props.form.hasMicroscopicImagesChoice
   || declaraciones.value.length > 0,
 )
+const hasDetailsStep = computed(() => !!props.form.allowsLegalRepresentative || hasFormDetails.value)
 
-// Sólo los pasos que este formulario tiene. La lista puede cambiar en vivo:
-// elegir «representante» puede agregar el paso de datos (la ciudad del paciente).
+const stepTitle = (step: Step): string => {
+  if (step === 'document') return 'Lee el documento'
+  if (step === 'signature') return 'Firma'
+  if (props.form.allowsLegalRepresentative) return hasFormDetails.value ? 'Quién firma y datos' : '¿Quién firma?'
+  return 'Datos y autorizaciones'
+}
+
+// Sólo los pasos que este formulario tiene; la lista no cambia mientras se firma.
 const steps = computed<Step[]>(() => {
   const list: Step[] = ['document']
-  if (props.form.allowsLegalRepresentative) list.push('signer')
-  if (hasDetails.value) list.push('details')
+  if (hasDetailsStep.value) list.push('details')
   list.push('signature')
   return list
 })
@@ -260,6 +271,10 @@ const steps = computed<Step[]>(() => {
 const stepIndex = ref(0)
 const currentStep = computed<Step>(() => steps.value[Math.min(stepIndex.value, steps.value.length - 1)]!)
 const isLastStep = computed(() => currentStep.value === 'signature')
+/** El paso siguiente es la firma: se dice, para que nadie intente firmar antes. */
+const nextIsSignature = computed(() =>
+  isStepped.value && steps.value[steps.value.indexOf(currentStep.value) + 1] === 'signature',
+)
 
 /** En `continuous` se ve todo; en `steps`, sólo el paso actual. */
 const isShown = (step: Step): boolean => !isStepped.value || currentStep.value === step
@@ -269,8 +284,11 @@ const isShown = (step: Step): boolean => !isStepped.value || currentStep.value =
 const canAdvance = computed(() => {
   switch (currentStep.value) {
     case 'document': return documentReady.value
-    case 'signer': return !quienFirmaSinResponder.value && !representativeIncomplete.value
-    case 'details': return !missingRequiredText.value && !declaracionesSinResponder.value
+    case 'details':
+      return !quienFirmaSinResponder.value
+        && !representativeIncomplete.value
+        && !missingRequiredText.value
+        && !declaracionesSinResponder.value
     default: return false
   }
 })
@@ -403,7 +421,7 @@ function submit() {
     <div v-if="isStepped" class="flex flex-wrap items-center justify-between gap-2" aria-live="polite">
       <p class="text-base text-muted-foreground">
         Paso {{ steps.indexOf(currentStep) + 1 }} de {{ steps.length }} ·
-        <span class="font-medium text-foreground">{{ STEP_TITLE[currentStep] }}</span>
+        <span class="font-medium text-foreground">{{ stepTitle(currentStep) }}</span>
       </p>
       <div class="flex gap-1.5" aria-hidden="true">
         <span
@@ -453,155 +471,212 @@ function submit() {
       </div>
     </div>
 
-    <!-- Quién firma (sólo los formularios que admiten representante).
+    <!-- Quién firma, sus datos y las declaraciones: UN paso en `steps`, con scroll
+         propio para que el pie con los botones siempre se vea (con el teclado
+         abierto en horizontal también). Fuera de ese paso no ocupa alto. -->
+    <div
+      v-if="hasDetailsStep"
+      v-show="isShown('details')"
+      class="flex flex-col gap-4"
+      :class="isStepped && 'min-h-0 flex-1 overflow-y-auto'"
+    >
+      <p v-if="nextIsSignature && !form.allowsLegalRepresentative" class="text-sm text-muted-foreground">
+        La firma va en el siguiente paso.
+      </p>
+      <!-- Quién firma (sólo los formularios que admiten representante).
 
-         Pregunta con dos opciones y SIN opción marcada, calcada de la app vieja:
-         mientras no se responda, el botón de firmar está deshabilitado. Un
-         checkbox desmarcado —lo que había antes— es una respuesta que nadie dio. -->
-    <div v-if="form.allowsLegalRepresentative" v-show="isShown('signer')" class="flex flex-col gap-3">
-      <fieldset class="flex flex-col gap-2">
-        <legend class="text-sm font-medium text-foreground">
-          ¿Quién firma este consentimiento?
-        </legend>
-        <div class="flex flex-wrap gap-2">
-          <!-- Botones grandes y no radios diminutos: esto se responde con el dedo
-               en una tablet, de pie, con el paciente delante. -->
-          <button
-            v-for="opcion in QUIEN_FIRMA_OPCIONES"
-            :key="opcion.value"
-            type="button"
-            :disabled="submitting"
-            :aria-pressed="quienFirma === opcion.value"
-            class="rounded-md border px-4 py-2 transition-colors disabled:opacity-50"
-            :class="[
-              esTablet ? 'min-h-14 px-6 text-lg' : 'min-h-11 text-sm',
-              quienFirma === opcion.value
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-input bg-background text-foreground hover:bg-accent',
-            ]"
-            @click="quienFirma = opcion.value"
-          >
-            {{ opcion.label }}
-          </button>
+           Pregunta con dos opciones y SIN opción marcada, calcada de la app vieja:
+           mientras no se responda, el botón de firmar está deshabilitado. Un
+           checkbox desmarcado —lo que había antes— es una respuesta que nadie dio. -->
+      <div v-if="form.allowsLegalRepresentative" class="flex flex-col gap-3">
+        <fieldset class="flex flex-col gap-2">
+          <legend class="text-sm font-medium text-foreground">
+            ¿Quién firma este consentimiento?
+          </legend>
+          <div class="flex flex-wrap gap-2">
+            <!-- Botones grandes y no radios diminutos: esto se responde con el dedo
+                 en una tablet, de pie, con el paciente delante. -->
+            <button
+              v-for="opcion in QUIEN_FIRMA_OPCIONES"
+              :key="opcion.value"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="quienFirma === opcion.value"
+              class="rounded-md border px-4 py-2 transition-colors disabled:opacity-50"
+              :class="[
+                esTablet ? 'min-h-14 px-6 text-lg' : 'min-h-11 text-sm',
+                quienFirma === opcion.value
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+              ]"
+              @click="quienFirma = opcion.value"
+            >
+              {{ opcion.label }}
+            </button>
+          </div>
+          <p v-if="quienFirmaSinResponder" class="text-xs text-muted-foreground">
+            Responde quién va a firmar para poder continuar.
+          </p>
+          <p v-else-if="nextIsSignature" class="text-sm text-muted-foreground">
+            La firma va en el siguiente paso.
+          </p>
+        </fieldset>
+        <div v-if="representativeSigns" class="grid gap-3 sm:grid-cols-3">
+          <div class="flex flex-col gap-1.5 sm:col-span-3">
+            <Label for="consent-rep-name">Nombre del representante</Label>
+            <Input id="consent-rep-name" v-model="representativeName" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <Label for="consent-rep-id-type">Tipo de documento</Label>
+            <Select v-model="representativeIdType" :disabled="submitting">
+              <SelectTrigger id="consent-rep-id-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="t in IDENTIFICATION_TYPES" :key="t.value" :value="t.value">
+                  {{ t.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <Label for="consent-rep-id">Número de documento</Label>
+            <Input
+              id="consent-rep-id"
+              v-model="representativeIdNumber" :class="esTablet && 'h-12 text-lg'"
+              inputmode="numeric"
+              autocomplete="off"
+              :disabled="submitting"
+            />
+          </div>
         </div>
-        <p v-if="quienFirmaSinResponder" class="text-xs text-muted-foreground">
-          Responde quién va a firmar para poder continuar.
-        </p>
-      </fieldset>
-      <div v-if="representativeSigns" class="grid gap-3 sm:grid-cols-3">
-        <div class="flex flex-col gap-1.5 sm:col-span-3">
-          <Label for="consent-rep-name">Nombre del representante</Label>
-          <Input id="consent-rep-name" v-model="representativeName" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
+      </div>
+
+      <!-- Lo que el PDF imprime además de las firmas. Vive FUERA del bloque del
+           representante: hay formularios sin representante que igual piden ciudad. -->
+      <div
+        v-if="form.requiresExpeditionCity || form.requiresPatientExpeditionCity || form.requiresEntityServed"
+        class="flex flex-col gap-3"
+      >
+        <!-- Si firma el paciente, su ciudad ES esta: sin la casilla a la vista, un
+             formulario que solo pide la del paciente quedaba sin cómo llenarla. -->
+        <div
+          v-if="form.requiresExpeditionCity || (form.requiresPatientExpeditionCity && !representativeSigns)"
+          class="flex flex-col gap-1.5 sm:max-w-xl"
+        >
+          <Label for="consent-expedition">
+            {{ representativeSigns ? 'Ciudad de expedición del documento del representante' : 'Ciudad de expedición del documento' }}
+          </Label>
+          <Input id="consent-expedition" v-model="expeditionCity" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
+          <div v-if="cityShortcuts.length" class="flex flex-wrap gap-2">
+            <button
+              v-for="ciudad in cityShortcuts"
+              :key="ciudad"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="expeditionCity === ciudad"
+              class="rounded-md border px-3 transition-colors disabled:opacity-50"
+              :class="[
+                esTablet ? 'min-h-11 text-base' : 'min-h-9 text-sm',
+                expeditionCity === ciudad
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+              ]"
+              @click="expeditionCity = ciudad"
+            >
+              {{ ciudad }}
+            </button>
+          </div>
         </div>
-        <div class="flex flex-col gap-1.5">
-          <Label for="consent-rep-id-type">Tipo de documento</Label>
-          <Select v-model="representativeIdType" :disabled="submitting">
-            <SelectTrigger id="consent-rep-id-type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="t in IDENTIFICATION_TYPES" :key="t.value" :value="t.value">
-                {{ t.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div class="flex flex-col gap-1.5 sm:col-span-2">
-          <Label for="consent-rep-id">Número de documento</Label>
+        <div
+          v-if="form.requiresPatientExpeditionCity && representativeSigns"
+          class="flex flex-col gap-1.5 sm:max-w-xl"
+        >
+          <Label for="consent-patient-expedition">Ciudad de expedición del documento del paciente</Label>
           <Input
-            id="consent-rep-id"
-            v-model="representativeIdNumber" :class="esTablet && 'h-12 text-lg'"
-            inputmode="numeric"
+            id="consent-patient-expedition"
+            v-model="patientExpeditionCity" :class="esTablet && 'h-12 text-lg'"
+            class="uppercase"
             autocomplete="off"
             :disabled="submitting"
           />
+          <div v-if="cityShortcuts.length" class="flex flex-wrap gap-2">
+            <button
+              v-for="ciudad in cityShortcuts"
+              :key="ciudad"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="patientExpeditionCity === ciudad"
+              class="rounded-md border px-3 transition-colors disabled:opacity-50"
+              :class="[
+                esTablet ? 'min-h-11 text-base' : 'min-h-9 text-sm',
+                patientExpeditionCity === ciudad
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+              ]"
+              @click="patientExpeditionCity = ciudad"
+            >
+              {{ ciudad }}
+            </button>
+          </div>
+        </div>
+        <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
+          <Label for="consent-entity">Entidad</Label>
+          <Input id="consent-entity" v-model="entidadEscrita" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
         </div>
       </div>
-    </div>
 
-    <!-- Lo que el PDF imprime además de las firmas. Vive FUERA del bloque del
-         representante: hay formularios sin representante que igual piden ciudad. -->
-    <div
-      v-if="form.requiresExpeditionCity || form.requiresPatientExpeditionCity || form.requiresEntityServed"
-      v-show="isShown('details')"
-      class="flex flex-col gap-3"
-    >
-      <div v-if="form.requiresExpeditionCity" class="flex flex-col gap-1.5 sm:max-w-xs">
-        <Label for="consent-expedition">
-          {{ representativeSigns ? 'Ciudad de expedición del documento del representante' : 'Ciudad de expedición del documento' }}
-        </Label>
-        <Input id="consent-expedition" v-model="expeditionCity" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
-      </div>
+      <!-- Declarations some forms print -->
       <div
-        v-if="form.requiresPatientExpeditionCity && representativeSigns"
-        class="flex flex-col gap-1.5 sm:max-w-xs"
+        v-if="form.hasSampleConservationChoice || form.hasMicroscopicImagesChoice"
+        class="flex flex-col gap-2"
       >
-        <Label for="consent-patient-expedition">Ciudad de expedición del documento del paciente</Label>
-        <Input
-          id="consent-patient-expedition"
-          v-model="patientExpeditionCity" :class="esTablet && 'h-12 text-lg'"
-          class="uppercase"
-          autocomplete="off"
-          :disabled="submitting"
-        />
-      </div>
-      <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
-        <Label for="consent-entity">Entidad</Label>
-        <Input id="consent-entity" v-model="entidadEscrita" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
-      </div>
-    </div>
-
-    <!-- Declarations some forms print -->
-    <div
-      v-if="form.hasSampleConservationChoice || form.hasMicroscopicImagesChoice"
-      v-show="isShown('details')"
-      class="flex flex-col gap-2"
-    >
-      <div v-if="form.hasSampleConservationChoice" class="flex items-center gap-2">
-        <Checkbox
-          id="consent-conserve"
-          v-model="conserveSamples"
-          :disabled="submitting"
-
-        />
-        <Label for="consent-conserve">Autorizo la conservación de mis muestras biológicas</Label>
-      </div>
-      <div v-if="form.hasMicroscopicImagesChoice" class="flex items-center gap-2">
-        <Checkbox
-          id="consent-images"
-          v-model="microscopicImages"
-          :disabled="submitting"
-
-        />
-        <Label for="consent-images">Autorizo el uso de imágenes microscópicas con fines académicos</Label>
-      </div>
-    </div>
-
-    <!-- Declaraciones dictadas por el catálogo: Sí / No explícito, sin valor
-         por defecto. El texto de cada pregunta viene del catálogo. -->
-    <div v-if="declaraciones.length > 0" v-show="isShown('details')" class="flex flex-col gap-3">
-      <fieldset v-for="d in declaraciones" :key="d.key" class="flex flex-col gap-2">
-        <legend class="text-sm font-medium text-foreground">{{ d.label }}</legend>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="opcion in [{ v: true, t: 'Sí' }, { v: false, t: 'No' }]"
-            :key="String(opcion.v)"
-            type="button"
+        <div v-if="form.hasSampleConservationChoice" class="flex items-center gap-2">
+          <Checkbox
+            id="consent-conserve"
+            v-model="conserveSamples"
             :disabled="submitting"
-            :aria-pressed="respuestasDeclaraciones[d.key] === opcion.v"
-            class="min-h-11 min-w-20 rounded-md border px-4 py-2 text-sm transition-colors disabled:opacity-50"
-            :class="respuestasDeclaraciones[d.key] === opcion.v
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-input bg-background text-foreground hover:bg-accent'"
-            @click="respuestasDeclaraciones[d.key] = opcion.v"
-          >
-            {{ opcion.t }}
-          </button>
+
+          />
+          <Label for="consent-conserve">Autorizo la conservación de mis muestras biológicas</Label>
         </div>
-      </fieldset>
-      <p v-if="declaracionesSinResponder" class="text-xs text-muted-foreground">
-        Responde Sí o No en cada pregunta para poder continuar.
-      </p>
+        <div v-if="form.hasMicroscopicImagesChoice" class="flex items-center gap-2">
+          <Checkbox
+            id="consent-images"
+            v-model="microscopicImages"
+            :disabled="submitting"
+
+          />
+          <Label for="consent-images">Autorizo el uso de imágenes microscópicas con fines académicos</Label>
+        </div>
+      </div>
+
+      <!-- Declaraciones dictadas por el catálogo: Sí / No explícito, sin valor
+           por defecto. El texto de cada pregunta viene del catálogo. -->
+      <div v-if="declaraciones.length > 0" class="flex flex-col gap-3">
+        <fieldset v-for="d in declaraciones" :key="d.key" class="flex flex-col gap-2">
+          <legend class="text-sm font-medium text-foreground">{{ d.label }}</legend>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="opcion in [{ v: true, t: 'Sí' }, { v: false, t: 'No' }]"
+              :key="String(opcion.v)"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="respuestasDeclaraciones[d.key] === opcion.v"
+              class="min-h-11 min-w-20 rounded-md border px-4 py-2 text-sm transition-colors disabled:opacity-50"
+              :class="respuestasDeclaraciones[d.key] === opcion.v
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-input bg-background text-foreground hover:bg-accent'"
+              @click="respuestasDeclaraciones[d.key] = opcion.v"
+            >
+              {{ opcion.t }}
+            </button>
+          </div>
+        </fieldset>
+        <p v-if="declaracionesSinResponder" class="text-xs text-muted-foreground">
+          Responde Sí o No en cada pregunta para poder continuar.
+        </p>
+      </div>
     </div>
 
     <!-- The pad -->
@@ -645,8 +720,8 @@ function submit() {
       <AlertCircle class="size-4 shrink-0" aria-hidden="true" />
       <span>{{ error }}</span>
     </p>
-    <p v-else-if="representativeIncomplete && isShown('signer')" class="text-xs text-muted-foreground">
-      Completa el nombre y el documento del representante para poder firmar.
+    <p v-else-if="representativeIncomplete && isShown('details')" class="text-xs text-muted-foreground">
+      Completa el nombre y el documento del representante para poder continuar.
     </p>
 
     <footer class="flex flex-wrap items-center justify-end gap-3" :class="isStepped && 'mt-auto'">
@@ -675,7 +750,9 @@ function submit() {
         :disabled="!canAdvance"
         @click="advance"
       >
-        {{ currentStep === 'document' ? 'Ya lo leí' : 'Siguiente' }}
+        {{ currentStep === 'document'
+          ? (nextIsSignature ? 'Ya lo leí, ir a firmar' : 'Ya lo leí')
+          : (nextIsSignature ? 'Siguiente: firmar' : 'Siguiente') }}
         <ArrowRight class="ml-1 size-5" aria-hidden="true" />
       </Button>
       <Button v-else :class="esTablet && 'h-14 px-8 text-lg'" :disabled="!canSign" @click="submit">
