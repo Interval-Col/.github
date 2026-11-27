@@ -296,6 +296,7 @@ oscillate the dirty status without ever clearing it.
 - Python/node versions pinned.
 - Separate `Dockerfile` for BE and FE.
 - Root-level `docker-compose.yml` or `compose.yaml`.
+- **Claude Code on work machines runs only with the organization's account, with its managed telemetry on** (from the switch-on date in `pharos-analitica` plan 7.9). The managed settings send per-person, per-day counts (sessions, active time, tokens, cost, commits, PRs, lines) and never prompt text, tool inputs or files; they are in [`pharos-analitica/docs/equipo/telemetria-claude.md`](https://github.com/Interval-Col/pharos-analitica/blob/develop/docs/equipo/telemetria-claude.md). Do not override or remove them.
 
 ### 🗝️ Secrets & vaults
 
