@@ -411,6 +411,39 @@ A separate template for the issue body lives at
 `.github/templates/issue-template.md` (alongside the plan template);
 keep them aligned.
 
+### The issue tree (talla M and L)
+
+A new plan of `talla` M or L (RFC 0040) is mirrored in GitHub as a tree of
+**sub-issues**, so whoever follows the work — a lead, or Periscopio's project
+book in Pháros TI — reads where each phase is from GitHub alone. Adopted
+2026-11-19 (`Interval-Col/pharos-ti#213`).
+
+| In the plan | In GitHub | On Project #2 |
+|---|---|---|
+| The plan | the **epic** tracking issue (`issue:` in the frontmatter) | yes |
+| `## Phase N` | a **phase issue**, sub-issue of the epic, in phase order | yes, with its `Target` date |
+| `🚦 Checkpoint N` | a sub-issue of the epic right after its phase, with `🚦` at the start of its title | yes, with its `Target` |
+| `- [ ] **N.M**` task | a **task issue**, sub-issue of its phase issue, in task order | no — kept off the board |
+
+- **One checkbox, one task issue.** The checkbox stays in the plan (the plan
+  is still the source of truth for the *how*); the issue carries the *state*.
+  Write the issue number next to the task: `- [ ] **2.3** — … (#NN)`.
+- **Titles** follow `ISSUE_TITLE_STYLE.md`. Phase issues may lead with their
+  number (`[E2] …`), task issues with their area (`[Plat] …`).
+- **PRs close task issues** with `Closes #NN`, so a task moves from «sin
+  empezar» to «a medias» (an open PR links it) to «cerrada» on its own.
+- **At most 100 sub-issues per parent** (a GitHub limit). A phase with more
+  tasks than that is two phases.
+- **Plans already open** adopt the tree when their owner next re-baselines
+  them; nobody back-fills a closed phase.
+- `talla` S has no plan (its ficha lives in the issue), so it has no tree.
+
+*(ES: un plan nuevo M o L se refleja en GitHub como árbol: la épica, una fase
+por sub-issue de la épica —y cada 🚦—, una tarea por sub-issue de su fase. La
+casilla sigue en el plan con el número del issue al lado. Épica, fases y 🚦 van
+al tablero con su Target; las tareas, no. Los PRs cierran las tareas con
+`Closes #NN`.)*
+
 ## When NOT to write a plan · Cuándo NO escribir un plan
 
 > **Ratified in RFC 0011** (plan + issue consolidation, 2026-06-30) after the plan

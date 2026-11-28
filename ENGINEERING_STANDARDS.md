@@ -742,6 +742,17 @@ junior, Spanish-native, AI-agent-assisted dev team. It standardises:
 - **The ficha comes first** — in a plan of `talla` M or L (RFC 0040), the
   understanding section opens the plan, and the last phase is delivery and
   stabilization.
+- **The plan comes with its issue tree** — every new plan of `talla` M or L
+  is mirrored in GitHub as a tree of sub-issues: the epic tracking issue has
+  one sub-issue per phase (and per 🚦 checkpoint), and each phase issue has
+  one sub-issue per task checkbox. The epic and the phase issues go on the
+  Project #2 board, each phase with its `Target`; task issues stay off the
+  board. PRs close task issues (`Closes #NN`). This is what lets a reader —
+  or Periscopio's project book — see which phase is where without opening the
+  plan. Detail in the agent prompt, § "The issue tree". *(ES: todo plan
+  nuevo M o L nace con su árbol: épica → una fase por sub-issue → una tarea
+  por sub-issue de su fase. Épica y fases en el tablero con su Target; las
+  tareas, fuera del tablero.)*
 
 Authoritative artefacts (canonical sources of truth):
 
