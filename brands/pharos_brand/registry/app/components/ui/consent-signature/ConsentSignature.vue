@@ -96,6 +96,11 @@ const props = withDefaults(defineProps<{
    * las del área metropolitana donde están las sedes; `[]` los quita.
    */
   cityShortcuts?: string[]
+  /**
+   * Atajos bajo «Entidad»: un toque llena la casilla. Por omisión, «PARTICULAR».
+   * La casilla ya viene llena con `entityServed` cuando la app lo sabe.
+   */
+  entityShortcuts?: string[]
 }>(), {
   documentError: null,
   orderNumber: null,
@@ -111,6 +116,7 @@ const props = withDefaults(defineProps<{
   documentPages: null,
   layout: 'continuous',
   cityShortcuts: () => ['MEDELLÍN', 'ENVIGADO', 'BELLO', 'SABANETA', 'ITAGÜÍ', 'LA ESTRELLA'],
+  entityShortcuts: () => ['PARTICULAR'],
 })
 
 const esTablet = computed(() => props.density === 'tablet')
@@ -158,7 +164,9 @@ const patientExpeditionCity = ref(props.subject.expeditionPlace ?? '')
 // un ref con el mismo nombre que una prop es una colisión real —el template
 // resuelve uno de los dos y el otro queda muerto sin avisar—. `vue/no-dupe-keys`
 // lo ataja, y por eso el nombre en español.
-const entidadEscrita = ref('')
+// Viene llena con la entidad que la app conoce (la aseguradora de la orden): la persona
+// sólo la revisa. Si no la sabe, vacía, como antes.
+const entidadEscrita = ref(props.entityServed ?? '')
 const conserveSamples = ref<boolean>(false)
 const microscopicImages = ref<boolean>(false)
 
@@ -623,6 +631,25 @@ function submit() {
         <div v-if="form.requiresEntityServed" class="flex flex-col gap-1.5 sm:max-w-xs">
           <Label for="consent-entity">Entidad</Label>
           <Input id="consent-entity" v-model="entidadEscrita" :class="esTablet && 'h-12 text-lg'" class="uppercase" autocomplete="off" :disabled="submitting" />
+          <div v-if="entityShortcuts.length" class="flex flex-wrap gap-2">
+            <button
+              v-for="entidad in entityShortcuts"
+              :key="entidad"
+              type="button"
+              :disabled="submitting"
+              :aria-pressed="entidadEscrita === entidad"
+              class="rounded-md border px-3 transition-colors disabled:opacity-50"
+              :class="[
+                esTablet ? 'min-h-11 text-base' : 'min-h-9 text-sm',
+                entidadEscrita === entidad
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-foreground hover:bg-accent',
+              ]"
+              @click="entidadEscrita = entidad"
+            >
+              {{ entidad }}
+            </button>
+          </div>
         </div>
       </div>
 
