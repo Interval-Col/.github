@@ -303,6 +303,19 @@
   --sidebar-primary: #B5CF6B;  --sidebar-primary-foreground: #141A05;  --sidebar-ring: #B5CF6B;
 }
 
+/* Consentimientos · Pluma — tinta sepia #6E4626 / #D3A77A (document-signing; elegido
+ * 2026-11-24 para la baldosa del hub, para que el lanzador no sea todo azul). Comparte tono
+ * con el naranja de Clientes (~30°) y se separa por croma: tinta apagada contra naranja vivo.
+ * Contraste sobre --card 8,2:1 / 8,3:1. Glifo propio `Quill` (custom-glyphs.ts). */
+.theme-consentimientos {
+  --primary: #6E4626;  --primary-foreground: #FFFFFF;  --ring: #6E4626;
+  --sidebar-primary: #6E4626;  --sidebar-primary-foreground: #FFFFFF;  --sidebar-ring: #6E4626;
+}
+.dark.theme-consentimientos {
+  --primary: #D3A77A;  --primary-foreground: #1A1006;  --ring: #D3A77A;
+  --sidebar-primary: #D3A77A;  --sidebar-primary-foreground: #1A1006;  --sidebar-ring: #D3A77A;
+}
+
 /* Expose the contract to Tailwind v4 utilities (CSS-first; no tailwind.config.js).
  * Utilities like bg-primary, text-status-success, bg-status-warning-bg,
  * border-border, font-data resolve here. */
