@@ -1,0 +1,5 @@
+export { default as Buscador } from './Buscador.vue'
+export { default as BuscadorModo } from './BuscadorModo.vue'
+export { default as BuscadorEnLinea } from './BuscadorEnLinea.vue'
+export { MODOS } from './types'
+export type { BorradorBuscador, BuscadorExpuesto, ConsultaPaciente, ModoBuscador, Respuesta } from './types'
