@@ -13,15 +13,16 @@ export interface TipoDocumento {
   nombre: string
 }
 
+// La lista que el LIS sabe buscar (German, 2026-11-27: «manda la de CobolQL»). Es la de
+// lab-qc `DOCUMENT_TYPES`: la sigla de siempre en el laboratorio, la misma del PDF.
 export const TIPOS_DOCUMENTO: readonly TipoDocumento[] = [
   { codigo: 'CC', nombre: 'Cédula de ciudadanía' },
   { codigo: 'TI', nombre: 'Tarjeta de identidad' },
-  { codigo: 'RC', nombre: 'Registro civil' },
   { codigo: 'CE', nombre: 'Cédula de extranjería' },
+  { codigo: 'RC', nombre: 'Registro civil' },
   { codigo: 'PA', nombre: 'Pasaporte' },
-  { codigo: 'PT', nombre: 'Permiso por protección temporal' },
-  { codigo: 'MS', nombre: 'Menor sin identificación' },
-  { codigo: 'AS', nombre: 'Adulto sin identificación' },
+  { codigo: 'PE', nombre: 'Permiso especial de permanencia' },
+  { codigo: 'NIT', nombre: 'NIT' },
 ]
 
 export function tipoPorCodigo(codigo: string | null | undefined): TipoDocumento | undefined {
