@@ -209,9 +209,10 @@ When a piece of work leaves PRs open across repos, do **not** chain
 `gh pr merge … && gh pr merge …`. That works only when nothing goes
 wrong, and four things routinely do:
 
-- **The branch goes stale.** Merging one PR leaves the others in that
-  repo `BEHIND`, and with *require branches to be up to date* the next
-  merge is rejected outright.
+- **The branch goes stale.** On a base that requires up-to-date
+  branches (`main`, and any `develop` that kept the rule), merging one
+  PR leaves the others in that repo `BEHIND` and the next merge is
+  rejected outright.
 - **The state has not settled.** After a merge GitHub takes seconds to
   recompute the other PRs in that repo; reading it immediately returns
   the **stale** value, so the stale branch above goes unnoticed.
@@ -234,6 +235,13 @@ merge-path biuman-lis#134 finance-lch#232 finance-lch#233^#232 public-web#141
 PRs in the same repo serialise automatically, in the order given; `^`
 declares a dependency **across** repos. Start with `--dry-run`: it
 prints the batches and the classification without touching anything.
+
+With `--lote`, the PRs of each repo are combined on a temporary branch
+and CI runs **once** on the combination; if it is green they merge one
+after another, with no branch updates in between. It only groups PRs on
+a base that does not require up-to-date branches, and it stops if
+someone else merges on that base mid-batch. `--solo-verificar` runs the
+check without merging.
 Install and full reference: `operations/scripts/README.md`.
 
 ---
@@ -294,12 +302,27 @@ has the key-management workflow in place.
 | Require a pull request before merging | ❌ (direct push allowed) |
 | Require status checks to pass before merging | ✅ |
 | Required status checks | same set as `main` |
+| Require branches to be up to date before merging | ❌ (see below) |
 | Allow force pushes | ❌ (never) |
 | Allow deletions | ❌ |
 
 A direct push to `develop` still needs CI to pass — GitHub enforces
 this when "Require status checks" is on regardless of whether a PR
 was used.
+
+**Why `develop` does not require up-to-date branches.** With it on,
+every merge leaves the next PR in that repo behind, and that PR has to
+re-run its whole CI before it can merge: a batch of PRs merges one CI
+run at a time. What the rule protects against — two PRs that are green
+on their own but break once combined — is covered here in two other
+ways: the CI that runs on every push to `develop`, and `merge-path
+--lote`, which runs CI once on the combination before merging a batch
+(see [Merging several related PRs](#merging-several-related-prs--merge-path)).
+`main` keeps the rule: it is the last gate before production.
+
+> ⚠️ A repo whose push to `develop` does **not** run lint and tests, or
+> whose `develop` applies schema changes on push, keeps the rule on
+> `develop` too until that changes.
 
 ### Feature branches
 
