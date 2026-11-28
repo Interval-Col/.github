@@ -24,7 +24,9 @@ on:
         description: JSON array of runner labels
         type: string
         required: false
-        default: '["self-hosted"]'
+        # Carril `checks`: pool persistente, sin secretos ni Docker (infrastructure#199,
+        # E2). Un llamador PÚBLICO sigue pasando '["ubuntu-latest"]'.
+        default: '["checks"]'
       enforce:
         description: fail the check on a finding (required-check mode)
         type: boolean

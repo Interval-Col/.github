@@ -41,7 +41,9 @@ on:
         description: JSON array of runner labels (the caller's private repo pays the minutes)
         type: string
         required: false
-        default: '["self-hosted"]'
+        # Carril `checks`: pool persistente, sin secretos ni Docker (infrastructure#199,
+        # E2). Un llamador PÚBLICO sigue pasando '["ubuntu-latest"]'.
+        default: '["checks"]'
       code_regex:
         description: paths that count as code even when they look like docs
         type: string
