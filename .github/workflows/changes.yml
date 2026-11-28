@@ -71,6 +71,7 @@ on:
 
 jobs:
   changes:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     outputs:
       code: ${{ steps.classify.outputs.code }}

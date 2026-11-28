@@ -62,6 +62,7 @@ on:
 
 jobs:
   issue-link:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
     permissions:

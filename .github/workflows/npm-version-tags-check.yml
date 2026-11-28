@@ -33,6 +33,7 @@ on:
 
 jobs:
   npm-version-tags-check:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7

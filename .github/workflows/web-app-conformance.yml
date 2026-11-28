@@ -41,6 +41,7 @@ on:
 
 jobs:
   web-app-conformance:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7

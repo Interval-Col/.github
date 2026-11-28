@@ -26,6 +26,7 @@ on:
 
 jobs:
   add-to-project:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     permissions: {}
     steps:

@@ -42,6 +42,12 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # Un push nuevo a un PR cancela la corrida vieja de ESE PR. Lo demás (push a
+  # develop/main, dispatch) recibe un grupo único y nunca se cancela (infrastructure#224).
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   corpus-check:
     runs-on: ubuntu-latest
