@@ -60,7 +60,7 @@ const modosVisibles = computed<ModoBuscador[]>(() =>
 const hayPestanas = computed(() => modosVisibles.value.length > 1)
 
 const {
-  borrador, aplicada, estado, filas, fuente, falta, valido, cargando, desactualizado, eco,
+  borrador, aplicada, estado, filas, fuente, falta, valido, cargando, desactualizado, eco, envios,
   cambiarModo, enviar,
 } = useBuscador<T>({
   buscar: (c, s) => props.buscar(c, s),

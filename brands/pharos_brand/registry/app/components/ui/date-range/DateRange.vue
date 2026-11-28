@@ -11,7 +11,6 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Label } from '@/components/ui/label'
 import { TEXTOS } from '@/lib/busqueda/textos'
 import { ATAJOS, detectar, rangoDe, type Atajo, type RangoFechas } from './atajos'
-export type { RangoFechas } from './atajos'
 
 const props = defineProps<{
   /** Si el rango abarca más días que esto, muestra el aviso (nunca bloquea). */
