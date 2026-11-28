@@ -43,6 +43,7 @@ permissions:
 
 jobs:
   db-tenant-check:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     permissions:
       contents: read

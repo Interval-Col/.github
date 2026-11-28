@@ -110,6 +110,7 @@ permissions:
 
 jobs:
   corpus-verify:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     environment: ${{ inputs.environment }}
     steps:

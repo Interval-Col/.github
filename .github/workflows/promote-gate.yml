@@ -46,6 +46,7 @@ on:
 
 jobs:
   promote-gate:
+    timeout-minutes: 20
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7

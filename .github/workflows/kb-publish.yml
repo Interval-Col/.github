@@ -76,6 +76,7 @@ permissions:
 
 jobs:
   build:
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     # One push of this KB's image at a time. It does NOT guarantee order — GitHub
     # runs a group's queue in arbitrary order — so the push step below also refuses
@@ -191,6 +192,7 @@ jobs:
   tell-consumers:
     needs: build
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.build.outputs.superseded != 'true'
+    timeout-minutes: 15
     runs-on: ${{ fromJSON(inputs.runner) }}
     steps:
       - uses: actions/checkout@v7
