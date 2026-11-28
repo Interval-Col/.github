@@ -30,7 +30,14 @@ const resumen = computed(() => {
   if (!desde && !hasta) return 'Escoge las fechas'
   const fechas = desde === hasta ? corta(desde) : `${corta(desde)} – ${corta(hasta)}`
   const atajo = etiquetaAtajo(modelo.value)
-  return atajo ? `${atajo} · ${fechas}` : fechas
+  // Con atajo, el botón dice sólo el atajo («Últimos 7 días») y las fechas van al `title`:
+  // así cabe en un ancho fijo corto. Sin atajo, dice las fechas.
+  return atajo || fechas
+})
+const titulo = computed(() => {
+  const { desde, hasta } = modelo.value
+  if (!desde && !hasta) return 'Escoge las fechas'
+  return desde === hasta ? corta(desde) : `${corta(desde)} – ${corta(hasta)}`
 })
 
 </script>
@@ -42,11 +49,15 @@ const resumen = computed(() => {
         type="button"
         variant="outline"
         :aria-invalid="!valido || undefined"
-        :class="cn('justify-start gap-2 font-normal tabular-nums', !valido && 'border-destructive')"
+        :title="titulo"
+        :class="cn('w-36 justify-start gap-2 font-normal tabular-nums', !valido && 'border-destructive')"
       >
         <CalendarRange class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span class="sr-only">Fechas:</span>
-        {{ resumen }}
+        <!-- Ancho FIJO: el resumen va de «Hoy · 28/11» a «Últimos 7 días · 22/11 – 28/11»,
+             y un botón que crece le cambia el alto a la barra (revisión adversarial de
+             pharos-lis#1433). El texto completo queda en el `title`. -->
+        <span class="min-w-0 truncate">{{ resumen }}</span>
       </Button>
     </PopoverTrigger>
     <PopoverContent align="start" :collision-padding="8" class="w-auto max-w-[calc(100vw-2rem)] p-3">

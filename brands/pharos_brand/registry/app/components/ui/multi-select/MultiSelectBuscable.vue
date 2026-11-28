@@ -39,6 +39,10 @@ const props = defineProps<{
   /** Ancho FIJO del botón (clases de Tailwind): fijo para que la barra no cambie de
    *  ancho con lo escogido. Por defecto `sm:w-40`. */
   anchoClase?: string
+  /** Aviso corto sobre lo que esta faceta oculta («1 requiere atención»). Se ve como un
+   *  punto de alerta DENTRO del botón —la barra no cambia de alto— y se lee completo en el
+   *  `title` y por lector de pantalla. Con scroll no se pierde lo que importa. */
+  aviso?: string
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string[]] }>()
@@ -83,11 +87,15 @@ function alternar(item: T) {
         type="button"
         variant="outline"
         :class="['w-full justify-between gap-2 font-normal', anchoClase ?? 'sm:w-40']"
-        :title="titulo || undefined"
+        :title="[titulo, aviso].filter(Boolean).join('\n') || undefined"
       >
         <span class="flex min-w-0 items-center gap-1.5">
           <span class="shrink-0 text-muted-foreground">{{ etiqueta }}:</span>
           <span class="truncate" :class="modelValue.length ? 'font-medium text-foreground' : 'text-muted-foreground'">{{ resumen }}</span>
+          <span v-if="aviso" class="inline-flex shrink-0 items-center text-status-warning" :title="aviso">
+            <span class="size-2 rounded-full bg-status-warning" aria-hidden="true" />
+            <span class="sr-only">{{ aviso }}</span>
+          </span>
         </span>
         <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </Button>
